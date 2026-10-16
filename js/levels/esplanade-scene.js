@@ -43,16 +43,18 @@ function addGround(scene) {
   }, [1, LENGTH / 3]);
   const deck = shadowed(new THREE.Mesh(new THREE.BoxGeometry(PATH.half * 2, 0.25, LENGTH), mat(0xffffff, { map: planks })), false, true);
   deck.position.set(0, G - 0.125, MID); scene.add(deck);
-  const pile = new THREE.CylinderGeometry(0.16, 0.18, G + 1.2, 10), wood = mat(0x5e4630);
+  const pile = new THREE.CylinderGeometry(0.16, 0.18, G + 5.5, 10), wood = mat(0x5e4630);   // down to the sea floor
   for (let z = -30; z < PATH.finish + 4; z += 4) {
-    const p = new THREE.Mesh(pile, wood); p.position.set(-PATH.half + 0.2, (G - 1.2) / 2, z); scene.add(p);
+    const p = new THREE.Mesh(pile, wood); p.position.set(-PATH.half + 0.2, (G - 5.5) / 2, z); scene.add(p);
   }
   const kerb = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.15, LENGTH), mat(0x8a6a48)));
   kerb.position.set(PATH.half + 0.15, G + 0.07, MID); scene.add(kerb);
   // The sea: right up to the boardwalk, out to the horizon, over a sandy floor.
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(900, LENGTH + 600), new THREE.MeshPhongMaterial({ color: 0x2aa3c4, specular: 0xffffff, shininess: 70, transparent: true, opacity: 0.92 }));
   sea.rotation.x = -Math.PI / 2; sea.position.set(-450 + PATH.half, 0, MID); sea.receiveShadow = true; scene.add(sea);
-  const floor = plane(900, LENGTH + 600, mat(0xb8a47a), -450 + PATH.half, -2.2, MID);
+  // The sea floor sits 5.5 m down: deeper than the real mudflats, so Wally has
+  // room to swim under the water (SEA_FLOOR in esplanade.js).
+  const floor = plane(900, LENGTH + 600, mat(0xb8a47a), -450 + PATH.half, -5.5, MID);
   floor.name = 'shallow-sea-floor';                  // hidden while Wally dives to the reef below it
   scene.add(floor);
   return sea;

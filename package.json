@@ -1,9 +1,9 @@
 {
-  "name": "chomp2",
+  "name": "chomp-3d",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node test/rules.test.mjs && node test/quests.test.mjs && node test/progress.test.mjs && node test/esplanade.test.mjs && node test/reef.test.mjs"
   },
-  "description": "Chomp2: Wally's Cairns Adventure. A 3D browser game: Wally the Cairns Crocodile."
+  "description": "Chomp 3D: Wally's Cairns Adventure. A 3D browser game: Wally the Cairns Crocodile."
 }

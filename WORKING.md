@@ -1,4 +1,4 @@
-# Chomp2: Wally's Cairns Adventure (working document)
+# Chomp 3D: Wally's Cairns Adventure (working document)
 
 Read this first if you are an AI (or a person) picking up the project. It says what the game is, how to
 run and test it, where every file and asset lives, how the assets were made, what is in progress, and how
@@ -39,8 +39,11 @@ when the feed-o-meter is in the red.
    saved in progress (`progress.pearls`).
 2. **The dive:** once ready, a glowing ring and buoy appear out to sea. Swimming into it dives to the reef.
    No food under water: the feed-o-meter becomes an **air meter**. Space swims up for air (not inside the
-   cave: rock overhead); F dives again. Bubble vents refill air. Running out costs a life, and Kenny paddles
+   cave: rock overhead); Shift (the Fours button on phones) dives again. Bubble vents refill air. Running out costs a life, and Kenny paddles
    out on a float with **Vegemite** to revive him.
+   Anywhere in the sea beside the boardwalk Wally can also go under: **Shift** (Fours on phones) dives, **Space** comes up, the air
+   meter shows while he is under, and box jellyfish drift both at the surface and deep down. To get back onto
+   the boardwalk he swims to its edge and pushes toward it to **crawl out** (or does a croc leap).
 3. **The coral cave:** a maze inside a rocky mound, with pearls in dead ends, two bubble vents, and the **old
    pirate chest** (holding a Golden Mango) in the furthest cell. Taking the chest makes the **giant clam** at
    the mouth snap shut; only **a pearl** placed in it opens it again. Out of the cave with the treasure and up
@@ -170,7 +173,8 @@ Budgets (MODELS.md): Wally up to 30k triangles, other characters 15k, props 3k.
 
 ## Working with more than one AI
 
-Git started 2026-10-16 because two AI sessions were editing the same files.
+Git started 2026-10-16 because two AI sessions were editing the same files. Repository:
+https://github.com/kenbin64/chomp2 (to be renamed chomp-3d on GitHub; the folder is `C:\projects\chomp-3d`).
 
 1. Before starting: `git status` and `git log --oneline -5`. If there are uncommitted changes you did not
    make, commit them first as they are (message: "Work from another session, committed as found").
@@ -194,7 +198,6 @@ In progress / next (in Ken's order of asking):
   features, stained wood boardwalk panels, and Ken's models instead of the built-in low-poly ones
   (the Esplanade still uses `jellyModel()` and the built-in pelican and people).
 - **Detailed mangroves** (and fig trees) on the Esplanade.
-- **Climbing out of the water:** Wally must be able to leap from the sea back onto the boardwalk.
 - Wally's helmet and white chest bloom too bright in close-ups.
 - Frame rate not yet measured in a normal browser window (headless tests stall).
 - Remaining models from `MODELS.md` (tourists, food, croc, props).
@@ -202,4 +205,5 @@ In progress / next (in Ken's order of asking):
 ## Log
 
 - 2026-10-16: git started (baseline commit). Working document written. Reef dive added to level 2.
+- 2026-10-16 (branch esplanade-water): crawl out onto the boardwalk, swim under water beside it (sea floor now 5.5 m down), jellyfish at the surface and deep, Kenny's rescue shared by sea and reef. Name back to Chomp 3D.
 - 2026-10-16 (branch reef-cave): the Esplanade's shallow sea floor (y = -2.2) is hidden while diving; it was hiding the reef from the camera in the cave.

@@ -23,7 +23,7 @@ import * as sound from '../sound.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone } from '../rules.js';
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
-import { jellyModel } from '../hazards.js';
+import { jellyModel, dressedJelly } from '../hazards.js';
 import { completeArea, readProgress, starsFor, POSTCARDS } from '../progress.js';
 import { PATH, generateCourse, hits, runScore, STARS } from './esplanade-rules.js';
 import { buildEsplanade, obstacleModel, mangoModel } from './esplanade-scene.js';
@@ -47,12 +47,16 @@ const POOL_Z = PATH.finish + 4;
 const inPool = (x, z) => z > POOL_Z + 1 && z < POOL_Z + 31 && Math.abs(x) < 12.5;
 const inSea = (x, z) => x < -PATH.half && !inPool(x, z);
 const POOL_WATER = G - 0.3;
+// Swimming under the sea beside the boardwalk: F goes under, Space comes up.
+// The sea's own ground reads seaDive, so it is declared before the ground.
+const SEA_FLOOR = -5.5, SEA_SWIM = -2.6, SEA_TOP = -0.45;
+const seaDive = { under: false, depth: SEA_TOP };
 let poolOpen = () => false;              // set below, once the game state exists
 const landGround = {
   stand(x, z, feetY) {
     if (inPool(x, z)) return { y: POOL_WATER - 0.45, surface: 'water' };
-    if (inSea(x, z)) return { y: -0.45, surface: 'water' };
-    if (feetY < G - 0.35) return { y: -0.45, surface: 'water' };     // in the water right against the boardwalk
+    if (inSea(x, z)) return { y: seaDive.depth, surface: 'water' };
+    if (feetY < G - 0.35) return { y: seaDive.depth, surface: 'water' };   // in the water right against the boardwalk
     return { y: G, surface: Math.abs(x) <= PATH.half ? 'deck' : 'land' };
   },
   move(x, z, nx, nz, y) {
@@ -141,9 +145,11 @@ clusters.add({ x: PATH.half + 3.4, z: PATH.finish - 12, size: 3, food: 7, rate: 
 
 // Box jellyfish drifting in the sea beside the boardwalk: it is stinger season.
 const jellies = [];
-for (let z = 60; z < PATH.finish - 20; z += 28 + (z % 17)) {
-  const m = jellyModel(); const x = -PATH.half - 2 - (z % 9);
-  m.position.set(x, -0.15, z); scene.add(m); jellies.push({ m, x, z, phase: z, cool: 0 });
+for (let z = 40, i = 0; z < PATH.finish - 20; z += 18 + (z % 13), i++) {
+  const m = dressedJelly(models.get('jellyfish')); const x = -PATH.half - 2 - (z % 11);
+  // Every other one drifts deep, where Wally meets it swimming under water.
+  const y = i % 2 ? -2.4 : -0.15;
+  m.position.set(x, y, z); scene.add(m); jellies.push({ m, x, z, y, phase: z, cool: 0 });
 }
 
 // Kenny turns up at the side of the path, ahead, when Wally is in the red.
@@ -176,7 +182,7 @@ const game = {
   groupsDone: 0, groupsTotal: 0, ready: false,
   // The dive: where he is ('land', then 'reef'), how deep, air, pearls, the chest and the clam.
   phase: 'land', depth: SURFACE_Y, wantDepth: SURFACE_Y, air: AIR.max, pearls: 0,
-  chest: false, doorShut: false, inCave: false, faint: 0, hint: 0, foursWas: false,
+  chest: false, doorShut: false, inCave: false, faint: 0, hint: 0, foursWas: false, climb: 0,
 };
 window.chomp = { game, wally, food };
 
@@ -211,6 +217,7 @@ const diveMarker = new THREE.Group();
 }
 // Under water he swims at the depth the level sets (game.depth), along the
 // reef, stopped by the cave's walls and by the giant clam while it is shut.
+const climbFrom = new THREE.Vector3(), climbTo = new THREE.Vector3();
 const doorBox = () => ({ x0: reef.mouth.x - 0.8, x1: reef.mouth.x + 0.8, z0: reef.mouth.z - 2.7, z1: reef.mouth.z + 2.7 });
 const reefGround = {
   stand: () => ({ y: game.depth, surface: 'water' }),
@@ -235,28 +242,58 @@ const skyMesh = scene.children.find(o => o.isMesh && o.geometry.type === 'Sphere
 const underFog = new THREE.FogExp2(0x0d5d78, 0.034), caveFog = new THREE.FogExp2(0x0a3140, 0.05);
 const underColour = new THREE.Color(0x0b5470), caveColour = new THREE.Color(0x061f26);
 let underNow = null;
+// The underside of the sea, seen from below beside the boardwalk (the reef has its own).
+const seaCeiling = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), new THREE.MeshBasicMaterial({ color: 0x8fe8f5, transparent: true, opacity: 0.88, side: THREE.DoubleSide, fog: false, depthWrite: false }));
+seaCeiling.rotation.x = Math.PI / 2; seaCeiling.position.y = -0.06; seaCeiling.visible = false; scene.add(seaCeiling);
 function looksUnder(under, inCave) {
-  const key = under ? (inCave ? 'cave' : 'reef') : 'above';
+  const key = under ? (inCave ? 'cave' : game.phase === 'reef' ? 'reef' : 'sea') : 'above';
   if (key === underNow) return;
   underNow = key;
   scene.fog = under ? (inCave ? caveFog : underFog) : aboveFog;
   scene.background = under ? (inCave ? caveColour : underColour) : aboveBackground;
   if (skyMesh) skyMesh.visible = !under;
   world.ring.visible = !under;
-  // The Esplanade's shallow sandy floor (2.2 m down) would hide the reef, 12 m down.
-  const floor = scene.getObjectByName('shallow-sea-floor'); if (floor) floor.visible = !under;
+  // The Esplanade's sea floor (5.5 m down) is the bottom beside the boardwalk,
+  // but would hide the reef, 12 m down, so it goes while he is on the reef.
+  const floor = scene.getObjectByName('shallow-sea-floor'); if (floor) floor.visible = !(under && game.phase === 'reef');
+  seaCeiling.visible = under && game.phase !== 'reef';
   reef.roof.visible = !inCave;                       // from inside, look down into the maze
 }
 
 function startDive() {
+  seaDive.under = false; seaDive.depth = SEA_TOP;
   game.phase = 'reef'; game.depth = SURFACE_Y; game.wantDepth = SWIM_Y;
   setGround(reefGround);
   reef.root.visible = true; diveMarker.visible = false;
   wally.pos.set(DIVE.x, SURFACE_Y, DIVE.z); wally.vel.set(0, 0, 0);
   sound.play.splash(); fx.splash(wally.pos, 30);
   bubbles.say(wally.root, 'Deep breath... down we go!', 3.4);
-  toast_('Find the coral cave! Space: swim up for air. F: dive', 'info');
+  toast_('Find the coral cave! Space: swim up for air. Shift (Fours): dive', 'info');
   $('track').hidden = true;
+}
+
+// Out of air anywhere: a life gone and Kenny on his way. False when it was the last life.
+function outOfAir() {
+  game.lives--; sound.play.lose();
+  if (game.lives <= 0) { finish(false, 'air'); return false; }
+  game.faint = 3.2; wally.setNapping(true);
+  kennyFloat.visible = vegemite.visible = kennyMesh.visible = true;
+  toast_(`Out of air! ${game.lives} left. Here comes Kenny`, 'bad');
+  bubbles.say(kennyMesh, 'Hang on, Wally! Vegemite!', 2.6);
+  return true;
+}
+// Kenny on his float beside Wally, holding out the Vegemite, until Wally is revived.
+function rescueStep(dt, t) {
+  game.faint -= dt;
+  kennyFloat.position.set(wally.pos.x + 1.6, 0.05, wally.pos.z + 0.6);
+  kennyMesh.position.set(kennyFloat.position.x, -0.25, kennyFloat.position.z); kennyMesh.rotation.y = -Math.PI / 2;
+  vegemite.position.set(wally.pos.x + 0.6, 0.6 + Math.sin(t * 4) * 0.1, wally.pos.z + 0.3); vegemite.rotation.y += dt * 3;
+  if (kennyPoser && kennyPoser.ok) kennyPoser.pose({ time: t, cheer: 1, napping: false });
+  if (game.faint <= 0) {
+    game.air = AIR.max; kennyFloat.visible = vegemite.visible = kennyMesh.visible = false;
+    wally.setNapping(false); sound.play.powerup();
+    toast_("Kenny's Vegemite! Full of beans. Shift (Fours) to dive", 'good'); bubbles.say(wally.root, 'Thanks, Kenny! Back down I go!', 3.4);
+  }
 }
 
 // One frame under (or floating on) the water over the reef.
@@ -265,7 +302,7 @@ function reefStep(dt, t, k) {
   game.inCave = inMaze(maze, wally.pos.x, wally.pos.z, MAZE.ox, MAZE.oz, MAZE.size) && !atTop;
   game.hint -= dt;
 
-  // Space: up for air (not from inside the cave: there is rock overhead). F: back down.
+  // Space: up for air (not from inside the cave: there is rock overhead). Shift / Fours: back down.
   const foursPressed = k.fours && !game.foursWas; game.foursWas = k.fours;
   if (game.faint <= 0) {
     if (k.jump && !atTop) {
@@ -333,26 +370,12 @@ function reefStep(dt, t, k) {
   }
 
   // Out of air: a life gone, and Kenny paddles out with the Vegemite.
-  if (game.faint > 0) {
-    game.faint -= dt;
-    kennyFloat.position.set(wally.pos.x + 1.6, 0.05, wally.pos.z + 0.6);
-    kennyMesh.position.set(kennyFloat.position.x, -0.25, kennyFloat.position.z); kennyMesh.rotation.y = -Math.PI / 2;
-    vegemite.position.set(wally.pos.x + 0.6, 0.6 + Math.sin(t * 4) * 0.1, wally.pos.z + 0.3); vegemite.rotation.y += dt * 3;
-    if (kennyPoser && kennyPoser.ok) kennyPoser.pose({ time: t, cheer: 1, napping: false });
-    if (game.faint <= 0) {
-      game.air = AIR.max; kennyFloat.visible = vegemite.visible = kennyMesh.visible = false;
-      wally.setNapping(false); sound.play.powerup();
-      toast_("Kenny's Vegemite! Full of beans. F to dive", 'good'); bubbles.say(wally.root, 'Thanks, Kenny! Back down I go!', 3.4);
-    }
-  } else if (game.air <= 0 && !game.done) {
-    game.lives--; sound.play.lose();
-    if (game.lives <= 0) { finish(false, 'air'); return; }
+  if (game.faint > 0) rescueStep(dt, t);
+  else if (game.air <= 0 && !game.done) {
     // Out of the cave if he was in it, then up to the top where Kenny can reach him.
     if (game.inCave) wally.pos.set(reef.mouth.x + 4, game.depth, reef.mouth.z);
-    game.wantDepth = SURFACE_Y; game.faint = 3.2; wally.setNapping(true);
-    kennyFloat.visible = vegemite.visible = kennyMesh.visible = true;
-    toast_(`Out of air! ${game.lives} left. Here comes Kenny`, 'bad');
-    bubbles.say(kennyMesh, 'Hang on, Wally! Vegemite!', 2.6);
+    game.wantDepth = SURFACE_Y;
+    if (!outOfAir()) return;
   }
 
   // How it looks: under water or above, in the cave or out, and a lamp in the dark.
@@ -393,15 +416,48 @@ function step(dt, t) {
   cam.dist = Math.min(22, Math.max(5, cam.dist + k.zoom));
 
   game.stun = Math.max(0, game.stun - dt); game.boost = Math.max(0, game.boost - dt);
+  if (game.phase === 'reef' || game.climb > 0) seaDive.under = false;
   if (game.phase === 'reef') { reefStep(dt, t, k); drawHud(); return; }
   game.kennyCool -= dt; game.hungry -= dt;
   const napping = game.nap > 0;
   let pace = speedFactor(game.energy) * (game.stun > 0 ? 0.4 : 1) * (game.boost > 0 ? 1.3 : 1);
-  const control = napping || game.done ? { forward: 0, right: 0, jump: false, fours: false } : k;
-  for (const e of wally.update(dt, control, cam.yaw, pace)) {
-    if (e === 'jump') sound.play.jump(); else if (e === 'land') sound.play.land();
-    else if (e === 'splash') { sound.play.splash(); fx.splash(wally.pos, 30); }
+  // In the sea: F goes under, Space comes back up (no croc leap while under).
+  const foursPressed = k.fours && !game.foursWas; game.foursWas = k.fours;
+  const inTheSea = wally.surface === 'water' && inSea(wally.pos.x, wally.pos.z);
+  if (game.faint <= 0 && !napping && !game.done) {
+    if (inTheSea && foursPressed && !seaDive.under) { seaDive.under = true; bubbles.say(wally.root, 'Down I go!', 2); }
+    else if (seaDive.under && k.jump) seaDive.under = false;
   }
+  if (!inTheSea && wally.surface !== 'water') seaDive.under = false;
+  if (inTheSea && !game.seaTip) { game.seaTip = true; toast_('Shift (Fours) to dive under. Swim to the boardwalk edge to climb out', 'info'); }
+  const wantSea = seaDive.under ? SEA_SWIM : SEA_TOP;
+  seaDive.depth += Math.sign(wantSea - seaDive.depth) * Math.min(Math.abs(wantSea - seaDive.depth), 4 * dt);
+  const control = napping || game.done || game.faint > 0 ? { forward: 0, right: 0, jump: false, fours: false }
+    : seaDive.under || seaDive.depth < SEA_TOP - 0.2 ? { ...k, jump: false } : k;
+  // Crawling out: at the boardwalk's edge, pushing toward it, he hauls himself up.
+  const wantX = -Math.sin(cam.yaw) * control.forward + Math.cos(cam.yaw) * control.right;
+  if (game.climb > 0) {
+    game.climb -= dt;
+    const u = 1 - Math.max(0, game.climb) / 0.6, e = u * u * (3 - 2 * u);
+    wally.pos.set(climbFrom.x + (climbTo.x - climbFrom.x) * e, climbFrom.y + (climbTo.y - climbFrom.y) * Math.min(1, e * 1.4) + Math.sin(u * Math.PI) * 0.35, climbFrom.z);
+    wally.root.position.copy(wally.pos);
+    if (game.climb <= 0) { wally.pos.copy(climbTo); wally.vel.set(0, 0, 0); wally.vy = 0; wally.grounded = true; wally.surface = 'deck'; }
+  } else {
+    if (wally.surface === 'water' && !seaDive.under && seaDive.depth > SEA_TOP - 0.2 && wally.pos.x > -PATH.half - 1.2 && wantX > 0.35 && !inPool(wally.pos.x, wally.pos.z)) {
+      climbFrom.copy(wally.pos); climbTo.set(-PATH.half + 0.8, G, wally.pos.z); game.climb = 0.6;
+      sound.play.jump(); fx.splash(wally.pos, 14);
+    }
+    for (const e of wally.update(dt, control, cam.yaw, pace)) {
+      if (e === 'jump') sound.play.jump(); else if (e === 'land') sound.play.land();
+      else if (e === 'splash') { sound.play.splash(); fx.splash(wally.pos, 30); }
+    }
+  }
+  // Air: it runs down under the water and fills again at the top.
+  if (!game.done && game.faint <= 0) game.air = airStep(game.air, seaDive.depth < -1.0 ? 'under' : 'surface', dt);
+  if (game.faint > 0) rescueStep(dt, t);
+  else if (game.air <= 0 && !game.done) { seaDive.under = false; if (!outOfAir()) return; }
+  looksUnder(camera.position.y < -0.2, false);
+  if (seaCeiling.visible) { seaCeiling.position.x = camera.position.x; seaCeiling.position.z = camera.position.z; }
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
   if (!game.done && game.boost <= 0 && !napping) game.energy -= energyDrain(wally.mode, moving) * dt;
 
@@ -424,9 +480,13 @@ function step(dt, t) {
   // Jellyfish drift; swimming into one stings.
   for (const j of jellies) {
     j.phase += dt; j.cool = Math.max(0, j.cool - dt);
-    j.m.position.set(j.x + Math.sin(j.phase * 0.4) * 1.5, -0.15 + Math.sin(j.phase * 1.6) * 0.1, j.z);
-    if (wally.surface === 'water' && j.cool <= 0 && Math.hypot(wally.pos.x - j.m.position.x, wally.pos.z - j.z) < 1.3) {
+    j.m.position.set(j.x + Math.sin(j.phase * 0.4) * 1.5, j.y + Math.sin(j.phase * 1.6) * 0.1, j.z);
+    const pulse = Math.sin(j.phase * 3) * 0.5 + 0.5; j.m.scale.set(1 + pulse * 0.08, 1 - pulse * 0.08, 1 + pulse * 0.08);
+    // It stings when he is at its depth: surface ones at the surface, deep ones under water.
+    const level = Math.abs(wally.pos.y - j.y) < 1.4;
+    if (wally.surface === 'water' && level && j.cool <= 0 && Math.hypot(wally.pos.x - j.m.position.x, wally.pos.z - j.z) < 1.3) {
       j.cool = 2; game.energy -= 12; game.streak = 0; wally.knock(j.m.position.x, j.z); fx.shake(0.4, 0.3);
+      if (seaDive.under) game.air = Math.max(0, game.air - AIR.sting);
       sound.play.sting(); toast_('Box jelly! Ouch!', 'bad'); bubbles.say(wally.root, pickLine('wallySting'), 3.4);
     }
   }
@@ -569,13 +629,14 @@ function followCamera(dt) {
   }
   const cp = Math.cos(cam.pitch);
   camera.position.set(camTarget.x + Math.sin(cam.yaw) * cp * cam.dist, camTarget.y + Math.sin(cam.pitch) * cam.dist, camTarget.z + Math.cos(cam.yaw) * cp * cam.dist);
-  if (game.phase === 'reef' && game.depth < -1.2) {
+  const reefUnder = game.phase === 'reef' && game.depth < -1.2, seaUnder = game.phase !== 'reef' && seaDive.depth < -1.0;
+  if (reefUnder || seaUnder) {
     // Under water: the camera stays under the surface and above the seabed,
     // and in the cave it looks down into the maze (the roof is hidden there).
     // Steep and close, so it looks down into the maze yet stays under the surface.
-    if (game.inCave) { cam.pitch += (1.1 - cam.pitch) * Math.min(1, dt * 3); cam.dist += (6.5 - cam.dist) * Math.min(1, dt * 3); }
+    if (reefUnder && game.inCave) { cam.pitch += (1.1 - cam.pitch) * Math.min(1, dt * 3); cam.dist += (6.5 - cam.dist) * Math.min(1, dt * 3); }
     camera.position.set(camTarget.x + Math.sin(cam.yaw) * Math.cos(cam.pitch) * cam.dist, camTarget.y + Math.sin(cam.pitch) * cam.dist, camTarget.z + Math.cos(cam.yaw) * Math.cos(cam.pitch) * cam.dist);
-    camera.position.y = Math.min(-0.9, Math.max(SEABED_Y + 1, camera.position.y));      // never up through the surface
+    camera.position.y = Math.min(-0.9, Math.max((reefUnder ? SEABED_Y : SEA_FLOOR) + 0.8, camera.position.y));   // never up through the surface
   } else if (camera.position.y < 0.8) camera.position.y = 0.8;
   camera.lookAt(camTarget);
   const jolt = fx.shakeOffset(dt); if (jolt) camera.position.add(jolt);
@@ -587,7 +648,7 @@ function followCamera(dt) {
 function drawHud() {
   $('score').textContent = game.points.toLocaleString();
   $('mangoes').textContent = game.mangoes;
-  const diving = game.phase === 'reef';
+  const diving = game.phase === 'reef' || seaDive.depth < -1.0 || game.air < AIR.max - 0.5;
   $('pearls').textContent = game.pearls;
   $('feed').classList.toggle('air', diving);
   $('meter-label').textContent = diving ? 'Air' : 'Feed-o-meter';
@@ -597,7 +658,7 @@ function drawHud() {
   $('lives').textContent = '●'.repeat(Math.max(0, game.lives)) + '○'.repeat(Math.max(0, LIVES - game.lives));
   $('veg').hidden = game.boost <= 0;
   $('track-wally').style.left = `${Math.min(100, Math.max(0, wally.pos.z / PATH.finish * 100))}%`;
-  $('job').textContent = diving
+  $('job').textContent = game.phase === 'reef'
     ? (game.chest ? (game.doorShut ? 'Put a pearl in the giant clam to get out!' : 'Out of the cave and up for air!') : 'Find the pirate chest in the coral cave')
     : game.ready ? 'Dive at the bubbles out to sea!' : game.groupsDone >= game.groupsTotal ? 'Now fill the feed-o-meter' : `Groups fed out ${game.groupsDone}/${game.groupsTotal}`;
 }
