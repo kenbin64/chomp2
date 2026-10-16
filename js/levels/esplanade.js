@@ -243,6 +243,8 @@ function looksUnder(under, inCave) {
   scene.background = under ? (inCave ? caveColour : underColour) : aboveBackground;
   if (skyMesh) skyMesh.visible = !under;
   world.ring.visible = !under;
+  // The Esplanade's shallow sandy floor (2.2 m down) would hide the reef, 12 m down.
+  const floor = scene.getObjectByName('shallow-sea-floor'); if (floor) floor.visible = !under;
   reef.roof.visible = !inCave;                       // from inside, look down into the maze
 }
 

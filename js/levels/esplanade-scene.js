@@ -52,7 +52,9 @@ function addGround(scene) {
   // The sea: right up to the boardwalk, out to the horizon, over a sandy floor.
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(900, LENGTH + 600), new THREE.MeshPhongMaterial({ color: 0x2aa3c4, specular: 0xffffff, shininess: 70, transparent: true, opacity: 0.92 }));
   sea.rotation.x = -Math.PI / 2; sea.position.set(-450 + PATH.half, 0, MID); sea.receiveShadow = true; scene.add(sea);
-  scene.add(plane(900, LENGTH + 600, mat(0xb8a47a), -450 + PATH.half, -2.2, MID));
+  const floor = plane(900, LENGTH + 600, mat(0xb8a47a), -450 + PATH.half, -2.2, MID);
+  floor.name = 'shallow-sea-floor';                  // hidden while Wally dives to the reef below it
+  scene.add(floor);
   return sea;
 }
 

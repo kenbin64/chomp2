@@ -140,7 +140,7 @@ Many smaller pictures are painted in code at start-up (`js/textures.js`, `reef-s
 ### Originals (**local only**, `incoming/`, about 750 MB, ignored by git)
 
 The full Meshy downloads and in-between versions: `*-original.glb`, `*-rigged.glb`, `*-pc.glb`, `*-phone.glb`,
-older Wally versions. Ken's downloads folder (`C:\Users\kbingh\Downloads`) holds the files as he exported them.
+older Wally versions. Ken's Downloads folder holds the files as he exported them.
 
 ## Pipelines
 
@@ -190,8 +190,6 @@ Done and tested:
 - Level 2 reef dive: rules and maze tested (69 tests); full run checked in a browser (chest, clam shuts, pearl opens it, win).
 
 In progress / next (in Ken's order of asking):
-- **Reef cave view bug:** the Esplanade lays a sandy sea floor at y = -2.2 (`esplanade-scene.js addGround`)
-  that hides the reef (12 m down) from the camera. Hide it while diving.
 - **Esplanade look to match level 1:** shiny water, buildings with depth, light and shadow, people with
   features, stained wood boardwalk panels, and Ken's models instead of the built-in low-poly ones
   (the Esplanade still uses `jellyModel()` and the built-in pelican and people).
@@ -204,3 +202,4 @@ In progress / next (in Ken's order of asking):
 ## Log
 
 - 2026-10-16: git started (baseline commit). Working document written. Reef dive added to level 2.
+- 2026-10-16 (branch reef-cave): the Esplanade's shallow sea floor (y = -2.2) is hidden while diving; it was hiding the reef from the camera in the cave.

@@ -418,8 +418,14 @@ export function buildReef(scene, quality, { maze, jellyGltf = null }) {
   { const g = mergeGeometries(wallGeos), p = g.attributes.position;             // knobbly, not machined
     for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); p.setXYZ(i, x + Math.sin(y * 2 + z) * 0.12, y, z + Math.sin(y * 2.3 + x) * 0.12); }
     g.computeVertexNormals();
-    // Rock needs texture coordinates: project them from the side.
-    const uv = new Float32Array(p.count * 2); for (let i = 0; i < p.count; i++) { uv[i * 2] = (p.getX(i) + p.getZ(i)) * 0.25; uv[i * 2 + 1] = p.getY(i) * 0.25; }
+    // Rock needs texture coordinates: each face takes the picture from the way it
+    // faces (sides along x or z, tops from above), so nothing is smeared.
+    const nrm = g.attributes.normal, uv = new Float32Array(p.count * 2);
+    for (let i = 0; i < p.count; i++) {
+      const ax = Math.abs(nrm.getX(i)), ay = Math.abs(nrm.getY(i)), az = Math.abs(nrm.getZ(i));
+      const [u, v] = ay >= ax && ay >= az ? [p.getX(i), p.getZ(i)] : ax >= az ? [p.getZ(i), p.getY(i)] : [p.getX(i), p.getY(i)];
+      uv[i * 2] = u * 0.25; uv[i * 2 + 1] = v * 0.25;
+    }
     g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
     const walls = new THREE.Mesh(g, rock); walls.castShadow = true; walls.receiveShadow = true; root.add(walls); }
   // Coral along the wall tops, so it reads as a coral maze from above.
