@@ -591,14 +591,15 @@ function showMap() {
     const b = document.createElement('button');
     b.type = 'button'; b.className = `map-area ${open ? 'open' : 'locked'}`;
     const stars = progress.stars[a.id] || 0;
-    b.innerHTML = '<b></b><small></small><span class="s"></span>';
+    b.innerHTML = '<b></b><small></small><span class="goal"></span><span class="s"></span>';
     b.children[0].textContent = a.name;
     b.children[1].textContent = !a.ready ? 'Coming soon' : open ? (a.place || '') : 'Finish the area before to open';
-    b.children[2].textContent = a.ready ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
+    b.children[2].textContent = a.ready ? a.objective || '' : '';       // what to do there
+    b.children[3].textContent = a.ready ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
     if (open) b.onclick = () => { if (PAGES[a.id]) location.href = PAGES[a.id]; else { $('map').hidden = true; start(); } };
     grid.appendChild(b);
   }
-  $('map-mangoes').textContent = `Golden Mangoes: ${progress.mangoes}`;
+  $('map-mangoes').textContent = `Golden Mangoes: ${progress.mangoes} · Pearls: ${progress.pearls || 0}`;
   $('map-postcards').textContent = `Postcards: ${progress.postcards.length} of ${AREAS.length}`;
   $('map').hidden = false;
 }

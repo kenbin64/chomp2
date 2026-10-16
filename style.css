@@ -94,6 +94,7 @@ body.touch .keys.pc, body:not(.touch) .keys.phone { display: none; }
 .map-area { border-radius: 14px; padding: 10px 12px; background: rgba(255, 255, 255, 0.08); border: 2px solid rgba(255, 209, 102, 0.35); color: inherit; font: inherit; cursor: pointer; text-align: left; }
 .map-area b { display: block; font-size: 17px; }
 .map-area small { display: block; opacity: 0.8; }
+.map-area .goal { display: block; margin: 6px 0 4px; font-size: 13px; line-height: 1.35; opacity: 0.92; }
 .map-area .s { color: #ffd166; letter-spacing: 0.08em; }
 .map-area.locked { opacity: 0.45; cursor: default; }
 .map-area.open:hover { background: rgba(255, 209, 102, 0.18); }

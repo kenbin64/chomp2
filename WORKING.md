@@ -206,6 +206,7 @@ In progress / next (in Ken's order of asking):
 ## Log
 
 - 2026-10-16: git started (baseline commit). Working document written. Reef dive added to level 2.
+- 2026-10-16 (branch map-objectives): each built area's objective is on the trip map (`objective` in `js/quests.js`, tested); the map footer shows lifetime pearls.
 - 2026-10-16 (branch open-all): every built area is open on the trip map for now (`OPEN_ALL`), `?locked` for the real game.
 - 2026-10-16 (branch esplanade-water): crawl out onto the boardwalk, swim under water beside it (sea floor now 5.5 m down), jellyfish at the surface and deep, Kenny's rescue shared by sea and reef. Name back to Chomp 3D.
 - 2026-10-16 (branch reef-cave): the Esplanade's shallow sea floor (y = -2.2) is hidden while diving; it was hiding the reef from the camera in the cave.

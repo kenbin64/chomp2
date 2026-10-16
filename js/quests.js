@@ -5,9 +5,12 @@
 // Pure data and counting, no drawing, so it is tested (test/quests.test.mjs).
 
 export const AREAS = [
+  // objective: what the player has to do, in a sentence or two, shown on the trip map.
   { id: 'park', name: 'Croc Park', place: 'Cairns, Far North Queensland', ready: true,
+    objective: 'Feed out every group of visitors around the lagoon, beating the pelicans, flying foxes, toads and crocs to the food. Then fill the feed-o-meter.',
     notes: 'Lagoon, banks, rocks and the boardwalk. Tourists throw food from the boardwalk.' },
   { id: 'esplanade', name: 'The Esplanade', place: 'The Cairns waterfront', ready: true,
+    objective: 'Feed every picnic group (each leaves a pearl) and fill up. Then dive to the coral cave, find the pirate chest and get out before your air runs out. A pearl opens the giant clam.',
     notes: 'The Cairns Esplanade: lagoon pool, boardwalk, fig trees, mangroves along the mudflats.' },
   { id: 'daintree', name: 'Daintree River', ready: false,
     notes: 'Tourists on river boats. Swim, swing on vines, jump rock to rock, run the beach. Mangroves, rainforest to the water.' },
