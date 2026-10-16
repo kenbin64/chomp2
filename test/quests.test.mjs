@@ -87,5 +87,7 @@ check('map offers only places visited', mapChoices(['park']).map(a => a.id).join
 check('map never offers an area that is not built', mapChoices(['park', 'reef']).every(a => a.ready));
 check('nothing visited, nothing on the map', mapChoices([]).length === 0);
 
+// Every area that can be played says what to do there, for the trip map.
+check('every built area has an objective', AREAS.filter(a => a.ready).every(a => typeof a.objective === 'string' && a.objective.length > 20));
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
