@@ -58,7 +58,8 @@ npm test                    # all rule tests: rules, quests, progress, esplanade
 
 URL switches (any page): `?q=low|medium|high` force graphics quality, `?real=0` turn off the photographic
 layer (compare with the painted look), `?bot` a test pilot plays, `?play` skip the title.
-Esplanade only: `?dive` jump straight to the dive, `&pearls=3` start with pearls, `?seed=7` course and maze.
+For now every built area is open on the trip map (`OPEN_ALL` in `js/progress.js`); add `?locked` to play with
+the real unlocking. Esplanade only: `?dive` jump straight to the dive, `&pearls=3` start with pearls, `?seed=7` course and maze.
 
 Test hooks in the browser console: `window.chomp` holds `game`, `wally`, `food`, `cam`, and per level
 `pelicans`, `jellies`, `toads`, `clusters`, `kenny` (park) or `reef`, `maze`, `camera`, `scene` (Esplanade).
@@ -205,5 +206,6 @@ In progress / next (in Ken's order of asking):
 ## Log
 
 - 2026-10-16: git started (baseline commit). Working document written. Reef dive added to level 2.
+- 2026-10-16 (branch open-all): every built area is open on the trip map for now (`OPEN_ALL`), `?locked` for the real game.
 - 2026-10-16 (branch esplanade-water): crawl out onto the boardwalk, swim under water beside it (sea floor now 5.5 m down), jellyfish at the surface and deep, Kenny's rescue shared by sea and reef. Name back to Chomp 3D.
 - 2026-10-16 (branch reef-cave): the Esplanade's shallow sea floor (y = -2.2) is hidden while diving; it was hiding the reef from the camera in the cave.

@@ -21,7 +21,7 @@ import { loadRealism } from './realism.js';
 import { usePalmCrown } from './palms.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from './quality.js';
 import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
-import { readProgress, completeArea, isOpen, starsFor, POSTCARDS } from './progress.js';
+import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL } from './progress.js';
 import * as sound from './sound.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, difficulty,
          clampToPark, terrainHeight, onDeck, LIVES, REVIVE_ENERGY, inRedZone,
@@ -587,7 +587,7 @@ function showMap() {
   $('title').hidden = true; $('win').hidden = true; $('over').hidden = true;
   const grid = $('map-grid'); grid.innerHTML = '';
   for (const a of AREAS) {
-    const open = isOpen(progress, a.id);
+    const open = (OPEN_ALL && !params.has('locked') && a.ready) || isOpen(progress, a.id);
     const b = document.createElement('button');
     b.type = 'button'; b.className = `map-area ${open ? 'open' : 'locked'}`;
     const stars = progress.stars[a.id] || 0;
