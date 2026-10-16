@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rig Test</title>
+<!-- Shows Wally's code skeleton at work: rig-test.html?pose=run&view=side
+     poses: rest, stand, run, leap, swim, cheer, nap, chomp. Add &bones to see the skeleton. -->
+<style>html, body { margin: 0; height: 100%; background: #9fc6d8; } canvas { display: block; width: 100%; height: 100%; }
+#label { position: fixed; top: 10px; left: 12px; font: 600 18px system-ui; color: #10202a; }</style>
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<canvas id="c"></canvas><div id="label"></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { rigWally, WallyMotion, shapeFor } from './js/rig.js';
+
+const q = new URLSearchParams(location.search);
+const pose = q.get('pose') || 'run', view = q.get('view') || 'side', phase = Number(q.get('phase') || 1.2);
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9fc6d8);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x556644, 1.5));
+const sun = new THREE.DirectionalLight(0xfff0dd, 2); sun.position.set(3, 5, 4); scene.add(sun);
+const grid = new THREE.GridHelper(4, 40, 0x557788, 0x88aabb); scene.add(grid);
+
+const loader = new GLTFLoader(); const draco = new DRACOLoader(); draco.setDecoderPath('./js/addons/libs/draco/'); loader.setDRACOLoader(draco);
+const gltf = await loader.loadAsync(q.get('m') || 'models/wally.glb');
+let mesh; gltf.scene.traverse(o => { if (o.isMesh && !mesh) mesh = o; });
+mesh.geometry.computeBoundingBox();
+const { skinned, bones, shape } = rigWally(mesh, shapeFor(mesh.geometry.boundingBox.getSize(new THREE.Vector3())));
+scene.add(skinned);
+skinned.geometry.computeBoundingBox(); grid.position.y = skinned.geometry.boundingBox.min.y;
+if (q.has('bones')) { const h = new THREE.SkeletonHelper(skinned); scene.add(h); }
+if (q.has('parts')) {
+  // Colour each skin point by the bone that holds it most.
+  const g = skinned.geometry, si = g.attributes.skinIndex, sw = g.attributes.skinWeight, n = si.count;
+  const col = new Float32Array(n * 3), c = new THREE.Color();
+  for (let i = 0; i < n; i++) {
+    let best = 0, bw = -1; for (let k = 0; k < 4; k++) if (sw.getComponent(i, k) > bw) { bw = sw.getComponent(i, k); best = si.getComponent(i, k); }
+    c.setHSL((best * 0.618) % 1, 0.8, 0.5); col.set([c.r, c.g, c.b], i * 3);
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  skinned.material = new THREE.MeshLambertMaterial({ vertexColors: true });
+}
+
+const motion = new WallyMotion(bones, shape);
+const states = {
+  rest: null,
+  stand: { mode: 'upright', speed: 0, walk: 0, time: 0.4, jaw: 0.12 },
+  run: { mode: 'upright', speed: 1, walk: phase, time: 1, jaw: 0.12 },
+  leap: { mode: 'swim', speed: 0.3, walk: 0, time: 1, airborne: true, fromWater: true, jaw: 0.75 },
+  swim: { mode: 'swim', speed: 0.6, walk: 0, time: 0.3, jaw: 0.12 },
+  cheer: { mode: 'upright', speed: 0, walk: 0, time: 0.2, cheer: 0.5, jaw: 0.4 },
+  nap: { mode: 'upright', speed: 0, walk: 0, time: 0, napping: true, jaw: 0 },
+  chomp: { mode: 'upright', speed: 0, walk: 0, time: 0.4, jaw: 0 },
+};
+if (states[pose]) motion.update(states[pose]);
+document.getElementById('label').textContent = `${pose} (${view})`;
+
+const dirs = { side: [1, 0.15, 0], front: [0, 0.15, 1], back: [0, 0.2, -1], three: [0.8, 0.35, 0.8], top: [0.01, 1, 0.01] };
+const d = new THREE.Vector3(...dirs[view]).normalize();
+const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 50);
+const centre = new THREE.Vector3(0, 0, 0);
+const zoom = Number(q.get('zoom') || 1), look = new THREE.Vector3(...(q.get('at') || '0,0,0').split(',').map(Number));
+camera.position.copy(look).addScaledVector(d, 4.2 / zoom); camera.lookAt(look);
+function draw() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.render(scene, camera); }
+draw(); addEventListener('resize', draw);
+window.rigReady = true;
+</script>
+</body>
+</html>

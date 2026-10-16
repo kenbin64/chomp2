@@ -1,0 +1,1 @@
+{"name": "chomp-3d", "private": true, "type": "module", "scripts": {"test": "node test/rules.test.mjs && node test/quests.test.mjs && node test/progress.test.mjs && node test/esplanade.test.mjs && node test/reef.test.mjs"}}

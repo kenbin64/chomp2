@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b6e8c">
+<title>Chomp! Wally the Cairns Crocodile</title>
+<meta name="description" content="Wally the Cairns Crocodile catches the food tourists throw. A 3D adventure through Far North Queensland, by Kenneth W. Bingham.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- The font loads without holding up the game: on a slow connection the game starts in a fallback font. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" hidden>
+  <div class="panel score"><b id="score">0</b><span id="streak"></span></div>
+  <div class="panel energy" id="feed">
+    <div class="feed-head"><span class="label">Feed-o-meter</span><span id="lives" aria-label="Lives"></span></div>
+    <div class="bar"><div class="red-zone"></div><div id="energy-fill"></div></div>
+    <span id="veg" hidden>Full tank!</span>
+    <span class="red-note">In the red! Get to Kenny and his jar!</span>
+  </div>
+  <div class="panel quest">
+    <h2 id="quest-title"></h2>
+    <ul id="goals"></ul>
+    <div id="frenzy" hidden><b>Feeding Frenzy</b> <span id="frenzy-count"></span> <span id="frenzy-time"></span></div>
+  </div>
+  <div id="toasts" aria-live="polite"></div>
+</div>
+
+<div id="intro" hidden>
+  <p class="intro-eyebrow">Welcome to</p>
+  <h2 id="intro-name"></h2>
+  <p id="intro-place"></p>
+  <p class="intro-skip">Press any key or tap to skip</p>
+</div>
+
+<div id="touch" hidden>
+  <div id="stick"><div id="knob"></div></div>
+  <button id="t-fours" type="button">Fours</button>
+  <button id="t-jump" type="button">Jump</button>
+  <button id="t-pause" type="button" aria-label="Pause">II</button>
+  <button id="t-cam" type="button" aria-label="Camera behind Wally">Cam</button>
+</div>
+
+<section id="title" class="overlay">
+  <div class="card">
+    <h1>Chomp!</h1>
+    <p class="sub">Wally the Cairns Crocodile</p>
+    <p>Somebody scratched out the <s>Don't</s> on the sign, so the visitors have brought lunch. Get close enough and they'll throw it to Wally, but not too close or they'll run off with it. Food keeps Wally going, and there's only so much.</p>
+    <p class="area">Croc Park, Far North Queensland</p>
+    <button id="play" class="go" type="button">Play</button>
+    <div class="keys pc">
+      <span><kbd>W A S D</kbd> move</span><span><kbd>Space</kbd> jump, croc leap in water</span>
+      <span><kbd>Shift</kbd> all fours</span><span><kbd>Drag</kbd> or <kbd>Q E</kbd> turn camera</span><span><kbd>C</kbd> camera to his front or back</span>
+      <span><kbd>P</kbd> pause</span><span><kbd>M</kbd> sound</span>
+    </div>
+    <div class="keys phone">
+      <span>Left thumb: move</span><span>Right thumb: turn camera</span><span>Cam: his front or back</span><span>Jump and Fours buttons</span>
+    </div>
+    <p class="fine">Watch out for box jellyfish, flying foxes after the food, and the other crocs. When the feed-o-meter drops into the red, Kenny the Koala heads over with his jar. Get to it before the meter runs out, or Wally loses a life.</p>
+  </div>
+</section>
+
+<section id="map" class="overlay" hidden>
+  <div class="card">
+    <h1>Wally's Big Trip</h1>
+    <p class="sub">Pick where to go. Finish an area to open the next one.</p>
+    <div class="map-grid" id="map-grid"></div>
+    <p class="fine"><span id="map-mangoes"></span> &middot; <span id="map-postcards"></span></p>
+  </div>
+</section>
+
+<section id="paused" class="overlay" hidden>
+  <div class="card">
+    <h1>Paused</h1>
+    <button id="resume" class="go" type="button">Keep going</button>
+    <p class="fine">Graphics: <span id="quality-name"></span>.
+      <a href="?q=low">Low</a> &middot; <a href="?q=medium">Medium</a> &middot; <a href="?q=high">High</a> (restarts the game)</p>
+  </div>
+</section>
+
+<section id="over" class="overlay" hidden>
+  <div class="card">
+    <h1>Out of puff</h1>
+    <p>Wally has used up all his lives and needs a proper lie down.</p>
+    <p class="big">Score <b id="final-score">0</b></p>
+    <p class="fine" id="best"></p>
+    <button id="again" class="go" type="button">Try again</button>
+  </div>
+</section>
+
+<section id="win" class="overlay" hidden>
+  <div class="card">
+    <h1>Croc Park done!</h1>
+    <p>Wally is fuelled up and out the gate.</p>
+    <p class="big">Score <b id="win-score">0</b></p>
+    <p class="stars" id="win-stars"></p>
+    <div class="postcard"><b>Postcard collected</b><p id="win-postcard"></p></div>
+    <p>Next stop: <b id="next-area"></b>.</p>
+    <button id="to-map" class="go" type="button">On to the map</button>
+    <p class="fine"><a href="#" id="again2">Play the park again</a></p>
+  </div>
+</section>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

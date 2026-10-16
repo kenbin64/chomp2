@@ -1,0 +1,7 @@
+# Original model downloads (hundreds of MB): the game uses the shrunk copies in models/.
+incoming/
+# Screenshots made while testing.
+screens/
+node_modules/
+.DS_Store
+Thumbs.db

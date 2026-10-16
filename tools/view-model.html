@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Model check</title>
+<!-- Shows one model from models/ from the front, side and back, on a 1 m grid,
+     with the game's forward direction (+z) marked. Open it from the game's own
+     server:  http://localhost:8090/tools/view-model.html?m=pelican  -->
+<style>html,body{margin:0;background:#cfd8dc;font:14px sans-serif} #info{position:fixed;left:8px;top:6px}</style>
+<script type="importmap">{ "imports": { "three": "../js/three.module.js", "three/addons/": "../js/addons/" } }</script>
+</head>
+<body>
+<div id="info"></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+const name = new URLSearchParams(location.search).get('m') || 'pelican';
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(innerWidth, innerHeight); document.body.appendChild(renderer.domElement);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0xffffff, 0x777766, 2.2));
+const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(2, 4, 3); scene.add(sun);
+scene.add(new THREE.GridHelper(4, 4, 0x333333, 0x888888));
+const arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0.01, 0), 1.5, 0xd32f2f); scene.add(arrow);
+
+const loader = new GLTFLoader();
+const draco = new DRACOLoader(); draco.setDecoderPath('../js/addons/libs/draco/'); loader.setDRACOLoader(draco);
+const gltf = await loader.loadAsync(`../models/${name}.glb`);
+const model = gltf.scene;
+// Same fit as the game: scale to height, base on the ground, centred.
+const box = new THREE.Box3().setFromObject(model), size = box.getSize(new THREE.Vector3());
+const height = Number(new URLSearchParams(location.search).get('h') || 1.35);
+model.scale.setScalar(height / size.y);
+box.setFromObject(model);
+model.position.sub(new THREE.Vector3((box.min.x + box.max.x) / 2, box.min.y, (box.min.z + box.max.z) / 2));
+scene.add(model);
+
+// ?walk=1: the same leg stride the game gives an unrigged bird (look.js addStride),
+// so the legs can be checked here. stride(phase) renders one moment of the step.
+if (new URLSearchParams(location.search).get('walk')) {
+  const { addStride } = await import('../js/look.js');
+  const parts = [];
+  model.traverse(o => {
+    if (!o.isMesh) return;
+    o.geometry.computeBoundingBox();
+    const b = o.geometry.boundingBox, h = b.max.y - b.min.y;
+    o.material = o.material.clone();
+    parts.push(addStride(o.material, { ground: b.min.y, legTop: b.min.y + h * 0.17, centre: (b.min.x + b.max.x) / 2, reach: h * 0.07, lift: h * 0.035 }));
+  });
+  window.stride = (phase) => { for (const s of parts) { s.amount.value = 1; s.phase.value = phase; } return phase; };
+}
+document.getElementById('info').textContent = `${name}: ${size.x.toFixed(2)} x ${size.y.toFixed(2)} x ${size.z.toFixed(2)} as made; red arrow = the game's forward (+z)`;
+
+const camera = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.01, 50);
+const views = { front: [0, 0.7, 4], side: [4, 0.7, 0], back: [0, 0.7, -4], top: [0.01, 5, 0] };
+window.view = (v, zoom = 1) => { camera.position.set(...views[v].map(c => c * zoom)); camera.lookAt(0, height * 0.45, 0); renderer.render(scene, camera); return v; };
+window.view('front');
+window.ready = true;
+</script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model Preview</title>
+<!-- Checks a model before it goes into the game: open preview.html?m=models/wally.glb
+     Drag to turn it, wheel to zoom. Shows its size, triangle count, skeleton and
+     animations, and plays each animation from the list. -->
+<style>
+  html, body { margin: 0; height: 100%; background: #20303a; color: #fff; font: 15px system-ui, sans-serif; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #info { position: fixed; top: 12px; left: 12px; background: rgba(0, 0, 0, 0.55); padding: 10px 14px; border-radius: 10px; line-height: 1.5; max-width: 420px; }
+  #info b { color: #ffd166; }
+  #clips button { margin: 4px 4px 0 0; padding: 4px 10px; border-radius: 6px; border: 0; cursor: pointer; }
+</style>
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="info">Loading...</div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+const url = new URLSearchParams(location.search).get('m') || 'models/wally.glb';
+const view = new URLSearchParams(location.search).get('view');      // front, side, back, top: a fixed view for screenshots
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x9fc6d8);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x556644, 1.4));
+const sun = new THREE.DirectionalLight(0xfff0dd, 2.2); sun.position.set(3, 6, 4); scene.add(sun);
+const grid = new THREE.GridHelper(6, 12, 0x335566, 0x557788); scene.add(grid);
+// A 1.8 m post beside the model, for scale.
+const post = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.8), new THREE.MeshStandardMaterial({ color: 0xff5555 }));
+post.position.set(-1.6, 0.9, 0); scene.add(post);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 200);
+
+const loader = new GLTFLoader();
+const draco = new DRACOLoader(); draco.setDecoderPath('./js/addons/libs/draco/'); loader.setDRACOLoader(draco);
+const gltf = await loader.loadAsync(url);
+const model = gltf.scene;
+scene.add(model);
+model.updateWorldMatrix(true, true);
+const box = new THREE.Box3().setFromObject(model);
+const size = box.getSize(new THREE.Vector3()), centre = box.getCenter(new THREE.Vector3());
+
+let tris = 0, bones = 0, meshes = 0;
+model.traverse(o => {
+  if (o.isMesh) { meshes++; const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; }
+  if (o.isBone) bones++;
+});
+const mixer = new THREE.AnimationMixer(model);
+const info = document.getElementById('info');
+info.innerHTML = `<b>${url}</b><br>Size (m): width ${size.x.toFixed(2)}, height ${size.y.toFixed(2)}, depth ${size.z.toFixed(2)}<br>` +
+  `Triangles: ${Math.round(tris).toLocaleString()} in ${meshes} mesh(es)<br>Bones: ${bones || 'none (not rigged)'}<br>` +
+  `Animations: ${gltf.animations.length ? '' : 'none'}<div id="clips"></div><br>Red post: 1.8 m. Blue axis = forward (+Z).`;
+for (const clip of gltf.animations) {
+  const b = document.createElement('button'); b.textContent = clip.name;
+  b.onclick = () => { mixer.stopAllAction(); mixer.clipAction(clip).play(); };
+  document.getElementById('clips').appendChild(b);
+}
+if (gltf.animations[0]) mixer.clipAction(gltf.animations[0]).play();
+scene.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0.01, 0), 1.2, 0x3366ff));
+window.previewInfo = { size: size.toArray(), tris: Math.round(tris), bones, animations: gltf.animations.map(a => a.name) };
+
+// Orbit by dragging; start looking at the model's centre from the front.
+const radius = Math.max(size.x, size.y, size.z) * 1.9 + 1;
+let yaw = { front: 0, side: Math.PI / 2, back: Math.PI, top: 0 }[view] ?? 0.5, pitch = view === 'top' ? 1.45 : 0.25;
+let drag = null;
+addEventListener('pointerdown', e => drag = { x: e.clientX, y: e.clientY });
+addEventListener('pointerup', () => drag = null);
+addEventListener('pointermove', e => { if (!drag) return; yaw -= (e.clientX - drag.x) * 0.01; pitch = Math.max(-1.4, Math.min(1.5, pitch + (e.clientY - drag.y) * 0.01)); drag = { x: e.clientX, y: e.clientY }; });
+let zoom = 1; addEventListener('wheel', e => { zoom *= e.deltaY > 0 ? 1.1 : 0.9; });
+
+let last = performance.now();
+(function frame() {
+  const now = performance.now(), dt = (now - last) / 1000; last = now;
+  mixer.update(dt);
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  const r = radius * zoom;
+  camera.position.set(centre.x + Math.sin(yaw) * Math.cos(pitch) * r, centre.y + Math.sin(pitch) * r, centre.z + Math.cos(yaw) * Math.cos(pitch) * r);
+  camera.lookAt(centre);
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

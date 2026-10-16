@@ -1,0 +1,160 @@
+// reef-rules.js
+// The rules of the dive under the Esplanade, kept apart from the drawing so
+// they can be tested: the coral maze inside the cave, where the pearls and the
+// pirate chest go, how Wally bumps into walls, and how his air runs down and
+// fills up. Plain JavaScript, no three.js.
+
+// ---- Depths (metres; the sea surface is 0) ------------------------------------
+export const SEABED_Y = -12;
+export const SWIM_Y = -8.6;        // where Wally swims along the reef, clear of the coral
+export const SURFACE_Y = -0.45;    // where he floats at the top, as in the rest of the game
+export const WALL_TOP = -5.6;      // maze walls run from the seabed up to here
+
+// ---- Air ----------------------------------------------------------------------
+export const AIR = {
+  max: 100,
+  drain: 100 / 55,                 // one breath lasts 55 seconds
+  vent: 45,                        // per second, standing in a bubble vent
+  surface: 70,                     // per second, floating at the top
+  sting: 12,                       // a box jellyfish knocks this much out of him
+  pearlTopUp: 35,                  // a pearl traded at a vent, when air is low
+};
+
+// One step of the air meter. where: 'surface' | 'vent' | 'under'.
+export function airStep(air, where, dt) {
+  if (where === 'surface') return Math.min(AIR.max, air + AIR.surface * dt);
+  if (where === 'vent') return Math.min(AIR.max, air + AIR.vent * dt);
+  return Math.max(0, air - AIR.drain * dt);
+}
+
+// ---- Scoring ------------------------------------------------------------------
+export const PEARL_POINTS = 5;
+export const CHEST_POINTS = 30;
+export function reefScore({ pearls = 0, chest = false }) {
+  return pearls * PEARL_POINTS + (chest ? CHEST_POINTS : 0);
+}
+
+// ---- The maze -------------------------------------------------------------------
+// A grid of cols x rows cells. Each cell records which of its four sides are
+// open. Directions: 0 east (+x), 1 south (+z), 2 west (-x), 3 north (-z).
+const DX = [1, 0, -1, 0], DZ = [0, 1, 0, -1];
+
+function seeded(seed) {
+  let s = (Math.abs(Math.floor(seed)) % 2147483646) + 1;
+  return () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646;
+}
+
+// A perfect maze (exactly one way between any two cells), carved by walking
+// at random and backing up at dead ends. The entrance is a gap in the east
+// wall of the given row. The chest goes in the cell furthest from the entrance,
+// so the whole maze has to be explored to reach it.
+export function makeMaze(cols, rows, seed = 1, entranceRow = Math.floor(rows / 2)) {
+  const rnd = seeded(seed);
+  const open = Array.from({ length: cols * rows }, () => [false, false, false, false]);
+  const seen = new Array(cols * rows).fill(false);
+  const at = (c, r) => r * cols + c;
+  const stack = [[cols - 1, entranceRow]];
+  seen[at(cols - 1, entranceRow)] = true;
+  while (stack.length) {
+    const [c, r] = stack[stack.length - 1];
+    const ways = [0, 1, 2, 3].filter(d => {
+      const nc = c + DX[d], nr = r + DZ[d];
+      return nc >= 0 && nc < cols && nr >= 0 && nr < rows && !seen[at(nc, nr)];
+    });
+    if (!ways.length) { stack.pop(); continue; }
+    const d = ways[Math.floor(rnd() * ways.length)];
+    const nc = c + DX[d], nr = r + DZ[d];
+    open[at(c, r)][d] = true;
+    open[at(nc, nr)][(d + 2) % 4] = true;
+    seen[at(nc, nr)] = true;
+    stack.push([nc, nr]);
+  }
+  const entrance = { c: cols - 1, r: entranceRow };
+  open[at(entrance.c, entrance.r)][0] = true;          // the gap in the outside wall
+  const dist = distances(cols, rows, open, entrance);
+  let chest = entrance;
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (dist[at(c, r)] > dist[at(chest.c, chest.r)]) chest = { c, r };
+  return { cols, rows, open, entrance, chest, dist };
+}
+
+// Steps from the entrance to every cell, through open sides only.
+export function distances(cols, rows, open, from) {
+  const dist = new Array(cols * rows).fill(-1);
+  const q = [from]; dist[from.r * cols + from.c] = 0;
+  while (q.length) {
+    const { c, r } = q.shift();
+    for (let d = 0; d < 4; d++) {
+      if (!open[r * cols + c][d]) continue;
+      const nc = c + DX[d], nr = r + DZ[d];
+      if (nc < 0 || nc >= cols || nr < 0 || nr >= rows || dist[nr * cols + nc] >= 0) continue;
+      dist[nr * cols + nc] = dist[r * cols + c] + 1;
+      q.push({ c: nc, r: nr });
+    }
+  }
+  return dist;
+}
+
+// Dead ends (one open side), the natural place to hide a pearl, apart from the
+// entrance and the chest's own cell.
+export function deadEnds(maze) {
+  const out = [];
+  for (let r = 0; r < maze.rows; r++) for (let c = 0; c < maze.cols; c++) {
+    if (c === maze.entrance.c && r === maze.entrance.r) continue;
+    if (c === maze.chest.c && r === maze.chest.r) continue;
+    if (maze.open[r * maze.cols + c].filter(Boolean).length === 1) out.push({ c, r });
+  }
+  return out;
+}
+
+// The walls as boxes on the ground plan: { x0, z0, x1, z1 } in metres, for the
+// maze placed with its north-west corner at (ox, oz) and cells `size` wide.
+// Shared walls appear once. thick: wall thickness.
+export function wallBoxes(maze, ox, oz, size, thick = 1.1) {
+  const boxes = [], h = thick / 2;
+  for (let r = 0; r < maze.rows; r++) for (let c = 0; c < maze.cols; c++) {
+    const o = maze.open[r * maze.cols + c];
+    const x0 = ox + c * size, z0 = oz + r * size, x1 = x0 + size, z1 = z0 + size;
+    if (!o[3]) boxes.push({ x0: x0 - h, z0: z0 - h, x1: x1 + h, z1: z0 + h });                 // north
+    if (!o[2]) boxes.push({ x0: x0 - h, z0: z0 - h, x1: x0 + h, z1: z1 + h });                 // west
+    if (r === maze.rows - 1 && !o[1]) boxes.push({ x0: x0 - h, z0: z1 - h, x1: x1 + h, z1: z1 + h });   // south edge
+    if (c === maze.cols - 1 && !o[0]) boxes.push({ x0: x1 - h, z0: z0 - h, x1: x1 + h, z1: z1 + h });   // east edge
+  }
+  return boxes;
+}
+
+// The centre of a cell, in metres.
+export function cellCentre(maze, cell, ox, oz, size) {
+  return { x: ox + (cell.c + 0.5) * size, z: oz + (cell.r + 0.5) * size };
+}
+
+// A step from (x, z) toward (nx, nz) for a body of radius rad, stopped by the
+// boxes. Each axis is tried on its own, so he slides along a wall rather than
+// sticking to it.
+export function collide(x, z, nx, nz, boxes, rad = 0.6) {
+  const blocked = (px, pz) => boxes.some(b => px > b.x0 - rad && px < b.x1 + rad && pz > b.z0 - rad && pz < b.z1 + rad);
+  let rx = x, rz = z;
+  if (!blocked(nx, rz)) rx = nx;
+  if (!blocked(rx, nz)) rz = nz;
+  return { x: rx, z: rz };
+}
+
+// Whether a point is inside the maze's rectangle (the cave).
+export function inMaze(maze, x, z, ox, oz, size, margin = 0) {
+  return x > ox - margin && x < ox + maze.cols * size + margin && z > oz - margin && z < oz + maze.rows * size + margin;
+}
+
+// Where to put n pearls in the cave: dead ends first (the reward for exploring),
+// then cells spread evenly along the way in, never the entrance or the chest.
+export function pearlCells(maze, n) {
+  const key = (p) => `${p.c},${p.r}`;
+  const out = deadEnds(maze).slice(0, n), used = new Set(out.map(key));
+  used.add(key(maze.entrance)); used.add(key(maze.chest));
+  const rest = [];
+  for (let r = 0; r < maze.rows; r++) for (let c = 0; c < maze.cols; c++) if (!used.has(`${c},${r}`)) rest.push({ c, r, d: maze.dist[r * maze.cols + c] });
+  rest.sort((a, b) => a.d - b.d);
+  for (let i = 0; out.length < n && rest.length; i++) {
+    const pick = rest.splice(Math.floor((i * 0.618 % 1) * rest.length), 1)[0];   // spread through the range of distances
+    out.push({ c: pick.c, r: pick.r });
+  }
+  return out;
+}

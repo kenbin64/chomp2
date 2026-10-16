@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b6e8c">
+<title>Chomp! The Esplanade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" hidden>
+  <div class="panel score"><b id="score">0</b><span class="mango-count">&#x1F96D; <span id="mangoes">0</span></span><span class="pearl-count" title="Pearls">&#x26AA; <span id="pearls">0</span></span></div>
+  <div class="panel quest"><h2>Lunch on the Esplanade</h2><p id="job" style="margin:0"></p></div>
+  <div class="panel energy" id="feed">
+    <div class="feed-head"><span class="label" id="meter-label">Feed-o-meter</span><span id="lives" aria-label="Lives"></span></div>
+    <div class="bar"><div class="red-zone"></div><div id="energy-fill"></div></div>
+    <span id="veg" hidden>Full tank!</span>
+    <span class="red-note" id="red-note">In the red! Look out for Kenny and his jar!</span>
+  </div>
+  <div class="panel track" id="track" aria-label="Distance to the dive spot"><span>Start</span><div class="track-bar"><div id="track-wally"></div></div><span>Reef</span></div>
+  <div id="count"></div>
+  <div id="toasts" aria-live="polite"></div>
+</div>
+
+<div id="touch" hidden>
+  <div id="stick"><div id="knob"></div></div>
+  <button id="t-fours" type="button">Duck</button>
+  <button id="t-jump" type="button">Jump</button>
+  <button id="t-pause" type="button" aria-label="Pause">II</button>
+  <button id="t-cam" type="button">Cam</button>
+</div>
+
+<section id="title" class="overlay">
+  <div class="card">
+    <p class="area">Level 2</p>
+    <h1>The Esplanade</h1>
+    <p>Wally has the run of the Esplanade boardwalk: up and down it, and off the side for a swim in the ocean (watch for stingers). The picnic groups will throw lunch if he doesn't crowd them. Feed out every group (each one leaves him a pearl) and fill the feed-o-meter. Then dive into the sea to the coral cave: collect pearls, find the pirate chest at the heart of the maze and get back out before his air runs out. The giant clam at the mouth shuts once he has the chest, and only a pearl will open it.</p>
+    <button id="play" class="go" type="button">Play</button>
+    <div class="keys pc">
+      <span><kbd>W A S D</kbd> move</span><span><kbd>Space</kbd> jump, croc leap from the water</span><span><kbd>Drag</kbd> or <kbd>Q E</kbd> camera, <kbd>C</kbd> front or back</span>
+      <span><kbd>Shift</kbd> duck under fig branches</span><span>Steer off the side into the ocean, <kbd>Space</kbd> to leap back up</span><span><kbd>P</kbd> pause</span>
+    </div>
+    <div class="keys phone"><span>Left thumb: steer</span><span>Jump and Duck buttons</span></div>
+    <p class="fine"><a href="index.html?map">Back to the map</a></p>
+  </div>
+</section>
+
+<section id="paused" class="overlay" hidden>
+  <div class="card"><h1>Paused</h1><button id="resume" class="go" type="button">Keep going</button>
+  <p class="fine"><a href="index.html?map">Back to the map</a></p></div>
+</section>
+
+<section id="result" class="overlay" hidden>
+  <div class="card">
+    <h1 id="result-title"></h1>
+    <p class="stars" id="result-stars"></p>
+    <p id="result-why"></p>
+    <ul class="result-lines" id="result-lines"></ul>
+    <div class="postcard" id="postcard" hidden><b>Postcard collected</b><p id="postcard-text"></p></div>
+    <button id="again" class="go" type="button">Run it again</button>
+    <p class="fine"><a href="index.html?map">Back to the map</a></p>
+  </div>
+</section>
+
+<script type="module" src="js/levels/esplanade.js"></script>
+</body>
+</html>

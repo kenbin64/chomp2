@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>People Test</title>
+<!-- A line-up of visitors, for checking how they look: people-test.html?seed=3 -->
+<style>html, body { margin: 0; height: 100%; background: #9fc6d8; } canvas { display: block; width: 100%; height: 100%; }</style>
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { person } from './js/tourists.js';
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.shadowMap.enabled = true;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9fc6d8);
+scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x6b5a3a, 0.7));
+const sun = new THREE.DirectionalLight(0xffe2b8, 2.4); sun.position.set(-5, 8, 6); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8 }); scene.add(sun);
+const rim = new THREE.DirectionalLight(0xbfe0ff, 0.9); rim.position.set(5, 3, -6); scene.add(rim);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: 0xd8bf88 }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const people = [];
+for (let i = 0; i < 8; i++) {
+  const p = person(); p.g.position.set((i - 3.5) * 1.15, 0, (i % 2) * 0.6); scene.add(p.g); people.push(p);
+  if (i % 3 === 0) { p.arms[1].rotation.x = -2.7; }                                   // waving
+  if (i % 3 === 1 && p.phone) { p.arms[1].rotation.x = -1.0; p.arms[1].userData.elbow.rotation.x = -1.0; p.arms[0].rotation.x = -0.9; p.arms[0].userData.elbow.rotation.x = -1.1; }   // photo
+}
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+camera.position.set(0, 1.6, 9); camera.lookAt(0, 1.1, 0);
+function draw() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.render(scene, camera); }
+draw(); addEventListener('resize', draw); window.ready = true;
+</script>
+</body>
+</html>
