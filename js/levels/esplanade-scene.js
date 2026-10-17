@@ -33,6 +33,8 @@ function plane(w, d, material, x, y, z) {
 }
 
 const LENGTH = PATH.finish + 120;
+// The timber pier section of the walk (Ken's photo: concrete promenade, with a timber pier partway along).
+export const PIER = { z0: 210, z1: 270 };
 const MID = (PATH.finish + 60) / 2 - 30;
 
 // The boardwalk, on piles over the water, with the ocean beside it and the
@@ -67,20 +69,44 @@ function addGround(scene, realism, q) {
     density: x => x < PATH.half + 1.2 ? 0.4 : 1,
   });
 
-  // The boardwalk: photographed hardwood planks with their grain and wear,
-  // running across the walk, with a darker gap between boards.
-  const real = surfaceMaterial(realism, 'planks', PATH.half * 2 / 3.6, LENGTH / 3.6);   // boards about 28 cm wide, so the grain reads
+  // The walk, as in Ken's photos of the real Esplanade: a paved concrete
+  // promenade on top of a concrete seawall with a rounded capping, and partway
+  // along a timber pier section (photographed hardwood boards with grain and
+  // gaps, on piles) that he can see the water through.
+  const pierLen = PIER.z1 - PIER.z0;
+  const paved = surfaceMaterial(realism, 'paving', PATH.half * 2 / 2.4, LENGTH / 2.4, { color: 0xc9bdb4 });   // the warm pinkish-grey concrete of today's promenade
+  const boards = surfaceMaterial(realism, 'planks', PATH.half * 2 / 3.6, pierLen / 3.6);
   const planks = canvasTexture(256, 256, (g, w, h) => {
     for (let i = 0; i < 8; i++) {
       g.fillStyle = ['#a77a4f', '#9b6f45', '#b0845a', '#986a40'][i % 4]; g.fillRect(i * 32, 0, 30, h);
       g.fillStyle = 'rgba(60,35,15,0.5)'; g.fillRect(i * 32 + 30, 0, 2, h);
     }
-  }, [1, LENGTH / 3]);
-  const deck = shadowed(new THREE.Mesh(new THREE.BoxGeometry(PATH.half * 2, 0.25, LENGTH), real || mat(0xffffff, { map: planks })), false, true);
-  deck.position.set(0, G - 0.125, MID); scene.add(deck);
+  }, [1, pierLen / 3]);
+  const concrete = mat(0xb5a998, { roughness: 0.95 });
+  // Promenade before and after the pier.
+  for (const [z0, z1] of [[MID - LENGTH / 2, PIER.z0], [PIER.z1, MID + LENGTH / 2]]) {
+    const len = z1 - z0;
+    const m = paved ? paved.clone() : concrete;
+    if (paved) for (const k of ['map', 'normalMap', 'roughnessMap']) { m[k] = paved[k].clone(); m[k].repeat.set(PATH.half * 2 / 2.4, len / 2.4); m[k].needsUpdate = true; }
+    const walk = shadowed(new THREE.Mesh(new THREE.BoxGeometry(PATH.half * 2, 0.25, len), m), false, true);
+    walk.position.set(0, G - 0.125, (z0 + z1) / 2); scene.add(walk);
+    // The seawall: a sloping concrete face from the sea floor up to the walk,
+    // and a rounded capping along its top edge (Wally can still hop over it).
+    const wall = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.7, G + 5.5, len), concrete), false, true);
+    wall.position.set(-PATH.half - 0.25, (G - 5.5) / 2, (z0 + z1) / 2); wall.rotation.z = -0.06; scene.add(wall);
+    const cap = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, len, 12, 1, false, 0, Math.PI), mat(0xb9aea0, { roughness: 0.95 })));
+    cap.rotation.x = Math.PI / 2; cap.rotation.y = Math.PI / 2; cap.position.set(-PATH.half + 0.05, G, (z0 + z1) / 2); scene.add(cap);
+  }
+  // The timber pier section.
+  const deck = shadowed(new THREE.Mesh(new THREE.BoxGeometry(PATH.half * 2, 0.25, pierLen), boards || mat(0xffffff, { map: planks })), false, true);
+  deck.position.set(0, G - 0.125, (PIER.z0 + PIER.z1) / 2); scene.add(deck);
   const pile = new THREE.CylinderGeometry(0.16, 0.18, G + 5.5, 10), wood = mat(0x5e4630);   // down to the sea floor
-  for (let z = -30; z < PATH.finish + 4; z += 4) {
-    const p = new THREE.Mesh(pile, wood); p.position.set(-PATH.half + 0.2, (G - 5.5) / 2, z); scene.add(p);
+  for (let z = PIER.z0 + 1; z < PIER.z1; z += 3) for (const x of [-PATH.half + 0.3, 0, PATH.half - 0.3]) {
+    const p = new THREE.Mesh(pile, wood); p.position.set(x, (G - 5.5) / 2, z); scene.add(p);
+  }
+  const railMat = mat(0x6e5236);
+  for (let z = PIER.z0; z <= PIER.z1; z += 2.5) {
+    const post = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.6, 0.12), railMat)); post.position.set(-PATH.half + 0.06, G + 0.3, z); scene.add(post);
   }
   const kerb = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.15, LENGTH), mat(0x8a6a48)));
   kerb.position.set(PATH.half + 0.15, G + 0.07, MID); scene.add(kerb);
@@ -224,8 +250,24 @@ function addLagoon(scene) {
   const z0 = PATH.finish + 4;
   const edge = shadowed(new THREE.Mesh(new THREE.BoxGeometry(30, 1.4, 34), mat(0xe8dcc0)), false, true);
   edge.position.set(0, G - 1.0, z0 + 17); scene.add(edge);
-  const pool = new THREE.Mesh(new THREE.PlaneGeometry(26, 30), new THREE.MeshPhongMaterial({ color: 0x29c4d6, specular: 0xffffff, shininess: 90, transparent: true, opacity: 0.88 }));
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(26, 30), new THREE.MeshPhongMaterial({ color: 0x3fe0e8, specular: 0xffffff, shininess: 120, transparent: true, opacity: 0.72 }));
   pool.rotation.x = -Math.PI / 2; pool.position.set(0, G - 0.3, z0 + 17); scene.add(pool);
+  // Pale sand-white floor showing through the clear water, as in Ken's photo.
+  const bed = plane(26, 30, mat(0xf2ead8, { roughness: 1 }), 0, G - 1.1, z0 + 17); scene.add(bed);
+  // The Lagoon's sculptures: tall silver poles topped by leaping fish whose
+  // fins fan out like blades, spraying water.
+  const steel = mat(0xd8dde2, { metalness: 0.9, roughness: 0.25 });
+  const fin = new THREE.Shape(); fin.moveTo(0, 0); fin.quadraticCurveTo(0.5, 0.9, 0.1, 2.2); fin.quadraticCurveTo(-0.15, 1.0, 0, 0);
+  const finGeo = new THREE.ExtrudeGeometry(fin, { depth: 0.04, bevelEnabled: false });
+  for (const [x, z, h] of [[-7, z0 + 10, 6.5], [4, z0 + 15, 5], [-2, z0 + 24, 5.8]]) {
+    const g = new THREE.Group();
+    const pole = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, h, 16), steel)); pole.position.y = h / 2; g.add(pole);
+    for (let k = 0; k < 6; k++) {
+      const f = shadowed(new THREE.Mesh(finGeo, steel));
+      f.position.y = h - 0.2; f.rotation.set(0.5 + (k % 2) * 0.25, (k / 6) * Math.PI * 2, -0.6 - k * 0.08); g.add(f);
+    }
+    g.position.set(x, G - 1.1, z); scene.add(g);
+  }
   const sign = canvasTexture(1024, 256, (g, w, h) => {
     g.fillStyle = '#1d5f73'; g.fillRect(0, 0, w, h);
     g.fillStyle = '#ffffff'; g.font = 'bold 120px "Trebuchet MS", sans-serif'; g.textAlign = 'center';
@@ -314,7 +356,7 @@ export function buildEsplanade(scene, q, backdrops = {}, realism = null) {
   // from the real Esplanade). The sea is to the west (-x) here, hence the turn.
   ring.visible = false; ring.userData.off = true;
   // A cool blue haze keeps them rainforest green (the warm sunset haze turned them sandy).
-  const ranges = addRanges(scene, new THREE.Color(0x9cbcc8), sun.position.clone().normalize(), { sink: 1, turn: Math.PI / 2 });   // Ken: open water out to sea (Trinity Bay); the ranges stay behind the city and reach out a little along the coast
+  const ranges = addRanges(scene, new THREE.Color(0x9cbcc8), sun.position.clone().normalize(), { sink: 0.6, turn: Math.PI / 2 });   // Ken's photos: open water out to sea, ranges behind the city and lower hills across the end of Trinity Bay
   const sea = addGround(scene, realism, q);
   // The park's photographed blue sky (Ken: the ocean as vibrant as the park's;
   // the pale sunset made the water reflect pale). It lights the scene too.
