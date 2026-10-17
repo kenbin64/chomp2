@@ -150,3 +150,5 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .credits-list dd { margin: 2px 0 0; font-size: 16px; }
 .credits-list dd.small { font-size: 13px; opacity: 0.85; }
 .acknowledge { margin: 10px 0 6px; font-size: 13px; line-height: 1.45; opacity: 0.9; font-style: italic; }
+.love { margin: 14px 0 0; color: #ffd166; font-size: 22px; }
+.places dt { text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 800; }
