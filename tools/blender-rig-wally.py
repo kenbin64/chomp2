@@ -47,7 +47,7 @@ BONES = [
     ('Spine2', (0, Y, 0.24), (0, Y, 0.34), 'Spine1'),
     ('Neck',   (0, Y, 0.34), (0, -0.10, 0.44), 'Spine2'),
     ('Head',   (0, -0.10, 0.44), (0, -0.10, 0.80), 'Neck'),
-    ('Jaw',    (0, -0.08, 0.46), (0, -0.52, 0.43), 'Head'),
+    ('Jaw',    (0, -0.12, 0.50), (0, -0.52, 0.42), 'Head'),   # hinge behind the mouth to the chin tip
     ('Tail1',  (0, 0.08, -0.22), (0, 0.20, -0.36), 'Hips'),
     ('Tail2',  (0, 0.20, -0.36), (0, 0.30, -0.50), 'Tail1'),
     ('Tail3',  (0, 0.30, -0.50), (0, 0.39, -0.63), 'Tail2'),
@@ -90,6 +90,70 @@ body.select_set(True); rig.select_set(True)
 bpy.context.view_layer.objects.active = rig
 bpy.ops.object.parent_set(type='ARMATURE_AUTO')
 
+# ---- The jaw, by hand -----------------------------------------------------
+# Automatic weights split the open mouth badly, so the lower jaw is assigned by
+# where it is: everything in front of the hinge and below the mouth line belongs
+# to the Jaw, blending into the Head over the last 10 cm before the hinge so the
+# cheeks bend instead of creasing. The mouth line was measured from the model:
+# from the hinge (y -0.12, z 0.50) to the front teeth (y -0.55, z 0.465).
+def mouth_line(y):
+    t = min(max((y + 0.12) / (-0.55 + 0.12), 0.0), 1.0)
+    return 0.50 + (0.465 - 0.50) * t
+
+def smooth(a, b, x):
+    t = min(max((x - a) / (b - a), 0.0), 1.0)
+    return t * t * (3 - 2 * t)
+
+jaw, head = body.vertex_groups['Jaw'], body.vertex_groups['Head']
+others = [g for g in body.vertex_groups if g.name not in ('Jaw', 'Head')]
+
+# Points clearly above the mouth line are upper jaw, clearly below are lower jaw.
+# The points close to the line (teeth, lips) follow whichever of the two they are
+# joined to through the mesh, nearest first: an upper fang hangs below the line
+# but is joined to the upper gum, so it stays with the head.
+import heapq
+verts = body.data.vertices
+snout = {v.index for v in verts if v.co.y < -0.10 and 0.30 < v.co.z < 0.62}
+links = {i: [] for i in snout}
+for e in body.data.edges:
+    a, b = e.vertices
+    if a in snout and b in snout:
+        d = (verts[a].co - verts[b].co).length
+        links[a].append((b, d)); links[b].append((a, d))
+label, queue = {}, []
+for i in snout:
+    z, line = verts[i].co.z, mouth_line(verts[i].co.y)
+    if z > line + 0.012: label[i] = 'head'
+    elif z < line - 0.045: label[i] = 'jaw'
+    else: continue
+    heapq.heappush(queue, (0.0, i, label[i]))
+best = {i: 0.0 for i in label}
+while queue:
+    d, i, who = heapq.heappop(queue)
+    if d > best.get(i, 1e9): continue
+    for j, step in links[i]:
+        if j in label and best[j] <= d + step: continue
+        best[j] = d + step; label[j] = who
+        heapq.heappush(queue, (d + step, j, who))
+
+for v in verts:
+    if label.get(v.index) != 'jaw':
+        jaw.remove([v.index])
+        continue
+    w = smooth(-0.12, -0.22, v.co.y)             # 0 at the hinge, 1 from 10 cm in front of it
+    jaw.add([v.index], w, 'REPLACE')
+    head.add([v.index], 1.0 - w, 'REPLACE')
+    for g in others:
+        g.remove([v.index])
+
+# Anything left with no weight at all (it only had the Jaw before) follows the Head.
+for v in body.data.vertices:
+    if not any(g.weight > 0.01 for g in v.groups):
+        head.add([v.index], 1.0, 'REPLACE')
+
+rig.show_in_front = True                         # bones visible through the body
+arm_data.display_type = 'STICK'
+
 # Report: how many points ended up with no weight at all (those would not move).
 groups = {g.index: g.name for g in body.vertex_groups}
 bare = sum(1 for v in body.data.vertices if not any(g.weight > 0.01 for g in v.groups))
@@ -115,7 +179,7 @@ if prefix:
     turn('LeftForeArm', (1, 0, 0), -30); turn('RightForeArm', (1, 0, 0), -30)   # forearms a little forward
     turn('LeftUpLeg', (1, 0, 0), -40); turn('LeftLeg', (1, 0, 0), 70)          # left knee up, as in a run
     turn('RightUpLeg', (1, 0, 0), 20)                                       # right leg pushing back
-    turn('Jaw', (1, 0, 0), 25)                                              # mouth wider
+    turn('Jaw', (1, 0, 0), 30)                                              # mouth wider
     turn('Head', (1, 0, 0), -15)                                            # chin up
     for name in ['Tail2', 'Tail3', 'Tail4', 'Tail5']:
         turn(name, (0, 0, 1), 14)                                           # tail swinging to one side
@@ -135,4 +199,10 @@ if prefix:
         cam.rotation_euler = tuple(math.radians(r) for r in rot)
         scene.render.filepath = '%s-%s.png' % (prefix, name)
         bpy.ops.render.render(write_still=True)
+    # A close-up of the face from the side, to see the jaw open.
+    cam_data.ortho_scale = 0.8
+    cam.location = Vector((10, -0.3, 0.45)); cam.rotation_euler = (math.radians(90), 0, math.radians(90))
+    scene.render.resolution_x, scene.render.resolution_y = 700, 700
+    scene.render.filepath = '%s-face.png' % prefix
+    bpy.ops.render.render(write_still=True)
     print('RENDERED', prefix)
