@@ -363,22 +363,21 @@ export class Wally {
 
     let want;
     if (input.steer) {
-      // Keyboard (Ken's scheme, 2026-10-17): every arrow runs him, after a quick
-      // turn. Up runs ahead the way he faces; Down spins him round and he runs
-      // the other way; Left and Right turn him a quarter that way and he runs on.
-      // Each turn is a snap when the key goes down, not a slow curve, so he
-      // never drifts forward while turning.
+      // Keyboard (Ken, 2026-10-17): Left and Right turn him smoothly for as long
+      // as they are held, at any angle, not in steps. On their own he turns on
+      // the spot; with Up held he runs and steers. Up runs ahead the way he
+      // faces. Down spins him round once and he runs the other way while held.
       if (input.forward < 0 && !(this.lastForward < 0)) this.turnLeft = (this.turnLeft || 0) + Math.PI;
-      if (input.right > 0 && !(this.lastRight > 0)) this.turnLeft = (this.turnLeft || 0) - Math.PI / 2;
-      if (input.right < 0 && !(this.lastRight < 0)) this.turnLeft = (this.turnLeft || 0) + Math.PI / 2;
-      this.lastForward = input.forward; this.lastRight = input.right;
+      this.lastForward = input.forward;
       if (this.turnLeft) {
         const step = Math.sign(this.turnLeft) * Math.min(Math.abs(this.turnLeft), SPIN * dt);
         this.facing += step; this.turnLeft -= step;
         if (Math.abs(this.turnLeft) < 1e-4) this.turnLeft = 0;
       }
-      const held = input.forward !== 0 || input.right !== 0;
-      const going = held && Math.abs(this.turnLeft || 0) < 0.3 ? 1 : 0;
+      // Turning eases in over a moment, so a tap nudges him a little and a hold sweeps round.
+      this.turnRate = (this.turnRate || 0) + ((-input.right * TURN) - (this.turnRate || 0)) * Math.min(1, dt * 10);
+      this.facing += this.turnRate * dt;
+      const going = input.forward !== 0 && Math.abs(this.turnLeft || 0) < 0.3 ? 1 : 0;
       want = new THREE.Vector3(Math.sin(this.facing) * going, 0, Math.cos(this.facing) * going);
     } else {
       // Phone stick: relative to the camera, forward is away from it.
