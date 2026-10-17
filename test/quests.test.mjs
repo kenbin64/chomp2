@@ -73,9 +73,11 @@ check('not full with nothing left to eat is hungry', h.checkFull(FULL - 1, 0) ==
 check('a hungry park cannot be left', !h.leave());
 check('full means 95 or more', FULL === 95);
 check('six areas, park first', AREAS.length === 6 && AREAS[0].id === 'park');
-check('the park and the Esplanade are playable so far', AREAS.filter(a => a.ready).map(a => a.id).join() === 'park,esplanade');
+check('the park, the Esplanade and the reef are playable so far', AREAS.filter(a => a.ready).map(a => a.id).join() === 'park,esplanade,reef');
+check('the reef is third (Ken, 2026-10-16)', AREAS[2].id === 'reef' && AREAS[2].name === 'The Great Barrier Reef');
+check('after the Esplanade comes the reef', nextArea('esplanade').id === 'reef');
 check('after the park comes the Esplanade', nextArea('park').id === 'esplanade');
-check('nothing after the reef', nextArea('reef') === null);
+check('nothing after Kuranda', nextArea('kuranda') === null);
 check('unknown area has no next', nextArea('nowhere') === null);
 
 // Visits and the map

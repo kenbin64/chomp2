@@ -20,11 +20,11 @@ The trip (areas, in order; `js/quests.js` `AREAS`, unlocks in `js/progress.js`):
 | # | Area | State | Page and code |
 |---|---|---|---|
 | 1 | Croc Park | playable | `index.html`, `js/main.js`, `js/world.js` |
-| 2 | The Esplanade, with the reef dive | playable | `esplanade.html`, `js/levels/esplanade*.js`, `js/levels/reef-*.js` |
-| 3 | Daintree River | not started | |
-| 4 | Mossman Gorge | not started | |
-| 5 | Kuranda | not started | |
-| 6 | Green Island and the Great Barrier Reef | not started | |
+| 2 | The Esplanade | playable | `esplanade.html`, `js/levels/esplanade*.js` |
+| 3 | The Great Barrier Reef | playable | `reef.html`, `js/levels/reef.js`, `js/levels/reef-*.js` |
+| 4 | Daintree River | not started | |
+| 5 | Mossman Gorge | not started | |
+| 6 | Kuranda | not started | |
 
 ### Level 1: Croc Park
 Feed out every group of visitors around the lagoon (they throw when Wally is in the "sweet spot": close, not
@@ -32,7 +32,18 @@ too close). Thieves: pelicans (swim and walk onto land to scoop missed food), fl
 cane toads (food on the ground), other crocs (in the water). Box jellyfish sting. Kenny brings Vegemite toast
 when the feed-o-meter is in the red.
 
-### Level 2: The Esplanade and the reef (Ken's design, 2026-10-16)
+### Decisions, 2026-10-16 (Ken)
+- **Trip order:** 1 Croc Park, 2 The Esplanade, 3 The Great Barrier Reef, 4 Daintree River, 5 Mossman Gorge, 6 Kuranda.
+- **The dive and coral cave belong to level 3**, the Great Barrier Reef (page `reef.html`, code `js/levels/reef.js`).
+  The Esplanade ends at the Lagoon pool again; it keeps pearls, swimming under water, crawling out and jellyfish.
+- **Diving:** on-screen **Dive** and **Up** buttons whenever Wally is in the water, phone and PC, each showing its
+  key (Shift / Space). Under water he swims at one depth.
+- **Finding the cave:** a glowing **guide fish** leads the way, an **arrow** at the screen edge points to it, and he
+  has to swim a **coral maze on the reef** to reach the cave (which has its own maze inside).
+- **Pearls carry over** (decided by the AI, easy to change): the reef starts with the pearls banked so far, a pearl
+  spent at the giant clam comes off the bank, and pearls found are added.
+
+### Level 2: The Esplanade (first designed 2026-10-16; the dive part below moved to level 3)
 1. **On the boardwalk:** feed out every picnic group and fill the feed-o-meter. A group fed out to the last
    bite **leaves a pearl** (a scared-off group does not). Pearls start on this level and are a theme through
    the whole game: the more pearls, the better the chance of clearing a level. A lifetime pearl total is
@@ -59,7 +70,7 @@ npm test                    # all rule tests: rules, quests, progress, esplanade
 URL switches (any page): `?q=low|medium|high` force graphics quality, `?real=0` turn off the photographic
 layer (compare with the painted look), `?bot` a test pilot plays, `?play` skip the title.
 For now every built area is open on the trip map (`OPEN_ALL` in `js/progress.js`); add `?locked` to play with
-the real unlocking. Esplanade only: `?dive` jump straight to the dive, `&pearls=3` start with pearls, `?seed=7` course and maze.
+the real unlocking. Esplanade: `?seed=7` course. Reef: `?pearls=3` start with that many pearls (instead of the banked ones), `?seed=7` mazes.
 
 Test hooks in the browser console: `window.chomp` holds `game`, `wally`, `food`, `cam`, and per level
 `pelicans`, `jellies`, `toads`, `clusters`, `kenny` (park) or `reef`, `maze`, `camera`, `scene` (Esplanade).
@@ -206,6 +217,7 @@ In progress / next (in Ken's order of asking):
 ## Log
 
 - 2026-10-16: git started (baseline commit). Working document written. Reef dive added to level 2.
+- 2026-10-16 (branch reef-level): level 3, The Great Barrier Reef (`reef.html`, `js/levels/reef.js`): Green Island jetty, Dive/Up buttons, guide fish and arrow, coral maze on the reef (walls 4 m down, solid at every depth), the cave, pearls carried over from the bank. The Esplanade ends at the Lagoon again. Played end to end in a browser.
 - 2026-10-16 (branch map-objectives): each built area's objective is on the trip map (`objective` in `js/quests.js`, tested); the map footer shows lifetime pearls.
 - 2026-10-16 (branch open-all): every built area is open on the trip map for now (`OPEN_ALL`), `?locked` for the real game.
 - 2026-10-16 (branch esplanade-water): crawl out onto the boardwalk, swim under water beside it (sea floor now 5.5 m down), jellyfish at the surface and deep, Kenny's rescue shared by sea and reef. Name back to Chomp 3D.

@@ -579,7 +579,7 @@ function restart() { location.reload(); }   // simplest clean reset of every cre
 // ---- The map of Wally's Big Trip ------------------------------------------------------
 // Every area, its stars, and whether it is open yet. The park is played here;
 // other areas are their own pages.
-const PAGES = { park: null, esplanade: 'esplanade.html' };
+const PAGES = { park: null, esplanade: 'esplanade.html', reef: 'reef.html' };
 let progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
 const PARK_STARS = [40, 70, 100];               // park score for one, two and three stars
 

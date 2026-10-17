@@ -10,16 +10,17 @@ export const AREAS = [
     objective: 'Feed out every group of visitors around the lagoon, beating the pelicans, flying foxes, toads and crocs to the food. Then fill the feed-o-meter.',
     notes: 'Lagoon, banks, rocks and the boardwalk. Tourists throw food from the boardwalk.' },
   { id: 'esplanade', name: 'The Esplanade', place: 'The Cairns waterfront', ready: true,
-    objective: 'Feed every picnic group (each leaves a pearl) and fill up. Then dive to the coral cave, find the pirate chest and get out before your air runs out. A pearl opens the giant clam.',
+    objective: 'Feed every picnic group along the boardwalk (each leaves a pearl for the reef) and fill the feed-o-meter, then head for the Lagoon pool. Watch the box jellyfish if you swim.',
     notes: 'The Cairns Esplanade: lagoon pool, boardwalk, fig trees, mangroves along the mudflats.' },
+  { id: 'reef', name: 'The Great Barrier Reef', place: 'Green Island, off Cairns', ready: true,
+    objective: 'Dive from the Green Island jetty, follow the guide fish through the coral maze to the cave, find the pirate chest and get out before your air runs out. Bring pearls: one opens the giant clam.',
+    notes: 'Green Island jetty, then under water: coral maze on the reef, box jellyfish, bubble vents, the coral cave with the pirate chest and the giant clam.' },
   { id: 'daintree', name: 'Daintree River', ready: false,
     notes: 'Tourists on river boats. Swim, swing on vines, jump rock to rock, run the beach. Mangroves, rainforest to the water.' },
   { id: 'mossman', name: 'Mossman Gorge', ready: false,
     notes: 'River rafts, climbing vines and cliffs, a vine-swinging challenge, line traversing over the gorge catching food along the line. Rainforest over the hills.' },
   { id: 'kuranda', name: 'Kuranda', ready: false,
     notes: 'Kuranda markets, a bungee challenge (catch something at the bottom of the jump), line traversing over Barron Falls. Cane fields and rainforest on the way up.' },
-  { id: 'reef', name: 'Green Island and the Great Barrier Reef', ready: false,
-    notes: 'Green Island beach and jetty, underwater on the reef (box jellyfish), a coral maze challenge.' },
 ];
 
 // The rule for moving on from any scene (Ken, 2026-10-16): feed out every group

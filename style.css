@@ -98,3 +98,18 @@ body.touch .keys.pc, body:not(.touch) .keys.phone { display: none; }
 .map-area .s { color: #ffd166; letter-spacing: 0.08em; }
 .map-area.locked { opacity: 0.45; cursor: default; }
 .map-area.open:hover { background: rgba(255, 209, 102, 0.18); }
+
+/* Dive and Up: shown whenever Wally is in the water, on phones and PCs alike, each
+   with its keyboard key underneath. Big enough for a thumb. */
+.dive-buttons { position: fixed; right: 18px; bottom: 150px; display: flex; flex-direction: column; gap: 10px; z-index: 6; }
+.dive-buttons button { width: 92px; height: 74px; border-radius: 18px; border: 2px solid rgba(159, 238, 255, 0.7);
+  background: rgba(10, 60, 80, 0.72); color: #e8fbff; font: 800 20px/1.1 inherit; cursor: pointer; }
+.dive-buttons button small { display: block; font-size: 12px; font-weight: 600; opacity: 0.75; margin-top: 3px; }
+.dive-buttons button:active, .dive-buttons button.on { background: rgba(60, 170, 210, 0.85); }
+.dive-buttons button[disabled] { opacity: 0.35; cursor: default; }
+body:not(.touch) .dive-buttons { bottom: 110px; }
+
+/* The arrow at the top of the screen pointing to where to go (the reef). */
+.guide-arrow { position: fixed; top: 92px; left: 50%; transform: translateX(-50%); text-align: center; color: #ffe08a; z-index: 5; pointer-events: none; text-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+.guide-arrow .tip { display: inline-block; font-size: 44px; line-height: 1; transition: transform 0.12s linear; }
+.guide-arrow small { display: block; font: 700 14px/1.2 inherit; color: #fff; }
