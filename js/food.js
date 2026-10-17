@@ -76,9 +76,19 @@ const MODELS = {
   },
 };
 
+// Ken's toast model (models/toast.glb), when present, like the jar.
+let toastModel = null;
+export function useToastModel(gltf) { toastModel = gltf || null; }
+
 // Kenny's toast: a slice of toast with butter and the dark spread from his jar.
 // The spread is never named (it is a real product), only shown.
 export function kennysToast() {
+  if (toastModel) {
+    const g = new THREE.Group(), t = toastModel.scene.clone(true);
+    fitToSize(t, 0.75);
+    t.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    g.add(t); return g;
+  }
   const g = new THREE.Group();
   add(g, new THREE.BoxGeometry(0.44, 0.08, 0.44), 0xc98d4a, 0, -0.02);          // crust
   add(g, new THREE.BoxGeometry(0.38, 0.02, 0.38), 0xf0c27a, 0, 0.025);           // toasted face

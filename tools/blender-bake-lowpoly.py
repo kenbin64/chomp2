@@ -10,7 +10,10 @@
 #      the heavy model onto the light one.
 #
 #   blender --background --factory-startup --python tools/blender-bake-lowpoly.py -- \
-#       in.glb out.glb <triangles> <texture-size> [voxel-size-in-model-units]
+#       in.glb out.glb <triangles> <texture-size> [voxel-size-in-model-units] [reach]
+#   reach (default 1): how far the bake looks for the original's surface; raise it
+#   (2 or 3) for busy shapes where the light copy sits further from the original,
+#   which otherwise shows as black patches.
 #
 # Example: Kenny (fur in 68,000 loose tufts) needs the voxel step; a jar does not.
 
@@ -21,6 +24,7 @@ from mathutils import Vector
 args = sys.argv[sys.argv.index('--') + 1:]
 src, out, target, size = args[0], args[1], int(args[2]), int(args[3])
 voxel = float(args[4]) if len(args) > 4 else 0.0
+reach_k = float(args[5]) if len(args) > 5 else 1.0
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=src)
@@ -89,8 +93,8 @@ bpy.ops.object.select_all(action='DESELECT')
 high.select_set(True); low.select_set(True); bpy.context.view_layer.objects.active = low
 bake = scene.render.bake
 bake.use_selected_to_active = True
-bake.cage_extrusion = reach * 0.012
-bake.max_ray_distance = reach * 0.04
+bake.cage_extrusion = reach * 0.012 * reach_k
+bake.max_ray_distance = reach * 0.04 * reach_k
 bake.margin = 8
 
 nt.nodes.active = tc
