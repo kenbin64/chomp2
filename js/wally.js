@@ -363,9 +363,9 @@ export class Wally {
 
     let want;
     if (input.steer) {
-      // Keyboard: Wally steers himself. Up runs the way he is facing; left and
-      // right turn him as he goes (he always faces where he is moving); down
-      // spins him round quickly and he runs the other way.
+      // Keyboard (Ken's scheme): left and right only turn him on the spot; up is
+      // the only key that moves him, straight ahead the way he faces; down spins
+      // him round to face the other way.
       if (input.forward < 0 && !(this.lastForward < 0)) this.spinLeft = Math.PI;
       this.lastForward = input.forward;
       if (this.spinLeft > 0) {
@@ -373,7 +373,7 @@ export class Wally {
         this.facing += step; this.spinLeft -= step;
       }
       this.facing -= input.right * TURN * dt;
-      const going = input.forward !== 0 || input.right !== 0 ? (this.spinLeft > 0.3 ? 0.3 : 1) : 0;
+      const going = input.forward > 0 && !(this.spinLeft > 0.3) ? 1 : 0;
       want = new THREE.Vector3(Math.sin(this.facing) * going, 0, Math.cos(this.facing) * going);
     } else {
       // Phone stick: relative to the camera, forward is away from it.
