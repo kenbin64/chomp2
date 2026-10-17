@@ -20,12 +20,13 @@ import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
+import { dressOutfit } from '../outfit.js';
 import { loadRealism } from '../realism.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone } from '../rules.js';
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
 import { jellyModel, dressedJelly } from '../hazards.js';
-import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds } from '../progress.js';
+import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, wearing } from '../progress.js';
 import { PATH, generateCourse, hits, runScore, STARS, MANGO_SET_BONUS } from './esplanade-rules.js';
 import { buildEsplanade, obstacleModel, mangoModel, useMangoModel } from './esplanade-scene.js';
 import { Clusters } from '../clusters.js';
@@ -118,6 +119,8 @@ if (!scene.environment) {   // the photographed sky already lights the scene whe
 const wally = new Wally(scene);
 wally.facing = 0;                                     // facing down the boardwalk
 wally.useModel(models.get('wally'));
+{ const p0 = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
+  if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(p0, 'wally').shirt); }   // clothes from the Kuranda markets
 const food = new Food(scene); food.useModels(models);
 const bubbles = new Bubbles(scene, touch ? 3 : 4);
 const fx = new Effects(scene, food);

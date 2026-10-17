@@ -21,11 +21,12 @@ import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
+import { dressOutfit } from '../outfit.js';
 import { LIVES } from '../rules.js';
 import { HumanoidPoser } from '../rig.js';
 import { kennysJar, useJarModel } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
-import { readProgress, completeArea, starsFor, POSTCARDS, bankFinds } from '../progress.js';
+import { readProgress, completeArea, starsFor, POSTCARDS, bankFinds, wearing } from '../progress.js';
 import { makeMaze, makeReefMaze, mazePath, cellAt, cellCentre, collide, inMaze, airStep, AIR,
          SWIM_Y, SURFACE_Y, SEABED_Y, reefRunScore, REEF_STARS, PEARL_POINTS, CHEST_POINTS,
          LANES, LANE_NAMES, TREASURES, nextDepth, treasureSpots, canCollect } from './reef-rules.js';
@@ -172,6 +173,8 @@ addEventListener('resize', () => post.setSize(innerWidth, innerHeight));
 // ---- Characters ------------------------------------------------------------------
 const wally = new Wally(scene);
 wally.useModel(models.get('wally'));
+{ const p0 = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
+  if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(p0, 'wally').shirt); }   // clothes from the Kuranda markets
 const bubbles = new Bubbles(scene, touch ? 3 : 4);
 const fx = new Effects(scene, { items: [] });
 

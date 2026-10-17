@@ -21,7 +21,8 @@ import { loadRealism } from './realism.js';
 import { usePalmCrown } from './palms.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from './quality.js';
 import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
-import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds } from './progress.js';
+import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing } from './progress.js';
+import { dressOutfit } from './outfit.js';
 import * as sound from './sound.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, difficulty,
          clampToPark, terrainHeight, onDeck, LIVES, REVIVE_ENERGY, inRedZone,
@@ -133,6 +134,10 @@ const toads = new CaneToads(scene, quality.name === 'low' ? 3 : 5, {
 // Dress everyone in Ken's models where a file exists.
 wally.useModel(models.get('wally'));
 kenny.useModel(models.get('kenny'));
+// The clothes they own from the Kuranda markets (outfit.js).
+{ const p0 = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
+  if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(p0, 'wally').shirt);
+  if (kenny.skin) dressOutfit(kenny.skin.root, 'kenny', wearing(p0, 'kenny').vest); }
 crocs.useModel(models.get('croc'));
 pelicans.useModel(models.get('pelican'));
 toads.useModel(models.get('toad'));
@@ -587,7 +592,7 @@ function restart() { location.reload(); }   // simplest clean reset of every cre
 // ---- The map of Wally's Big Trip ------------------------------------------------------
 // Every area, its stars, and whether it is open yet. The park is played here;
 // other areas are their own pages.
-const PAGES = { park: null, esplanade: 'esplanade.html', reef: 'reef.html' };
+const PAGES = { park: null, esplanade: 'esplanade.html', reef: 'reef.html', kuranda: 'kuranda.html' };
 let progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
 const PARK_STARS = [40, 70, 100];               // park score for one, two and three stars
 

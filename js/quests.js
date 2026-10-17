@@ -15,7 +15,7 @@ export const AREAS = [
   { id: 'reef', name: 'The Great Barrier Reef', place: 'Green Island, off Cairns', ready: true,
     objective: 'Dive from the Green Island jetty, follow the guide fish through the coral maze to the cave, find the pirate chest and get out before your air runs out. Bring pearls: one opens the giant clam.',
     notes: 'Green Island jetty, then under water: coral maze on the reef, box jellyfish, bubble vents, the coral cave with the pirate chest and the giant clam.' },
-  { id: 'kuranda', name: 'Kuranda', place: 'The village in the rainforest', ready: false,
+  { id: 'kuranda', name: 'Kuranda', place: 'The village in the rainforest', ready: true,
     objective: 'Feed through the Kuranda markets without scaring the shoppers off, and fill the feed-o-meter. Spend Golden Mangoes on new clothes for Wally and Kenny, and take the trail to Barron Falls for the zip line and the bungee.',
     notes: 'Kuranda village and markets in the rainforest, the Skyrail gondolas overhead; a trail to the Barron Falls gorge: zip line across it, bungee over it (catch food on the way). Djabugay country: the boomerang is taught by a local guide.' },
   { id: 'daintree', name: 'Daintree River', ready: false,

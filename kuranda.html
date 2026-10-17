@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>html,body{background:#0b1d27}</style>
+<link rel="preload" as="image" href="assets/title/opener.webp">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b6e8c">
+<title>Kuranda · Chomp 3D: Wally's Cairns Adventure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" hidden>
+  <div class="panel score"><b id="score">0</b><span class="mango-count">&#x1F96D; <span id="mangoes">0</span></span><span class="pearl-count" title="Gold coins">&#x1FA99; <span id="coins">0</span></span></div>
+  <div class="panel quest"><h2>Kuranda markets</h2><p id="job" style="margin:0"></p></div>
+  <div class="panel energy" id="feed">
+    <div class="feed-head"><span class="label" id="meter-label">Feed-o-meter</span><span id="lives" aria-label="Lives"></span></div>
+    <div class="bar"><div class="red-zone"></div><div id="energy-fill"></div></div>
+    <span id="veg" hidden>Full tank!</span>
+    <span class="red-note" id="red-note">In the red! Look out for Kenny and his jar!</span>
+  </div>
+  <div class="panel track" id="track" aria-label="Along the street"><span>Village</span><div class="track-bar"><div id="track-wally"></div></div><span>Barron Falls</span></div>
+  <div id="count"></div>
+  <div id="toasts" aria-live="polite"></div>
+</div>
+
+<div id="touch" hidden>
+  <div id="stick"><div id="knob"></div></div>
+  <button id="t-fours" type="button">Duck</button>
+  <button id="t-jump" type="button">Jump</button>
+  <button id="t-pause" type="button" aria-label="Pause">II</button>
+  <button id="t-cam" type="button">Cam</button>
+</div>
+
+
+<section id="title" class="overlay art-bg">
+  <div class="card">
+    <p class="area">Level 4</p>
+    <h1>Kuranda</h1>
+    <p>Wally's taken the Skyrail up to Kuranda, the village in the rainforest. The market shoppers will share their snacks if he doesn't crowd them. Feed out every group and fill the feed-o-meter, and the trail to Barron Falls opens at the end of the street. Pop into the clothes stall (the purple awning) to spend Golden Mangoes on new gear for Wally and Kenny, or a river-boat ticket for the Daintree.</p>
+    <button id="play" class="go" type="button">Play</button>
+    <div class="keys pc">
+      <span><kbd>Up</kbd> run ahead, <kbd>Left</kbd> <kbd>Right</kbd> turn, <kbd>Down</kbd> turn round</span><span><kbd>Space</kbd> jump</span><span><kbd>Drag</kbd> or <kbd>Q E</kbd> camera, <kbd>C</kbd> front or back</span><span><kbd>P</kbd> pause</span>
+    </div>
+    <div class="keys phone"><span>Left thumb: steer</span><span>Jump button</span></div>
+    <p class="fine"><a href="index.html?map">Back to the map</a></p>
+  </div>
+</section>
+
+<section id="shop" class="overlay" hidden>
+  <div class="card shop-card">
+    <h1>The clothes stall</h1>
+    <p class="sub">Golden Mangoes: <b id="shop-mangoes">0</b></p>
+    <div class="shop-cols">
+      <div><h3>Wally</h3><ul class="shop-list" id="shop-wally"></ul></div>
+      <div><h3>Kenny</h3><ul class="shop-list" id="shop-kenny"></ul></div>
+    </div>
+    <h3>For the Daintree</h3><ul class="shop-list" id="shop-ticket"></ul>
+    <p class="fine" id="shop-note"></p>
+    <button id="shop-close" class="go" type="button">Back to the markets</button>
+  </div>
+</section>
+
+<section id="paused" class="overlay" hidden>
+  <div class="card"><h1>Paused</h1><button id="resume" class="go" type="button">Keep going</button>
+  <p class="fine"><a href="index.html?map">Back to the map</a></p></div>
+</section>
+
+<section id="result" class="overlay" hidden>
+  <div class="card">
+    <h1 id="result-title"></h1>
+    <p class="stars" id="result-stars"></p>
+    <p id="result-why"></p>
+    <ul class="result-lines" id="result-lines"></ul>
+    <div class="postcard" id="postcard" hidden><b>Postcard collected</b><p id="postcard-text"></p></div>
+    <button id="again" class="go" type="button">Go again</button>
+    <p class="fine"><a href="index.html?map">Back to the map</a></p>
+  </div>
+</section>
+
+<script type="module" src="js/levels/kuranda.js"></script>
+</body>
+</html>
