@@ -347,10 +347,18 @@ function coin() {
 }
 const GLOW = { starfish: 0xff9a5a, shell: 0xfff0d0, coin: 0xffd24a };
 // spots: [{ kind, x, z }]. Returns [{ kind, x, y, z, mesh, taken }].
-export function buildTreasures(root, spots) {
+// Ken's seashell model (models/seashell.glb), when present, for the shells.
+function kensShell(gltf) {
+  const m = gltf.scene.clone(true);
+  const size = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3());
+  m.scale.multiplyScalar(0.6 / Math.max(size.x, size.y, size.z));
+  const c = new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3()); m.position.sub(c);
+  const g = new THREE.Group(); g.add(m); return g;
+}
+export function buildTreasures(root, shellGltf, spots) {
   return spots.map(({ kind, x, z }) => {
     const g = new THREE.Group();
-    const thing = kind === 'starfish' ? starfish() : kind === 'shell' ? cowrie() : coin();
+    const thing = kind === 'starfish' ? starfish() : kind === 'shell' ? (shellGltf ? kensShell(shellGltf) : cowrie()) : coin();
     g.add(glowSprite(GLOW[kind], 1.6), thing);
     const y = LANES[TREASURES[kind].lane];
     g.position.set(x, y, z); root.add(g);
@@ -358,7 +366,7 @@ export function buildTreasures(root, spots) {
   });
 }
 
-export function buildReef(scene, quality, { maze, outer, jellyGltf = null }) {
+export function buildReef(scene, quality, { maze, outer, jellyGltf = null, coralGltf = null }) {
   const rnd = seeded(77);
   const root = new THREE.Group(); root.visible = false; scene.add(root);
   const { ox, oz, size } = MAZE;
@@ -607,6 +615,43 @@ export function buildReef(scene, quality, { maze, outer, jellyGltf = null }) {
     const m = dressedJelly(jellyGltf); root.add(m);
     // Each drifts slowly up and down through the three swimming depths (Ken: dodge them).
     jellies.push({ m, x, z, y: SWIM_Y, phase: rnd() * 6, rise: 0.25 + rnd() * 0.2, cool: 0, inMaze: i < 6 });
+  }
+
+  // Ken's coral (models/coral.glb), when present: clumps growing along the tops
+  // of the coral maze's walls and round the open reef, each turned and sized
+  // differently. One draw per part of the model, however many clumps.
+  if (coralGltf) {
+    const spots = [];
+    let cseed = 97; const crnd = () => ((cseed = (cseed * 16807) % 2147483647) / 2147483647);
+    for (const b of outerBoxes) {
+      const len = Math.hypot(b.x1 - b.x0, b.z1 - b.z0);
+      for (let k = 0; k < Math.max(1, Math.round(len / 4)); k++) {
+        if (crnd() < 0.35) continue;
+        const t = (k + 0.5) / Math.max(1, Math.round(len / 4));
+        spots.push([b.x0 + (b.x1 - b.x0) * t, CORAL_TOP - 0.2, b.z0 + (b.z1 - b.z0) * t, 1.6 + crnd() * 1.6]);
+      }
+    }
+    for (let k = 0; k < (quality.name === 'low' ? 10 : 30); k++) {
+      const x = BOUNDS.x0 + 8 + crnd() * (BOUNDS.x1 - BOUNDS.x0 - 16), z = BOUNDS.z0 + 8 + crnd() * (BOUNDS.z1 - BOUNDS.z0 - 16);
+      if (inCaveArea(x, z, 6) || Math.hypot(x - DIVE.x, z - DIVE.z) < 8 || inMaze(outer, x, z, OUTER.ox, OUTER.oz, OUTER.size, 2)) continue;
+      spots.push([x, SEABED_Y, z, 2.2 + crnd() * 2.5]);
+    }
+    const src = coralGltf.scene.clone(true);
+    src.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(src), size = box.getSize(new THREE.Vector3());
+    const norm = new THREE.Matrix4().makeScale(1 / size.y, 1 / size.y, 1 / size.y)
+      .multiply(new THREE.Matrix4().makeTranslation(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2));
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+    src.traverse(o => {
+      if (!o.isMesh) return;
+      const inst = new THREE.InstancedMesh(o.geometry, o.material, spots.length);
+      spots.forEach(([x, y, z, h], i) => {
+        q.setFromAxisAngle(up, crnd() * Math.PI * 2);
+        inst.setMatrixAt(i, m.compose(p.set(x, y, z), q, sc.setScalar(h)).multiply(norm).multiply(o.matrixWorld));
+      });
+      inst.castShadow = true; inst.receiveShadow = true;
+      root.add(inst);
+    });
   }
 
   return {

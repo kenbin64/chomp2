@@ -156,11 +156,11 @@ const islandTrees = new Trees(scene, { light });
 const seed = Number(params.get('seed')) || 1 + Math.floor(Math.random() * 2147483000);
 const maze = makeMaze(MAZE.cols, MAZE.rows, seed);
 const outer = makeReefMaze(OUTER.cols, OUTER.rows, seed + 4);
-const reef = buildReef(scene, quality, { maze, outer, jellyGltf: models.get('jellyfish') });
+const reef = buildReef(scene, quality, { maze, outer, jellyGltf: models.get('jellyfish'), coralGltf: models.get('coral') });
 // Reef treasures (Ken): starfish, shells and gold coins along both mazes'
 // corridors at the three depths, never in a pearl's cell.
 const pearlCellsOf = (m, o) => reef.pearls.map(p => cellAt(m, p.x, p.z, o.ox, o.oz, o.size)).filter(Boolean);
-const treasures = buildTreasures(reef.root, [
+const treasures = buildTreasures(reef.root, models.get('seashell') || null, [
   ...treasureSpots(outer, 14, seed + 11, pearlCellsOf(outer, OUTER)).map(t => ({ kind: t.kind, ...cellCentre(outer, t.cell, OUTER.ox, OUTER.oz, OUTER.size) })),
   ...treasureSpots(maze, 18, seed + 17, pearlCellsOf(maze, MAZE)).map(t => ({ kind: t.kind, ...cellCentre(maze, t.cell, MAZE.ox, MAZE.oz, MAZE.size) })),
 ]);
