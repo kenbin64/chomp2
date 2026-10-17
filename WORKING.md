@@ -32,7 +32,18 @@ too close). Thieves: pelicans (swim and walk onto land to scoop missed food), fl
 cane toads (food on the ground), other crocs (in the water). Box jellyfish sting. Kenny brings Vegemite toast
 when the feed-o-meter is in the red.
 
-### Level 2: The Esplanade and the reef (Ken's design, 2026-10-16)
+### Decisions, 2026-10-16 (Ken)
+- **Trip order:** 1 Croc Park, 2 The Esplanade, 3 The Great Barrier Reef, 4 Daintree River, 5 Mossman Gorge, 6 Kuranda.
+- **The dive and coral cave belong to level 3**, the Great Barrier Reef (page `reef.html`, code `js/levels/reef.js`).
+  The Esplanade ends at the Lagoon pool again; it keeps pearls, swimming under water, crawling out and jellyfish.
+- **Diving:** on-screen **Dive** and **Up** buttons whenever Wally is in the water, phone and PC, each showing its
+  key (Shift / Space). Under water he swims at one depth.
+- **Finding the cave:** a glowing **guide fish** leads the way, an **arrow** at the screen edge points to it, and he
+  has to swim a **coral maze on the reef** to reach the cave (which has its own maze inside).
+- **Pearls carry over** (decided by the AI, easy to change): the reef starts with the pearls banked so far, a pearl
+  spent at the giant clam comes off the bank, and pearls found are added.
+
+### Level 2: The Esplanade (first designed 2026-10-16; the dive part below moved to level 3)
 1. **On the boardwalk:** feed out every picnic group and fill the feed-o-meter. A group fed out to the last
    bite **leaves a pearl** (a scared-off group does not). Pearls start on this level and are a theme through
    the whole game: the more pearls, the better the chance of clearing a level. A lifetime pearl total is

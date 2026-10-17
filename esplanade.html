@@ -24,7 +24,7 @@
     <span id="veg" hidden>Full tank!</span>
     <span class="red-note" id="red-note">In the red! Look out for Kenny and his jar!</span>
   </div>
-  <div class="panel track" id="track" aria-label="Distance to the dive spot"><span>Start</span><div class="track-bar"><div id="track-wally"></div></div><span>Reef</span></div>
+  <div class="panel track" id="track" aria-label="Distance to the Lagoon"><span>Start</span><div class="track-bar"><div id="track-wally"></div></div><span>Lagoon</span></div>
   <div id="count"></div>
   <div id="toasts" aria-live="polite"></div>
 </div>
@@ -37,11 +37,15 @@
   <button id="t-cam" type="button">Cam</button>
 </div>
 
+<div id="dive-buttons" class="dive-buttons" hidden>
+  <button id="b-dive" type="button">Dive<small>Shift</small></button>
+  <button id="b-up" type="button">Up<small>Space</small></button>
+</div>
 <section id="title" class="overlay">
   <div class="card">
     <p class="area">Level 2</p>
     <h1>The Esplanade</h1>
-    <p>Wally has the run of the Esplanade boardwalk: up and down it, and off the side for a swim in the ocean (watch for stingers). The picnic groups will throw lunch if he doesn't crowd them. Feed out every group (each one leaves him a pearl) and fill the feed-o-meter. Then dive into the sea to the coral cave: collect pearls, find the pirate chest at the heart of the maze and get back out before his air runs out. The giant clam at the mouth shuts once he has the chest, and only a pearl will open it.</p>
+    <p>Wally has the run of the Esplanade boardwalk: up and down it, and off the side for a swim in the ocean (watch for stingers). The picnic groups will throw lunch if he doesn't crowd them. Feed out every group (each one leaves him a pearl, and pearls carry on to the Great Barrier Reef) and fill the feed-o-meter, and the Lagoon pool at the end is his way on. In the sea he can dive under (watch for box jellyfish) and crawl back up onto the boardwalk.</p>
     <button id="play" class="go" type="button">Play</button>
     <div class="keys pc">
       <span><kbd>W A S D</kbd> move</span><span><kbd>Space</kbd> jump, croc leap from the water</span><span><kbd>Drag</kbd> or <kbd>Q E</kbd> camera, <kbd>C</kbd> front or back</span>

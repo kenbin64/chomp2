@@ -98,3 +98,13 @@ body.touch .keys.pc, body:not(.touch) .keys.phone { display: none; }
 .map-area .s { color: #ffd166; letter-spacing: 0.08em; }
 .map-area.locked { opacity: 0.45; cursor: default; }
 .map-area.open:hover { background: rgba(255, 209, 102, 0.18); }
+
+/* Dive and Up: shown whenever Wally is in the water, on phones and PCs alike, each
+   with its keyboard key underneath. Big enough for a thumb. */
+.dive-buttons { position: fixed; right: 18px; bottom: 150px; display: flex; flex-direction: column; gap: 10px; z-index: 6; }
+.dive-buttons button { width: 92px; height: 74px; border-radius: 18px; border: 2px solid rgba(159, 238, 255, 0.7);
+  background: rgba(10, 60, 80, 0.72); color: #e8fbff; font: 800 20px/1.1 inherit; cursor: pointer; }
+.dive-buttons button small { display: block; font-size: 12px; font-weight: 600; opacity: 0.75; margin-top: 3px; }
+.dive-buttons button:active, .dive-buttons button.on { background: rgba(60, 170, 210, 0.85); }
+.dive-buttons button[disabled] { opacity: 0.35; cursor: default; }
+body:not(.touch) .dive-buttons { bottom: 110px; }
