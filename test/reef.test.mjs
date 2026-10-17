@@ -25,8 +25,8 @@ for (const seed of [1, 2, 3, 7, 42, 99]) {
   check(`seed ${seed}: walls are the same from both sides`, agree);
   check(`seed ${seed}: the entrance is a gap in the east wall`, m.entrance.c === m.cols - 1 && m.open[m.entrance.r * m.cols + m.entrance.c][0]);
   const far = Math.max(...dist);
-  check(`seed ${seed}: the chest is in the furthest cell`, dist[m.chest.r * m.cols + m.chest.c] === far);
-  check(`seed ${seed}: the chest is a real trek in`, far >= 8, `${far} steps`);
+  const cd = dist[m.chest.r * m.cols + m.chest.c];
+  check(`seed ${seed}: the chest is a fair way in, not the furthest corner (Ken)`, cd >= 4 && cd <= Math.round(far * 0.75) + 1, `${cd} of ${far} steps`);
   const pc = pearlCells(m, 6), keys = new Set(pc.map(p => `${p.c},${p.r}`));
   check(`seed ${seed}: six pearls find six different cells`, pc.length === 6 && keys.size === 6);
   check(`seed ${seed}: no pearl on the entrance or the chest`, !keys.has(`${m.entrance.c},${m.entrance.r}`) && !keys.has(`${m.chest.c},${m.chest.r}`));

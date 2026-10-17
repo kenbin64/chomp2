@@ -81,6 +81,7 @@ export function reefScore({ pearls = 0, chest = false }) {
 }
 
 // ---- The maze -------------------------------------------------------------------
+export const CHEST_DEPTH = 0.6;    // how far toward the deepest cell the chest sits
 // A grid of cols x rows cells. Each cell records which of its four sides are
 // open. Directions: 0 east (+x), 1 south (+z), 2 west (-x), 3 north (-z).
 const DX = [1, 0, -1, 0], DZ = [0, 1, 0, -1];
@@ -118,8 +119,16 @@ export function makeMaze(cols, rows, seed = 1, entranceRow = Math.floor(rows / 2
   const entrance = { c: cols - 1, r: entranceRow };
   open[at(entrance.c, entrance.r)][0] = true;          // the gap in the outside wall
   const dist = distances(cols, rows, open, entrance);
-  let chest = entrance;
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (dist[at(c, r)] > dist[at(chest.c, chest.r)]) chest = { c, r };
+  // The chest goes about CHEST_DEPTH of the way to the furthest cell (Ken: the
+  // furthest cell made a 30-second swim that felt endless), preferring a dead
+  // end there, so finding it is still a search.
+  const far = Math.max(...dist), want = Math.max(4, Math.round(far * CHEST_DEPTH));
+  let chest = entrance, best = 1e9;
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const d = dist[at(c, r)], deadEnd = open[at(c, r)].filter(Boolean).length === 1;
+    const score = Math.abs(d - want) + (deadEnd ? 0 : 1.5);
+    if (d > 0 && score < best) { best = score; chest = { c, r }; }
+  }
   return { cols, rows, open, entrance, chest, dist };
 }
 

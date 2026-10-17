@@ -578,18 +578,22 @@ export function buildReef(scene, quality, { maze, outer, jellyGltf = null, coral
   }
   for (const cell of pearlCells(maze, 6)) { const p = cellCentre(maze, cell, ox, oz, size); addPearl(p.x, p.z, true); }
 
-  // Bubble vents: one outside by the mouth, two inside along the way to the chest.
-  const far = maze.dist[maze.chest.r * maze.cols + maze.chest.c];
-  const ventCells = [Math.round(far / 3), Math.round(far * 2 / 3)].map(d => {
-    for (let r = 0; r < maze.rows; r++) for (let c = 0; c < maze.cols; c++) if (maze.dist[r * maze.cols + c] === d) return { c, r };
-    return maze.entrance;
-  });
-  const route = mazePath(outer, outer.entrance, outer.exit), half = route[Math.floor(route.length / 2)] || outer.entrance;
-  const hp = cellCentre(outer, half, OUTER.ox, OUTER.oz, OUTER.size);
-  const vents = [vent(hp.x, hp.z, false), ...ventCells.map(c => { const p = cellCentre(maze, c, ox, oz, size); return vent(p.x, p.z, true); })];
+  // Bubble vents (Ken: more air tunnels): in the cave, one on the way to the
+  // chest every few steps and a couple off in side passages; in the coral maze,
+  // one every few cells along the way through.
+  const ventCellsIn = [];
+  const cpath = mazePath(maze, maze.entrance, maze.chest);
+  for (let k = 3; k < cpath.length - 1; k += 4) ventCellsIn.push(cpath[k]);
+  const onPath = new Set(cpath.map(c => c.c + ',' + c.r));
+  const side = [];
+  for (let r = 0; r < maze.rows; r++) for (let c = 0; c < maze.cols; c++) if (!onPath.has(c + ',' + r) && maze.dist[r * maze.cols + c] >= 4) side.push({ c, r });
+  for (let k = 0; k < Math.min(2, side.length); k++) ventCellsIn.push(side[Math.floor((k + 0.5) * side.length / 2)]);
+  const route = mazePath(outer, outer.entrance, outer.exit);
+  const outerVents = route.filter((_, k) => k > 0 && k % 4 === 2).map(c => cellCentre(outer, c, OUTER.ox, OUTER.oz, OUTER.size));
+  const vents = [...outerVents.map(p => vent(p.x, p.z, false)), ...ventCellsIn.map(c => { const p = cellCentre(maze, c, ox, oz, size); return vent(p.x, p.z, true); })];
   for (const v of vents) root.add(v.group);
 
-  // The chest, in the furthest cell.
+  // The chest, a fair way in (reef-rules CHEST_DEPTH).
   const chest = chestModel();
   const cp = cellCentre(maze, maze.chest, ox, oz, size);
   chest.group.position.set(cp.x, SEABED_Y, cp.z);

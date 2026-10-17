@@ -217,7 +217,7 @@ const game = {
   chest: false, doorShut: false, inCave: false, faint: 0, stun: 0, hint: 0,
   foursWas: false, diveQueued: false, upQueued: false, climb: 0, guideSaid: false,
 };
-window.chomp = { game, wally, reef, maze, outer, camera, scene, treasures };
+window.chomp = { game, wally, reef, maze, outer, camera, scene, treasures, MAZE };
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -311,6 +311,7 @@ function guideStep(dt, t) {
 function arrowStep() {
   let target = null, label = '';
   if (!game.chest && !game.inCave) { target = mouthPoint; label = 'Coral cave'; }
+  else if (!game.chest && game.inCave) { target = reef.chest; label = 'Treasure'; }   // a compass, straight at it: the way there is still to be found
   else if (game.chest && game.inCave) { target = mouthPoint; label = 'Way out'; }
   const el = $('arrow');
   if (!target || game.done) { el.hidden = true; return; }
