@@ -9,6 +9,9 @@ import { PATH } from './esplanade-rules.js';
 import { addSky, addLights, addHorizon, addRanges, palm } from '../world.js';
 import { palmStand } from '../palms.js';
 import { Trees } from '../trees.js';
+import { Grass } from '../grass.js';
+import { surfaceMaterial, applySky } from '../realism.js';
+import { Water } from 'three/addons/objects/Water.js';
 import { person } from '../tourists.js';
 import { pelicanModel } from '../hazards.js';
 
@@ -34,15 +37,46 @@ const MID = (PATH.finish + 60) / 2 - 30;
 
 // The boardwalk, on piles over the water, with the ocean beside it and the
 // city side level with the deck. The sea side has no rail: Wally can jump in.
-function addGround(scene) {
-  scene.add(plane(160, LENGTH, mat(0x67a34a), PATH.half + 80, G - 0.02, MID));         // city-side grass, level with the deck
+// Ken (2026-10-17): wood with a grain, grass with life, an ocean as vibrant as
+// the park's. The photographed surfaces (realism.js) are used where present.
+function lawnMaterial(realism) {
+  const m = surfaceMaterial(realism, 'grass', 160 / 3, LENGTH / 3, { vertexColors: true });
+  return m || mat(0xffffff, { vertexColors: true });
+}
+function addGround(scene, realism, q) {
+  // City-side lawn: the photographed grass, tinted in broad lush and dry patches.
+  const lawnGeo = new THREE.PlaneGeometry(160, LENGTH, 80, 160);
+  lawnGeo.rotateX(-Math.PI / 2);
+  const lp = lawnGeo.attributes.position, lc = new Float32Array(lp.count * 3), c = new THREE.Color();
+  for (let i = 0; i < lp.count; i++) {
+    const x = lp.getX(i) + PATH.half + 80, z = lp.getZ(i) + MID;
+    c.setRGB(0.82, 0.86, 0.78);
+    const n = Math.sin(x * 0.11) * Math.cos(z * 0.09) * 0.5 + Math.sin(x * 0.037 + z * 0.029) * 0.5;
+    const dry = Math.max(0, Math.sin(x * 0.053 + 1.3) * Math.cos(z * 0.047 - 0.7));
+    c.lerp(new THREE.Color(1.0, 0.93, 0.62), dry * 0.35).multiplyScalar(1 + n * 0.2);
+    if (!realism) c.multiply(new THREE.Color(0x67a34a));
+    c.toArray(lc, i * 3);
+  }
+  lawnGeo.setAttribute('color', new THREE.BufferAttribute(lc, 3));
+  const lawn = new THREE.Mesh(lawnGeo, lawnMaterial(realism));
+  lawn.position.set(PATH.half + 80, G - 0.02, MID); lawn.receiveShadow = true; scene.add(lawn);
+  // Real grass tufts on the lawn, from the kerb out past the trees.
+  const grass = new Grass(scene, {
+    x0: PATH.half + 0.6, x1: PATH.half + 46, z0: -30, z1: PATH.finish + 30, heightAt: () => G,
+    tufts: q.name === 'high' ? 30000 : q.name === 'medium' ? 14000 : 4000,
+    density: x => x < PATH.half + 1.2 ? 0.4 : 1,
+  });
+
+  // The boardwalk: photographed hardwood planks with their grain and wear,
+  // running across the walk, with a darker gap between boards.
+  const real = surfaceMaterial(realism, 'planks', PATH.half * 2 / 3.6, LENGTH / 3.6);   // boards about 28 cm wide, so the grain reads
   const planks = canvasTexture(256, 256, (g, w, h) => {
     for (let i = 0; i < 8; i++) {
       g.fillStyle = ['#a77a4f', '#9b6f45', '#b0845a', '#986a40'][i % 4]; g.fillRect(i * 32, 0, 30, h);
       g.fillStyle = 'rgba(60,35,15,0.5)'; g.fillRect(i * 32 + 30, 0, 2, h);
     }
   }, [1, LENGTH / 3]);
-  const deck = shadowed(new THREE.Mesh(new THREE.BoxGeometry(PATH.half * 2, 0.25, LENGTH), mat(0xffffff, { map: planks })), false, true);
+  const deck = shadowed(new THREE.Mesh(new THREE.BoxGeometry(PATH.half * 2, 0.25, LENGTH), real || mat(0xffffff, { map: planks })), false, true);
   deck.position.set(0, G - 0.125, MID); scene.add(deck);
   const pile = new THREE.CylinderGeometry(0.16, 0.18, G + 5.5, 10), wood = mat(0x5e4630);   // down to the sea floor
   for (let z = -30; z < PATH.finish + 4; z += 4) {
@@ -51,8 +85,22 @@ function addGround(scene) {
   const kerb = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.15, LENGTH), mat(0x8a6a48)));
   kerb.position.set(PATH.half + 0.15, G + 0.07, MID); scene.add(kerb);
   // The sea: right up to the boardwalk, out to the horizon, over a sandy floor.
-  const sea = new THREE.Mesh(new THREE.PlaneGeometry(900, LENGTH + 600), new THREE.MeshPhongMaterial({ color: 0x2aa3c4, specular: 0xffffff, shininess: 70, transparent: true, opacity: 0.92 }));
+  // Where the ripple picture is present (and not on low graphics) it is the
+  // park's reflective water, in a brighter tropical blue-green; otherwise plain.
+  let sea, ripple = () => {};
+  if (realism && realism.waterNormals && q.name !== 'low') {
+    sea = new Water(new THREE.PlaneGeometry(900, LENGTH + 600), {
+      textureWidth: q.name === 'high' ? 512 : 256, textureHeight: q.name === 'high' ? 512 : 256,
+      waterNormals: realism.waterNormals, sunDirection: new THREE.Vector3(-0.6, 0.7, -0.4).normalize(),
+      sunColor: 0xfff1d6, waterColor: 0x0f8fa8, distortionScale: 2.2, fog: !!scene.fog,
+    });
+    sea.material.uniforms.size.value = 2.4;
+    ripple = t => { sea.material.uniforms.time.value = t * 0.6; };
+  } else {
+    sea = new THREE.Mesh(new THREE.PlaneGeometry(900, LENGTH + 600), new THREE.MeshPhongMaterial({ color: 0x2aa3c4, specular: 0xffffff, shininess: 70, transparent: true, opacity: 0.92 }));
+  }
   sea.rotation.x = -Math.PI / 2; sea.position.set(-450 + PATH.half, 0, MID); sea.receiveShadow = true; scene.add(sea);
+  sea.userData.ripple = ripple; sea.userData.grass = grass;
   // The sea floor sits 5.5 m down: deeper than the real mudflats, so Wally has
   // room to swim under the water (SEA_FLOOR in esplanade.js).
   const floor = plane(900, LENGTH + 600, mat(0xb8a47a), -450 + PATH.half, -5.5, MID);
@@ -99,6 +147,43 @@ function fig(x, z, s) {
   return g;
 }
 
+// Buildings with depth (Ken: not cold facades): each tower has balconies that
+// stand out from the walls, a darker recessed glass band per floor, a rooftop
+// parapet and plant room, an awning and shopfront at street level, and a few
+// stepped back. Warm render colours, lit windows here and there.
+function balconyTower(rnd, w, h, d, colour) {
+  const g = new THREE.Group();
+  const wall = mat(colour, { roughness: 0.92 });
+  const trim = mat(0xf7f2e8, { roughness: 0.6 });
+  const glass = mat(0x3d5a6e, { roughness: 0.15, metalness: 0.4, envMapIntensity: 1.2 });
+  const lit = mat(0x6b5a3a, { roughness: 0.2, emissive: 0xffc06a, emissiveIntensity: 0.6 });
+  const rail = mat(0xe9edf0, { roughness: 0.4, metalness: 0.3 });
+  const body = shadowed(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wall)); body.position.y = h / 2; g.add(body);
+  const floors = Math.max(2, Math.floor((h - 4) / 3.2));
+  for (let f = 0; f < floors; f++) {
+    const y = 4 + f * 3.2;
+    // Recessed glass band on the side facing the water (-x).
+    const band = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.8, d * 0.82), rnd() < 0.12 ? lit : glass);
+    band.position.set(-w / 2 - 0.02, y + 1.1, 0); g.add(band);
+    // A balcony slab with a railing, standing out 1.2 m.
+    const slab = shadowed(new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.22, d * 0.9), trim)); slab.position.set(-w / 2 - 0.6, y, 0); g.add(slab);
+    const r = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.9, d * 0.9), rail); r.position.set(-w / 2 - 1.17, y + 0.55, 0); g.add(r);
+    // Windows along the ends too.
+    for (const sz of [-1, 1]) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(w * 0.7, 1.5, 0.1), rnd() < 0.12 ? lit : glass);
+      win.position.set(0, y + 1.1, sz * (d / 2 + 0.02)); g.add(win);
+    }
+  }
+  // Rooftop parapet and a small plant room.
+  const par = shadowed(new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.8, d + 0.4), trim)); par.position.y = h + 0.4; g.add(par);
+  const room = shadowed(new THREE.Mesh(new THREE.BoxGeometry(w * 0.35, 2.4, d * 0.4), wall)); room.position.set(w * 0.15, h + 1.2, 0); g.add(room);
+  // Street level: a colourful awning and a warm shopfront.
+  const awn = shadowed(new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.15, d * 0.95), mat([0xd2553a, 0x2f8f7a, 0xe0a030, 0x3a6fb0][Math.floor(rnd() * 4)])));
+  awn.position.set(-w / 2 - 1.1, 3.1, 0); awn.rotation.z = 0.18; g.add(awn);
+  const shop = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.6, d * 0.8), lit); shop.position.set(-w / 2 - 0.03, 1.4, 0); g.add(shop);
+  return g;
+}
+
 function windowsTexture(base) {
   return canvasTexture(128, 256, (g, w, h) => {
     g.fillStyle = base; g.fillRect(0, 0, w, h);
@@ -110,13 +195,15 @@ function windowsTexture(base) {
 }
 
 function addCity(scene, rnd) {
-  const colours = ['#f4efe6', '#e8f1f2', '#f6e3cf', '#d9ece4', '#ffffff', '#f2d9c4'];
+  const colours = [0xf2e6d2, 0xe6efe9, 0xf5dcc0, 0xd8e8e1, 0xfaf4ea, 0xefd2bd, 0xf0e2a8];
   for (let z = -30; z < PATH.finish + 60; z += 18 + rnd() * 10) {
     const h = 10 + rnd() * 34, w = 12 + rnd() * 10, d = 12 + rnd() * 6;
-    const tex = windowsTexture(colours[Math.floor(rnd() * colours.length)]);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(w / 12, h / 22);
-    const b = shadowed(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(0xffffff, { map: tex })));
-    b.position.set(42 + rnd() * 20, G + h / 2, z); scene.add(b);
+    const b = balconyTower(rnd, w, h, d, colours[Math.floor(rnd() * colours.length)]);
+    b.position.set(42 + rnd() * 20, G, z); scene.add(b);
+    if (h > 26 && rnd() < 0.5) {                                   // a stepped-back upper block
+      const top = balconyTower(rnd, w * 0.7, 8, d * 0.75, colours[Math.floor(rnd() * colours.length)]);
+      top.position.set(b.position.x + w * 0.1, G + h + 0.8, z); scene.add(top);
+    }
   }
 }
 
@@ -213,7 +300,7 @@ export function mangoModel() {
 
 // ---- Build it ---------------------------------------------------------------
 
-export function buildEsplanade(scene, q, backdrops = {}) {
+export function buildEsplanade(scene, q, backdrops = {}, realism = null) {
   let seed = 21;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   addSky(scene, backdrops.sky);
@@ -228,7 +315,14 @@ export function buildEsplanade(scene, q, backdrops = {}) {
   ring.visible = false; ring.userData.off = true;
   // A cool blue haze keeps them rainforest green (the warm sunset haze turned them sandy).
   const ranges = addRanges(scene, new THREE.Color(0x9cbcc8), sun.position.clone().normalize(), { sink: 0.55, turn: Math.PI / 2 });
-  const sea = addGround(scene);
+  const sea = addGround(scene, realism, q);
+  // The park's photographed blue sky (Ken: the ocean as vibrant as the park's;
+  // the pale sunset made the water reflect pale). It lights the scene too.
+  if (realism && realism.sky) {
+    applySky(scene, realism, sun, scene.children.find(o => o.isMesh && o.geometry.type === 'SphereGeometry'));
+    scene.fog.near = 140; scene.fog.far = 600;
+    scene.environmentIntensity = 0.35;     // the open waterfront takes much less sky light than the park (at 0.9 it washed out)
+  }
   // Ken's trees (trees.js): palms along the path in stands of one to three, kept
   // clear of it, and ghost gums and umbrella trees on the city side, where the
   // built figs used to be. (The built mangroves in the water are gone until

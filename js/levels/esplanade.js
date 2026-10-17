@@ -20,6 +20,7 @@ import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
+import { loadRealism } from '../realism.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone } from '../rules.js';
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
@@ -101,10 +102,12 @@ useJarModel(models.get('jar'));                    // Ken's jar for Kenny's resc
 useToastModel(models.get('toast'));                // and his toast power-up
 useMangoModel(models.get('mango'));                // Ken's mango for the Golden Mangoes
 usePalmCrown(models.get('palm-crown'));                // Ken's palm crown on the built trunks
-const world = buildEsplanade(scene, quality);
+// The photographed surfaces and ripple picture (realism.js), as in the park; ?real=0 turns them off.
+const realism = params.get('real') === '0' ? null : await loadRealism(renderer, { light: touch || quality.name === 'low' });
+const world = buildEsplanade(scene, quality, {}, realism);
 const post = createPost(renderer, scene, camera, quality);
 addEventListener('resize', () => post.setSize(innerWidth, innerHeight));
-{
+if (!scene.environment) {   // the photographed sky already lights the scene when it is present
   const env = new THREE.Scene();
   const sky = scene.children.find(o => o.isMesh && o.geometry.type === 'SphereGeometry');
   if (sky) env.add(sky.clone());
@@ -625,6 +628,7 @@ function frame() {
   if (game.running && !game.paused) step(dt, t);
   bubbles.update(dt); fx.update(dt, t);
   if (world.trees) world.trees.update(t);          // the breeze in the trees
+  world.sea.userData.ripple(t); world.sea.userData.grass.update(t);   // waves, and the breeze in the grass
   followCamera(dt);
   fpsWatch(dt);
   post.render();

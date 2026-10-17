@@ -51,10 +51,10 @@ export function createPost(renderer, scene, camera, quality) {
     ao.blendIntensity = 0.85;
     // The shading pass draws every object as if solid, so a glow or a sign (a flat
     // picture with see-through edges) would leave a dark square behind it (Ken saw
-    // this round the mangoes). Pictures are hidden from that pass only.
+    // this round the mangoes). Pictures, and tree cards (userData.noAO), are hidden from that pass only.
     const shade = ao.render.bind(ao), hidden = [];
     ao.render = (...args) => {
-      scene.traverse(o => { if (o.isSprite && o.visible) { o.visible = false; hidden.push(o); } });
+      scene.traverse(o => { if ((o.isSprite || o.userData.noAO) && o.visible) { o.visible = false; hidden.push(o); } });
       shade(...args);
       for (const o of hidden) o.visible = true;
       hidden.length = 0;

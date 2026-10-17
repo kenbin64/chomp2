@@ -100,6 +100,7 @@ export class Trees {
       const mesh = new THREE.InstancedMesh(card, material, list.length);
       mesh.customDepthMaterial = depth;
       mesh.castShadow = true; mesh.receiveShadow = true;
+      mesh.userData.noAO = true;                  // a cut-out card: the shading pass would see a solid square
       mesh.frustumCulled = false;                 // cards turn in the shader; the box three.js works out cannot know that
       const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3();
       list.forEach((t, i) => {
