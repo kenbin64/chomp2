@@ -1,6 +1,6 @@
 // Tests for js/levels/esplanade-rules.js. Run:  node test/esplanade.test.mjs
 
-import { PATH, KINDS, generateCourse, hits, runScore, STARS } from '../js/levels/esplanade-rules.js';
+import { PATH, KINDS, generateCourse, hits, runScore, STARS, MANGO_SET_BONUS } from '../js/levels/esplanade-rules.js';
 
 let passed = 0, failed = 0;
 function check(name, ok, detail = '') {
@@ -56,6 +56,15 @@ check('star thresholds rise', STARS[0] < STARS[1] && STARS[1] < STARS[2]);
 }
 const best = runScore({ food: 15 * 3, mangoes: c.mangoes.length, energyLeft: 60, finished: true }).total;
 check('three stars are reachable on this course', best >= STARS[2], best);
+
+// Every Golden Mango collected: one star's worth of bonus, and only for the full set.
+{
+  const some = runScore({ food: 100, mangoes: 20, finished: true });
+  const all = runScore({ food: 100, mangoes: 20, mangoSet: true, finished: true });
+  check('the full mango set adds its bonus', all.total - some.total === MANGO_SET_BONUS && all.mangoSet === MANGO_SET_BONUS);
+  check('the mango set bonus is one star step', MANGO_SET_BONUS === STARS[1] - STARS[0] && STARS[2] - STARS[1] === MANGO_SET_BONUS);
+  check('no set, no set bonus', some.mangoSet === 0);
+}
 
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

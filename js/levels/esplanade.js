@@ -25,7 +25,7 @@ import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
 import { jellyModel, dressedJelly } from '../hazards.js';
 import { completeArea, readProgress, starsFor, POSTCARDS } from '../progress.js';
-import { PATH, generateCourse, hits, runScore, STARS } from './esplanade-rules.js';
+import { PATH, generateCourse, hits, runScore, STARS, MANGO_SET_BONUS } from './esplanade-rules.js';
 import { buildEsplanade, obstacleModel, mangoModel } from './esplanade-scene.js';
 import { Clusters } from '../clusters.js';
 import { airStep, AIR } from './reef-rules.js';
@@ -385,6 +385,10 @@ function step(dt, t) {
     if (Math.abs(m.z - wally.pos.z) < 1.4 && Math.abs(m.x - wally.pos.x) < 1.1 && Math.abs(m.y - (wally.pos.y + 1.2)) < 1.4) {
       m.taken = true; scene.remove(m.mesh); game.mangoes++; game.points += 1; sound.play.goal();
       fx.burst(m.mesh.position, [0xffb51f, 0xffe066], 8);
+      if (game.mangoes === mangoes.length) {                      // the full set: Ken's bonus, one star's worth
+        game.points += MANGO_SET_BONUS; fx.burst(wally.pos, [0xffb51f, 0xffe066, 0xffffff], 30);
+        toast_(`Every Golden Mango! +${MANGO_SET_BONUS}`, 'good'); bubbles.say(wally.root, 'Crikey! The whole set!', 3.4);
+      }
     }
   }
 
@@ -530,7 +534,7 @@ function followCamera(dt) {
 // ---- Screens -------------------------------------------------------------------------
 function drawHud() {
   $('score').textContent = game.points.toLocaleString();
-  $('mangoes').textContent = game.mangoes;
+  $('mangoes').textContent = `${game.mangoes}/${mangoes.length}`;
   const diving = seaDive.depth < -1.0 || game.air < AIR.max - 0.5;
   $('pearls').textContent = game.pearls;
   $('feed').classList.toggle('air', diving);
@@ -557,7 +561,7 @@ function setPaused(p) { if (!game.running) return; game.paused = p; $('paused').
 function finish(won, why = '') {
   game.running = false;
   $('hud').hidden = true; $('touch').hidden = true;
-  const s = runScore({ food: game.foodPoints, mangoes: game.mangoes, energyLeft: game.energy, stumbles: game.stumbles, finished: won, pearls: game.pearls });
+  const s = runScore({ food: game.foodPoints, mangoes: game.mangoes, mangoSet: game.mangoes === mangoes.length, energyLeft: game.energy, stumbles: game.stumbles, finished: won, pearls: game.pearls });
   const stars = won ? starsFor(s.total, STARS) : 0;
   if (won) {
     progress = completeArea(progress, 'esplanade', { score: s.total, stars, mangoes: game.mangoes, pearls: game.pearls });
@@ -567,7 +571,7 @@ function finish(won, why = '') {
   $('result-why').textContent = why === 'hungry' ? `Wally made it, but his feed-o-meter isn't full. He needs a full tank (${FULL}%) to head on.` : '';
   $('result-stars').textContent = won ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
   $('result-lines').innerHTML = '';
-  for (const [label, v] of [['Tucker caught', `${game.caught} (${s.food})`], ['Golden Mangoes', `${game.mangoes} (${s.mangoes})`], ['Pearls', `${game.pearls} (${s.pearls})`], ['Finish bonus', s.finishBonus], ['No-bump bonus', s.clean], ['Total', s.total]]) {
+  for (const [label, v] of [['Tucker caught', `${game.caught} (${s.food})`], ['Golden Mangoes', `${game.mangoes}/${mangoes.length} (${s.mangoes})`], ['All mangoes bonus', s.mangoSet], ['Pearls', `${game.pearls} (${s.pearls})`], ['Finish bonus', s.finishBonus], ['No-bump bonus', s.clean], ['Total', s.total]]) {
     const li = document.createElement('li'); li.innerHTML = `<span></span><b></b>`; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }
   $('postcard').hidden = !won;

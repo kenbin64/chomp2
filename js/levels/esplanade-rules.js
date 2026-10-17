@@ -74,15 +74,21 @@ export function hits(ob, x, z, feetY, mode) {
   return Math.abs(x - ob.x) < k.w / 2 + radius && Math.abs(z - ob.z) < k.d / 2 + radius;
 }
 
+// Collecting every Golden Mango on the level earns this bonus (Ken's choice):
+// one star's worth (see STARS, 40 apart).
+export const MANGO_SET_BONUS = 40;
+
 // Final score and what it is made of.
 // food: catch points (ground 1, air 2, jumping 3); a Golden Mango is 1.
+// mangoSet: true when every mango on the level was collected.
 // pearls and chest: from the dive to the reef (reef-rules.js scores them).
-export function runScore({ food = 0, mangoes = 0, energyLeft = 0, stumbles = 0, finished = false, pearls = 0, chest = false }) {
+export function runScore({ food = 0, mangoes = 0, mangoSet = false, energyLeft = 0, stumbles = 0, finished = false, pearls = 0, chest = false }) {
   const finishBonus = finished ? 20 + Math.round(Math.max(0, energyLeft) / 10) : 0;
   const clean = finished && stumbles === 0 ? 25 : 0;
   const pearlPoints = Math.max(0, pearls) * PEARL_POINTS, chestPoints = chest ? CHEST_POINTS : 0;
-  return { food, mangoes, finishBonus, clean, pearls: pearlPoints, chest: chestPoints,
-    total: food + mangoes + finishBonus + clean + pearlPoints + chestPoints };
+  const set = mangoSet ? MANGO_SET_BONUS : 0;
+  return { food, mangoes, mangoSet: set, finishBonus, clean, pearls: pearlPoints, chest: chestPoints,
+    total: food + mangoes + set + finishBonus + clean + pearlPoints + chestPoints };
 }
 
 export const STARS = [70, 110, 150];      // raised with the reef: pearls and the chest add up to about 100 more
