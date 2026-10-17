@@ -48,13 +48,23 @@
   <button id="t-cam" type="button" aria-label="Camera behind Wally">Cam</button>
 </div>
 
-<section id="title" class="overlay">
-  <div class="card">
+<section id="title" class="overlay opener">
+  <!-- Ken's opener art: the title is painted on the sign -->
+  <img class="opener-blur" src="assets/title/opener.webp" alt="">
+  <img class="opener-art" src="assets/title/opener.webp" alt="Chomp 3D: Wally's Cairns Adventure">
+  <div class="opener-bar">
+    <div class="opener-buttons">
+      <button id="play" class="go" type="button">Play</button>
+      <button id="how" class="ghost" type="button">How to play</button>
+    </div>
+    <p class="credit">Ken Bingham, with assistance from AI</p>
+  </div>
+  <div class="card how-card" id="how-card" hidden>
     <h1>Chomp 3D</h1>
     <p class="sub">Wally's Cairns Adventure</p>
     <p>Somebody scratched out the <s>Don't</s> on the sign, so the visitors have brought lunch. Get close enough and they'll throw it to Wally, but not too close or they'll run off with it. Food keeps Wally going, and there's only so much.</p>
     <p class="area">Croc Park, Far North Queensland</p>
-    <button id="play" class="go" type="button">Play</button>
+    <button id="how-close" class="go" type="button">Got it</button>
     <div class="keys pc">
       <span><kbd>Up</kbd> run ahead, <kbd>Left</kbd> <kbd>Right</kbd> turn, <kbd>Down</kbd> turn round</span><span><kbd>Space</kbd> jump, croc leap in water</span>
       <span><kbd>Shift</kbd> all fours</span><span><kbd>Drag</kbd> or <kbd>Q E</kbd> turn camera</span><span><kbd>C</kbd> camera to his front or back</span>
