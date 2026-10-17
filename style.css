@@ -152,3 +152,5 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .acknowledge { margin: 10px 0 6px; font-size: 13px; line-height: 1.45; opacity: 0.9; font-style: italic; }
 .love { margin: 14px 0 0; color: #ffd166; font-size: 22px; }
 .places dt { text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 800; }
+/* Level start cards sit over Ken's title art, so it is the first thing seen on any page. */
+.overlay.art-bg { background: linear-gradient(rgba(8, 30, 44, 0.45), rgba(8, 30, 44, 0.7)), url(assets/title/opener.webp) center / cover no-repeat; }
