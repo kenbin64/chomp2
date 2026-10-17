@@ -26,7 +26,7 @@ import { HumanoidPoser } from '../rig.js';
 import { jellyModel, dressedJelly } from '../hazards.js';
 import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds } from '../progress.js';
 import { PATH, generateCourse, hits, runScore, STARS, MANGO_SET_BONUS } from './esplanade-rules.js';
-import { buildEsplanade, obstacleModel, mangoModel } from './esplanade-scene.js';
+import { buildEsplanade, obstacleModel, mangoModel, useMangoModel } from './esplanade-scene.js';
 import { Clusters } from '../clusters.js';
 import { airStep, AIR } from './reef-rules.js';
 import { clamWithPearl } from './reef-scene.js';
@@ -99,6 +99,7 @@ const fpsWatch = watchFrameRate(quality, lower => {
 const models = await loadModels(undefined, { light: touch || quality.name === 'low' });
 useJarModel(models.get('jar'));                    // Ken's jar for Kenny's rescue, when present
 useToastModel(models.get('toast'));                // and his toast power-up
+useMangoModel(models.get('mango'));                // Ken's mango for the Golden Mangoes
 usePalmCrown(models.get('palm-crown'));                // Ken's palm crown on the built trunks
 const world = buildEsplanade(scene, quality);
 const post = createPost(renderer, scene, camera, quality);

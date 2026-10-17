@@ -184,7 +184,26 @@ export function obstacleModel(kind) {
   return g;
 }
 
+// Ken's mango model (models/mango.glb), when present; a soft golden glow behind
+// it marks it as a Golden Mango to collect.
+let mangoGltf = null, mangoGlow = null;
+export function useMangoModel(gltf) { mangoGltf = gltf || null; }
 export function mangoModel() {
+  if (mangoGltf) {
+    const g = new THREE.Group(), m = mangoGltf.scene.clone(true);
+    const size = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3());
+    m.scale.multiplyScalar(0.5 / Math.max(size.x, size.y, size.z));
+    const c = new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3()); m.position.sub(c);
+    m.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    if (!mangoGlow) {
+      const cv = document.createElement('canvas'); cv.width = cv.height = 64; const x = cv.getContext('2d');
+      const r = x.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,214,90,0.85)'); r.addColorStop(1, 'rgba(255,190,40,0)');
+      x.fillStyle = r; x.fillRect(0, 0, 64, 64); mangoGlow = new THREE.CanvasTexture(cv);
+    }
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: mangoGlow, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    glow.scale.setScalar(1.3);
+    g.add(glow, m); return g;
+  }
   const g = new THREE.Group();
   const fruit = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20, 16), mat(0xffb51f, { emissive: 0xff8a00, emissiveIntensity: 0.35, roughness: 0.35 }));
   fruit.scale.set(0.85, 1, 1.15); fruit.castShadow = true; g.add(fruit);
