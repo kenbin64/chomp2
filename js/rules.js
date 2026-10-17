@@ -186,12 +186,29 @@ export function standHeight(x, z, feetY, floatY = -0.45, fromBelow = false) {
   if (onDeck(x, z)) {
     const d = deckHeight(x);
     const blocked = fromBelow && !canClimbDeckAt(x);
-    if (!blocked && feetY >= d - STEP && d > best.y) best = { y: d, surface: 'deck' };
+    // At the steps he walks up onto the deck from the ground; elsewhere he has to
+    // be up level with it already (jumped, or walking along it).
+    const onSteps = DECK_OPENINGS.some(o => o.kind === 'steps' && x >= o.x0 && x <= o.x1) && !fromBelow;
+    if (!blocked && (feetY >= d - STEP || onSteps) && d > best.y) best = { y: d, surface: 'deck' };
   }
   for (const r of ROCKS) {
     if (Math.hypot(x - r.x, z - r.z) <= r.r && feetY >= r.top - STEP && r.top > best.y) best = { y: r.top, surface: 'rock' };
   }
   return best;
+}
+
+// The boardwalk is solid (Ken): from the bank or the water Wally cannot walk
+// into it where it is lower than he is tall; he has to jump up onto it (or use
+// the steps). Where it is high enough over the water he can swim underneath.
+// feetY: his feet; swimming: lying flat in the water, so he needs less room.
+export const WALLY_TALL = 2.5, WALLY_SWIM_TALL = 1.2, DECK_THICK = 0.35;
+export function deckBlocks(x, z, feetY, swimming = false) {
+  if (!onDeck(x, z)) return false;
+  const top = deckHeight(x);
+  if (feetY >= top - STEP) return false;                       // up on it, or landing on it
+  if (DECK_OPENINGS.some(o => o.kind === 'steps' && x >= o.x0 && x <= o.x1)) return false;   // the steps up
+  const underside = top - DECK_THICK;
+  return underside - feetY < (swimming ? WALLY_SWIM_TALL : WALLY_TALL);   // not enough room to pass under
 }
 
 // Keeps Wally inside the railings while he is up on the boardwalk.
