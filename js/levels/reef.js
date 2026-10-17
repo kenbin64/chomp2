@@ -518,6 +518,7 @@ function finish(won, why = '') {
   $('hud').hidden = true; $('touch').hidden = true; $('dive-buttons').hidden = true; $('arrow').hidden = true;
   const s = reefRunScore({ found: game.found, chest: game.chest, airLeft: game.air, finished: won });
   const stars = won ? starsFor(s.total, REEF_STARS) : 0;
+  if (won) sound.fanfare();                         // Wally's theme hook: well done, mate
   if (won) {
     // Pearls are a bank across the trip: what was spent at the clam comes off, what was found goes on.
     progress = { ...progress, pearls: Math.max(0, (progress.pearls || 0) - game.spent) };

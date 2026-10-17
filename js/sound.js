@@ -18,6 +18,8 @@ export function start() {
 // Background music (music.js), through the same volume and mute as the effects.
 export function startMusic(mood) { if (ctx) music.start(ctx, master, mood); }
 export function underwaterMusic(on) { music.setUnderwater(on); }
+export function moodMusic(mood) { music.setMood(mood); }
+export function fanfare() { music.fanfare(); }
 
 export function toggleMute() {
   muted = !muted;

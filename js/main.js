@@ -537,7 +537,7 @@ function followCamera(dt) {
 // ---- Start, pause, end ------------------------------------------------------------
 
 function start() {
-  sound.start(); sound.startMusic('park');
+  sound.start(); sound.startMusic('park'); sound.moodMusic('park');
   $('title').hidden = true; $('over').hidden = true; $('win').hidden = true;
   $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true; game.paused = false;
@@ -560,6 +560,7 @@ function finish(won, why = '') {
   game.running = false;
   if (game.score > best) { best = game.score; try { localStorage.setItem('chomp-best', String(best)); } catch { /* not saved */ } }
   $('hud').hidden = true; $('touch').hidden = true;
+  if (won) sound.fanfare();                         // Wally's theme hook: well done, mate
   if (won) {
     const stars = starsFor(game.score, PARK_STARS);
     progress = completeArea(progress, 'park', { score: game.score, stars });
@@ -627,7 +628,7 @@ function showMap() {
   $('map').hidden = false;
 }
 
-$('play').onclick = () => { sound.start(); sound.startMusic('park'); showMap(); };
+$('play').onclick = () => { sound.start(); sound.startMusic('theme'); sound.moodMusic('theme'); showMap(); };
 $('to-map').onclick = () => location.href = 'index.html?map';
 $('resume').onclick = () => setPaused(false);
 $('again').onclick = restart; $('again2').onclick = e => { e.preventDefault(); location.href = 'index.html?play'; };

@@ -564,6 +564,7 @@ function finish(won, why = '') {
   $('hud').hidden = true; $('touch').hidden = true;
   const s = runScore({ food: game.foodPoints, mangoes: game.mangoes, mangoSet: game.mangoes === mangoes.length, energyLeft: game.energy, stumbles: game.stumbles, finished: won, pearls: game.pearls });
   const stars = won ? starsFor(s.total, STARS) : 0;
+  if (won) sound.fanfare();                         // Wally's theme hook: well done, mate
   if (won) {
     progress = completeArea(progress, 'esplanade', { score: s.total, stars, mangoes: game.mangoes, pearls: game.pearls });
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
