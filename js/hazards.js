@@ -9,7 +9,7 @@
 
 import * as THREE from 'three';
 import { LAGOON, isWater, terrainHeight, clampToPark, PARK_EDGE } from './rules.js';
-import { dress, hideStandIn } from './models.js';
+import { dress, hideStandIn, ModelSkin } from './models.js';
 import { addFlap, rimAll, addRim, addStride } from './look.js';
 
 const STING_RANGE = 1.3;
@@ -340,10 +340,28 @@ class Flyers {
     }
   }
 
-  // The flying fox model has no bones: each bat gets its own copy with its own
-  // materials, turned to fly belly-down, and its wings flap in the shader.
+  // Ken's flying fox. Rigged in Blender (tools/blender-rig-flyingfox.py) it has
+  // real wing bones and the moves Fly, Glide and Dive: a full downstroke, then
+  // elbow and fingers folding the wing in on the way up, as real bats do.
+  // Without bones it falls back to bending the wings in the shader.
   useModel(gltf) {
     if (!gltf) return;
+    if (gltf.animations && gltf.animations.length) {
+      for (const b of this.list) {
+        const skin = new ModelSkin(gltf);
+        rimAll(skin.root, { strength: 0.18 });
+        skin.root.traverse(o => { if (o.isMesh) o.frustumCulled = false; });   // wings reach past the resting outline
+        const size = new THREE.Box3().setFromObject(skin.root).getSize(new THREE.Vector3());
+        skin.root.scale.multiplyScalar(WINGSPAN / size.x);
+        const turn = new THREE.Group();
+        turn.rotation.x = Math.PI / 2;              // head forward (+z), belly down
+        turn.add(skin.root);
+        hideStandIn(b.mesh);
+        b.mesh.add(turn);
+        b.skin = skin;
+      }
+      return;
+    }
     for (const b of this.list) {
       const fox = gltf.scene.clone(true);
       const flaps = [];
@@ -405,6 +423,15 @@ class Flyers {
       b.mesh.userData.wings[0].rotation.z = -flap; b.mesh.userData.wings[1].rotation.z = flap;
       // Model wings: a strong downstroke, half-tucked in a dive.
       if (b.flaps) { const a = b.state === 'dive' ? flap * 0.5 + 0.25 : flap * 0.9 + 0.1; for (const f of b.flaps) f.value = a; }
+      if (b.skin) {
+        // Circling, a bat flaps for a while, then glides on spread wings; it
+        // dives with wings half-tucked and flaps hard to get away with the food.
+        const gliding = b.state === 'circle' && Math.sin(t * 0.35 + b.phase * 2) > 0.45;
+        if (b.state === 'dive') b.skin.play('dive', { alternatives: ['fly'] });
+        else if (gliding) b.skin.play('glide', { alternatives: ['fly'], fade: 0.5 });
+        else b.skin.play('fly', { speed: b.state === 'escape' ? 1.35 : 1, fade: 0.4 });
+        b.skin.update(dt);
+      }
     }
     return stolen;
   }
