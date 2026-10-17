@@ -60,6 +60,22 @@ when the feed-o-meter is in the red.
    the mouth snap shut; only **a pearl** placed in it opens it again. Out of the cave with the treasure and up
    to the surface wins the level.
 
+### Decisions, 2026-10-17 (Ken)
+- **Stars open the adventures** (`ACTIVITIES` in `js/progress.js`, shown on the trip map): River rapids 6 stars and
+  Line traverse 9 at Mossman Gorge; Bungee jump 12 and Boomerang 15 at Kuranda. Star counts are a first guess.
+- **Kuranda markets:** clothes for Wally and Kenny, paid for with banked Golden Mangoes.
+- **Golden Mangoes:** collect every one on a level for a bonus worth one star (`MANGO_SET_BONUS`, 40).
+- **Pearls:** banked; one opens the giant clam on the reef.
+- **Wally collapses** (out of puff): he loses a life and stays down until Kenny brings his jar, every time.
+- **Keyboard:** Up moves the way Wally faces; Left/Right turn on the spot; Down turns round; Shift dives,
+  Ctrl+Shift comes up (reef and sea); no jumping in the reef's water.
+- **Boomerang:** a cultural object; Kuranda is Djabugay country. Frame it as Wally learning from a local
+  guide, respectfully, never as a joke.
+- **Trees** are impostors of Ken's Meshy trees (`js/trees.js`, `assets/trees/`, tools `blender-impostor.py`,
+  `impostor-atlas.py`). **Characters** are rigged and animated in Blender by script (`tools/blender-rig-*.py`,
+  `tools/blender-animate-*.py`); heavy Meshy models are rebuilt with `tools/blender-bake-lowpoly.py`.
+- **One AI at a time:** Ken works with one Claude session on this project now.
+
 ## Run and test
 
 ```
