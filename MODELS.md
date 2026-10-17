@@ -176,13 +176,23 @@ animated film, detailed hand-painted textures, warm and inviting"*; export **gam
 | `kur-river-rock.glb` | A cluster of big smooth river boulders, grey granite worn round by water, some wet and dark, about 5 m across. |
 | `kur-crates.glb` | A stack of wooden market crates full of tropical fruit: mangoes, pineapples, coconuts and bananas, about 1.2 m tall. |
 
-**Clothes from the Kuranda markets** (small, about 2k triangles, no rig; they are fitted on in the game):
+**Clothes and gear from the Kuranda markets** (Ken's list, 2026-10-17). Small worn objects, about 2k to 4k
+triangles, no rig, each on its own; the game fits them on Wally's or Kenny's head, face or hand. Shirts and
+board shorts need no models: they are coloured and patterned in the game (Hawaiian colours, stripes, neon, disco).
 
 | File | Prompt |
 |---|---|
+| `acc-cork-hat.glb` | A classic Australian bush hat, brown felt with a wide brim, with wine corks hanging on strings all round the brim, cartoon style. |
+| `acc-lifeguard-cap.glb` | An Australian surf lifesaver's cap: a close-fitting fabric skull cap in quarters of bright red and yellow, with chin ties, cartoon style. |
+| `acc-pirate-hat.glb` | A black pirate tricorn hat with gold trim and a white skull-and-crossbones badge on the front, cartoon style. |
 | `acc-sunnies.glb` | A pair of chunky, fun round sunglasses with bright yellow frames and dark lenses, cartoon style. |
-| `acc-lei.glb` | A Hawaiian-style flower lei necklace: a full ring of bright pink, yellow and white hibiscus and frangipani flowers. |
+| `acc-mask.glb` | A sparkly carnival party mask covering the eyes, purple with gold glitter edges and a small feather on one side. |
+| `acc-wig-rainbow.glb` | A big fluffy curly wig in rainbow stripes (red, orange, yellow, green, blue, purple), clown-party style, cartoon. |
+| `acc-wig-blue.glb` | A big fluffy afro-style party wig in electric neon blue, cartoon style. |
+| `acc-wig-pink.glb` | A big fluffy party wig in bubblegum pink, cartoon style. |
+| `acc-boomerang.glb` | A traditional-shaped wooden boomerang, smooth polished wood, plain or with simple painted dots, about 60 cm tip to tip. Respectful, not a cartoon caricature. |
 | `acc-bandana.glb` | A red bandana with a white paisley pattern, folded and tied in a knot, shaped to sit around a neck. |
+| `acc-lei.glb` | A Hawaiian-style flower lei necklace: a full ring of bright pink, yellow and white hibiscus and frangipani flowers. |
 
 ## Backdrops (pictures, not models)
 

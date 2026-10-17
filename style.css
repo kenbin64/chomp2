@@ -172,3 +172,6 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .shop-list button.wear { background: #8fd3c7; }
 .shop-list button[disabled] { opacity: 0.45; cursor: default; }
 .shop-list .on { font-size: 13px; color: #8fd3c7; }
+.shop-list li.grp { display: block; border: 0; padding: 8px 4px 2px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #ffd166; }
+.shop-list .soon { font-size: 12px; opacity: 0.6; font-style: italic; }
+.shop-card { max-height: calc(100vh - 24px); overflow: auto; }

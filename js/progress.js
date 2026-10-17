@@ -97,28 +97,70 @@ export function activityOpen(progress, id) {
 }
 
 // ---- The wardrobe (Ken: Wally and Kenny can get new clothes at the Kuranda markets) ----
-// Shirts and vests are recolours of what they wear (colour: the new main colour);
-// extras are things put on as well. Prices are in Golden Mangoes. What they wear
-// at the start is free and owned from the beginning.
+// Ken's list (2026-10-17): Aussie cork hat, lifeguard cap, board shorts and
+// Hawaiian shirts in variety, traditional Aussie gear, sunglasses, a pirate hat
+// and pirate clothes, masks, coloured wigs, boomerangs (useful in later
+// levels), bright neon, disco clothes.
+// Shirts and shorts are recoloured or re-patterned on the character itself
+// (outfit.js): style 'plain' keeps the printed pattern in a new colour, 'neon'
+// glows, 'disco' shimmers through the colours, 'stripes' (colour and colour2).
+// Hats, glasses, masks, wigs and boomerangs are worn objects: needs: 'model'
+// marks the ones waiting on a model, shown in the shop as coming soon.
+// Prices are Golden Mangoes. What they wear at the start is free and owned.
+export const SLOTS = { wally: ['shirt', 'shorts', 'hat', 'glasses', 'face', 'wig', 'held'],
+                       kenny: ['vest', 'hat', 'glasses', 'face', 'wig'] };
 export const WARDROBE = [
+  // Wally's Hawaiian shirts
   { id: 'shirt-sunset',     who: 'wally', slot: 'shirt', name: 'Sunset hibiscus shirt', price: 0,  colour: null },
-  { id: 'shirt-reef',       who: 'wally', slot: 'shirt', name: 'Reef blue shirt',       price: 25, colour: 0x2f8fd8 },
-  { id: 'shirt-rainforest', who: 'wally', slot: 'shirt', name: 'Rainforest green shirt', price: 25, colour: 0x2e9a4a },
-  { id: 'shirt-lagoon',     who: 'wally', slot: 'shirt', name: 'Lagoon purple shirt',   price: 30, colour: 0x8a4fd0 },
-  { id: 'shirt-wattle',     who: 'wally', slot: 'shirt', name: 'Golden wattle shirt',   price: 40, colour: 0xf2c21b },
-  { id: 'wally-sunnies',    who: 'wally', slot: 'extra', name: 'Sunnies',               price: 20 },
-  { id: 'wally-lei',        who: 'wally', slot: 'extra', name: 'Flower lei',            price: 30 },
-  { id: 'vest-ranger',      who: 'kenny', slot: 'vest',  name: 'Ranger vest',           price: 0,  colour: null },
-  { id: 'vest-khaki',       who: 'kenny', slot: 'vest',  name: 'Outback khaki vest',    price: 20, colour: 0xb59a5e },
-  { id: 'vest-ocean',       who: 'kenny', slot: 'vest',  name: 'Ocean blue vest',       price: 25, colour: 0x2a6fb5 },
-  { id: 'vest-redearth',    who: 'kenny', slot: 'vest',  name: 'Red earth vest',        price: 25, colour: 0xa8452c },
-  { id: 'kenny-sunnies',    who: 'kenny', slot: 'extra', name: 'Sunnies',               price: 20 },
-  { id: 'kenny-bandana',    who: 'kenny', slot: 'extra', name: 'Bandana',               price: 20 },
+  { id: 'shirt-reef',       who: 'wally', slot: 'shirt', name: 'Reef blue Hawaiian',    price: 25, colour: 0x2f8fd8 },
+  { id: 'shirt-rainforest', who: 'wally', slot: 'shirt', name: 'Rainforest Hawaiian',   price: 25, colour: 0x2e9a4a },
+  { id: 'shirt-lagoon',     who: 'wally', slot: 'shirt', name: 'Lagoon purple Hawaiian', price: 30, colour: 0x8a4fd0 },
+  { id: 'shirt-wattle',     who: 'wally', slot: 'shirt', name: 'Golden wattle Hawaiian', price: 30, colour: 0xf2c21b },
+  { id: 'shirt-bush',       who: 'wally', slot: 'shirt', name: 'Bush khaki shirt',      price: 25, colour: 0x9a8a5a, style: 'plain' },
+  { id: 'shirt-greengold',  who: 'wally', slot: 'shirt', name: 'Green and gold jersey',  price: 35, colour: 0x1f7a3a, colour2: 0xf2c21b, style: 'stripes' },
+  { id: 'shirt-pirate',     who: 'wally', slot: 'shirt', name: 'Pirate stripes',        price: 35, colour: 0xb81f2a, colour2: 0xf2ece0, style: 'stripes' },
+  { id: 'shirt-neonpink',   who: 'wally', slot: 'shirt', name: 'Neon pink',             price: 45, colour: 0xff2fa8, style: 'neon' },
+  { id: 'shirt-neongreen',  who: 'wally', slot: 'shirt', name: 'Neon green',            price: 45, colour: 0x39ff6a, style: 'neon' },
+  { id: 'shirt-disco',      who: 'wally', slot: 'shirt', name: 'Disco shirt',           price: 60, colour: 0xd040ff, style: 'disco' },
+  // Wally's board shorts
+  { id: 'shorts-sunset',    who: 'wally', slot: 'shorts', name: 'Sunset board shorts',  price: 0,  colour: null },
+  { id: 'shorts-surf',      who: 'wally', slot: 'shorts', name: 'Surf blue boardies',   price: 20, colour: 0x1f6fd0 },
+  { id: 'shorts-reef',      who: 'wally', slot: 'shorts', name: 'Reef teal boardies',   price: 20, colour: 0x17a8a0 },
+  { id: 'shorts-mango',     who: 'wally', slot: 'shorts', name: 'Mango yellow boardies', price: 20, colour: 0xf5b81c },
+  { id: 'shorts-lifeguard', who: 'wally', slot: 'shorts', name: 'Lifeguard red and gold', price: 30, colour: 0xd8231f, colour2: 0xf6c21b, style: 'stripes' },
+  { id: 'shorts-pirate',    who: 'wally', slot: 'shorts', name: 'Pirate breeches',      price: 30, colour: 0x2a2a30 },
+  { id: 'shorts-neon',      who: 'wally', slot: 'shorts', name: 'Neon boardies',        price: 40, colour: 0x00e5ff, style: 'neon' },
+  { id: 'shorts-disco',     who: 'wally', slot: 'shorts', name: 'Disco shorts',         price: 50, colour: 0xffd23a, style: 'disco' },
+  // Worn objects (each needs its model)
+  { id: 'hat-cork',     who: 'wally', slot: 'hat',     name: 'Aussie cork hat',      price: 40, needs: 'model' },
+  { id: 'hat-lifeguard', who: 'wally', slot: 'hat',    name: 'Lifeguard cap',        price: 35, needs: 'model' },
+  { id: 'hat-pirate',   who: 'wally', slot: 'hat',     name: 'Pirate hat',           price: 50, needs: 'model' },
+  { id: 'wally-sunnies', who: 'wally', slot: 'glasses', name: 'Sunnies',             price: 20, needs: 'model' },
+  { id: 'wally-mask',   who: 'wally', slot: 'face',    name: 'Party mask',           price: 30, needs: 'model' },
+  { id: 'wig-rainbow',  who: 'wally', slot: 'wig',     name: 'Rainbow wig',          price: 40, needs: 'model' },
+  { id: 'wig-blue',     who: 'wally', slot: 'wig',     name: 'Electric blue wig',    price: 35, needs: 'model' },
+  { id: 'boomerang',    who: 'wally', slot: 'held',    name: 'Boomerang',            price: 60, needs: 'model' },
+  // Kenny
+  { id: 'vest-ranger',      who: 'kenny', slot: 'vest',  name: 'Ranger vest',        price: 0,  colour: null },
+  { id: 'vest-khaki',       who: 'kenny', slot: 'vest',  name: 'Outback khaki vest', price: 20, colour: 0xb59a5e },
+  { id: 'vest-ocean',       who: 'kenny', slot: 'vest',  name: 'Ocean blue vest',    price: 25, colour: 0x2a6fb5 },
+  { id: 'vest-redearth',    who: 'kenny', slot: 'vest',  name: 'Red earth vest',     price: 25, colour: 0xa8452c },
+  { id: 'vest-neon',        who: 'kenny', slot: 'vest',  name: 'Neon orange vest',   price: 40, colour: 0xff7a1a, style: 'neon' },
+  { id: 'vest-disco',       who: 'kenny', slot: 'vest',  name: 'Disco vest',         price: 50, colour: 0x40c0ff, style: 'disco' },
+  { id: 'kenny-sunnies',    who: 'kenny', slot: 'glasses', name: 'Sunnies',          price: 20, needs: 'model' },
+  { id: 'kenny-pirate',     who: 'kenny', slot: 'hat',   name: 'Pirate hat',         price: 50, needs: 'model' },
+  { id: 'kenny-wig',        who: 'kenny', slot: 'wig',   name: 'Pink wig',           price: 35, needs: 'model' },
 ];
 
+// Slots that are always filled (their own clothes underneath); the rest can be taken off.
+const BASE = { shirt: 'shirt-sunset', shorts: 'shorts-sunset', vest: 'vest-ranger' };
 export function freshWardrobe() {
-  return { owned: WARDROBE.filter(i => i.price === 0).map(i => i.id),
-           wear: { wally: { shirt: 'shirt-sunset', extra: null }, kenny: { vest: 'vest-ranger', extra: null } } };
+  const wear = {};
+  for (const [who, slots] of Object.entries(SLOTS)) {
+    wear[who] = {};
+    for (const slot of slots) wear[who][slot] = WARDROBE.find(i => i.who === who && i.slot === slot && i.price === 0)?.id || null;
+  }
+  return { owned: WARDROBE.filter(i => i.price === 0).map(i => i.id), wear };
 }
 
 // Buy something. Returns { progress, ok, why }: why is 'unknown', 'owned' or 'mangoes'.
@@ -132,13 +174,14 @@ export function buyItem(progress, id) {
     wardrobe: { ...wardrobe, owned: [...wardrobe.owned, id] } } };
 }
 
-// Put something on (only what is owned). Choosing an extra that is already on takes it off.
+// Put something on (only what is owned). Choosing a hat, glasses, mask, wig or
+// boomerang that is already on takes it off; shirts, shorts and vests swap.
 export function wearItem(progress, id) {
   const item = WARDROBE.find(i => i.id === id);
   const wardrobe = progress.wardrobe || freshWardrobe();
   if (!item || !wardrobe.owned.includes(id)) return progress;
-  const now = { ...wardrobe.wear[item.who] };
-  now[item.slot] = item.slot === 'extra' && now.extra === id ? null : id;
+  const now = { ...freshWardrobe().wear[item.who], ...wardrobe.wear[item.who] };
+  now[item.slot] = !BASE[item.slot] && now[item.slot] === id ? null : id;
   return { ...progress, wardrobe: { ...wardrobe, wear: { ...wardrobe.wear, [item.who]: now } } };
 }
 
@@ -187,8 +230,9 @@ function readWardrobe(w) {
   const owned = [...new Set([...f.owned, ...(Array.isArray(w.owned) ? w.owned.filter(known) : [])])];
   const wear = { wally: { ...f.wear.wally }, kenny: { ...f.wear.kenny } };
   for (const who of ['wally', 'kenny']) for (const [slot, id] of Object.entries((w.wear && w.wear[who]) || {})) {
+    if (!SLOTS[who].includes(slot)) continue;
     const item = WARDROBE.find(i => i.id === id);
-    if (id === null && slot === 'extra') wear[who].extra = null;
+    if (id === null && !BASE[slot]) wear[who][slot] = null;
     else if (item && item.who === who && item.slot === slot && owned.includes(id)) wear[who][slot] = id;
   }
   return { owned, wear };

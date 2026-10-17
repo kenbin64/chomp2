@@ -136,8 +136,8 @@ wally.useModel(models.get('wally'));
 kenny.useModel(models.get('kenny'));
 // The clothes they own from the Kuranda markets (outfit.js).
 { const p0 = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
-  if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(p0, 'wally').shirt);
-  if (kenny.skin) dressOutfit(kenny.skin.root, 'kenny', wearing(p0, 'kenny').vest); }
+  if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(p0, 'wally'));
+  if (kenny.skin) dressOutfit(kenny.skin.root, 'kenny', wearing(p0, 'kenny')); }
 crocs.useModel(models.get('croc'));
 pelicans.useModel(models.get('pelican'));
 toads.useModel(models.get('toad'));

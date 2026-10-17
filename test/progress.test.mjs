@@ -70,7 +70,11 @@ check('every area has a postcard', AREAS.every(a => typeof POSTCARDS[a.id] === '
   check('wearing what was bought', P.wearing(w1, 'wally').shirt.id === 'shirt-reef');
   check('cannot wear what is not owned', P.wearing(P.wearItem(p0, 'vest-ocean'), 'kenny').vest.id === 'vest-ranger');
   const b2 = P.buyItem(w1, 'wally-sunnies'), w2 = P.wearItem(b2.progress, 'wally-sunnies');
-  check('an extra goes on, and comes off when chosen again', P.wearing(w2, 'wally').extra.id === 'wally-sunnies' && P.wearing(P.wearItem(w2, 'wally-sunnies'), 'wally').extra === null);
+  check('sunnies go on, and come off when chosen again', P.wearing(w2, 'wally').glasses.id === 'wally-sunnies' && P.wearing(P.wearItem(w2, 'wally-sunnies'), 'wally').glasses === null);
+  check('a shirt cannot be taken off, only swapped', P.wearing(P.wearItem(w2, 'shirt-reef'), 'wally').shirt.id === 'shirt-reef');
+  const w3 = P.wearItem(P.buyItem({ ...w2, mangoes: 99 }, 'shorts-surf').progress, 'shorts-surf');
+  check('shirt and shorts are chosen separately', P.wearing(w3, 'wally').shirt.id === 'shirt-reef' && P.wearing(w3, 'wally').shorts.id === 'shorts-surf');
+  check('Ken\'s list is in the shop', ['hat-cork', 'hat-lifeguard', 'hat-pirate', 'shirt-pirate', 'wally-mask', 'wig-rainbow', 'boomerang', 'shirt-neonpink', 'shirt-disco'].every(id => P.WARDROBE.some(i => i.id === id)));
   const saved = P.readProgress(JSON.stringify(w2));
   check('the wardrobe is saved and read back', P.wearing(saved, 'wally').shirt.id === 'shirt-reef' && saved.wardrobe.owned.includes('wally-sunnies'));
   const broken = P.readProgress(JSON.stringify({ unlocked: ['park'], wardrobe: { owned: ['made-up'], wear: { wally: { shirt: 'made-up' } } } }));

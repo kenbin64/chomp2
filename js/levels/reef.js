@@ -174,7 +174,7 @@ addEventListener('resize', () => post.setSize(innerWidth, innerHeight));
 const wally = new Wally(scene);
 wally.useModel(models.get('wally'));
 { const p0 = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
-  if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(p0, 'wally').shirt); }   // clothes from the Kuranda markets
+  if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(p0, 'wally')); }   // clothes from the Kuranda markets
 const bubbles = new Bubbles(scene, touch ? 3 : 4);
 const fx = new Effects(scene, { items: [] });
 

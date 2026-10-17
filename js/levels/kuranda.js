@@ -118,8 +118,8 @@ const jar = kennysJar(jarLabelTexture()); jar.visible = false; scene.add(jar);
 
 // Wear what they own (outfit.js).
 function dressUp() {
-  if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(progress, 'wally').shirt);
-  if (kennySkin) dressOutfit(kennySkin.root, 'kenny', wearing(progress, 'kenny').vest);
+  if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(progress, 'wally'));
+  if (kennySkin) dressOutfit(kennySkin.root, 'kenny', wearing(progress, 'kenny'));
 }
 dressUp();
 
@@ -157,14 +157,22 @@ function drawShop() {
   for (const who of ['wally', 'kenny']) {
     const list = $(`shop-${who}`); list.innerHTML = '';
     const on = wearing(progress, who);
-    for (const item of WARDROBE.filter(i => i.who === who && i.slot !== 'extra')) {
+    const GROUP = { shirt: 'Shirts', shorts: 'Board shorts', vest: 'Vests', hat: 'Hats', glasses: 'Sunnies', face: 'Masks', wig: 'Wigs', held: 'Boomerangs' };
+    let lastSlot = null;
+    for (const item of WARDROBE.filter(i => i.who === who)) {
+      if (item.slot !== lastSlot) { lastSlot = item.slot; const h = document.createElement('li'); h.className = 'grp'; h.textContent = GROUP[item.slot] || item.slot; list.append(h); }
       const li = document.createElement('li');
       const sw = document.createElement('span'); sw.className = 'sw';
-      sw.style.background = item.colour == null ? (who === 'wally' ? 'linear-gradient(135deg,#f06a2a,#ffd166)' : '#8a6a48') : '#' + item.colour.toString(16).padStart(6, '0');
+      const hex = c => '#' + c.toString(16).padStart(6, '0');
+      sw.style.background = item.needs ? '#555' : item.colour == null ? (who === 'wally' ? 'linear-gradient(135deg,#f06a2a,#ffd166)' : '#8a6a48')
+        : item.style === 'stripes' ? `repeating-linear-gradient(0deg, ${hex(item.colour)} 0 4px, ${hex(item.colour2)} 4px 8px)`
+        : item.style === 'disco' ? 'linear-gradient(135deg,#ff2fa8,#ffd23a,#39ff6a,#40c0ff,#d040ff)' : hex(item.colour);
+      if (item.style === 'neon') sw.style.boxShadow = `0 0 8px ${hex(item.colour)}`;
       const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = item.name;
       li.append(sw, nm);
       const wearingIt = Object.values(on).some(x => x && x.id === item.id);
-      if (wearingIt) { const s = document.createElement('span'); s.className = 'on'; s.textContent = 'Wearing'; li.append(s); }
+      if (item.needs) { const s = document.createElement('span'); s.className = 'soon'; s.textContent = 'Coming soon'; li.append(s); }
+      else if (wearingIt) { const s = document.createElement('span'); s.className = 'on'; s.textContent = 'Wearing'; li.append(s); }
       else if (owned.includes(item.id)) {
         const b = document.createElement('button'); b.className = 'wear'; b.type = 'button'; b.textContent = 'Wear';
         b.onclick = () => { progress = wearItem(progress, item.id); save(); dressUp(); drawShop(); sound.play.goal(); };

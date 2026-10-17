@@ -120,7 +120,7 @@ const wally = new Wally(scene);
 wally.facing = 0;                                     // facing down the boardwalk
 wally.useModel(models.get('wally'));
 { const p0 = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
-  if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(p0, 'wally').shirt); }   // clothes from the Kuranda markets
+  if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(p0, 'wally')); }   // clothes from the Kuranda markets
 const food = new Food(scene); food.useModels(models);
 const bubbles = new Bubbles(scene, touch ? 3 : 4);
 const fx = new Effects(scene, food);
