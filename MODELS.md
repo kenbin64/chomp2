@@ -90,6 +90,23 @@ People can also go through **Mixamo** (free, from Adobe, made for human figures)
 model there and it rigs it and gives hundreds of ready moves (throwing, waving, cheering, phone photo,
 running away). Use whichever is quicker; the Blender route works for people too.
 
+### Tourists from pictures (Ken, 2026-10-17): match the promo video
+
+The quickest way to tourists that look like the people in Ken's video and title art: make a picture
+of each in the **same image tool and style**, then build the model from it in **Meshy, image to 3D**.
+
+1. In the image tool, one picture per person with this frame around the description below:
+   > *Full-body character design of [DESCRIPTION], standing in a T-pose (arms straight out to the
+   > sides, legs slightly apart), facing the camera, plain light grey background, even soft light,
+   > no shadows, whole body in frame from head to shoes. Stylised 3D animated-feature look, the same
+   > warm Pixar-like style as a family animated film, friendly happy expression.*
+2. In Meshy: **image to 3D** from that picture, then download **game-ready (about 10k), no rig, for
+   Blender** (GLB), as with Wally. Name it `tourist-1.glb` to `tourist-10.glb` in the order below.
+3. The rest (shrinking, rig, moves) is done here: watching, waving, phone photos, throwing, cheering,
+   and running off laughing when Wally gets too close.
+
+The ten people are the ones listed under section 4 just below (use each description as [DESCRIPTION]).
+
 ### 4. Tourists: `tourist-1.glb` to `tourist-10.glb`
 Everyday Australians and visitors on a sunny day out, each one a distinct individual. Make about ten that vary in age, build, height, skin tone, hair and clothes. Dress them in ordinary holiday clothes only: no costumes and nothing meant to signal a culture. Show them as warm, friendly, happy people.
 
