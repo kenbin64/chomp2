@@ -15,6 +15,7 @@ import { Bubbles } from '../bubbles.js';
 import { Effects } from '../fx.js';
 import { loadModels, dress } from '../models.js';
 import { usePalmCrown, buildPalm, palmStand } from '../palms.js';
+import { Trees } from '../trees.js';
 import { loadRealism, applySky, surfaceMaterial } from '../realism.js';
 import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
@@ -101,6 +102,7 @@ water.rotation.x = -Math.PI / 2; water.position.set(-40, 0, 420);
 scene.add(water);
 
 // Green Island: a sand cay with palms, and the jetty out to the dive spot.
+const islandTrees = new Trees(scene, { light });
 {
   const g = new THREE.CircleGeometry(ISLAND.r + 4, 64, 0, Math.PI * 2); g.rotateX(-Math.PI / 2);
   const p = g.attributes.position;
@@ -109,15 +111,20 @@ scene.add(water);
   const sand = surfaceMaterial(realism, 'sand', 6, 6) || new THREE.MeshStandardMaterial({ color: 0xe7d7a8, roughness: 1 });
   const cay = new THREE.Mesh(g, sand); cay.position.set(ISLAND.x, 0, ISLAND.z); cay.receiveShadow = true; scene.add(cay);
   let seed = 5; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  const bark = surfaceMaterial(realism, 'palm', 1, 4);
+  // Ken's palms (trees.js) on the cay, a few umbrella trees in the middle.
   for (let i = 0; i < 9; i++) {
     const a = rnd() * Math.PI * 2, d = 3 + rnd() * 9;
     for (const t of palmStand(ISLAND.x + Math.cos(a) * d, ISLAND.z + Math.sin(a) * d, rnd, { minH: 6, maxH: 11 })) {
       if (onJetty(t.x, t.z) || Math.hypot(t.x - ISLAND.x, t.z - ISLAND.z) > ISLAND.r - 2) continue;
-      const palm = buildPalm(t.height, t.lean, i * 13.7 + t.x, bark);
-      palm.position.set(t.x, sandHeight(t.x, t.z), t.z); palm.rotation.y = t.yaw; scene.add(palm);
+      islandTrees.add('palm', t.x, sandHeight(t.x, t.z), t.z, t.height + 2);
     }
   }
+  for (let i = 0; i < 4; i++) {
+    const a = rnd() * Math.PI * 2, d = rnd() * 4;
+    const x = ISLAND.x + Math.cos(a) * d, z = ISLAND.z + Math.sin(a) * d;
+    if (!onJetty(x, z)) islandTrees.add('umbrella', x, sandHeight(x, z), z, 6 + rnd() * 3);
+  }
+  islandTrees.build();
   // The jetty: boards across it, posts and rails, piles down into the water.
   const deckMat = surfaceMaterial(realism, 'planks', (JETTY.x1 - JETTY.x0) / 1.2, JETTY.half * 2 / 1.2, { rotate: true }) || new THREE.MeshStandardMaterial({ color: 0x9c7650, roughness: 0.9 });
   const deck = new THREE.Mesh(new THREE.BoxGeometry(JETTY.x1 - JETTY.x0, 0.22, JETTY.half * 2), deckMat);
@@ -540,6 +547,7 @@ function frame() {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt;
   if (game.running && !game.paused) step(dt, t);
   bubbles.update(dt); fx.update(dt, t);
+  islandTrees.update(t);                            // the breeze in the palms
   followCamera(dt);
   fpsWatch(dt);
   post.render();

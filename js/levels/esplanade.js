@@ -614,6 +614,7 @@ function frame() {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt;
   if (game.running && !game.paused) step(dt, t);
   bubbles.update(dt); fx.update(dt, t);
+  if (world.trees) world.trees.update(t);          // the breeze in the trees
   followCamera(dt);
   fpsWatch(dt);
   post.render();

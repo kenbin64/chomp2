@@ -12,6 +12,7 @@ import { Water } from 'three/addons/objects/Water.js';
 import { surfaceMaterial, groundMaterial, applySky } from './realism.js';
 import { buildPalm, palmStand } from './palms.js';
 import { addForest } from './forest.js';
+import { Trees } from './trees.js';
 
 const SEA_START_Z = -64;     // beyond this the park meets the harbour
 
@@ -399,20 +400,6 @@ function addSign(scene) {
   scene.add(g);
 }
 
-// One of Ken's palm models if there are any, otherwise the built palm.
-function palmFor(x, z, height, lean, models, i) {
-  const files = ['palm-1', 'palm-2'].filter(n => models && models.has(n));
-  if (!files.length) return palm(x, z, height, lean);
-  const g = new THREE.Group();
-  const m = cloneSkinned(models.get(files[i % files.length]).scene);
-  m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-  fitToHeight(m, height);
-  g.add(m);
-  g.position.set(x, drawnHeight(x, z), z);
-  g.rotation.y = Math.random() * Math.PI * 2;
-  return g;
-}
-
 // A coconut palm (palms.js), with the scanned bark when it is present. yaw is
 // the way it leans; opts.lights adds the Esplanade's fairy lights.
 let palmCount = 0;
@@ -423,7 +410,25 @@ function palm(x, z, height, lean, yaw = Math.random() * Math.PI * 2, opts = {}) 
   return g;
 }
 
-function addPalmsAndRocks(scene, q, models) {
+// The rainforest between the park and the ranges, on the land side only: a deep
+// belt of ghost gums, umbrella trees and palms whose crowns merge into one wall.
+function addTreeBelt(trees, q) {
+  let seed = 11;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const count = q.name === 'high' ? 760 : q.name === 'medium' ? 440 : 200;
+  for (let n = 0, tries = 0; n < count && tries < count * 20; tries++) {
+    const a = rnd() * Math.PI * 2, d = 150 + Math.sqrt(rnd()) * 120;
+    const x = Math.cos(a) * d, z = Math.sin(a) * d;
+    if (z < SEA_START_Z + 20) continue;
+    const r = rnd();
+    if (r < 0.5) trees.add('eucalyptus', x, BANK_Y, z, 16 + rnd() * 12);
+    else if (r < 0.8) trees.add('umbrella', x, BANK_Y, z, 9 + rnd() * 5);
+    else trees.add('palm', x, BANK_Y, z, 11 + rnd() * 5);
+    n++;
+  }
+}
+
+function addPalmsAndRocks(scene, q, models, trees) {
   let seed = 3;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   // Stands of one, two or three palms (palms.js palmStand), so fewer stands than palms.
@@ -431,10 +436,15 @@ function addPalmsAndRocks(scene, q, models) {
     const a = rnd() * Math.PI * 2, d = 1.5 + rnd() * 1.4;
     const x = Math.cos(a) * LAGOON.rx * d, z = Math.sin(a) * LAGOON.rz * d;
     if (z < SEA_START_Z + 2 || Math.abs(z - BOARDWALK.z) < 3) continue;
-    const own = ['palm-1', 'palm-2'].some(n => models && models.has(n));
-    for (const t of palmStand(x, z, rnd, { minH: 6, maxH: 13 })) {
-      scene.add(own ? palmFor(t.x, t.z, t.height, t.lean, models, i) : palm(t.x, t.z, t.height, t.lean, t.yaw));
-    }
+    for (const t of palmStand(x, z, rnd, { minH: 6, maxH: 13 })) trees.add('palm', t.x, drawnHeight(t.x, t.z), t.z, t.height + 2);
+  }
+  // Ghost gums and umbrella trees further back, giving shade and variety.
+  for (let i = 0; i < Math.round(q.palms * 0.5); i++) {
+    const a = rnd() * Math.PI * 2, d = 2.0 + rnd() * 1.6;
+    const x = Math.cos(a) * LAGOON.rx * d, z = Math.sin(a) * LAGOON.rz * d;
+    if (z < SEA_START_Z + 6 || Math.abs(z - BOARDWALK.z) < 5) continue;
+    if (rnd() < 0.55) trees.add('eucalyptus', x, drawnHeight(x, z), z, 13 + rnd() * 8);
+    else trees.add('umbrella', x, drawnHeight(x, z), z, 7 + rnd() * 4);
   }
   const rock = scanned('rock', 1, 1, { color: 0x9c968c }) || mat(0x8c8579, { roughness: 0.95 });
   for (let i = 0; i < 26; i++) {
@@ -483,24 +493,26 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
     ring.visible = false;                             // real-looking ranges instead, and a softer,
     addRanges(scene, scene.fog.color, sun.position.clone().normalize());  // further-off haze
     scene.fog.near = 110; scene.fog.far = 520;
-    // Rainforest between the park and the ranges, on the land side only: a
-    // dense belt whose canopies merge into one wall of green.
-    addForest(scene, { count: q.name === 'high' ? 420 : q.name === 'medium' ? 260 : 120, inner: 165, outer: 265,
-      keep: (x, z) => z > SEA_START_Z + 20, groundY: () => BANK_Y });
   }
+  // Ken's trees (trees.js): his palms round the park, ghost gums and umbrella
+  // trees among them, and a deep belt of all three out toward the ranges.
+  const trees = new Trees(scene, { light: q.name === 'low' });
+  addTreeBelt(trees, q);
   addGround(scene);
   addFarGround(scene);
   const wave = addWater(scene, q, sun);
   addFence(scene);
   addBoardwalk(scene);
   addSign(scene);
-  addPalmsAndRocks(scene, q, models);
+  addPalmsAndRocks(scene, q, models, trees);
+  trees.build();
   addRocks(scene);
   const gate = addGate(scene);
   const boats = addHarbour(scene, models);
 
   const update = function update(t, dt, gateOpen) {
     wave(t);
+    trees.update(t);
     gate(dt, gateOpen);
     boats.forEach((b, i) => { b.position.y = 0.6 + Math.sin(t * 0.8 + i) * 0.15; b.rotation.z = Math.sin(t * 0.6 + i) * 0.03; });
   };

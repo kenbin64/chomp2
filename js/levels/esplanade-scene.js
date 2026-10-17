@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { PATH } from './esplanade-rules.js';
 import { addSky, addLights, addHorizon, palm } from '../world.js';
 import { palmStand } from '../palms.js';
+import { Trees } from '../trees.js';
 import { person } from '../tourists.js';
 import { pelicanModel } from '../hazards.js';
 
@@ -202,17 +203,21 @@ export function buildEsplanade(scene, q, backdrops = {}) {
   sun.target.position.set(0, 0, 0); scene.add(sun.target);
   const ring = addHorizon(scene, backdrops.ring);
   const sea = addGround(scene);
-  for (let z = -20; z < PATH.finish + 40; z += 14 + rnd() * 12) scene.add(mangrove(-26 - rnd() * 24, z, 0.9 + rnd() * 0.8));
-  for (let z = -20; z < PATH.finish; z += 26 + rnd() * 10) scene.add(fig(13 + rnd() * 8, z, 0.8 + rnd() * 0.3));
-  // Palms along the path in stands of one to three, every one lit with fairy
-  // lights and an uplight, as on the real Esplanade. Kept clear of the path.
+  // Ken's trees (trees.js): palms along the path in stands of one to three, kept
+  // clear of it, and ghost gums and umbrella trees on the city side, where the
+  // built figs used to be. (The built mangroves in the water are gone until
+  // there is a mangrove model; see MODELS.md.)
+  const trees = new Trees(scene, { light: q.name === 'low' });
   for (let z = -10; z < PATH.finish; z += 14 + rnd() * 6) {
-    for (const t of palmStand(PATH.half + 2.6, z, rnd, { minH: 6, maxH: 11 })) {
-      const p = palm(Math.max(PATH.half + 1.0, t.x), t.z, t.height, t.lean, t.yaw, { lights: true });
-      p.position.y = G; scene.add(p);
-    }
+    for (const t of palmStand(PATH.half + 2.6, z, rnd, { minH: 6, maxH: 11 })) trees.add('palm', Math.max(PATH.half + 1.0, t.x), G, t.z, t.height + 2);
   }
+  for (let z = -20; z < PATH.finish + 20; z += 12 + rnd() * 10) {
+    const x = 13 + rnd() * 14;
+    if (rnd() < 0.5) trees.add('eucalyptus', x, G, z, 13 + rnd() * 8);
+    else trees.add('umbrella', x, G, z, 7 + rnd() * 4);
+  }
+  trees.build();
   addCity(scene, rnd);
   const pool = addLagoon(scene);
-  return { sun, ring, pool, sea, shelter: z => shelter(scene, z) };
+  return { sun, ring, pool, sea, trees, shelter: z => shelter(scene, z) };
 }
