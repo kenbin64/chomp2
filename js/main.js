@@ -632,6 +632,9 @@ function showMap() {
 $('how').onclick = () => { $('how-card').hidden = false; };
 $('how-close').onclick = () => { $('how-card').hidden = true; };
 $('credits').onclick = () => { $('credits-card').hidden = false; };
+// Ken's promo trailer (the brand name on the jar covered with a V: tools/cover-label-keys.py).
+$('trailer').onclick = () => { $('trailer-box').hidden = false; const v = $('trailer-video'); v.currentTime = 0; v.play().catch(() => {}); };
+$('trailer-close').onclick = () => { const v = $('trailer-video'); v.pause(); $('trailer-box').hidden = true; };
 $('credits-close').onclick = () => { $('credits-card').hidden = true; };
 $('play').onclick = () => { sound.start(); sound.startMusic('theme'); sound.moodMusic('theme'); showMap(); };
 $('to-map').onclick = () => location.href = 'index.html?map';
