@@ -27,8 +27,9 @@ import { kennysJar, useJarModel } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
 import { readProgress, completeArea, starsFor, POSTCARDS } from '../progress.js';
 import { makeMaze, makeReefMaze, mazePath, cellAt, cellCentre, collide, inMaze, airStep, AIR,
-         SWIM_Y, SURFACE_Y, SEABED_Y, reefRunScore, REEF_STARS, PEARL_POINTS, CHEST_POINTS } from './reef-rules.js';
-import { buildReef, MAZE, OUTER, DIVE, BOUNDS } from './reef-scene.js';
+         SWIM_Y, SURFACE_Y, SEABED_Y, reefRunScore, REEF_STARS, PEARL_POINTS, CHEST_POINTS,
+         LANES, LANE_NAMES, TREASURES, nextDepth, treasureSpots, canCollect } from './reef-rules.js';
+import { buildReef, buildTreasures, MAZE, OUTER, DIVE, BOUNDS } from './reef-scene.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -154,6 +155,13 @@ const seed = Number(params.get('seed')) || 7;
 const maze = makeMaze(MAZE.cols, MAZE.rows, seed);
 const outer = makeReefMaze(OUTER.cols, OUTER.rows, seed + 4);
 const reef = buildReef(scene, quality, { maze, outer, jellyGltf: models.get('jellyfish') });
+// Reef treasures (Ken): starfish, shells and gold coins along both mazes'
+// corridors at the three depths, never in a pearl's cell.
+const pearlCellsOf = (m, o) => reef.pearls.map(p => cellAt(m, p.x, p.z, o.ox, o.oz, o.size)).filter(Boolean);
+const treasures = buildTreasures(reef.root, [
+  ...treasureSpots(outer, 14, seed + 11, pearlCellsOf(outer, OUTER)).map(t => ({ kind: t.kind, ...cellCentre(outer, t.cell, OUTER.ox, OUTER.oz, OUTER.size) })),
+  ...treasureSpots(maze, 18, seed + 17, pearlCellsOf(maze, MAZE)).map(t => ({ kind: t.kind, ...cellCentre(maze, t.cell, MAZE.ox, MAZE.oz, MAZE.size) })),
+]);
 reef.root.visible = true;
 
 const post = createPost(renderer, scene, camera, quality);
@@ -203,11 +211,11 @@ const banked = params.has('pearls') ? Number(params.get('pearls')) : (progress.p
 const game = {
   running: false, paused: false, done: false, time: 0,
   lives: LIVES, air: AIR.max, depth: SURFACE_Y, wantDepth: SURFACE_Y,
-  pearls: banked, found: 0, spent: 0, points: 0, mangoes: 0,
+  pearls: banked, found: 0, spent: 0, points: 0, mangoes: 0, treasure: 0, treasures: 0,
   chest: false, doorShut: false, inCave: false, faint: 0, stun: 0, hint: 0,
   foursWas: false, diveQueued: false, upQueued: false, climb: 0, guideSaid: false,
 };
-window.chomp = { game, wally, reef, maze, outer, camera, scene };
+window.chomp = { game, wally, reef, maze, outer, camera, scene, treasures };
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -359,17 +367,20 @@ function step(dt, t) {
   const dive = (foursPressed && !k.ctrl) || game.diveQueued;
   const up = ctrlShiftPressed || game.upQueued;
   game.diveQueued = game.upQueued = false;
+  // Three depths under water (Ken): Shift one deeper, Ctrl+Shift one up; from
+  // the top depth, up is the surface (but not inside the cave: rock overhead).
   if (game.faint <= 0 && !game.done && inWater) {
-    if (dive && atTop) game.wantDepth = SWIM_Y;
+    if (dive) game.wantDepth = nextDepth(game.wantDepth, 1);
     if (up && !atTop) {
-      if (game.inCave) { if (game.hint <= 0) { toast_('Rock overhead! Find a bubble vent or swim out', 'bad'); game.hint = 3; } }
-      else game.wantDepth = SURFACE_Y;
+      const to = nextDepth(game.wantDepth, -1, !game.inCave);
+      if (to === game.wantDepth && game.inCave) { if (game.hint <= 0) { toast_('Rock overhead! Find a bubble vent or swim out', 'bad'); game.hint = 3; } }
+      game.wantDepth = to;
     }
   }
   if (!inWater) game.wantDepth = SURFACE_Y;
   game.depth += Math.sign(game.wantDepth - game.depth) * Math.min(Math.abs(game.wantDepth - game.depth), 5 * dt);
   $('dive-buttons').hidden = !inWater || game.done;
-  $('b-dive').disabled = !atTop; $('b-up').disabled = atTop || game.inCave;
+  $('b-dive').disabled = game.wantDepth <= LANES[LANES.length - 1] + 0.01; $('b-up').disabled = atTop;
 
   // Moving: no croc leap while under water; climbing out onto the jetty from the water.
   // In the reef's water there is no jumping at all (Ken): he swims at the
@@ -421,11 +432,25 @@ function step(dt, t) {
       toast_(`A pearl! ${game.pearls} now`, 'good');
     }
   }
+  // Reef treasures: picked up by swimming through one at its depth.
+  for (const tr of treasures) {
+    if (tr.taken) continue;
+    tr.phase += dt;
+    tr.thing.rotation.y += dt * 1.6;
+    tr.mesh.position.y = tr.y + Math.sin(tr.phase * 2) * 0.12;
+    if (!atTop && canCollect(wally.pos.x, wally.pos.z, game.depth, tr.x, tr.z, tr.y)) {
+      const T = TREASURES[tr.kind];
+      tr.taken = true; tr.mesh.visible = false;
+      game.treasure += T.points; game.treasures++; game.points += T.points;
+      sound.play.goal(); fx.burst(tr.mesh.position.clone(), tr.kind === 'coin' ? [0xffd24a, 0xffffff] : tr.kind === 'shell' ? [0xfff0d0, 0xffffff] : [0xff9a5a, 0xffd0a0], 10);
+      toast_(`+${T.points} ${T.name}!`, 'good');
+    }
+  }
   // Box jellyfish: a sting knocks the air out of him.
   for (const j of reef.jellies) {
     j.cool = Math.max(0, j.cool - dt);
     if (j.cool > 0 || atTop) continue;
-    if (Math.hypot(wally.pos.x - j.m.position.x, wally.pos.z - j.m.position.z) < 1.5 && Math.abs(game.depth - j.m.position.y) < 2.5) {
+    if (Math.hypot(wally.pos.x - j.m.position.x, wally.pos.z - j.m.position.z) < 1.5 && Math.abs(game.depth - j.m.position.y) < 1.1) {   // only at its own depth: change depth to slip past
       j.cool = 2; game.air = Math.max(0, game.air - AIR.sting); game.stun = 0.6;
       wally.knock(j.m.position.x, j.m.position.z); fx.shake(0.4, 0.3); sound.play.sting();
       toast_('Box jelly! Lost some air', 'bad');
@@ -502,6 +527,11 @@ function drawHud() {
   $('job').textContent = game.chest
     ? (game.doorShut ? 'Put a pearl in the giant clam to get out!' : 'Out of the cave and up for air!')
     : game.inCave ? 'Find the pirate chest in the cave' : game.depth > -1.2 ? 'Dive! Follow the guide fish to the coral cave' : 'Follow the guide fish through the coral maze';
+  // Under water, which depth he is at, and the treasures found (shells, starfish, coins).
+  if (game.depth < -1.2) {
+    const i = LANES.reduce((b, y, k) => Math.abs(y - game.depth) < Math.abs(LANES[b] - game.depth) ? k : b, 0);
+    $('job').textContent += ` · Depth: ${LANE_NAMES[i]} · Treasures: ${game.treasures}/${treasures.length}`;
+  }
 }
 
 function start() {
@@ -516,7 +546,7 @@ function setPaused(p) { if (!game.running) return; game.paused = p; $('paused').
 function finish(won, why = '') {
   game.running = false;
   $('hud').hidden = true; $('touch').hidden = true; $('dive-buttons').hidden = true; $('arrow').hidden = true;
-  const s = reefRunScore({ found: game.found, chest: game.chest, airLeft: game.air, finished: won });
+  const s = reefRunScore({ found: game.found, chest: game.chest, airLeft: game.air, finished: won, treasure: game.treasure });
   const stars = won ? starsFor(s.total, REEF_STARS) : 0;
   if (won) sound.fanfare();                         // Wally's theme hook: well done, mate
   if (won) {
@@ -529,7 +559,7 @@ function finish(won, why = '') {
   $('result-why').textContent = won ? '' : 'Kenny can only bring so much Vegemite. Swim up for air sooner, and use the bubble vents.';
   $('result-stars').textContent = won ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
   $('result-lines').innerHTML = '';
-  for (const [label, v] of [['Pearls found', `${game.found} (${s.pearls})`], ['Pearl spent on the clam', game.spent], ['Pirate chest', s.chest], ['Air left bonus', s.finishBonus], ['Total', s.total]]) {
+  for (const [label, v] of [['Pearls found', `${game.found} (${s.pearls})`], ['Reef treasures', `${game.treasures}/${treasures.length} (${s.treasure})`], ['Pearl spent on the clam', game.spent], ['Pirate chest', s.chest], ['Air left bonus', s.finishBonus], ['Total', s.total]]) {
     const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }
   $('postcard').hidden = !won;
