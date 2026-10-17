@@ -6,7 +6,7 @@
 
 import * as THREE from 'three';
 import { PATH } from './esplanade-rules.js';
-import { addSky, addLights, addHorizon, palm } from '../world.js';
+import { addSky, addLights, addHorizon, addRanges, palm } from '../world.js';
 import { palmStand } from '../palms.js';
 import { Trees } from '../trees.js';
 import { person } from '../tourists.js';
@@ -202,6 +202,13 @@ export function buildEsplanade(scene, q, backdrops = {}) {
   sun.shadow.camera.left = -40; sun.shadow.camera.right = 40; sun.shadow.camera.top = 40; sun.shadow.camera.bottom = -40;
   sun.target.position.set(0, 0, 0); scene.add(sun.target);
   const ring = addHorizon(scene, backdrops.ring);
+  // The painted horizon's haze is see-through and looked like a white veil over
+  // the sea (Ken), so the Esplanade has the park's solid 3D ranges instead: green
+  // hills behind the city, lower ones across the water (as across Trinity Inlet
+  // from the real Esplanade). The sea is to the west (-x) here, hence the turn.
+  ring.visible = false; ring.userData.off = true;
+  // A cool blue haze keeps them rainforest green (the warm sunset haze turned them sandy).
+  const ranges = addRanges(scene, new THREE.Color(0x9cbcc8), sun.position.clone().normalize(), { sink: 0.55, turn: Math.PI / 2 });
   const sea = addGround(scene);
   // Ken's trees (trees.js): palms along the path in stands of one to three, kept
   // clear of it, and ghost gums and umbrella trees on the city side, where the
@@ -219,5 +226,5 @@ export function buildEsplanade(scene, q, backdrops = {}) {
   trees.build();
   addCity(scene, rnd);
   const pool = addLagoon(scene);
-  return { sun, ring, pool, sea, trees, shelter: z => shelter(scene, z) };
+  return { sun, ring, ranges, pool, sea, trees, shelter: z => shelter(scene, z) };
 }

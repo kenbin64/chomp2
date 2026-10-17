@@ -230,7 +230,8 @@ function looksUnder(under) {
   scene.fog = under ? underFog : aboveFog;
   scene.background = under ? underColour : aboveBackground;
   if (skyMesh) skyMesh.visible = !under;
-  world.ring.visible = !under;
+  world.ring.visible = !under && !world.ring.userData.off;
+  if (world.ranges) world.ranges.visible = !under;
   seaCeiling.visible = under;
 }
 
@@ -529,6 +530,7 @@ function followCamera(dt) {
   camera.lookAt(camTarget);
   const jolt = fx.shakeOffset(dt); if (jolt) camera.position.add(jolt);
   world.ring.position.x = camera.position.x; world.ring.position.z = camera.position.z;   // the horizon stays on the horizon
+  if (world.ranges) { world.ranges.position.x = camera.position.x; world.ranges.position.z = camera.position.z; }
   world.sun.position.set(wally.pos.x - 60, 70, wally.pos.z - 40); world.sun.target.position.copy(wally.pos);
 }
 

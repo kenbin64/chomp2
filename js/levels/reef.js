@@ -134,7 +134,7 @@ const islandTrees = new Trees(scene, { light });
   for (let x = JETTY.x0 + 0.3; x <= JETTY.x1; x += 3) for (const side of [-1, 1]) {
     const pl = new THREE.Mesh(pile, wood); pl.position.set(x, (JETTY.y - 4) / 2, JETTY.z + side * (JETTY.half - 0.15)); pl.castShadow = true; scene.add(pl);
   }
-  const rail = new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.6 });
+  const rail = new THREE.MeshStandardMaterial({ color: 0xa8a294, roughness: 0.9 });   // sun-bleached timber (pure white glared in the sun)
   for (const side of [-1, 1]) {
     const r = new THREE.Mesh(new THREE.BoxGeometry(JETTY.x1 - JETTY.x0 - 4, 0.08, 0.1), rail);
     r.position.set((JETTY.x0 + 4 + JETTY.x1) / 2, JETTY.y + 0.95, JETTY.z + side * (JETTY.half - 0.05)); scene.add(r);

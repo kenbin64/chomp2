@@ -90,7 +90,12 @@ function addHorizon(scene, image) {
 // the way distance and haze colour real hills. They are drawn unlit, with the
 // shading worked out here: slopes facing the sun lighter, gullies darker, and
 // a mottle for the canopy, fading into the haze at the foot.
-function addRanges(scene, horizon, sunDir) {
+// sink: how much they drop on the sea side (1 = down to nothing, 0.5 = half
+// height, as across the water from the Esplanade); turn: turns the whole ring
+// (radians) so the low side faces a level's sea. Returns the group, so a level
+// that is longer than the ring can carry it along with the camera.
+export function addRanges(scene, horizon, sunDir, { sink = 1, turn = 0 } = {}) {
+  const group = new THREE.Group(); group.rotation.y = turn;
   const layers = [
     { r: 290, base: 7, rise: 26, colour: 0x2e5a3c, seed: 1.7, haze: 0.2 },
     { r: 370, base: 18, rise: 40, colour: 0x557487, seed: 4.1, haze: 0.45 },
@@ -99,7 +104,7 @@ function addRanges(scene, horizon, sunDir) {
     let h = L.base + L.rise * (0.5 + 0.28 * Math.sin(a * 3 + L.seed) + 0.17 * Math.sin(a * 7.3 + L.seed * 2) + 0.05 * Math.sin(a * 19 + L.seed));
     h += 1.6 * Math.sin(a * 41 + L.seed) + 0.8 * Math.sin(a * 97);           // canopy on the skyline
     const z = Math.sin(a);
-    return h * (1 - Math.max(0, Math.min(1, (-z - 0.15) * 4)));              // sink toward the sea side
+    return h * (1 - sink * Math.max(0, Math.min(1, (-z - 0.15) * 4)));       // sink toward the sea side
   };
   for (const L of layers) {
     const steps = 480, rows = 6, pos = [], col = [], idx = [];
@@ -129,8 +134,10 @@ function addRanges(scene, horizon, sunDir) {
     geo.setIndex(idx);
     const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: false }));
     m.renderOrder = -1;
-    scene.add(m);
+    group.add(m);
   }
+  scene.add(group);
+  return group;
 }
 
 // ---- Ground and water ---------------------------------------------------
