@@ -363,17 +363,22 @@ export class Wally {
 
     let want;
     if (input.steer) {
-      // Keyboard (Ken's scheme): left and right only turn him on the spot; up is
-      // the only key that moves him, straight ahead the way he faces; down spins
-      // him round to face the other way.
-      if (input.forward < 0 && !(this.lastForward < 0)) this.spinLeft = Math.PI;
-      this.lastForward = input.forward;
-      if (this.spinLeft > 0) {
-        const step = Math.min(this.spinLeft, SPIN * dt);
-        this.facing += step; this.spinLeft -= step;
+      // Keyboard (Ken's scheme, 2026-10-17): every arrow runs him, after a quick
+      // turn. Up runs ahead the way he faces; Down spins him round and he runs
+      // the other way; Left and Right turn him a quarter that way and he runs on.
+      // Each turn is a snap when the key goes down, not a slow curve, so he
+      // never drifts forward while turning.
+      if (input.forward < 0 && !(this.lastForward < 0)) this.turnLeft = (this.turnLeft || 0) + Math.PI;
+      if (input.right > 0 && !(this.lastRight > 0)) this.turnLeft = (this.turnLeft || 0) - Math.PI / 2;
+      if (input.right < 0 && !(this.lastRight < 0)) this.turnLeft = (this.turnLeft || 0) + Math.PI / 2;
+      this.lastForward = input.forward; this.lastRight = input.right;
+      if (this.turnLeft) {
+        const step = Math.sign(this.turnLeft) * Math.min(Math.abs(this.turnLeft), SPIN * dt);
+        this.facing += step; this.turnLeft -= step;
+        if (Math.abs(this.turnLeft) < 1e-4) this.turnLeft = 0;
       }
-      this.facing -= input.right * TURN * dt;
-      const going = input.forward > 0 && !(this.spinLeft > 0.3) ? 1 : 0;
+      const held = input.forward !== 0 || input.right !== 0;
+      const going = held && Math.abs(this.turnLeft || 0) < 0.3 ? 1 : 0;
       want = new THREE.Vector3(Math.sin(this.facing) * going, 0, Math.cos(this.facing) * going);
     } else {
       // Phone stick: relative to the camera, forward is away from it.
