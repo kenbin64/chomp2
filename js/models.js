@@ -23,7 +23,7 @@ export const MODEL_FILES = [
   ...Array.from({ length: 10 }, (_, i) => `tourist-${i + 1}`),
   'food-fries', 'food-pizza', 'food-taco', 'food-hotdog', 'food-shrimp',
   'food-chicken', 'food-hoagie', 'food-hamburger', 'food-steak',
-  'palm-1', 'palm-2', 'palm-crown', 'boat',
+  'palm-1', 'palm-2', 'palm-crown', 'boat', 'jar',
 ];
 
 // Load whichever files exist. Returns a Map of name -> loaded glTF.

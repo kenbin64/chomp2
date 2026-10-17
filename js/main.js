@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { buildWorld, GATE } from './world.js';
 import { Wally } from './wally.js';
-import { Food, randomKind } from './food.js';
+import { Food, randomKind, useJarModel } from './food.js';
 import { Tourists } from './tourists.js';
 import { Kenny } from './kenny.js';
 import { Crocs } from './crocs.js';
@@ -56,6 +56,7 @@ addEventListener('resize', resize); resize();
 
 // Ken's models and backdrop pictures, where they exist; stand-ins otherwise.
 const models = await loadModels(undefined, { light: touch || quality.name === 'low' });
+useJarModel(models.get('jar'));                    // Ken's jar for Kenny's rescue, when present
 const backdrops = await loadBackdrops();
 async function loadBackdrops() {
   const out = {};

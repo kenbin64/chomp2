@@ -88,9 +88,23 @@ export function kennysToast() {
   return g;
 }
 
-// Kenny's jar of dark spread, big enough to spot from across the park. It may
-// look like the jar everyone knows, but carries no name or lettering.
+// Ken's jar model (models/jar.glb), when it is present: every jar in the game
+// is a copy of it. Each level hands it over once its models have loaded.
+let jarModel = null;
+export function useJarModel(gltf) { jarModel = gltf || null; }
+const JAR_SIZE = 0.75;           // metres tall: big enough to spot from across the park
+
+// Kenny's jar of dark spread. It may look like the jar everyone knows, but
+// carries no name, only a V.
 export function kennysJar(labelTexture) {
+  if (jarModel) {
+    const g = new THREE.Group();
+    const jar = jarModel.scene.clone(true);
+    fitToSize(jar, JAR_SIZE);
+    jar.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    g.add(jar);
+    return g;
+  }
   const g = new THREE.Group();
   const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.34, 28), new THREE.MeshStandardMaterial({ color: 0x1a0d05, roughness: 0.2, metalness: 0.1 }));
   const label = new THREE.Mesh(new THREE.CylinderGeometry(0.225, 0.225, 0.2, 28, 1, true), new THREE.MeshStandardMaterial({ map: labelTexture, roughness: 0.6 }));

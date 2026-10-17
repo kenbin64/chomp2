@@ -10,7 +10,7 @@
 
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
-import { Food, randomKind, kennysToast } from '../food.js';
+import { Food, randomKind, kennysToast, useJarModel } from '../food.js';
 import { Input } from '../input.js';
 import { Bubbles, pickLine } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
@@ -97,6 +97,7 @@ const fpsWatch = watchFrameRate(quality, lower => {
 });
 
 const models = await loadModels(undefined, { light: touch || quality.name === 'low' });
+useJarModel(models.get('jar'));                    // Ken's jar for Kenny's rescue, when present
 usePalmCrown(models.get('palm-crown'));                // Ken's palm crown on the built trunks
 const world = buildEsplanade(scene, quality);
 const post = createPost(renderer, scene, camera, quality);

@@ -22,7 +22,7 @@ import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
 import { LIVES } from '../rules.js';
 import { HumanoidPoser } from '../rig.js';
-import { kennysJar } from '../food.js';
+import { kennysJar, useJarModel } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
 import { readProgress, completeArea, starsFor, POSTCARDS } from '../progress.js';
 import { makeMaze, makeReefMaze, mazePath, cellAt, cellCentre, collide, inMaze, airStep, AIR,
@@ -65,6 +65,7 @@ const fpsWatch = watchFrameRate(quality, lower => { quality = lower; renderer.se
 
 const light = touch || quality.name === 'low';
 const models = await loadModels(undefined, { light });
+useJarModel(models.get('jar'));                    // Ken's jar for Kenny's rescue, when present
 usePalmCrown(models.get('palm-crown'));
 const realism = params.get('real') === '0' ? null : await loadRealism(renderer, { light });
 
