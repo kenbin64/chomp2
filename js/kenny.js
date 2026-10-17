@@ -11,7 +11,10 @@ import { jarLabelTexture } from './textures.js';
 import { dress } from './models.js';
 import { HumanoidPoser } from './rig.js';
 
-const OFFER_TIME = 1.5;           // seconds his Offer move takes: jar held out, set down, stand up
+const OFFER_TIME = 1.5;
+const REVIVE_SPEED = 6;          // m/s: running flat out to Wally lying down
+const REVIVE_GAP = 1.3;          // m from Wally where he stops to hand over the jar
+const REVIVE_GIVE_UP = 12;       // s: if he cannot get there (Wally out in the water), hand it over anyway           // seconds his Offer move takes: jar held out, set down, stand up
 const HELP_COOLDOWN = 12;       // seconds before he will set off again after a delivery
 const WHIM_EVERY = 75;          // he also turns up now and then on his own
 const PICKUP = 1.8;
@@ -95,12 +98,44 @@ export class Kenny {
     return new THREE.Vector3(x, 0, z);
   }
 
+  // Wally has run out of puff and is down (Ken's rule: he stays down until Kenny
+  // brings the jar, every time). Kenny drops whatever he is doing and runs over.
+  reviveWally() {
+    this.state = 'revive'; this.reviveWait = 0;
+  }
+
+  // Where to stand to hand Wally the jar: on dry land, a step away from him.
+  standBeside(wallyPos) {
+    const spot = this.dropSpotNear(wallyPos);
+    const away = new THREE.Vector3(this.pos.x - wallyPos.x, 0, this.pos.z - wallyPos.z);
+    if (Math.hypot(spot.x - wallyPos.x, spot.z - wallyPos.z) < REVIVE_GAP && away.lengthSq() > 1e-4) {
+      away.setLength(REVIVE_GAP); spot.set(wallyPos.x + away.x, 0, wallyPos.z + away.z);
+    }
+    return spot;
+  }
+
   // Called every frame. Returns 'coming' when he sets off to help,
-  // 'dropped' when the toast is down, 'eaten' when Wally gets it.
+  // 'dropped' when the toast is down, 'eaten' when Wally gets it, and
+  // 'revived' when he has handed the jar to Wally lying down.
   update(dt, wallyPos, energy) {
     this.t += dt;
     this.helpCool -= dt; this.whim -= dt;
     let event = null;
+
+    // Running to revive Wally, then handing him the jar.
+    if (this.state === 'revive' || this.state === 'reviving') {
+      this.reviveWait += dt;
+      if (this.state === 'revive') {
+        this.goal = this.standBeside(wallyPos);
+        const d = Math.hypot(this.goal.x - this.pos.x, this.goal.z - this.pos.z);
+        if (d > 0.4 && this.reviveWait < REVIVE_GIVE_UP) this.walkAround(d, REVIVE_SPEED * dt);
+        else { this.state = 'reviving'; this.offering = OFFER_TIME; this.reviveIn = OFFER_TIME / 2; }
+      } else {
+        this.mesh.rotation.y = Math.atan2(wallyPos.x - this.pos.x, wallyPos.z - this.pos.z);   // facing Wally
+        this.reviveIn -= dt;
+        if (this.reviveIn <= 0) { this.state = 'sit'; this.timer = 3; this.waving = 2.5; event = 'revived'; }
+      }
+    }
 
     const needs = inRedZone(energy) && this.helpCool <= 0 && this.rescuesLeft > 0;   // the feed-o-meter's red zone
     if (needs && !this.toast && (this.state === 'wander' || this.state === 'sit')) {
@@ -113,7 +148,9 @@ export class Kenny {
     const to = new THREE.Vector3(this.goal.x - this.pos.x, 0, this.goal.z - this.pos.z);
     const dist = to.length();
 
-    if (this.state === 'sit') {
+    if (this.state === 'revive' || this.state === 'reviving') {
+      // handled above
+    } else if (this.state === 'sit') {
       this.timer -= dt;
       if (this.timer <= 0) { this.state = 'wander'; this.goal = this.randomSpot(); }
     } else if (dist > 0.4) {
@@ -149,7 +186,7 @@ export class Kenny {
       this.offering = Math.max(0, (this.offering || 0) - dt);
       this.waving = Math.max(0, (this.waving || 0) - dt);
       if (this.offering > 0 && sk.has('offer')) playing = sk.play('offer', { once: true });
-      else if (this.state === 'help') playing = sk.play('run', { alternatives: ['walk'] });
+      else if (this.state === 'help' || this.state === 'revive') playing = sk.play('run', { alternatives: ['walk'], speed: this.state === 'revive' ? 1.3 : 1 });
       else if (this.state === 'sit' && this.waving > 0) playing = sk.play('wave', { alternatives: ['idle'] });
       else if (this.state === 'sit') playing = sk.play('idle');
       else playing = sk.play('walk', { speed: 0.8 });

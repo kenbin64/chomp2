@@ -427,6 +427,7 @@ function step(dt, t) {
   }
 
   const k2 = kenny.update(dt, wally.pos, game.energy);
+  if (k2 === 'revived') revive();
   if (k2 === 'coming') { toast('Kenny is on his way with his jar!', 'info'); bubbles.say(kenny.mesh, pickLine('kennyComing'), 1.9); }
   if (k2 === 'dropped') { toast('Kenny is holding out his jar. Get to him!', 'info'); bubbles.say(kenny.mesh, pickLine('kennyJar'), 1.9); }
   if (k2 === 'eaten') {
@@ -450,18 +451,23 @@ function loseLife() {
   game.lives--; game.energy = 0; game.streak = 0;
   sound.play.lose();
   if (game.lives <= 0) { finish(false); return; }
-  game.nap = 3;
+  // Down he goes, and he stays down until Kenny brings his jar (Ken's rule).
+  game.nap = 1;
   wally.setNapping(true);
-  toast(`Wally's knackered! ${game.lives} ${game.lives === 1 ? 'life' : 'lives'} left`, 'bad');
+  kenny.reviveWally();
+  toast(`Wally's knackered! ${game.lives} ${game.lives === 1 ? 'life' : 'lives'} left. Here comes Kenny!`, 'bad');
   bubbles.say(wally.root, 'Need a quick kip...', 2.6, 2.8);
+  bubbles.say(kenny.mesh, "Hang on, Wally! Comin'!", 2.4);
 }
 
-function napping(dt) {
-  game.nap -= dt;
-  if (game.nap > 0) return;
+// While he is down, nothing happens until Kenny's jar arrives ('revived' below).
+function napping(dt) {}
+
+function revive() {
   game.nap = 0; game.energy = REVIVE_ENERGY;
   wally.setNapping(false);
-  bubbles.say(wally.root, 'Right, back into it!', 3.6);
+  sound.play.powerup();
+  bubbles.say(wally.root, pickLine('wallyToast'), 3.6);
 }
 
 // First visit to an area: the camera sweeps over it while its name comes up,

@@ -247,14 +247,19 @@ function outOfAir() {
 // Kenny on his float beside Wally, holding out the Vegemite, until Wally is revived.
 function rescueStep(dt, t) {
   game.faint -= dt;
+  // On the water he paddles up on his float; on land he simply stands beside Wally.
+  const afloat = kennyFloat.visible, base = afloat ? 0 : wally.pos.y;
   kennyFloat.position.set(wally.pos.x + 1.6, 0.05, wally.pos.z + 0.6);
-  kennyMesh.position.set(kennyFloat.position.x, -0.25, kennyFloat.position.z); kennyMesh.rotation.y = -Math.PI / 2;
-  vegemite.position.set(wally.pos.x + 0.6, 0.6 + Math.sin(t * 4) * 0.1, wally.pos.z + 0.3); vegemite.rotation.y += dt * 3;
+  kennyMesh.position.set(kennyFloat.position.x, afloat ? -0.25 : base, kennyFloat.position.z); kennyMesh.rotation.y = -Math.PI / 2;
+  vegemite.position.set(wally.pos.x + 0.6, base + 0.6 + Math.sin(t * 4) * 0.1, wally.pos.z + 0.3); vegemite.rotation.y += dt * 3;
   if (kennyPoser && kennyPoser.ok) kennyPoser.pose({ time: t, cheer: 1, napping: false });
   if (game.faint <= 0) {
-    game.air = AIR.max; kennyFloat.visible = vegemite.visible = kennyMesh.visible = false;
+    const wasAir = game.air < AIR.max * 0.5;
+    game.air = AIR.max; game.energy = Math.max(game.energy, REVIVE_ENERGY);
+    kennyFloat.visible = vegemite.visible = kennyMesh.visible = false;
     wally.setNapping(false); sound.play.powerup();
-    toast_("Kenny's Vegemite! Full of beans. Shift (Fours) to dive", 'good'); bubbles.say(wally.root, 'Thanks, Kenny! Back down I go!', 3.4);
+    if (wasAir) { toast_("Kenny's jar! Full of beans. Shift (Fours) to dive", 'good'); bubbles.say(wally.root, 'Thanks, Kenny! Back down I go!', 3.4); }
+    else { toast_("Kenny's jar! Back on your feet", 'good'); bubbles.say(wally.root, pickLine('wallyToast'), 3.4); }
   }
 }
 
@@ -451,14 +456,16 @@ function step(dt, t) {
 
   if (game.energy < 25 && game.hungry <= 0) { bubbles.say(wally.root, pickLine('wallyHungry'), 3.4); game.hungry = 10; }
 
-  // Running out: a nap costs a life.
-  if (game.nap > 0) {
-    game.nap -= dt;
-    if (game.nap <= 0) { wally.setNapping(false); game.energy = REVIVE_ENERGY; bubbles.say(wally.root, 'Right, back into it!', 3.4); }
-  } else if (game.energy <= 0 && !game.done) {
+  // Running out of puff costs a life, and Wally stays down until Kenny brings
+  // his jar (Ken's rule), the same rescue as running out of air.
+  if (game.energy <= 0 && !game.done && game.faint <= 0) {
     game.lives--; sound.play.lose();
     if (game.lives <= 0) { finish(false); return; }
-    game.nap = 2.5; wally.setNapping(true); toast_(`Out of puff! ${game.lives} left`, 'bad');
+    game.faint = 3.2; wally.setNapping(true);
+    kennyFloat.visible = wally.mode === 'swim';
+    vegemite.visible = kennyMesh.visible = true;
+    toast_(`Out of puff! ${game.lives} left. Here comes Kenny`, 'bad');
+    bubbles.say(kennyMesh, "Hang on, Wally! Comin'!", 2.6);
   }
 
   // The Lagoon: the way on, once the job is done.
