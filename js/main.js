@@ -13,7 +13,7 @@ import { Crocs } from './crocs.js';
 import { Jellies, FlyingFoxes, Pelicans, CaneToads } from './hazards.js';
 import { Clusters } from './clusters.js';
 import { Input } from './input.js';
-import { Bubbles, pickLine } from './bubbles.js';
+import { Bubbles, pickLine, chatty } from './bubbles.js';
 import { Effects, CRUMBS } from './fx.js';
 import { loadModels } from './models.js';
 import { createPost } from './post.js';
@@ -313,7 +313,7 @@ function caught(item) {
   game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[item.kind].energy);
   toast(`+${pts} ${how === 'leap' ? 'Jumping catch!' : how === 'air' ? 'In the air!' : item.name}`);
   const leapt = wally.airborne && wally.fromWater;
-  if (leapt || Math.random() < 0.3) bubbles.say(wally.root, pickLine(leapt ? 'wallyLeap' : 'wallyCatch'), 3.6);
+  if (chatty(leapt ? 0.9 : 0.6)) bubbles.say(wally.root, pickLine(leapt || how === 'leap' ? 'wallyLeap' : 'wallyCatch'), 3.6);
   const q = game.quest;
   const done = [...q.record('catch')];
   if (leapt) done.push(...q.record('leapCatch'));

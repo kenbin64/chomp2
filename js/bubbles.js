@@ -6,13 +6,15 @@
 import * as THREE from 'three';
 
 export const LINES = {
-  wallyCatch:   ['Bonza tucker!', 'Ripper!', 'Beauty, mate!', 'Too easy!', 'Fair dinkum, that\'s good!', 'Ta very much!'],
-  wallyLeap:    ['Up she goes!', 'Got it, mate!', 'How good is that!'],
+  wallyCatch:   ['Bonza tucker!', 'Ripper!', 'Beauty, mate!', 'Too easy!', 'Fair dinkum, that\'s good!', 'Ta very much!',
+                 'Crikey, what a beauty!', 'Oi, thanks for the tucker!', 'Bonza!', 'Good on ya, mate!', 'You little ripper!',
+                 'Crikey! Lunch is served!', 'Fair dinkum delicious!', 'Ta, mate! Bonza!'],
+  wallyLeap:    ['Up she goes!', 'Got it, mate!', 'How good is that!', 'Crikey! Look at me go!', 'Fair dinkum flying croc!'],
   wallySting:   ['Strewth, that stings!', 'Ow! Flamin\' jellies!'],
-  wallyStolen:  ['Oi! That was mine!', 'Fair go, mate!'],
-  wallyToast:   ['Thanks Kenny, you legend!', 'Now that\'s proper tucker!'],
+  wallyStolen:  ['Oi! That was mine!', 'Fair go, mate!', 'Oi! Hands off me tucker!', 'Crikey, ya cheeky thing!'],
+  wallyToast:   ['Thanks Kenny, you legend!', 'Now that\'s proper tucker!', 'Crikey, Kenny, you beauty!'],
   wallyHungry:  ['Running on empty here...', 'Could murder a feed.'],
-  wallyHello:   ['G\'day, mate!'],
+  wallyHello:   ['G\'day, mate!', 'Crikey, what a day for it!', 'G\'day, g\'day!'],
   wallyBump:    ['Whoops!', 'Strewth!', 'Ow, me shins!', 'Didn\'t see that one!'],
   touristNervous: ['Easy, big fella...', 'That\'s close enough, mate!', 'Whoa, back up a bit!', 'Steady on, Wally!'],
   touristFlee:  ['Righto, we\'re off!', 'Too close! Run!', 'Strewth, leg it!', 'Not today, croc!'],
@@ -23,9 +25,24 @@ export const LINES = {
   kennyDropped: ['Here ya go, mate.', 'She\'ll be right.'],
 };
 
+// A line of the given kind, never the same one twice in a row.
+const lastLine = {};
 export function pickLine(kind) {
   const list = LINES[kind];
-  return list[Math.floor(Math.random() * list.length)];
+  let line = list[Math.floor(Math.random() * list.length)];
+  if (list.length > 1 && line === lastLine[kind]) line = list[(list.indexOf(line) + 1) % list.length];
+  lastLine[kind] = line;
+  return line;
+}
+
+// Should Wally say something about this catch? Often, but with a few seconds'
+// rest between lines, so the slang stays fun and never becomes a constant stream.
+let lastCatchLine = -1e9;
+export function chatty(chance = 0.6, gapMs = 3500) {
+  const now = performance.now();
+  if (now - lastCatchLine < gapMs || Math.random() > chance) return false;
+  lastCatchLine = now;
+  return true;
 }
 
 function bubbleTexture(text) {

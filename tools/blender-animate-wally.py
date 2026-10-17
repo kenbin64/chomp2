@@ -142,51 +142,51 @@ def run(t):
     return p
 
 def jump(t):
-    # Jump in place: crouch (anticipation), spring up stretched, tuck at the top
-    # with arms flung wide and snout up, land with a squash, bounce back.
+    # Jumping on the spot is Wally showing off (Ken: make it dramatic). The clip
+    # is stretched over his time in the air: a stretched launch, a star shape at
+    # the top with a full spin, mouth wide and snout up, a tuck, and a squashy
+    # landing.
     p = {}
-    crouch = bump(t, 0.0, 0.3) + 0.8 * bump(t, 0.72, 0.95)
-    up = bump(t, 0.22, 0.72)
-    tuck = bump(t, 0.32, 0.66)
-    arms_down(p, 70 - 150 * up, 70 - 150 * up)          # arms swing from the sides to up and wide
-    p['LeftArm'].append((X, 20 * crouch - 20 * up))
-    p['RightArm'].append((X, 20 * crouch - 14 * up))
-    elbow(p, 30 * crouch + 10, 30 * crouch + 15)
-    p['LeftUpLeg'] = [(X, -50 * crouch - 70 * tuck)]
-    p['RightUpLeg'] = [(X, -50 * crouch - 60 * tuck)]
-    p['LeftLeg'] = [(X, 90 * crouch + 100 * tuck)]
-    p['RightLeg'] = [(X, 90 * crouch + 90 * tuck)]
-    p['LeftFoot'] = [(X, -35 * crouch + 30 * up)]
-    p['RightFoot'] = [(X, -35 * crouch + 30 * up)]
-    p['Spine'] = [(X, 22 * crouch - 12 * up)]
-    p['Spine2'] = [(X, -8 * up)]
-    p['Head'] = [(X, 14 * crouch - 28 * up)]             # snout up at the top
-    p['Jaw'] = [(X, 2 + 10 * up)]                        # laughing
-    tail_wag(p, t, 14, lift=-20 * crouch + 30 * up)
-    p['_hips'] = (0, 0, -0.22 * crouch + 0.05 * up)
+    launch = bump(t, 0.0, 0.18)
+    star = bump(t, 0.12, 0.72)
+    tuck = bump(t, 0.66, 0.92)
+    land = bump(t, 0.88, 1.0)
+    spin = 360 * ramp(t, 0.12, 0.74)
+    p['Hips'] = [(Z, spin)]                                          # the full turn in the air
+    arms_down(p, 70 - 110 * launch - 120 * star + 40 * tuck, 70 - 110 * launch - 120 * star + 40 * tuck)
+    p['LeftArm'].append((X, -15 * launch + 25 * tuck)); p['RightArm'].append((X, -15 * launch + 25 * tuck))
+    elbow(p, 10 + 60 * tuck, 10 + 60 * tuck)
+    for side, sgn in (('Left', 1), ('Right', -1)):
+        p[side + 'UpLeg'] = [(Y, -sgn * 28 * star), (X, 15 * launch - 70 * tuck)]   # legs spread wide, then tucked
+        p[side + 'Leg'] = [(X, 10 * star + 100 * tuck + 60 * land)]
+        p[side + 'Foot'] = [(X, 35 * launch + 20 * star)]
+    p['Spine'] = [(X, -10 * star + 15 * land)]
+    p['Spine2'] = [(X, -10 * star)]
+    p['Head'] = [(X, -30 * star + 10 * land)]
+    p['Jaw'] = [(X, 4 + 14 * star - 10 * land)]                      # "Crikey!"
+    tail_wag(p, t * 2, 18, lift=40 * star - 20 * land)
+    p['_hips'] = (0, 0, -0.18 * land + 0.04 * launch)
     return p
 
 def leap(t):
-    # Running jump, as in the video's first shot: one knee tucked high, the other
-    # leg trailing, arms thrown up and out, tail streaming behind, mouth wide.
+    # The running jump is a clean, straight-ahead leap: lead leg forward, trailing
+    # leg back, arms reaching forward, tail streaming behind, reaching for the landing.
     p = {}
-    air = bump(t, 0.05, 0.95)
-    reach = ramp(t, 0.6, 0.95)                           # reaching down for the landing
-    arms_down(p, 70 - 140 * air, 70 - 125 * air)
-    p['LeftArm'].append((X, -30 * air))
-    p['RightArm'].append((X, 10 * air))
-    elbow(p, 20, 35)
-    p['LeftUpLeg'] = [(X, -85 * air + 40 * reach)]
-    p['LeftLeg'] = [(X, 110 * air - 60 * reach)]
-    p['RightUpLeg'] = [(X, 35 * air - 45 * reach)]
-    p['RightLeg'] = [(X, 55 * air)]
-    p['LeftFoot'] = [(X, 25 * air)]
-    p['RightFoot'] = [(X, 40 * air)]
-    p['Spine'] = [(X, -10 * air + 15 * reach)]
-    p['Spine2'] = [(Z, 10 * air)]
-    p['Head'] = [(X, -25 * air + 15 * reach), (Y, 8 * air)]
-    p['Jaw'] = [(X, 12 * air)]
-    tail_wag(p, t, 10, lift=35 * air)
+    air = bump(t, 0.0, 1.0)
+    reach = ramp(t, 0.65, 0.95)
+    arms_down(p, 55, 55)
+    p['LeftArm'].append((X, -55 * air + 20 * reach)); p['RightArm'].append((X, -35 * air + 30 * reach))
+    elbow(p, 20, 30)
+    p['LeftUpLeg'] = [(X, -60 * air + 25 * reach)]
+    p['LeftLeg'] = [(X, 45 * air - 25 * reach)]
+    p['RightUpLeg'] = [(X, 35 * air - 50 * reach)]
+    p['RightLeg'] = [(X, 70 * air - 40 * reach)]
+    p['LeftFoot'] = [(X, -10 * air)]; p['RightFoot'] = [(X, 45 * air)]
+    p['Spine'] = [(X, 16 * air)]
+    p['Neck'] = [(X, -10 * air)]
+    p['Head'] = [(X, -10 * air)]
+    p['Jaw'] = [(X, 8 * air)]
+    tail_wag(p, t, 8, lift=25 * air)
     return p
 
 def swim(t):
@@ -347,7 +347,7 @@ MOVES = {
     'Idle':        (idle, 90, True),
     'Walk':        (walk, 30, True),
     'Run':         (run, 18, True),
-    'Jump':        (jump, 36, False),
+    'Jump':        (jump, 40, False),
     'Leap':        (leap, 30, False),
     'Swim':        (swim, 36, True),
     'ClimbUp':     (climb_up, 30, True),

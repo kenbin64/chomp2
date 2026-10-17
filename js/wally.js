@@ -15,7 +15,9 @@ import { dress } from './models.js';
 import { rigWally, WallyMotion, shapeFor, HumanoidPoser } from './rig.js';
 
 const SPEED = { upright: 6.5, fours: 9.5, swim: 5.5 };
-const JUMP = { land: 8.5, water: 13 };
+const JUMP = { land: 8.5, water: 13, show: 11 };   // show: jumping on the spot, for the big Jump move
+const TURN = 2.8;                // keyboard steering: how fast left and right turn him (radians a second)
+const SPIN = 14;                 // and how fast down spins him round
 const FALL = 22;                 // Wally's own gravity: snappier than the food's
 const FLOAT_Y = -0.45;           // root height while swimming
 const HIP = 1.1;                 // where a model is pivoted for leaning and swimming
@@ -292,7 +294,7 @@ export class Wally {
     if (s.clips.size === 0) { this.moveWhole(dt, speed); return; }
     // Air time of a hop and of a croc leap, from the jump speeds above, so the
     // jump clip lasts exactly as long as he is off the ground.
-    const airTime = (this.fromWater ? JUMP.water : JUMP.land) * 2 / FALL;
+    const airTime = (this.fromWater ? JUMP.water : this.standingJump ? JUMP.show : JUMP.land) * 2 / FALL;
     // Wally's Blender model has every move as a clip, Celebrate for cheering,
     // and Chomp, Grab and GroundPick for eating. Older models fall back.
     const blender = s.has('chomp');
@@ -306,7 +308,7 @@ export class Wally {
     this.eat = null;
     let playing = false;
     if (this.napping) playing = s.play('nap');
-    else if (this.airborne) playing = s.play(this.fromWater ? 'leap' : 'jump', { once: true, alternatives: ['jump'], fit: airTime });
+    else if (this.airborne) playing = s.play(this.standingJump ? 'jump' : 'leap', { once: true, alternatives: ['jump'], fit: airTime });
     else if (this.hurt > 0 && blender) playing = s.play('hurt', { once: true });
     else if (this.picking > 0) playing = s.play('groundpick', { once: true });
     // Catches set cheer to 0.8 and the eating moves show those; Celebrate is for
@@ -359,18 +361,37 @@ export class Wally {
     const onBoards = this.surface === 'deck';
     this.mode = inWater ? 'swim' : (input.fours && !onBoards ? 'fours' : 'upright');
 
-    // Move relative to the camera: forward is away from it.
-    const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw);
-    const want = new THREE.Vector3(fx * input.forward + Math.cos(camYaw) * input.right, 0,
-                                   fz * input.forward - Math.sin(camYaw) * input.right);
-    if (want.lengthSq() > 1) want.normalize();
+    let want;
+    if (input.steer) {
+      // Keyboard: Wally steers himself. Up runs the way he is facing; left and
+      // right turn him as he goes (he always faces where he is moving); down
+      // spins him round quickly and he runs the other way.
+      if (input.forward < 0 && !(this.lastForward < 0)) this.spinLeft = Math.PI;
+      this.lastForward = input.forward;
+      if (this.spinLeft > 0) {
+        const step = Math.min(this.spinLeft, SPIN * dt);
+        this.facing += step; this.spinLeft -= step;
+      }
+      this.facing -= input.right * TURN * dt;
+      const going = input.forward !== 0 || input.right !== 0 ? (this.spinLeft > 0.3 ? 0.3 : 1) : 0;
+      want = new THREE.Vector3(Math.sin(this.facing) * going, 0, Math.cos(this.facing) * going);
+    } else {
+      // Phone stick: relative to the camera, forward is away from it.
+      const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw);
+      want = new THREE.Vector3(fx * input.forward + Math.cos(camYaw) * input.right, 0,
+                               fz * input.forward - Math.sin(camYaw) * input.right);
+      if (want.lengthSq() > 1) want.normalize();
+    }
     want.multiplyScalar(SPEED[this.mode] * pace);
     this.vel.lerp(want, Math.min(1, dt * (this.airborne ? 2 : 8)));
     this.moveFlat(dt);
 
     // Jumping: a hop on land, a full croc leap out of the water.
     if (input.jump && this.grounded) {
-      this.vy = inWater ? JUMP.water : JUMP.land;
+      // Standing still, he puts on a show: a big high jump (the Jump move, with a
+      // spin). On the run it is a quick straight leap forward (the Leap move).
+      this.standingJump = !inWater && Math.hypot(this.vel.x, this.vel.z) < 1.5;
+      this.vy = inWater ? JUMP.water : (this.standingJump ? JUMP.show : JUMP.land);
       this.fromWater = inWater;
       this.grounded = false;
       events.push(inWater ? 'leap' : 'jump');
@@ -391,7 +412,7 @@ export class Wally {
     this.root.position.copy(this.pos);
 
     const speed = Math.hypot(this.vel.x, this.vel.z);
-    if (speed > 0.4) {
+    if (speed > 0.4 && !input.steer) {
       const target = Math.atan2(this.vel.x, this.vel.z);
       let d = target - this.facing;
       d = Math.atan2(Math.sin(d), Math.cos(d));

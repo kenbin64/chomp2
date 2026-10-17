@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import { Wally } from '../wally.js';
 import { Food, randomKind, kennysToast, useJarModel } from '../food.js';
 import { Input } from '../input.js';
-import { Bubbles, pickLine } from '../bubbles.js';
+import { Bubbles, pickLine, chatty } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
 import { loadModels, dress } from '../models.js';
 import { usePalmCrown } from '../palms.js';
@@ -421,7 +421,7 @@ function step(dt, t) {
       const pts = catchPoints(how, game.streak, game.boost > 0); game.foodPoints += pts; game.points += pts;
       game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[it.kind].energy);
       toast_(`+${pts} ${how === 'leap' ? 'Jumping catch!' : how === 'air' ? 'In the air!' : it.name}`);
-      if (Math.random() < 0.3) bubbles.say(wally.root, pickLine('wallyCatch'), 3.4);
+      if (chatty()) bubbles.say(wally.root, pickLine('wallyCatch'), 3.4);
     } else closest = Math.min(closest, d);
   }
   wally.jawWant = closest < 4.5 ? 0.75 : 0.12;
