@@ -4,7 +4,7 @@
 // Scenery only. Where Wally may go is decided in rules.js.
 
 import * as THREE from 'three';
-import { LAGOON, BANK_Y, BOARDWALK, ROCKS, lagoonDistance, terrainHeight, deckHeight, deckOpenAt } from './rules.js';
+import { LAGOON, BANK_Y, BOARDWALK, ROCKS, lagoonDistance, terrainHeight, deckHeight, deckOpenAt, PARK_EDGE } from './rules.js';
 import { signTexture, skyTexture, plankTexture, horizonTexture } from './textures.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { fitToSize, fitToHeight } from './models.js';
@@ -13,6 +13,7 @@ import { surfaceMaterial, groundMaterial, applySky } from './realism.js';
 import { buildPalm, palmStand } from './palms.js';
 import { addForest } from './forest.js';
 import { Trees } from './trees.js';
+import { Grass } from './grass.js';
 
 const SEA_START_Z = -64;     // beyond this the park meets the harbour
 
@@ -194,10 +195,13 @@ function sandiness(x, z) {
 // repeat of the grass tiles does not show.
 function groundTint(x, z, out) {
   const d = lagoonDistance(x, z);
-  out.setRGB(1, 1, 1);
+  out.setRGB(0.82, 0.86, 0.78);                      // a deeper, more natural green than the bare scan (Ken: it read as flat lime)
   if (z >= SEA_START_Z + 4 && d < 1.0) out.lerp(new THREE.Color(0x8c8678), Math.min(1, (1 - d) * 1.6));
+  // Broad patches: lusher and darker in places, drier and yellower in others.
   const n = Math.sin(x * 0.11) * Math.cos(z * 0.09) * 0.5 + Math.sin(x * 0.037 + z * 0.029) * 0.5;
-  return out.multiplyScalar(1 + n * 0.09);
+  const dryness = Math.max(0, Math.sin(x * 0.053 + 1.3) * Math.cos(z * 0.047 - 0.7));
+  out.lerp(new THREE.Color(1.0, 0.93, 0.62), dryness * 0.35 * (1 - Math.min(1, Math.max(0, 1.3 - d) * 3)));
+  return out.multiplyScalar(1 + n * 0.2);
 }
 
 function addGround(scene) {
@@ -507,6 +511,18 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
   addTreeBelt(trees, q);
   addGround(scene);
   addFarGround(scene);
+  // Real grass on the lawns (grass.js): short on the lawn, longer past the fence.
+  const grass = new Grass(scene, {
+    x0: -110, x1: 110, z0: SEA_START_Z + 6, z1: 110, heightAt: drawnHeight,
+    tufts: q.name === 'high' ? 36000 : q.name === 'medium' ? 16000 : 5000,
+    density: (x, z) => {
+      if (sandiness(x, z) > 0.15) return 0;
+      const d = lagoonDistance(x, z);
+      if (d > 4.2) return 0;
+      const fade = d > 3.4 ? (4.2 - d) / 0.8 : 1;                // thins out into the distance
+      return fade * (d > PARK_EDGE + 0.05 ? 1.7 : 1);              // left long beyond the fence
+    },
+  });
   const wave = addWater(scene, q, sun);
   addFence(scene);
   addBoardwalk(scene);
@@ -520,6 +536,7 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
   const update = function update(t, dt, gateOpen) {
     wave(t);
     trees.update(t);
+    grass.update(t);
     gate(dt, gateOpen);
     boats.forEach((b, i) => { b.position.y = 0.6 + Math.sin(t * 0.8 + i) * 0.15; b.rotation.z = Math.sin(t * 0.6 + i) * 0.03; });
   };
