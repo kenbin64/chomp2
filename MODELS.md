@@ -153,6 +153,37 @@ Done 2026-10-16 from Ken's Meshy export. The game fits it to 0.42 m tall (bigger
 
 The lagoon, banks, water and sky stay built by the game, so they don't need models.
 
+## Kuranda and Barron Falls (level 4, Ken 2026-10-17)
+
+For every one: add the style line *"Stylised 3D animated-feature look, same art style as a modern family
+animated film, detailed hand-painted textures, warm and inviting"*; export **game-ready, no rig, for Blender**
+(GLB). Props are fine at about 5k triangles. No words, logos or brand names on anything.
+
+| File | Prompt |
+|---|---|
+| `kur-stall-1.glb` | A tropical market stall: a timber frame with a striped red-and-cream canvas awning, a wooden counter piled with tropical fruit (mangoes, pineapples, bananas, papayas) in woven baskets, hanging string lights, about 3 m wide and 3 m tall. |
+| `kur-stall-2.glb` | A tropical market stall: a timber frame with a green-and-white striped canvas awning, racks of colourful sarongs and sun hats, a wooden counter, a small hand-painted sign with no writing, about 3 m wide and 3 m tall. |
+| `kur-stall-3.glb` | A tropical market food stall: a timber hut with a palm-thatch roof, a counter with jars of honey, fudge and local treats, an old-fashioned set of scales, about 3 m wide and 3 m tall. |
+| `kur-shopfront.glb` | A Queenslander-style shopfront: a single-storey timber building on a low raised floor, a wide shady veranda with white wooden posts and lacework, a corrugated iron roof painted green, big shop windows, cream and sage weatherboards, about 8 m wide. |
+| `kur-gondola.glb` | A small enclosed cable-car gondola cabin with big windows on all sides, rounded corners, painted forest green with a silver roof hanger arm on top, seats inside for six, about 2 m tall, no logos. |
+| `kur-cable-tower.glb` | A tall steel cable-car support tower, a slim lattice tower with a crossbar and pulley wheels at the top, painted dark green, about 30 m tall. |
+| `kur-lookout.glb` | A rainforest lookout platform: a timber boardwalk deck jutting out on tall posts, with sturdy timber railings, a little shade roof over the end, about 6 m long. |
+| `kur-bungee.glb` | A bungee jumping platform: a timber and steel tower about 20 m tall with stairs up the side, a small jump platform with a gate at the top sticking out over the edge, safety railings, a rope anchor point, no logos. |
+| `kur-zipline.glb` | A zip line launch platform built around a big rainforest tree trunk: a round timber deck with railings, a steel cable starting from a post above the deck, a small ramp to step off, about 6 m tall. |
+| `kur-pulley.glb` | A zip line trolley and harness: a steel pulley trolley with two wheels on top, a sturdy hanging strap below with a seat harness, bright orange, about 1 m tall. |
+| `kur-cliff-1.glb` | A large rainforest cliff rock face: dark grey and brown granite with vertical cracks, ferns and small plants growing from ledges, moss and wet streaks, about 15 m tall and 15 m wide. |
+| `kur-cliff-2.glb` | A tall jagged rock outcrop for a gorge edge: dark wet granite with hanging vines and ferns, about 12 m tall. |
+| `kur-river-rock.glb` | A cluster of big smooth river boulders, grey granite worn round by water, some wet and dark, about 5 m across. |
+| `kur-crates.glb` | A stack of wooden market crates full of tropical fruit: mangoes, pineapples, coconuts and bananas, about 1.2 m tall. |
+
+**Clothes from the Kuranda markets** (small, about 2k triangles, no rig; they are fitted on in the game):
+
+| File | Prompt |
+|---|---|
+| `acc-sunnies.glb` | A pair of chunky, fun round sunglasses with bright yellow frames and dark lenses, cartoon style. |
+| `acc-lei.glb` | A Hawaiian-style flower lei necklace: a full ring of bright pink, yellow and white hibiscus and frangipani flowers. |
+| `acc-bandana.glb` | A red bandana with a white paisley pattern, folded and tied in a knot, shaped to sit around a neck. |
+
 ## Backdrops (pictures, not models)
 
 Put these in `C:\projects\chomp-3d\backdrops\`. Each one replaces the painted version the game draws for itself, and the game uses whichever you have made.
