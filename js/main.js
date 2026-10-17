@@ -21,7 +21,7 @@ import { loadRealism } from './realism.js';
 import { usePalmCrown } from './palms.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from './quality.js';
 import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
-import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL } from './progress.js';
+import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen } from './progress.js';
 import * as sound from './sound.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, difficulty,
          clampToPark, terrainHeight, onDeck, LIVES, REVIVE_ENERGY, inRedZone,
@@ -605,6 +605,22 @@ function showMap() {
     b.children[3].textContent = a.ready ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
     if (open) b.onclick = () => { if (PAGES[a.id]) location.href = PAGES[a.id]; else { $('map').hidden = true; start(); } };
     grid.appendChild(b);
+  }
+  // The adventures stars open (Ken, 2026-10-17), shown so players see what they are working toward.
+  const have = totalStars(progress);
+  $('map-stars').textContent = `★ ${have}`;
+  const acts = $('map-acts'); acts.innerHTML = '';
+  for (const a of ACTIVITIES) {
+    const area = AREAS.find(x => x.id === a.area);
+    const open = activityOpen(progress, a.id);
+    const d = document.createElement('div');
+    d.className = `map-act ${open ? 'open' : ''}`;
+    d.innerHTML = '<b></b><small></small><span class="need"></span>';
+    d.children[0].textContent = `${a.name} · ${area ? area.name : ''}`;
+    d.children[1].textContent = a.about;
+    d.children[2].textContent = open ? 'Open!' : !area || !area.ready ? (a.stars ? `★ ${a.stars} needed · coming soon` : 'Coming soon')
+      : a.stars > have ? `★ ${a.stars} needed (${a.stars - have} to go)` : `Reach ${area.name} to open`;
+    acts.appendChild(d);
   }
   $('map-mangoes').textContent = `Golden Mangoes: ${progress.mangoes} · Pearls: ${progress.pearls || 0}`;
   $('map-postcards').textContent = `Postcards: ${progress.postcards.length} of ${AREAS.length}`;

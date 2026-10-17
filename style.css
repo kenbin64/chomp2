@@ -98,6 +98,15 @@ body.touch .keys.pc, body:not(.touch) .keys.phone { display: none; }
 .map-area .s { color: #ffd166; letter-spacing: 0.08em; }
 .map-area.locked { opacity: 0.45; cursor: default; }
 .map-area.open:hover { background: rgba(255, 209, 102, 0.18); }
+/* Adventures opened by stars: rapids, line traverse, bungee, the markets */
+.map-head { font-size: 19px; margin: 14px 0 2px; }
+.map-head span { color: #ffd166; font-size: 16px; }
+.map-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 8px 0 10px; text-align: left; }
+.map-act { border-radius: 12px; padding: 8px 10px; background: rgba(255, 255, 255, 0.06); border: 1px dashed rgba(255, 209, 102, 0.4); }
+.map-act b { display: block; font-size: 15px; }
+.map-act small { display: block; font-size: 12px; line-height: 1.3; opacity: 0.85; margin-top: 3px; }
+.map-act .need { display: block; margin-top: 4px; color: #ffd166; font-size: 13px; }
+.map-act.open { border-style: solid; background: rgba(255, 209, 102, 0.14); }
 
 /* Dive and Up: shown whenever Wally is in the water, on phones and PCs alike, each
    with its keyboard key underneath. Big enough for a thumb. */

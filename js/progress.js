@@ -29,6 +29,35 @@ export function completeArea(progress, id, { score = 0, stars = 0, mangoes = 0, 
   return p;
 }
 
+// What stars are for (Ken, 2026-10-17): they open the adventure activities.
+// Clothes for Wally and Kenny are bought at the Kuranda markets with the Golden
+// Mangoes he has banked. Stars needed are a first guess, easy to change.
+export const ACTIVITIES = [
+  { id: 'rapids',   name: 'River rapids',   area: 'mossman', stars: 6,
+    about: 'Ride the white water down Mossman Gorge on a raft.' },
+  { id: 'traverse', name: 'Line traverse',  area: 'mossman', stars: 9,
+    about: 'Hand over hand along a line across the gorge, catching food as it flies past.' },
+  { id: 'bungee',   name: 'Bungee jump',    area: 'kuranda', stars: 12,
+    about: 'Leap over Barron Falls and snatch the prize at the bottom of the jump.' },
+  { id: 'boomerang', name: 'Boomerang',     area: 'kuranda', stars: 15,
+    about: 'Throw a boomerang and catch it on the way back.' },
+  { id: 'shop',     name: 'Kuranda markets', area: 'kuranda', stars: 0,
+    about: 'Clothes for Wally and Kenny, paid for with Golden Mangoes.' },
+];
+
+// All the stars earned on the trip: the best for each area, added up.
+export function totalStars(progress) {
+  return Object.values(progress.stars || {}).reduce((sum, n) => sum + (Number.isFinite(n) ? n : 0), 0);
+}
+
+// Is an activity open? Enough stars, and (once the areas exist) its area reached.
+export function activityOpen(progress, id) {
+  const a = ACTIVITIES.find(x => x.id === id);
+  if (!a) return false;
+  const area = AREAS.find(x => x.id === a.area);
+  return totalStars(progress) >= a.stars && !!area && area.ready && progress.unlocked.includes(a.area);
+}
+
 // For now (Ken, 2026-10-16): every area that is built is open on the trip map,
 // so any level can be played straight away. Turn this off (or add ?locked to
 // the address) for the real game, where each area opens when the last is done.

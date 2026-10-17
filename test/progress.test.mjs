@@ -44,5 +44,17 @@ check('every area has a postcard', AREAS.every(a => typeof POSTCARDS[a.id] === '
   check('pearls survive saving and loading', readProgress(JSON.stringify(b)).pearls === 10);
   check('an old save without pearls loads with none', readProgress(JSON.stringify({ unlocked: ['park'] })).pearls === 0);
 }
+// Stars open the adventure activities (Ken, 2026-10-17).
+{
+  const { ACTIVITIES, totalStars, activityOpen } = await import('../js/progress.js');
+  const p = { ...freshProgress(), stars: { park: 3, esplanade: 2, reef: 1 } };
+  check('stars add up across areas', totalStars(p) === 6);
+  check('every activity names a real area', ACTIVITIES.every(a => ['mossman', 'kuranda'].includes(a.area)));
+  check('the activities ask for more stars as they go', ACTIVITIES.filter(a => a.stars > 0).every((a, i, l) => i === 0 || a.stars > l[i - 1].stars));
+  check('an activity in an area not built yet stays shut', !activityOpen(p, 'rapids'));
+  check('an unknown activity is shut', !activityOpen(p, 'skydiving'));
+  check('no stars yet, none earned', totalStars(freshProgress()) === 0);
+}
+
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
