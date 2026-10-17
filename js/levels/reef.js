@@ -344,12 +344,12 @@ function step(dt, t) {
   const atTop = game.depth > -1.2;
   game.inCave = !atTop && inMaze(maze, wally.pos.x, wally.pos.z, MAZE.ox, MAZE.oz, MAZE.size);
 
-  // Dive with Shift, come up with Ctrl+Shift (Ken's keys; Space under water and
-  // the on-screen buttons work too). Not up from inside the cave: rock overhead.
+  // Dive with Shift, come up with Ctrl+Shift (Ken's keys, or the on-screen
+  // buttons). Not up from inside the cave: rock overhead.
   const foursPressed = k.fours && !game.foursWas; game.foursWas = k.fours;
   const ctrlShift = k.fours && k.ctrl, ctrlShiftPressed = ctrlShift && !game.ctrlShiftWas; game.ctrlShiftWas = ctrlShift;
   const dive = (foursPressed && !k.ctrl) || game.diveQueued;
-  const up = ctrlShiftPressed || (k.jump && !atTop) || game.upQueued;
+  const up = ctrlShiftPressed || game.upQueued;
   game.diveQueued = game.upQueued = false;
   if (game.faint <= 0 && !game.done && inWater) {
     if (dive && atTop) game.wantDepth = SWIM_Y;
@@ -364,8 +364,10 @@ function step(dt, t) {
   $('b-dive').disabled = !atTop; $('b-up').disabled = atTop || game.inCave;
 
   // Moving: no croc leap while under water; climbing out onto the jetty from the water.
+  // In the reef's water there is no jumping at all (Ken): he swims at the
+  // surface or dives. On the jetty and the island he can still jump.
   const control = game.faint > 0 || game.done ? { forward: 0, right: 0, jump: false, fours: false }
-    : !atTop ? { ...k, jump: false, fours: false } : { ...k, fours: false };
+    : inWater ? { ...k, jump: false, fours: false } : { ...k, fours: false };
   if (game.climb > 0) {
     game.climb -= dt;
     const u = 1 - Math.max(0, game.climb) / 0.6, e = u * u * (3 - 2 * u);
