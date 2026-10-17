@@ -19,6 +19,7 @@ const JUMP = { land: 8.5, water: 13 };
 const FALL = 22;                 // Wally's own gravity: snappier than the food's
 const FLOAT_Y = -0.45;           // root height while swimming
 const HIP = 1.1;                 // where a model is pivoted for leaning and swimming
+const SWIM_LIFT = -0.45;         // Blender model, swimming: hips from about 1 m up to 0.55 m (as the old lying pose)
 
 // Body shape for each way of moving. lean tips the torso forward,
 // hipY is the height of the hips, tail is how steeply the tail drops.
@@ -292,10 +293,25 @@ export class Wally {
     // Air time of a hop and of a croc leap, from the jump speeds above, so the
     // jump clip lasts exactly as long as he is off the ground.
     const airTime = (this.fromWater ? JUMP.water : JUMP.land) * 2 / FALL;
+    // Wally's Blender model has every move as a clip, Celebrate for cheering,
+    // and Chomp, Grab and GroundPick for eating. Older models fall back.
+    const blender = s.has('chomp');
+    this.picking = Math.max(0, (this.picking || 0) - dt);
+    this.hurt = Math.max(0, (this.hurt || 0) - dt);
+    if (this.eat && blender) {
+      if (this.eat === 'ground' && this.mode !== 'swim' && !this.airborne) this.picking = 1.0;
+      else if (this.mode !== 'swim' && Math.random() < 0.45) s.overlay('grab', { speed: 1.4 });   // hands, then mouth
+      else s.overlay('chomp');                                                                   // straight in the jaws
+    }
+    this.eat = null;
     let playing = false;
     if (this.napping) playing = s.play('nap');
     else if (this.airborne) playing = s.play(this.fromWater ? 'leap' : 'jump', { once: true, alternatives: ['jump'], fit: airTime });
-    else if (this.cheer > 0) playing = s.play('cheer', { once: true });
+    else if (this.hurt > 0 && blender) playing = s.play('hurt', { once: true });
+    else if (this.picking > 0) playing = s.play('groundpick', { once: true });
+    // Catches set cheer to 0.8 and the eating moves show those; Celebrate is for
+    // the big moments (level done, treasure), which set it to 1.2 or more.
+    else if (this.cheer > (blender ? 0.85 : 0)) playing = s.play('cheer', { alternatives: ['celebrate'] });
     else if (this.mode === 'swim') playing = s.play('swim', { speed: 0.6 + Math.min(1, speed / 5) });
     else if (speed > 3.5) playing = s.play(this.mode === 'fours' ? 'run_fours' : 'run', { alternatives: ['run'], speed: speed / 6.5 });
     else if (speed > 0.6) playing = s.play('walk', { alternatives: ['run'], speed: Math.max(0.6, speed / 3) });
@@ -303,12 +319,17 @@ export class Wally {
     if (!playing) s.stop();
     s.update(dt);
     if (!playing && this.poser && this.poser.ok) this.poser.pose({ time: this.time, cheer: this.cheer, napping: this.napping });
-    if (playing && this.mode === 'swim' && !this.airborne && this.poser && this.poser.ok) this.poser.chinUp(0.8);   // head up, looking ahead
-    if (s.jaw) s.jaw.rotation.x += this.jawOpen;          // the catch still opens his jaw
+    if (!blender) {
+      if (playing && this.mode === 'swim' && !this.airborne && this.poser && this.poser.ok) this.poser.chinUp(0.8);   // head up, looking ahead
+      if (s.jaw) s.jaw.rotation.x += this.jawOpen;        // the catch still opens his jaw
+    }
 
     // Lying down for a nap is the pivot's job, as no clip does it.
     const p = s.pivot, k = Math.min(1, dt * 10);
-    const roll = this.napping ? 1.35 : 0, lift = this.napping ? -HIP + 0.35 : 0;
+    // The Blender Swim clip lays him flat at hip height (about 1 m up); lower
+    // him so his back is at the water line with eyes and snout just above it.
+    const swimming = blender && this.mode === 'swim' && !this.airborne;
+    const roll = this.napping ? 1.35 : 0, lift = this.napping ? -HIP + 0.35 : (swimming ? SWIM_LIFT : 0);
     p.rotation.z += (roll - p.rotation.z) * k;
     p.position.y += (HIP + lift - p.position.y) * k;
   }
@@ -319,7 +340,10 @@ export class Wally {
   }
 
   // Called by the game on a catch: jaws slam shut.
-  chomp() { this.snap = 0.25; this.cheer = 0.8; }
+  // A catch. how: 'air', 'leap' or 'ground' (see rules.catchPoints). With
+  // Wally's Blender moves he snaps it out of the air with his jaws, or catches it
+  // in his hands and brings it to his mouth, or bends down for food on the ground.
+  chomp(how = 'air') { this.snap = 0.25; this.cheer = 0.8; this.eat = how; }
 
   // Out of puff: he flops down for a nap (costs a life), then gets back up.
   setNapping(on) { this.napping = on; }
@@ -391,6 +415,7 @@ export class Wally {
 
   // Knocked back and dazed, e.g. by a jellyfish sting.
   knock(fromX, fromZ) {
+    this.hurt = 0.8;                             // the Hurt move, if the model has one
     const dx = this.pos.x - fromX, dz = this.pos.z - fromZ, d = Math.hypot(dx, dz) || 1;
     this.vel.set(dx / d * 7, 0, dz / d * 7);
     if (this.grounded) { this.vy = 5; this.grounded = false; this.fromWater = false; }

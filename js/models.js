@@ -118,6 +118,27 @@ export class ModelSkin {
     this.currentClip = null; this.current = null;
   }
 
+  // Play a short move on top of whatever is playing, once: Wally's Chomp and
+  // Grab only move his head, jaw and arms, so they ride over running, jumping or
+  // swimming. The clip is made additive (measured from its first frame, which is
+  // his rest or arms-down pose), so it adds its motion instead of replacing.
+  overlay(name, { speed = 1 } = {}) {
+    const clip = this.find(name);
+    if (!clip) return false;
+    this.additive = this.additive || new Map();
+    let add = this.additive.get(clip);
+    if (!add) {
+      add = THREE.AnimationUtils.makeClipAdditive(clip.clone());
+      this.additive.set(clip, add);
+    }
+    const action = this.mixer.clipAction(add);
+    action.blendMode = THREE.AdditiveAnimationBlendMode;
+    action.setLoop(THREE.LoopOnce, 1);
+    action.timeScale = speed;
+    action.reset().play();
+    return true;
+  }
+
   update(dt) { this.mixer.update(dt); }
 }
 

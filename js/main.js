@@ -303,10 +303,10 @@ function caught(item) {
   fx.burst(item.mesh.position, CRUMBS[item.kind] || [0xffffff]);
   fx.shake(0.12, 0.12);
   food.take(item, 'eaten');
-  wally.chomp();
+  const how = item.landed ? 'ground' : (wally.airborne ? 'leap' : 'air');
+  wally.chomp(how);
   sound.play.chomp();
   game.streak++; game.catches++;
-  const how = item.landed ? 'ground' : (wally.airborne ? 'leap' : 'air');
   const pts = catchPoints(how, game.streak, game.boost > 0);
   game.score += pts;
   game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[item.kind].energy);
