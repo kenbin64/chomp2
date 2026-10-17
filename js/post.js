@@ -49,6 +49,16 @@ export function createPost(renderer, scene, camera, quality) {
     ao = new GTAOPass(scene, camera, size.x, size.y);
     ao.updateGtaoMaterial({ radius: 0.6, distanceExponent: 1.5, thickness: 1.2, scale: 1.0, samples: 12 });
     ao.blendIntensity = 0.85;
+    // The shading pass draws every object as if solid, so a glow or a sign (a flat
+    // picture with see-through edges) would leave a dark square behind it (Ken saw
+    // this round the mangoes). Pictures, and tree cards (userData.noAO), are hidden from that pass only.
+    const shade = ao.render.bind(ao), hidden = [];
+    ao.render = (...args) => {
+      scene.traverse(o => { if ((o.isSprite || o.userData.noAO) && o.visible) { o.visible = false; hidden.push(o); } });
+      shade(...args);
+      for (const o of hidden) o.visible = true;
+      hidden.length = 0;
+    };
     composer.addPass(ao);
   }
   const bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.22, 0.55, 0.88);

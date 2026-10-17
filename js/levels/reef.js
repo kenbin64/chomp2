@@ -15,6 +15,7 @@ import { Bubbles } from '../bubbles.js';
 import { Effects } from '../fx.js';
 import { loadModels, dress } from '../models.js';
 import { usePalmCrown, buildPalm, palmStand } from '../palms.js';
+import { Trees } from '../trees.js';
 import { loadRealism, applySky, surfaceMaterial } from '../realism.js';
 import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
@@ -22,12 +23,13 @@ import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
 import { LIVES } from '../rules.js';
 import { HumanoidPoser } from '../rig.js';
-import { kennysJar } from '../food.js';
+import { kennysJar, useJarModel } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
-import { readProgress, completeArea, starsFor, POSTCARDS } from '../progress.js';
+import { readProgress, completeArea, starsFor, POSTCARDS, bankFinds } from '../progress.js';
 import { makeMaze, makeReefMaze, mazePath, cellAt, cellCentre, collide, inMaze, airStep, AIR,
-         SWIM_Y, SURFACE_Y, SEABED_Y, reefRunScore, REEF_STARS, PEARL_POINTS, CHEST_POINTS } from './reef-rules.js';
-import { buildReef, MAZE, OUTER, DIVE, BOUNDS } from './reef-scene.js';
+         SWIM_Y, SURFACE_Y, SEABED_Y, reefRunScore, REEF_STARS, PEARL_POINTS, CHEST_POINTS,
+         LANES, LANE_NAMES, TREASURES, nextDepth, treasureSpots, canCollect } from './reef-rules.js';
+import { buildReef, buildTreasures, MAZE, OUTER, DIVE, BOUNDS } from './reef-scene.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -65,6 +67,7 @@ const fpsWatch = watchFrameRate(quality, lower => { quality = lower; renderer.se
 
 const light = touch || quality.name === 'low';
 const models = await loadModels(undefined, { light });
+useJarModel(models.get('jar'));                    // Ken's jar for Kenny's rescue, when present
 usePalmCrown(models.get('palm-crown'));
 const realism = params.get('real') === '0' ? null : await loadRealism(renderer, { light });
 
@@ -100,6 +103,7 @@ water.rotation.x = -Math.PI / 2; water.position.set(-40, 0, 420);
 scene.add(water);
 
 // Green Island: a sand cay with palms, and the jetty out to the dive spot.
+const islandTrees = new Trees(scene, { light });
 {
   const g = new THREE.CircleGeometry(ISLAND.r + 4, 64, 0, Math.PI * 2); g.rotateX(-Math.PI / 2);
   const p = g.attributes.position;
@@ -108,15 +112,20 @@ scene.add(water);
   const sand = surfaceMaterial(realism, 'sand', 6, 6) || new THREE.MeshStandardMaterial({ color: 0xe7d7a8, roughness: 1 });
   const cay = new THREE.Mesh(g, sand); cay.position.set(ISLAND.x, 0, ISLAND.z); cay.receiveShadow = true; scene.add(cay);
   let seed = 5; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  const bark = surfaceMaterial(realism, 'palm', 1, 4);
+  // Ken's palms (trees.js) on the cay, a few umbrella trees in the middle.
   for (let i = 0; i < 9; i++) {
     const a = rnd() * Math.PI * 2, d = 3 + rnd() * 9;
     for (const t of palmStand(ISLAND.x + Math.cos(a) * d, ISLAND.z + Math.sin(a) * d, rnd, { minH: 6, maxH: 11 })) {
       if (onJetty(t.x, t.z) || Math.hypot(t.x - ISLAND.x, t.z - ISLAND.z) > ISLAND.r - 2) continue;
-      const palm = buildPalm(t.height, t.lean, i * 13.7 + t.x, bark);
-      palm.position.set(t.x, sandHeight(t.x, t.z), t.z); palm.rotation.y = t.yaw; scene.add(palm);
+      islandTrees.add('palm', t.x, sandHeight(t.x, t.z), t.z, t.height + 2);
     }
   }
+  for (let i = 0; i < 4; i++) {
+    const a = rnd() * Math.PI * 2, d = rnd() * 4;
+    const x = ISLAND.x + Math.cos(a) * d, z = ISLAND.z + Math.sin(a) * d;
+    if (!onJetty(x, z)) islandTrees.add('umbrella', x, sandHeight(x, z), z, 6 + rnd() * 3);
+  }
+  islandTrees.build();
   // The jetty: boards across it, posts and rails, piles down into the water.
   const deckMat = surfaceMaterial(realism, 'planks', (JETTY.x1 - JETTY.x0) / 1.2, JETTY.half * 2 / 1.2, { rotate: true }) || new THREE.MeshStandardMaterial({ color: 0x9c7650, roughness: 0.9 });
   const deck = new THREE.Mesh(new THREE.BoxGeometry(JETTY.x1 - JETTY.x0, 0.22, JETTY.half * 2), deckMat);
@@ -126,7 +135,7 @@ scene.add(water);
   for (let x = JETTY.x0 + 0.3; x <= JETTY.x1; x += 3) for (const side of [-1, 1]) {
     const pl = new THREE.Mesh(pile, wood); pl.position.set(x, (JETTY.y - 4) / 2, JETTY.z + side * (JETTY.half - 0.15)); pl.castShadow = true; scene.add(pl);
   }
-  const rail = new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.6 });
+  const rail = new THREE.MeshStandardMaterial({ color: 0xa8a294, roughness: 0.9 });   // sun-bleached timber (pure white glared in the sun)
   for (const side of [-1, 1]) {
     const r = new THREE.Mesh(new THREE.BoxGeometry(JETTY.x1 - JETTY.x0 - 4, 0.08, 0.1), rail);
     r.position.set((JETTY.x0 + 4 + JETTY.x1) / 2, JETTY.y + 0.95, JETTY.z + side * (JETTY.half - 0.05)); scene.add(r);
@@ -142,10 +151,19 @@ scene.add(water);
 }
 
 // The reef below: the coral maze, the cave and everything in it.
-const seed = Number(params.get('seed')) || 7;
+// A new maze every dive (Ken: never the same twice, or people just memorise it).
+// ?seed=N still gives a fixed one, for testing.
+const seed = Number(params.get('seed')) || 1 + Math.floor(Math.random() * 2147483000);
 const maze = makeMaze(MAZE.cols, MAZE.rows, seed);
 const outer = makeReefMaze(OUTER.cols, OUTER.rows, seed + 4);
-const reef = buildReef(scene, quality, { maze, outer, jellyGltf: models.get('jellyfish') });
+const reef = buildReef(scene, quality, { maze, outer, jellyGltf: models.get('jellyfish'), coralGltf: models.get('coral') });
+// Reef treasures (Ken): starfish, shells and gold coins along both mazes'
+// corridors at the three depths, never in a pearl's cell.
+const pearlCellsOf = (m, o) => reef.pearls.map(p => cellAt(m, p.x, p.z, o.ox, o.oz, o.size)).filter(Boolean);
+const treasures = buildTreasures(reef.root, models.get('seashell') || null, [
+  ...treasureSpots(outer, 14, seed + 11, pearlCellsOf(outer, OUTER)).map(t => ({ kind: t.kind, ...cellCentre(outer, t.cell, OUTER.ox, OUTER.oz, OUTER.size) })),
+  ...treasureSpots(maze, 18, seed + 17, pearlCellsOf(maze, MAZE)).map(t => ({ kind: t.kind, ...cellCentre(maze, t.cell, MAZE.ox, MAZE.oz, MAZE.size) })),
+]);
 reef.root.visible = true;
 
 const post = createPost(renderer, scene, camera, quality);
@@ -195,11 +213,11 @@ const banked = params.has('pearls') ? Number(params.get('pearls')) : (progress.p
 const game = {
   running: false, paused: false, done: false, time: 0,
   lives: LIVES, air: AIR.max, depth: SURFACE_Y, wantDepth: SURFACE_Y,
-  pearls: banked, found: 0, spent: 0, points: 0, mangoes: 0,
+  pearls: banked, found: 0, spent: 0, points: 0, mangoes: 0, treasure: 0, treasures: 0, coins: 0,
   chest: false, doorShut: false, inCave: false, faint: 0, stun: 0, hint: 0,
   foursWas: false, diveQueued: false, upQueued: false, climb: 0, guideSaid: false,
 };
-window.chomp = { game, wally, reef, maze, outer, camera, scene };
+window.chomp = { game, wally, reef, maze, outer, camera, scene, treasures };
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -313,7 +331,7 @@ function outOfAir() {
   game.wantDepth = SURFACE_Y; game.faint = 3.2; wally.setNapping(true);
   kennyFloat.visible = vegemite.visible = true;
   toast_(`Out of air! ${game.lives} left. Here comes Kenny`, 'bad');
-  bubbles.say(kennyMesh, 'Hang on, Wally! Vegemite!', 2.6);
+  bubbles.say(kennyMesh, "Hang on, Wally! Here's me jar!", 2.6);
   return true;
 }
 function rescueStep(dt, t) {
@@ -325,7 +343,7 @@ function rescueStep(dt, t) {
     game.air = AIR.max; kennyFloat.visible = vegemite.visible = false;
     kennyMesh.position.copy(kennyHome);
     wally.setNapping(false); sound.play.powerup();
-    toast_("Kenny's Vegemite! Full of beans. Dive when you're ready", 'good'); bubbles.say(wally.root, 'Thanks, Kenny! Back down I go!', 3.4);
+    toast_("Kenny's jar! Full of beans. Dive when you're ready", 'good'); bubbles.say(wally.root, 'Thanks, Kenny! Back down I go!', 3.4);
   }
 }
 
@@ -341,27 +359,36 @@ function step(dt, t) {
 
   const inWater = wally.surface === 'water';
   const atTop = game.depth > -1.2;
+  sound.underwaterMusic(!atTop);                    // the music goes soft and muffled under water
   game.inCave = !atTop && inMaze(maze, wally.pos.x, wally.pos.z, MAZE.ox, MAZE.oz, MAZE.size);
 
-  // Dive and Up (Shift / Space, or the buttons). Not up from inside the cave: rock overhead.
+  // Dive with Shift, come up with Ctrl+Shift (Ken's keys, or the on-screen
+  // buttons). Not up from inside the cave: rock overhead.
   const foursPressed = k.fours && !game.foursWas; game.foursWas = k.fours;
-  const dive = foursPressed || game.diveQueued, up = (k.jump && !atTop) || game.upQueued;
+  const ctrlShift = k.fours && k.ctrl, ctrlShiftPressed = ctrlShift && !game.ctrlShiftWas; game.ctrlShiftWas = ctrlShift;
+  const dive = (foursPressed && !k.ctrl) || game.diveQueued;
+  const up = ctrlShiftPressed || game.upQueued;
   game.diveQueued = game.upQueued = false;
+  // Three depths under water (Ken): Shift one deeper, Ctrl+Shift one up; from
+  // the top depth, up is the surface (but not inside the cave: rock overhead).
   if (game.faint <= 0 && !game.done && inWater) {
-    if (dive && atTop) game.wantDepth = SWIM_Y;
+    if (dive) game.wantDepth = nextDepth(game.wantDepth, 1);
     if (up && !atTop) {
-      if (game.inCave) { if (game.hint <= 0) { toast_('Rock overhead! Find a bubble vent or swim out', 'bad'); game.hint = 3; } }
-      else game.wantDepth = SURFACE_Y;
+      const to = nextDepth(game.wantDepth, -1, !game.inCave);
+      if (to === game.wantDepth && game.inCave) { if (game.hint <= 0) { toast_('Rock overhead! Find a bubble vent or swim out', 'bad'); game.hint = 3; } }
+      game.wantDepth = to;
     }
   }
   if (!inWater) game.wantDepth = SURFACE_Y;
   game.depth += Math.sign(game.wantDepth - game.depth) * Math.min(Math.abs(game.wantDepth - game.depth), 5 * dt);
   $('dive-buttons').hidden = !inWater || game.done;
-  $('b-dive').disabled = !atTop; $('b-up').disabled = atTop || game.inCave;
+  $('b-dive').disabled = game.wantDepth <= LANES[LANES.length - 1] + 0.01; $('b-up').disabled = atTop;
 
   // Moving: no croc leap while under water; climbing out onto the jetty from the water.
+  // In the reef's water there is no jumping at all (Ken): he swims at the
+  // surface or dives. On the jetty and the island he can still jump.
   const control = game.faint > 0 || game.done ? { forward: 0, right: 0, jump: false, fours: false }
-    : !atTop ? { ...k, jump: false, fours: false } : { ...k, fours: false };
+    : inWater ? { ...k, jump: false, fours: false } : { ...k, fours: false };
   if (game.climb > 0) {
     game.climb -= dt;
     const u = 1 - Math.max(0, game.climb) / 0.6, e = u * u * (3 - 2 * u);
@@ -369,8 +396,10 @@ function step(dt, t) {
     wally.root.position.copy(wally.pos);
     if (game.climb <= 0) { wally.pos.copy(climbTo); wally.vel.set(0, 0, 0); wally.vy = 0; wally.grounded = true; wally.surface = 'deck'; }
   } else {
-    const wantX = -Math.sin(cam.yaw) * control.forward + Math.cos(cam.yaw) * control.right;
-    const wantZ = -Math.cos(cam.yaw) * control.forward - Math.sin(cam.yaw) * control.right;
+    // Which way he is pushing: with the keyboard, straight ahead while Up is held;
+    // with the phone stick, relative to the camera.
+    const wantX = control.steer ? Math.sin(wally.facing) * (control.forward > 0 ? 1 : 0) : -Math.sin(cam.yaw) * control.forward + Math.cos(cam.yaw) * control.right;
+    const wantZ = control.steer ? Math.cos(wally.facing) * (control.forward > 0 ? 1 : 0) : -Math.cos(cam.yaw) * control.forward - Math.sin(cam.yaw) * control.right;
     const nearJetty = wally.pos.x >= JETTY.x0 - 1.2 && wally.pos.x <= JETTY.x1 && Math.abs(wally.pos.z - JETTY.z) <= JETTY.half + 1.2;
     if (inWater && atTop && nearJetty && Math.hypot(wantX, wantZ) > 0.35) {
       // Pushing toward the jetty from beside it or off its end: haul up onto the deck.
@@ -405,11 +434,26 @@ function step(dt, t) {
       toast_(`A pearl! ${game.pearls} now`, 'good');
     }
   }
+  // Reef treasures: picked up by swimming through one at its depth.
+  for (const tr of treasures) {
+    if (tr.taken) continue;
+    tr.phase += dt;
+    tr.thing.rotation.y += dt * 1.6;
+    tr.mesh.position.y = tr.y + Math.sin(tr.phase * 2) * 0.12;
+    if (!atTop && canCollect(wally.pos.x, wally.pos.z, game.depth, tr.x, tr.z, tr.y)) {
+      const T = TREASURES[tr.kind];
+      tr.taken = true; tr.mesh.visible = false;
+      game.treasure += T.points; game.treasures++; game.points += T.points;
+      if (tr.kind === 'coin') game.coins++;                         // gold coins pay the Skyrail up to Kuranda
+      sound.play.goal(); fx.burst(tr.mesh.position.clone(), tr.kind === 'coin' ? [0xffd24a, 0xffffff] : tr.kind === 'shell' ? [0xfff0d0, 0xffffff] : [0xff9a5a, 0xffd0a0], 10);
+      toast_(`+${T.points} ${T.name}!`, 'good');
+    }
+  }
   // Box jellyfish: a sting knocks the air out of him.
   for (const j of reef.jellies) {
     j.cool = Math.max(0, j.cool - dt);
     if (j.cool > 0 || atTop) continue;
-    if (Math.hypot(wally.pos.x - j.m.position.x, wally.pos.z - j.m.position.z) < 1.5 && Math.abs(game.depth - j.m.position.y) < 2.5) {
+    if (Math.hypot(wally.pos.x - j.m.position.x, wally.pos.z - j.m.position.z) < 1.5 && Math.abs(game.depth - j.m.position.y) < 1.1) {   // only at its own depth: change depth to slip past
       j.cool = 2; game.air = Math.max(0, game.air - AIR.sting); game.stun = 0.6;
       wally.knock(j.m.position.x, j.m.position.z); fx.shake(0.4, 0.3); sound.play.sting();
       toast_('Box jelly! Lost some air', 'bad');
@@ -486,10 +530,15 @@ function drawHud() {
   $('job').textContent = game.chest
     ? (game.doorShut ? 'Put a pearl in the giant clam to get out!' : 'Out of the cave and up for air!')
     : game.inCave ? 'Find the pirate chest in the cave' : game.depth > -1.2 ? 'Dive! Follow the guide fish to the coral cave' : 'Follow the guide fish through the coral maze';
+  // Under water, which depth he is at, and the treasures found (shells, starfish, coins).
+  if (game.depth < -1.2) {
+    const i = LANES.reduce((b, y, k) => Math.abs(y - game.depth) < Math.abs(LANES[b] - game.depth) ? k : b, 0);
+    $('job').textContent += ` · Depth: ${LANE_NAMES[i]} · Treasures: ${game.treasures}/${treasures.length}`;
+  }
 }
 
 function start() {
-  sound.start();
+  sound.start(); sound.startMusic('reef');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true;
   bubbles.say(wally.root, game.pearls ? `G'day! I've got ${game.pearls} pearl${game.pearls === 1 ? '' : 's'}. Let's find that cave!` : "G'day! Better find some pearls down there.", 3.6, 3);
@@ -500,19 +549,22 @@ function setPaused(p) { if (!game.running) return; game.paused = p; $('paused').
 function finish(won, why = '') {
   game.running = false;
   $('hud').hidden = true; $('touch').hidden = true; $('dive-buttons').hidden = true; $('arrow').hidden = true;
-  const s = reefRunScore({ found: game.found, chest: game.chest, airLeft: game.air, finished: won });
+  const s = reefRunScore({ found: game.found, chest: game.chest, airLeft: game.air, finished: won, treasure: game.treasure });
   const stars = won ? starsFor(s.total, REEF_STARS) : 0;
-  if (won) {
+  if (won) sound.fanfare();                         // Wally's theme hook: well done, mate
+  {
     // Pearls are a bank across the trip: what was spent at the clam comes off, what was found goes on.
+    // Finished or not, what he found is kept (Ken), gold coins included.
     progress = { ...progress, pearls: Math.max(0, (progress.pearls || 0) - game.spent) };
-    progress = completeArea(progress, 'reef', { score: s.total, stars, mangoes: game.mangoes, pearls: game.found });
+    if (won) progress = completeArea(progress, 'reef', { score: s.total, stars, mangoes: game.mangoes, pearls: game.found, coins: game.coins });
+    else progress = bankFinds(progress, { mangoes: game.mangoes, pearls: game.found, coins: game.coins });
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
   }
   $('result-title').textContent = won ? 'Found the pirate treasure!' : why === 'air' ? 'Out of air!' : 'Not this time';
-  $('result-why').textContent = won ? '' : 'Kenny can only bring so much Vegemite. Swim up for air sooner, and use the bubble vents.';
+  $('result-why').textContent = won ? '' : 'Kenny can only bring his jar so many times. Swim up for air sooner, and use the bubble vents.';
   $('result-stars').textContent = won ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
   $('result-lines').innerHTML = '';
-  for (const [label, v] of [['Pearls found', `${game.found} (${s.pearls})`], ['Pearl spent on the clam', game.spent], ['Pirate chest', s.chest], ['Air left bonus', s.finishBonus], ['Total', s.total]]) {
+  for (const [label, v] of [['Pearls found', `${game.found} (${s.pearls})`], ['Reef treasures', `${game.treasures}/${treasures.length} (${s.treasure})`], ['Gold coins (Skyrail fare)', game.coins], ['Pearl spent on the clam', game.spent], ['Pirate chest', s.chest], ['Air left bonus', s.finishBonus], ['Total', s.total]]) {
     const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }
   $('postcard').hidden = !won;
@@ -532,6 +584,7 @@ function frame() {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt;
   if (game.running && !game.paused) step(dt, t);
   bubbles.update(dt); fx.update(dt, t);
+  islandTrees.update(t);                            // the breeze in the palms
   followCamera(dt);
   fpsWatch(dt);
   post.render();

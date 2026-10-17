@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<style>html,body{background:#0b1d27}</style>
+<link rel="preload" as="image" href="assets/title/opener.webp">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#1b6e8c">
-<title>Chomp! Wally the Cairns Crocodile</title>
+<title>Chomp 3D: Wally's Cairns Adventure</title>
 <meta name="description" content="Wally the Cairns Crocodile catches the food tourists throw. A 3D adventure through Far North Queensland, by Kenneth W. Bingham.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -48,15 +50,65 @@
   <button id="t-cam" type="button" aria-label="Camera behind Wally">Cam</button>
 </div>
 
-<section id="title" class="overlay">
-  <div class="card">
-    <h1>Chomp!</h1>
-    <p class="sub">Wally the Cairns Crocodile</p>
+<section id="title" class="overlay opener">
+  <!-- Ken's opener art: the title is painted on the sign -->
+  <img class="opener-blur" src="assets/title/opener.webp" alt="">
+  <img class="opener-art" src="assets/title/opener.webp" alt="Chomp 3D: Wally's Cairns Adventure">
+  <div class="opener-bar">
+    <div class="opener-buttons">
+      <button id="play" class="go" type="button">Play</button>
+      <button id="how" class="ghost" type="button">How to play</button>
+      <button id="trailer" class="ghost" type="button">&#9654; Trailer</button>
+    </div>
+    <p class="credit">Ken Bingham, with assistance from AI &middot; <button id="credits" class="link" type="button">Credits</button></p>
+  </div>
+  <div class="trailer-box" id="trailer-box" hidden>
+    <video id="trailer-video" src="assets/title/trailer.mp4" controls playsinline preload="none"></video>
+    <button id="trailer-close" class="go" type="button">Close</button>
+  </div>
+  <div class="card how-card credits-card" id="credits-card" hidden>
+    <h2>Credits</h2>
+    <dl class="credits-list">
+      <dt>Created, designed and directed by</dt>
+      <dd>Ken Bingham</dd>
+      <dd class="small">From his original game <i>Chomp!</i> (2014): the idea, the story, the rules, the places and the look.</dd>
+      <dt>Characters</dt>
+      <dd>Wally the Cairns Crocodile and Kenny the Koala, by Ken Bingham</dd>
+      <dt>Title art and 3D models</dt>
+      <dd>Made by Ken Bingham with AI generation tools (Meshy and others), from his own designs and descriptions</dd>
+      <dt>Programming, rigging, animation and asset preparation</dt>
+      <dd>AI-assisted (Claude, by Anthropic), under Ken's direction</dd>
+      <dt>Music</dt>
+      <dd>A placeholder composed in code, made to be replaced by recordings from Aboriginal and Torres Strait Islander musicians</dd>
+      <dt>With thanks for free assets</dt>
+      <dd class="small">Sky and surface photographs: Poly Haven and ambientCG (CC0). 3D engine: three.js (MIT). Lettering: Baloo 2 (SIL Open Font License).</dd>
+    </dl>
+    <h3 class="love">For the love of Cairns</h3>
+    <dl class="credits-list places">
+      <dt>The Cairns Esplanade</dt>
+      <dd class="small">The city's waterfront, with its free swimming Lagoon and the tidal mudflats where migratory shorebirds feed, some flying in from as far as Siberia.</dd>
+      <dt>The Great Barrier Reef and Green Island</dt>
+      <dd class="small">The largest coral reef system in the world, World Heritage listed. Green Island is a coral cay in the reef, a short boat ride from Cairns.</dd>
+      <dt>The Daintree</dt>
+      <dd class="small">Part of the Wet Tropics of Queensland World Heritage Area and often described as one of the oldest rainforests on Earth. Here two World Heritage areas, rainforest and reef, meet at the sea.</dd>
+      <dt>Mossman Gorge</dt>
+      <dd class="small">Crystal-clear river and rainforest in the Daintree National Park, in the traditional country of the Eastern Kuku Yalanji people.</dd>
+      <dt>Kuranda and Barron Falls</dt>
+      <dd class="small">The village in the rainforest, reached by the historic Kuranda Scenic Railway (finished in 1891) and the Skyrail over the treetops. Barron Falls roars after the wet season rains.</dd>
+      <dt>Saltwater crocodiles</dt>
+      <dd class="small">The largest living reptiles, at home in Far North Queensland's rivers and estuaries. Wally is a friendly one, but real crocs are wild: be croc wise.</dd>
+    </dl>
+    <p class="acknowledge">Chomp 3D is set in Far North Queensland. We acknowledge the Traditional Owners of the lands and waters it celebrates, including the Gimuy Walubara Yidinji and Yirrganydji peoples of Cairns, the Djabugay people of Kuranda and the Eastern Kuku Yalanji people of the Daintree and Mossman Gorge, and pay our respects to Elders past and present.</p>
+    <button id="credits-close" class="go" type="button">Close</button>
+  </div>
+  <div class="card how-card" id="how-card" hidden>
+    <h1>Chomp 3D</h1>
+    <p class="sub">Wally's Cairns Adventure</p>
     <p>Somebody scratched out the <s>Don't</s> on the sign, so the visitors have brought lunch. Get close enough and they'll throw it to Wally, but not too close or they'll run off with it. Food keeps Wally going, and there's only so much.</p>
     <p class="area">Croc Park, Far North Queensland</p>
-    <button id="play" class="go" type="button">Play</button>
+    <button id="how-close" class="go" type="button">Got it</button>
     <div class="keys pc">
-      <span><kbd>W A S D</kbd> move</span><span><kbd>Space</kbd> jump, croc leap in water</span>
+      <span><kbd>Up</kbd> run ahead, <kbd>Left</kbd> <kbd>Right</kbd> turn, <kbd>Down</kbd> turn round</span><span><kbd>Space</kbd> jump, croc leap in water</span>
       <span><kbd>Shift</kbd> all fours</span><span><kbd>Drag</kbd> or <kbd>Q E</kbd> turn camera</span><span><kbd>C</kbd> camera to his front or back</span>
       <span><kbd>P</kbd> pause</span><span><kbd>M</kbd> sound</span>
     </div>
@@ -72,6 +124,9 @@
     <h1>Wally's Big Trip</h1>
     <p class="sub">Pick where to go. Finish an area to open the next one.</p>
     <div class="map-grid" id="map-grid"></div>
+    <h2 class="map-head">Adventures <span id="map-stars"></span></h2>
+    <p class="fine">Earn stars in each area to open them. Clothes at the Kuranda markets cost Golden Mangoes.</p>
+    <div class="map-acts" id="map-acts"></div>
     <p class="fine"><span id="map-mangoes"></span> &middot; <span id="map-postcards"></span></p>
   </div>
 </section>

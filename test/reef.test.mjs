@@ -99,6 +99,27 @@ check('no way between cells that are not joined gives no path', mazePath({ cols:
 // ---- The reef level's score ----
 check('reef score adds pearls, chest and air left', reefRunScore({ found: 4, chest: true, airLeft: 50, finished: true }).total === 20 + 30 + 20 + 10);
 check('no finish, no finish bonus', reefRunScore({ found: 4, finished: false }).finishBonus === 0);
-check('reef stars rise and three are reachable', REEF_STARS[0] < REEF_STARS[1] && REEF_STARS[1] < REEF_STARS[2] && reefRunScore({ found: 14, chest: true, airLeft: 60, finished: true }).total >= REEF_STARS[2]);
+check('reef stars rise; three are reachable, but only by collecting treasures', REEF_STARS[0] < REEF_STARS[1] && REEF_STARS[1] < REEF_STARS[2] && reefRunScore({ found: 14, chest: true, airLeft: 60, finished: true, treasure: 60 }).total >= REEF_STARS[2] && reefRunScore({ found: 14, chest: true, airLeft: 60, finished: true }).total < REEF_STARS[2]);
+// Depths and treasures (Ken: things to collect at different depths, for points).
+{
+  const R = await import('../js/levels/reef-rules.js');
+  check('three depths, all inside the coral', R.LANES.length === 3 && R.LANES.every(y => y < R.WALL_TOP && y > R.SEABED_Y));
+  check('a dive from the surface goes to the top depth', R.nextDepth(R.SURFACE_Y, 1) === R.LANES[0]);
+  check('Shift goes one deeper', R.nextDepth(R.LANES[0], 1) === R.LANES[1] && R.nextDepth(R.LANES[1], 1) === R.LANES[2]);
+  check('no deeper than the deepest', R.nextDepth(R.LANES[2], 1) === R.LANES[2]);
+  check('Ctrl+Shift goes one up, and from the top to the surface', R.nextDepth(R.LANES[2], -1) === R.LANES[1] && R.nextDepth(R.LANES[0], -1) === R.SURFACE_Y);
+  check('with rock overhead he cannot surface', R.nextDepth(R.LANES[0], -1, false) === R.LANES[0]);
+  const deeper = Object.values(R.TREASURES).sort((a, b) => a.lane - b.lane);
+  check('deeper treasures are worth more', deeper.every((t, i) => i === 0 || t.points > deeper[i - 1].points));
+  const m = R.makeMaze(6, 6, 3);
+  const spots = R.treasureSpots(m, 12, 3);
+  check('treasures sit in different cells', new Set(spots.map(t => t.cell.c + ',' + t.cell.r)).size === spots.length);
+  check('never on the entrance or the chest', spots.every(t => !(t.cell.c === m.entrance.c && t.cell.r === m.entrance.r) && !(t.cell.c === m.chest.c && t.cell.r === m.chest.r)));
+  check('the same seed gives the same treasures', JSON.stringify(R.treasureSpots(m, 12, 3)) === JSON.stringify(spots));
+  check('picked up only at its depth', R.canCollect(0, 0, R.LANES[1], 0.5, 0, R.LANES[1]) && !R.canCollect(0, 0, R.LANES[0], 0.5, 0, R.LANES[2]));
+  const base = R.reefRunScore({ found: 2, chest: true, finished: true, airLeft: 50 });
+  check('treasure points add to the score', R.reefRunScore({ found: 2, chest: true, finished: true, airLeft: 50, treasure: 17 }).total === base.total + 17);
+}
+
 console.log(`${passed} passed, ${failed} failed`);
 if (failed) process.exitCode = 1;

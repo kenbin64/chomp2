@@ -196,5 +196,30 @@ check('waking from a nap is out of the red', !R.inRedZone(R.REVIVE_ENERGY));
 check('three lives', R.LIVES === 3);
 check('food passing under the deck carries on to the water', R.foodSurface(0, B.z, 1) === R.WATER_Y);
 
+// The boardwalk is solid from the side (Ken): jump onto it, or swim under where it is high.
+{
+  const { deckBlocks, deckHeight: dh, BOARDWALK: B, WALLY_TALL } = await import('../js/rules.js');
+  const lowX = B.flat + 4;                                   // on a ramp, part way down (clear of the steps)
+  check('walking into a low part of the boardwalk is blocked', deckBlocks(lowX, B.z, 0.0, false));
+  check('jumped up level with it, he is not blocked', !deckBlocks(lowX, B.z, dh(lowX) - 0.1, false));
+  check('swimming under the high middle is allowed', !deckBlocks(0, B.z, -0.45, true));
+  check('standing upright under the high middle is too low for him', deckBlocks(0, B.z, -0.45, false) === (dh(0) - 0.35 + 0.45 < WALLY_TALL));
+  check('beside the boardwalk nothing blocks', !deckBlocks(lowX, B.z + B.width, 0.0, false));
+  check('the steps are a way up', !deckBlocks(-34, B.z, 0.0, false));
+  const { standHeight: sh } = await import('../js/rules.js');
+  check('at the steps he walks up onto the deck', sh(-34, B.z, 0.0).surface === 'deck');
+  check('away from the steps, from the ground he stays on the ground', sh(B.flat + 4, B.z, 0.0).surface !== 'deck');
+}
+
+// The first level is the training level: the meter lasts longest there, and each level after drains a little faster (Ken).
+{
+  const { energyDrain: d, LEVEL_DRAIN: L } = await import('../js/rules.js');
+  const secs = lvl => 100 / d('upright', true, lvl);
+  check('Croc Park gives the most time on the meter', secs('park') > secs('esplanade') && secs('esplanade') > secs('reef'));
+  check('running flat out in Croc Park, a full meter lasts over a minute', secs('park') > 60);
+  check('levels get harder in trip order', ['park', 'esplanade', 'reef', 'kuranda', 'daintree', 'mossman'].every((k, i, a) => i === 0 || L[k] >= L[a[i - 1]]));
+  check('no level given means the full rate', d('upright', true) === d('upright', true, 'reef'));
+}
+
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

@@ -60,6 +60,31 @@ when the feed-o-meter is in the red.
    the mouth snap shut; only **a pearl** placed in it opens it again. Out of the cave with the treasure and up
    to the surface wins the level.
 
+### Decisions, 2026-10-17 (Ken)
+- **Stars open the adventures** (`ACTIVITIES` in `js/progress.js`, shown on the trip map): River rapids 6 stars and
+  Line traverse 9 at Mossman Gorge; Bungee jump 12 and Boomerang 15 at Kuranda. Star counts are a first guess.
+- **Kuranda markets:** clothes for Wally and Kenny, paid for with banked Golden Mangoes.
+- **Golden Mangoes:** collect every one on a level for a bonus worth one star (`MANGO_SET_BONUS`, 40).
+- **Pearls:** banked; one opens the giant clam on the reef.
+- **Wally collapses** (out of puff): he loses a life and stays down until Kenny brings his jar, every time.
+- **Keyboard:** Up moves the way Wally faces; Left/Right turn on the spot; Down turns round; Shift dives,
+  Ctrl+Shift comes up (reef and sea); no jumping in the reef's water.
+- **Boomerang:** a cultural object; Kuranda is Djabugay country. Frame it as Wally learning from a local
+  guide, respectfully, never as a joke.
+- **Trees** are impostors of Ken's Meshy trees (`js/trees.js`, `assets/trees/`, tools `blender-impostor.py`,
+  `impostor-atlas.py`). **Characters** are rigged and animated in Blender by script (`tools/blender-rig-*.py`,
+  `tools/blender-animate-*.py`); heavy Meshy models are rebuilt with `tools/blender-bake-lowpoly.py`.
+- **One AI at a time:** Ken works with one Claude session on this project now.
+
+### Kuranda design, 2026-10-17 (Ken)
+- **Trip order:** 1 Croc Park, 2 The Esplanade, 3 The Great Barrier Reef, **4 Kuranda**, then Daintree River and Mossman Gorge.
+- **Main job:** feed through the Kuranda markets (visitors and stallholders throw food among the stalls; sweet spot;
+  fill the meter), as in the park and the Esplanade.
+- **The shop:** a market stall where Wally and Kenny get **new clothes**, paid for with banked Golden Mangoes.
+- **Barron Falls** (a trail from the village): **zip line** across the gorge and **bungee** jump, both opened by
+  stars, both about **catching food on the way** (time the bungee's lowest point; steer the zip line).
+- **Boomerang** (respectfully, learning from a local guide; Kuranda is Djabugay country).
+
 ## Run and test
 
 ```
@@ -70,7 +95,7 @@ npm test                    # all rule tests: rules, quests, progress, esplanade
 URL switches (any page): `?q=low|medium|high` force graphics quality, `?real=0` turn off the photographic
 layer (compare with the painted look), `?bot` a test pilot plays, `?play` skip the title.
 For now every built area is open on the trip map (`OPEN_ALL` in `js/progress.js`); add `?locked` to play with
-the real unlocking. Esplanade: `?seed=7` course. Reef: `?pearls=3` start with that many pearls (instead of the banked ones), `?seed=7` mazes.
+the real unlocking. Esplanade and reef are random every visit (Ken: never the same twice); `?seed=7` fixes the course or mazes for testing. Reef: `?pearls=3` start with that many pearls (instead of the banked ones).
 
 Test hooks in the browser console: `window.chomp` holds `game`, `wally`, `food`, `cam`, and per level
 `pelicans`, `jellies`, `toads`, `clusters`, `kenny` (park) or `reef`, `maze`, `camera`, `scene` (Esplanade).

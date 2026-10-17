@@ -10,9 +10,9 @@
 
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
-import { Food, randomKind, kennysToast } from '../food.js';
+import { Food, randomKind, kennysToast, useJarModel, useToastModel } from '../food.js';
 import { Input } from '../input.js';
-import { Bubbles, pickLine } from '../bubbles.js';
+import { Bubbles, pickLine, chatty } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
 import { loadModels, dress } from '../models.js';
 import { usePalmCrown } from '../palms.js';
@@ -20,13 +20,14 @@ import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
+import { loadRealism } from '../realism.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone } from '../rules.js';
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
 import { jellyModel, dressedJelly } from '../hazards.js';
-import { completeArea, readProgress, starsFor, POSTCARDS } from '../progress.js';
-import { PATH, generateCourse, hits, runScore, STARS } from './esplanade-rules.js';
-import { buildEsplanade, obstacleModel, mangoModel } from './esplanade-scene.js';
+import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds } from '../progress.js';
+import { PATH, generateCourse, hits, runScore, STARS, MANGO_SET_BONUS } from './esplanade-rules.js';
+import { buildEsplanade, obstacleModel, mangoModel, useMangoModel } from './esplanade-scene.js';
 import { Clusters } from '../clusters.js';
 import { airStep, AIR } from './reef-rules.js';
 import { clamWithPearl } from './reef-scene.js';
@@ -47,7 +48,7 @@ const POOL_Z = PATH.finish + 4;
 const inPool = (x, z) => z > POOL_Z + 1 && z < POOL_Z + 31 && Math.abs(x) < 12.5;
 const inSea = (x, z) => x < -PATH.half && !inPool(x, z);
 const POOL_WATER = G - 0.3;
-// Swimming under the sea beside the boardwalk: F goes under, Space comes up.
+// Swimming under the sea beside the boardwalk: Shift goes under, Ctrl+Shift comes up.
 // The sea's own ground reads seaDive, so it is declared before the ground.
 const SEA_FLOOR = -5.5, SEA_SWIM = -2.6, SEA_TOP = -0.45;
 const seaDive = { under: false, depth: SEA_TOP };
@@ -97,11 +98,16 @@ const fpsWatch = watchFrameRate(quality, lower => {
 });
 
 const models = await loadModels(undefined, { light: touch || quality.name === 'low' });
+useJarModel(models.get('jar'));                    // Ken's jar for Kenny's rescue, when present
+useToastModel(models.get('toast'));                // and his toast power-up
+useMangoModel(models.get('mango'));                // Ken's mango for the Golden Mangoes
 usePalmCrown(models.get('palm-crown'));                // Ken's palm crown on the built trunks
-const world = buildEsplanade(scene, quality);
+// The photographed surfaces and ripple picture (realism.js), as in the park; ?real=0 turns them off.
+const realism = params.get('real') === '0' ? null : await loadRealism(renderer, { light: touch || quality.name === 'low' });
+const world = buildEsplanade(scene, quality, {}, realism);
 const post = createPost(renderer, scene, camera, quality);
 addEventListener('resize', () => post.setSize(innerWidth, innerHeight));
-{
+if (!scene.environment) {   // the photographed sky already lights the scene when it is present
   const env = new THREE.Scene();
   const sky = scene.children.find(o => o.isMesh && o.geometry.type === 'SphereGeometry');
   if (sky) env.add(sky.clone());
@@ -117,7 +123,8 @@ const bubbles = new Bubbles(scene, touch ? 3 : 4);
 const fx = new Effects(scene, food);
 
 // The course: obstacles, mangoes, picnic shelters with people throwing food.
-const course = generateCourse(Number(params.get('seed')) || 7);
+// A new course every visit (Ken: never the same twice). ?seed=N gives a fixed one, for testing.
+const course = generateCourse(Number(params.get('seed')) || 1 + Math.floor(Math.random() * 2147483000));
 const obstacles = course.obstacles.map(o => {
   const mesh = obstacleModel(o.kind);
   mesh.position.set(o.x, G, o.z);
@@ -170,7 +177,7 @@ let toast = null;
 // ---- Controls and state -------------------------------------------------------
 const input = new Input(canvas, touch ? { stick: $('stick'), knob: $('knob'), jump: $('t-jump'), fours: $('t-fours'), pause: $('t-pause'), cam: $('t-cam') } : null);
 input.onPause = () => setPaused(!game.paused);
-// The on-screen Dive and Up buttons (the same as Shift and Space under water).
+// The on-screen Dive and Up buttons (the same as Shift and Ctrl+Shift under water).
 for (const [id, flag] of [['b-dive', 'diveQueued'], ['b-up', 'upQueued']]) {
   $(id).addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); game[flag] = true; });
 }
@@ -229,7 +236,8 @@ function looksUnder(under) {
   scene.fog = under ? underFog : aboveFog;
   scene.background = under ? underColour : aboveBackground;
   if (skyMesh) skyMesh.visible = !under;
-  world.ring.visible = !under;
+  world.ring.visible = !under && !world.ring.userData.off;
+  if (world.ranges) world.ranges.visible = !under;
   seaCeiling.visible = under;
 }
 
@@ -240,20 +248,25 @@ function outOfAir() {
   game.faint = 3.2; wally.setNapping(true);
   kennyFloat.visible = vegemite.visible = kennyMesh.visible = true;
   toast_(`Out of air! ${game.lives} left. Here comes Kenny`, 'bad');
-  bubbles.say(kennyMesh, 'Hang on, Wally! Vegemite!', 2.6);
+  bubbles.say(kennyMesh, "Hang on, Wally! Here's me jar!", 2.6);
   return true;
 }
 // Kenny on his float beside Wally, holding out the Vegemite, until Wally is revived.
 function rescueStep(dt, t) {
   game.faint -= dt;
+  // On the water he paddles up on his float; on land he simply stands beside Wally.
+  const afloat = kennyFloat.visible, base = afloat ? 0 : wally.pos.y;
   kennyFloat.position.set(wally.pos.x + 1.6, 0.05, wally.pos.z + 0.6);
-  kennyMesh.position.set(kennyFloat.position.x, -0.25, kennyFloat.position.z); kennyMesh.rotation.y = -Math.PI / 2;
-  vegemite.position.set(wally.pos.x + 0.6, 0.6 + Math.sin(t * 4) * 0.1, wally.pos.z + 0.3); vegemite.rotation.y += dt * 3;
+  kennyMesh.position.set(kennyFloat.position.x, afloat ? -0.25 : base, kennyFloat.position.z); kennyMesh.rotation.y = -Math.PI / 2;
+  vegemite.position.set(wally.pos.x + 0.6, base + 0.6 + Math.sin(t * 4) * 0.1, wally.pos.z + 0.3); vegemite.rotation.y += dt * 3;
   if (kennyPoser && kennyPoser.ok) kennyPoser.pose({ time: t, cheer: 1, napping: false });
   if (game.faint <= 0) {
-    game.air = AIR.max; kennyFloat.visible = vegemite.visible = kennyMesh.visible = false;
+    const wasAir = game.air < AIR.max * 0.5;
+    game.air = AIR.max; game.energy = Math.max(game.energy, REVIVE_ENERGY);
+    kennyFloat.visible = vegemite.visible = kennyMesh.visible = false;
     wally.setNapping(false); sound.play.powerup();
-    toast_("Kenny's Vegemite! Full of beans. Shift (Fours) to dive", 'good'); bubbles.say(wally.root, 'Thanks, Kenny! Back down I go!', 3.4);
+    if (wasAir) { toast_("Kenny's jar! Full of beans. Shift (Fours) to dive", 'good'); bubbles.say(wally.root, 'Thanks, Kenny! Back down I go!', 3.4); }
+    else { toast_("Kenny's jar! Back on your feet", 'good'); bubbles.say(wally.root, pickLine('wallyToast'), 3.4); }
   }
 }
 
@@ -293,11 +306,14 @@ function step(dt, t) {
   game.kennyCool -= dt; game.hungry -= dt;
   const napping = game.nap > 0;
   let pace = speedFactor(game.energy) * (game.stun > 0 ? 0.4 : 1) * (game.boost > 0 ? 1.3 : 1);
-  // In the sea: F goes under, Space comes back up (no croc leap while under).
+  // In the sea: Shift goes under, Ctrl+Shift comes back up (no croc leap while under).
   const foursPressed = k.fours && !game.foursWas; game.foursWas = k.fours;
   const inTheSea = wally.surface === 'water' && inSea(wally.pos.x, wally.pos.z);
   if (game.faint <= 0 && !napping && !game.done) {
-    const dive = foursPressed || game.diveQueued, up = k.jump || game.upQueued;
+    // Shift dives, Ctrl+Shift comes up (Ken's keys, as on the reef); Space and
+    // the on-screen buttons still work too.
+    const ctrlShift = k.fours && k.ctrl, ctrlShiftPressed = ctrlShift && !game.ctrlShiftWas; game.ctrlShiftWas = ctrlShift;
+    const dive = (foursPressed && !k.ctrl) || game.diveQueued, up = ctrlShiftPressed || k.jump || game.upQueued;
     if (inTheSea && dive && !seaDive.under) { seaDive.under = true; bubbles.say(wally.root, 'Down I go!', 2); }
     else if (seaDive.under && up) seaDive.under = false;
   }
@@ -306,13 +322,15 @@ function step(dt, t) {
   $('dive-buttons').hidden = !inTheSea || game.done;
   $('b-dive').disabled = seaDive.under; $('b-up').disabled = !seaDive.under;
   if (!inTheSea && wally.surface !== 'water') seaDive.under = false;
+  sound.underwaterMusic(seaDive.under);              // the music goes soft and muffled under water
   if (inTheSea && !game.seaTip) { game.seaTip = true; toast_('Shift (Fours) to dive under. Swim to the boardwalk edge to climb out', 'info'); }
   const wantSea = seaDive.under ? SEA_SWIM : SEA_TOP;
   seaDive.depth += Math.sign(wantSea - seaDive.depth) * Math.min(Math.abs(wantSea - seaDive.depth), 4 * dt);
   const control = napping || game.done || game.faint > 0 ? { forward: 0, right: 0, jump: false, fours: false }
     : seaDive.under || seaDive.depth < SEA_TOP - 0.2 ? { ...k, jump: false } : k;
   // Crawling out: at the boardwalk's edge, pushing toward it, he hauls himself up.
-  const wantX = -Math.sin(cam.yaw) * control.forward + Math.cos(cam.yaw) * control.right;
+  // Which way he is pushing: keyboard, straight ahead while Up is held; phone stick, relative to the camera.
+  const wantX = control.steer ? Math.sin(wally.facing) * (control.forward > 0 ? 1 : 0) : -Math.sin(cam.yaw) * control.forward + Math.cos(cam.yaw) * control.right;
   if (game.climb > 0) {
     game.climb -= dt;
     const u = 1 - Math.max(0, game.climb) / 0.6, e = u * u * (3 - 2 * u);
@@ -336,7 +354,7 @@ function step(dt, t) {
   looksUnder(camera.position.y < -0.2);
   if (seaCeiling.visible) { seaCeiling.position.x = camera.position.x; seaCeiling.position.z = camera.position.z; }
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (!game.done && game.boost <= 0 && !napping) game.energy -= energyDrain(wally.mode, moving) * dt;
+  if (!game.done && game.boost <= 0 && !napping) game.energy -= energyDrain(wally.mode, moving, 'esplanade') * dt;
 
   // Obstacles
   for (const o of obstacles) {
@@ -375,6 +393,10 @@ function step(dt, t) {
     if (Math.abs(m.z - wally.pos.z) < 1.4 && Math.abs(m.x - wally.pos.x) < 1.1 && Math.abs(m.y - (wally.pos.y + 1.2)) < 1.4) {
       m.taken = true; scene.remove(m.mesh); game.mangoes++; game.points += 1; sound.play.goal();
       fx.burst(m.mesh.position, [0xffb51f, 0xffe066], 8);
+      if (game.mangoes === mangoes.length) {                      // the full set: Ken's bonus, one star's worth
+        game.points += MANGO_SET_BONUS; fx.burst(wally.pos, [0xffb51f, 0xffe066, 0xffffff], 30);
+        toast_(`Every Golden Mango! +${MANGO_SET_BONUS}`, 'good'); bubbles.say(wally.root, 'Crikey! The whole set!', 3.4);
+      }
     }
   }
 
@@ -420,7 +442,7 @@ function step(dt, t) {
       const pts = catchPoints(how, game.streak, game.boost > 0); game.foodPoints += pts; game.points += pts;
       game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[it.kind].energy);
       toast_(`+${pts} ${how === 'leap' ? 'Jumping catch!' : how === 'air' ? 'In the air!' : it.name}`);
-      if (Math.random() < 0.3) bubbles.say(wally.root, pickLine('wallyCatch'), 3.4);
+      if (chatty()) bubbles.say(wally.root, pickLine('wallyCatch'), 3.4);
     } else closest = Math.min(closest, d);
   }
   wally.jawWant = closest < 4.5 ? 0.75 : 0.12;
@@ -450,14 +472,16 @@ function step(dt, t) {
 
   if (game.energy < 25 && game.hungry <= 0) { bubbles.say(wally.root, pickLine('wallyHungry'), 3.4); game.hungry = 10; }
 
-  // Running out: a nap costs a life.
-  if (game.nap > 0) {
-    game.nap -= dt;
-    if (game.nap <= 0) { wally.setNapping(false); game.energy = REVIVE_ENERGY; bubbles.say(wally.root, 'Right, back into it!', 3.4); }
-  } else if (game.energy <= 0 && !game.done) {
+  // Running out of puff costs a life, and Wally stays down until Kenny brings
+  // his jar (Ken's rule), the same rescue as running out of air.
+  if (game.energy <= 0 && !game.done && game.faint <= 0) {
     game.lives--; sound.play.lose();
     if (game.lives <= 0) { finish(false); return; }
-    game.nap = 2.5; wally.setNapping(true); toast_(`Out of puff! ${game.lives} left`, 'bad');
+    game.faint = 3.2; wally.setNapping(true);
+    kennyFloat.visible = wally.mode === 'swim';
+    vegemite.visible = kennyMesh.visible = true;
+    toast_(`Out of puff! ${game.lives} left. Here comes Kenny`, 'bad');
+    bubbles.say(kennyMesh, "Hang on, Wally! Comin'!", 2.6);
   }
 
   // The Lagoon: the way on, once the job is done.
@@ -512,18 +536,19 @@ function followCamera(dt) {
   camera.lookAt(camTarget);
   const jolt = fx.shakeOffset(dt); if (jolt) camera.position.add(jolt);
   world.ring.position.x = camera.position.x; world.ring.position.z = camera.position.z;   // the horizon stays on the horizon
+  if (world.ranges) { world.ranges.position.x = camera.position.x; world.ranges.position.z = camera.position.z; }
   world.sun.position.set(wally.pos.x - 60, 70, wally.pos.z - 40); world.sun.target.position.copy(wally.pos);
 }
 
 // ---- Screens -------------------------------------------------------------------------
 function drawHud() {
   $('score').textContent = game.points.toLocaleString();
-  $('mangoes').textContent = game.mangoes;
+  $('mangoes').textContent = `${game.mangoes}/${mangoes.length}`;
   const diving = seaDive.depth < -1.0 || game.air < AIR.max - 0.5;
   $('pearls').textContent = game.pearls;
   $('feed').classList.toggle('air', diving);
   $('meter-label').textContent = diving ? 'Air' : 'Feed-o-meter';
-  $('red-note').textContent = diving ? 'Low on air! Swim up (Space) or find a bubble vent' : 'In the red! Look out for Kenny and his jar!';
+  $('red-note').textContent = diving ? 'Low on air! Swim up (Ctrl+Shift) or find a bubble vent' : 'In the red! Look out for Kenny and his jar!';
   $('energy-fill').style.width = `${Math.max(0, diving ? game.air / AIR.max * 100 : game.energy)}%`;
   $('feed').classList.toggle('red', diving ? game.air < 25 : inRedZone(game.energy));
   $('lives').textContent = '●'.repeat(Math.max(0, game.lives)) + '○'.repeat(Math.max(0, LIVES - game.lives));
@@ -533,7 +558,7 @@ function drawHud() {
 }
 
 function start() {
-  sound.start();
+  sound.start(); sound.startMusic('esplanade');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true;
   cam.yaw = Math.PI;                    // start behind him, looking down the boardwalk
@@ -545,17 +570,17 @@ function setPaused(p) { if (!game.running) return; game.paused = p; $('paused').
 function finish(won, why = '') {
   game.running = false;
   $('hud').hidden = true; $('touch').hidden = true;
-  const s = runScore({ food: game.foodPoints, mangoes: game.mangoes, energyLeft: game.energy, stumbles: game.stumbles, finished: won, pearls: game.pearls });
+  const s = runScore({ food: game.foodPoints, mangoes: game.mangoes, mangoSet: game.mangoes === mangoes.length, energyLeft: game.energy, stumbles: game.stumbles, finished: won, pearls: game.pearls });
   const stars = won ? starsFor(s.total, STARS) : 0;
-  if (won) {
-    progress = completeArea(progress, 'esplanade', { score: s.total, stars, mangoes: game.mangoes, pearls: game.pearls });
-    try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
-  }
+  if (won) sound.fanfare();                         // Wally's theme hook: well done, mate
+  if (won) progress = completeArea(progress, 'esplanade', { score: s.total, stars, mangoes: game.mangoes, pearls: game.pearls });
+  else progress = bankFinds(progress, { mangoes: game.mangoes, pearls: game.pearls });   // Ken: keep what was found, finished or not
+  try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
   $('result-title').textContent = won ? 'Made it to the Lagoon!' : why === 'hungry' ? 'Still peckish!' : why === 'air' ? 'Out of air!' : 'Out of puff';
   $('result-why').textContent = why === 'hungry' ? `Wally made it, but his feed-o-meter isn't full. He needs a full tank (${FULL}%) to head on.` : '';
   $('result-stars').textContent = won ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
   $('result-lines').innerHTML = '';
-  for (const [label, v] of [['Tucker caught', `${game.caught} (${s.food})`], ['Golden Mangoes', `${game.mangoes} (${s.mangoes})`], ['Pearls', `${game.pearls} (${s.pearls})`], ['Finish bonus', s.finishBonus], ['No-bump bonus', s.clean], ['Total', s.total]]) {
+  for (const [label, v] of [['Tucker caught', `${game.caught} (${s.food})`], ['Golden Mangoes', `${game.mangoes}/${mangoes.length} (${s.mangoes})`], ['All mangoes bonus', s.mangoSet], ['Pearls', `${game.pearls} (${s.pearls})`], ['Finish bonus', s.finishBonus], ['No-bump bonus', s.clean], ['Total', s.total]]) {
     const li = document.createElement('li'); li.innerHTML = `<span></span><b></b>`; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }
   $('postcard').hidden = !won;
@@ -602,6 +627,8 @@ function frame() {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt;
   if (game.running && !game.paused) step(dt, t);
   bubbles.update(dt); fx.update(dt, t);
+  if (world.trees) world.trees.update(t);          // the breeze in the trees
+  world.sea.userData.ripple(t); world.sea.userData.grass.update(t);   // waves, and the breeze in the grass
   followCamera(dt);
   fpsWatch(dt);
   post.render();

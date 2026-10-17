@@ -99,8 +99,12 @@ export class Input {
     const turnKeys = (k.has('q') ? 1 : 0) - (k.has('e') ? 1 : 0);
     const out = {
       forward: f, right: r,
+      // Keyboard steers Wally himself (up runs the way he faces, down turns him
+      // round, left and right turn him); the phone stick points where to go.
+      steer: !this.stick,
       jump: this.jumpQueued,
       fours: k.has('shift') || this.foursToggle,
+      ctrl: k.has('control'),          // with Shift: come up from a dive (the reef and the sea)
       turn: this.turn, turnKeys, tilt: this.tilt, zoom: this.zoom, recenter: this.recenterQueued,
     };
     this.recenterQueued = false;

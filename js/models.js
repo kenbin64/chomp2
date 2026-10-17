@@ -23,7 +23,7 @@ export const MODEL_FILES = [
   ...Array.from({ length: 10 }, (_, i) => `tourist-${i + 1}`),
   'food-fries', 'food-pizza', 'food-taco', 'food-hotdog', 'food-shrimp',
   'food-chicken', 'food-hoagie', 'food-hamburger', 'food-steak',
-  'palm-1', 'palm-2', 'palm-crown', 'boat',
+  'palm-1', 'palm-2', 'palm-crown', 'boat', 'jar', 'mango', 'seashell', 'coral',
 ];
 
 // Load whichever files exist. Returns a Map of name -> loaded glTF.
@@ -116,6 +116,27 @@ export class ModelSkin {
   stop(fade = 0.2) {
     if (this.currentClip) this.mixer.clipAction(this.currentClip).fadeOut(fade);
     this.currentClip = null; this.current = null;
+  }
+
+  // Play a short move on top of whatever is playing, once: Wally's Chomp and
+  // Grab only move his head, jaw and arms, so they ride over running, jumping or
+  // swimming. The clip is made additive (measured from its first frame, which is
+  // his rest or arms-down pose), so it adds its motion instead of replacing.
+  overlay(name, { speed = 1 } = {}) {
+    const clip = this.find(name);
+    if (!clip) return false;
+    this.additive = this.additive || new Map();
+    let add = this.additive.get(clip);
+    if (!add) {
+      add = THREE.AnimationUtils.makeClipAdditive(clip.clone());
+      this.additive.set(clip, add);
+    }
+    const action = this.mixer.clipAction(add);
+    action.blendMode = THREE.AdditiveAnimationBlendMode;
+    action.setLoop(THREE.LoopOnce, 1);
+    action.timeScale = speed;
+    action.reset().play();
+    return true;
   }
 
   update(dt) { this.mixer.update(dt); }

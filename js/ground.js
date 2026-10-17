@@ -4,7 +4,7 @@
 // ask this, never a level directly, so every level can bring its own ground.
 // The park's ground is the default; another level calls setGround() at start.
 
-import { standHeight, clampToPark, railClamp, onDeck, deckHeight, foodSurface, isWater, terrainHeight } from './rules.js';
+import { standHeight, clampToPark, railClamp, onDeck, deckHeight, deckBlocks, foodSurface, isWater, terrainHeight } from './rules.js';
 
 export const parkGround = {
   // { y, surface } under (x, z) for feet at feetY. fromBelow: coming up from water.
@@ -13,6 +13,14 @@ export const parkGround = {
   move(x, z, nx, nz, y) {
     let tz = nz;
     if (onDeck(x, z) && y >= deckHeight(x) - 0.3) tz = railClamp(nx, z, nz);
+    // The boardwalk is solid from the side: stop at it (sliding along it), unless
+    // there is room to pass under or he has jumped up level with it.
+    const swimming = isWater(x, z);
+    if (!onDeck(x, z) && deckBlocks(nx, tz, y, swimming)) {
+      if (!deckBlocks(nx, z, y, swimming)) tz = z;                // slide along it
+      else if (!deckBlocks(x, tz, y, swimming)) nx = x;
+      else { nx = x; tz = z; }
+    }
     return clampToPark(nx, tz);
   },
   // Height food stops at, coming down at (x, z) from prevY.

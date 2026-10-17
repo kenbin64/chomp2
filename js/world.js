@@ -4,7 +4,7 @@
 // Scenery only. Where Wally may go is decided in rules.js.
 
 import * as THREE from 'three';
-import { LAGOON, BANK_Y, BOARDWALK, ROCKS, lagoonDistance, terrainHeight, deckHeight, deckOpenAt } from './rules.js';
+import { LAGOON, BANK_Y, BOARDWALK, ROCKS, lagoonDistance, terrainHeight, deckHeight, deckOpenAt, PARK_EDGE } from './rules.js';
 import { signTexture, skyTexture, plankTexture, horizonTexture } from './textures.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { fitToSize, fitToHeight } from './models.js';
@@ -12,6 +12,8 @@ import { Water } from 'three/addons/objects/Water.js';
 import { surfaceMaterial, groundMaterial, applySky } from './realism.js';
 import { buildPalm, palmStand } from './palms.js';
 import { addForest } from './forest.js';
+import { Trees } from './trees.js';
+import { Grass } from './grass.js';
 
 const SEA_START_Z = -64;     // beyond this the park meets the harbour
 
@@ -89,7 +91,12 @@ function addHorizon(scene, image) {
 // the way distance and haze colour real hills. They are drawn unlit, with the
 // shading worked out here: slopes facing the sun lighter, gullies darker, and
 // a mottle for the canopy, fading into the haze at the foot.
-function addRanges(scene, horizon, sunDir) {
+// sink: how much they drop on the sea side (1 = down to nothing, 0.5 = half
+// height, as across the water from the Esplanade); turn: turns the whole ring
+// (radians) so the low side faces a level's sea. Returns the group, so a level
+// that is longer than the ring can carry it along with the camera.
+export function addRanges(scene, horizon, sunDir, { sink = 1, turn = 0 } = {}) {
+  const group = new THREE.Group(); group.rotation.y = turn;
   const layers = [
     { r: 290, base: 7, rise: 26, colour: 0x2e5a3c, seed: 1.7, haze: 0.2 },
     { r: 370, base: 18, rise: 40, colour: 0x557487, seed: 4.1, haze: 0.45 },
@@ -98,7 +105,7 @@ function addRanges(scene, horizon, sunDir) {
     let h = L.base + L.rise * (0.5 + 0.28 * Math.sin(a * 3 + L.seed) + 0.17 * Math.sin(a * 7.3 + L.seed * 2) + 0.05 * Math.sin(a * 19 + L.seed));
     h += 1.6 * Math.sin(a * 41 + L.seed) + 0.8 * Math.sin(a * 97);           // canopy on the skyline
     const z = Math.sin(a);
-    return h * (1 - Math.max(0, Math.min(1, (-z - 0.15) * 4)));              // sink toward the sea side
+    return h * (1 - sink * Math.max(0, Math.min(1, (-z - 0.15) * 4)));       // sink toward the sea side
   };
   for (const L of layers) {
     const steps = 480, rows = 6, pos = [], col = [], idx = [];
@@ -128,8 +135,10 @@ function addRanges(scene, horizon, sunDir) {
     geo.setIndex(idx);
     const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: false }));
     m.renderOrder = -1;
-    scene.add(m);
+    group.add(m);
   }
+  scene.add(group);
+  return group;
 }
 
 // ---- Ground and water ---------------------------------------------------
@@ -186,10 +195,13 @@ function sandiness(x, z) {
 // repeat of the grass tiles does not show.
 function groundTint(x, z, out) {
   const d = lagoonDistance(x, z);
-  out.setRGB(1, 1, 1);
+  out.setRGB(0.82, 0.86, 0.78);                      // a deeper, more natural green than the bare scan (Ken: it read as flat lime)
   if (z >= SEA_START_Z + 4 && d < 1.0) out.lerp(new THREE.Color(0x8c8678), Math.min(1, (1 - d) * 1.6));
+  // Broad patches: lusher and darker in places, drier and yellower in others.
   const n = Math.sin(x * 0.11) * Math.cos(z * 0.09) * 0.5 + Math.sin(x * 0.037 + z * 0.029) * 0.5;
-  return out.multiplyScalar(1 + n * 0.09);
+  const dryness = Math.max(0, Math.sin(x * 0.053 + 1.3) * Math.cos(z * 0.047 - 0.7));
+  out.lerp(new THREE.Color(1.0, 0.93, 0.62), dryness * 0.35 * (1 - Math.min(1, Math.max(0, 1.3 - d) * 3)));
+  return out.multiplyScalar(1 + n * 0.2);
 }
 
 function addGround(scene) {
@@ -399,20 +411,6 @@ function addSign(scene) {
   scene.add(g);
 }
 
-// One of Ken's palm models if there are any, otherwise the built palm.
-function palmFor(x, z, height, lean, models, i) {
-  const files = ['palm-1', 'palm-2'].filter(n => models && models.has(n));
-  if (!files.length) return palm(x, z, height, lean);
-  const g = new THREE.Group();
-  const m = cloneSkinned(models.get(files[i % files.length]).scene);
-  m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-  fitToHeight(m, height);
-  g.add(m);
-  g.position.set(x, drawnHeight(x, z), z);
-  g.rotation.y = Math.random() * Math.PI * 2;
-  return g;
-}
-
 // A coconut palm (palms.js), with the scanned bark when it is present. yaw is
 // the way it leans; opts.lights adds the Esplanade's fairy lights.
 let palmCount = 0;
@@ -423,7 +421,25 @@ function palm(x, z, height, lean, yaw = Math.random() * Math.PI * 2, opts = {}) 
   return g;
 }
 
-function addPalmsAndRocks(scene, q, models) {
+// The rainforest between the park and the ranges, on the land side only: a deep
+// belt of ghost gums, umbrella trees and palms whose crowns merge into one wall.
+function addTreeBelt(trees, q) {
+  let seed = 11;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const count = q.name === 'high' ? 760 : q.name === 'medium' ? 440 : 200;
+  for (let n = 0, tries = 0; n < count && tries < count * 20; tries++) {
+    const a = rnd() * Math.PI * 2, d = 150 + Math.sqrt(rnd()) * 120;
+    const x = Math.cos(a) * d, z = Math.sin(a) * d;
+    if (z < SEA_START_Z + 20) continue;
+    const r = rnd();
+    if (r < 0.5) trees.add('eucalyptus', x, BANK_Y, z, 16 + rnd() * 12);
+    else if (r < 0.8) trees.add('umbrella', x, BANK_Y, z, 9 + rnd() * 5);
+    else trees.add('palm', x, BANK_Y, z, 11 + rnd() * 5);
+    n++;
+  }
+}
+
+function addPalmsAndRocks(scene, q, models, trees) {
   let seed = 3;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   // Stands of one, two or three palms (palms.js palmStand), so fewer stands than palms.
@@ -431,10 +447,15 @@ function addPalmsAndRocks(scene, q, models) {
     const a = rnd() * Math.PI * 2, d = 1.5 + rnd() * 1.4;
     const x = Math.cos(a) * LAGOON.rx * d, z = Math.sin(a) * LAGOON.rz * d;
     if (z < SEA_START_Z + 2 || Math.abs(z - BOARDWALK.z) < 3) continue;
-    const own = ['palm-1', 'palm-2'].some(n => models && models.has(n));
-    for (const t of palmStand(x, z, rnd, { minH: 6, maxH: 13 })) {
-      scene.add(own ? palmFor(t.x, t.z, t.height, t.lean, models, i) : palm(t.x, t.z, t.height, t.lean, t.yaw));
-    }
+    for (const t of palmStand(x, z, rnd, { minH: 6, maxH: 13 })) trees.add('palm', t.x, drawnHeight(t.x, t.z), t.z, t.height + 2);
+  }
+  // Ghost gums and umbrella trees further back, giving shade and variety.
+  for (let i = 0; i < Math.round(q.palms * 0.5); i++) {
+    const a = rnd() * Math.PI * 2, d = 2.0 + rnd() * 1.6;
+    const x = Math.cos(a) * LAGOON.rx * d, z = Math.sin(a) * LAGOON.rz * d;
+    if (z < SEA_START_Z + 6 || Math.abs(z - BOARDWALK.z) < 5) continue;
+    if (rnd() < 0.55) trees.add('eucalyptus', x, drawnHeight(x, z), z, 13 + rnd() * 8);
+    else trees.add('umbrella', x, drawnHeight(x, z), z, 7 + rnd() * 4);
   }
   const rock = scanned('rock', 1, 1, { color: 0x9c968c }) || mat(0x8c8579, { roughness: 0.95 });
   for (let i = 0; i < 26; i++) {
@@ -483,24 +504,39 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
     ring.visible = false;                             // real-looking ranges instead, and a softer,
     addRanges(scene, scene.fog.color, sun.position.clone().normalize());  // further-off haze
     scene.fog.near = 110; scene.fog.far = 520;
-    // Rainforest between the park and the ranges, on the land side only: a
-    // dense belt whose canopies merge into one wall of green.
-    addForest(scene, { count: q.name === 'high' ? 420 : q.name === 'medium' ? 260 : 120, inner: 165, outer: 265,
-      keep: (x, z) => z > SEA_START_Z + 20, groundY: () => BANK_Y });
   }
+  // Ken's trees (trees.js): his palms round the park, ghost gums and umbrella
+  // trees among them, and a deep belt of all three out toward the ranges.
+  const trees = new Trees(scene, { light: q.name === 'low' });
+  addTreeBelt(trees, q);
   addGround(scene);
   addFarGround(scene);
+  // Real grass on the lawns (grass.js): short on the lawn, longer past the fence.
+  const grass = new Grass(scene, {
+    x0: -110, x1: 110, z0: SEA_START_Z + 6, z1: 110, heightAt: drawnHeight,
+    tufts: q.name === 'high' ? 36000 : q.name === 'medium' ? 16000 : 5000,
+    density: (x, z) => {
+      if (sandiness(x, z) > 0.15) return 0;
+      const d = lagoonDistance(x, z);
+      if (d > 4.2) return 0;
+      const fade = d > 3.4 ? (4.2 - d) / 0.8 : 1;                // thins out into the distance
+      return fade * (d > PARK_EDGE + 0.05 ? 1.7 : 1);              // left long beyond the fence
+    },
+  });
   const wave = addWater(scene, q, sun);
   addFence(scene);
   addBoardwalk(scene);
   addSign(scene);
-  addPalmsAndRocks(scene, q, models);
+  addPalmsAndRocks(scene, q, models, trees);
+  trees.build();
   addRocks(scene);
   const gate = addGate(scene);
   const boats = addHarbour(scene, models);
 
   const update = function update(t, dt, gateOpen) {
     wave(t);
+    trees.update(t);
+    grass.update(t);
     gate(dt, gateOpen);
     boats.forEach((b, i) => { b.position.y = 0.6 + Math.sin(t * 0.8 + i) * 0.15; b.rotation.z = Math.sin(t * 0.6 + i) * 0.03; });
   };

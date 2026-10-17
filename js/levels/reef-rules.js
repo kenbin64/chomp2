@@ -10,6 +10,52 @@ export const SWIM_Y = -8.6;        // where Wally swims along the reef, clear of
 export const SURFACE_Y = -0.45;    // where he floats at the top, as in the rest of the game
 export const WALL_TOP = -5.6;      // maze walls run from the seabed up to here
 
+// ---- Swimming depths (Ken: things to collect at different depths) --------------
+// Under water Wally swims at one of three depths, all inside the coral (below
+// WALL_TOP, above the seabed): Shift takes him one deeper, Ctrl+Shift one up,
+// and from the top one he surfaces.
+export const LANES = [-6.6, SWIM_Y, -10.6];
+export const LANE_NAMES = ['near the top', 'middle', 'down deep'];
+// The next depth to swim at. dir +1 deeper, -1 up. From the surface a dive goes
+// to the top lane; up from the top lane is the surface (unless rock is overhead).
+export function nextDepth(depth, dir, canSurface = true) {
+  const near = LANES.reduce((best, y, i) => Math.abs(y - depth) < Math.abs(LANES[best] - depth) ? i : best, 0);
+  if (depth > LANES[0] + 1.5) return dir > 0 ? LANES[0] : depth;                  // at the surface
+  const i = near + Math.sign(dir);
+  if (i < 0) return canSurface ? SURFACE_Y : LANES[0];
+  return LANES[Math.min(LANES.length - 1, i)];
+}
+
+// ---- Reef treasures --------------------------------------------------------------
+// Scattered along the maze corridors at the three depths, worth more the deeper
+// they are: starfish near the top, cowrie shells in the middle, gold coins from
+// the pirate wreck down deep.
+export const TREASURES = {
+  starfish: { lane: 0, points: 2, name: 'Starfish' },
+  shell:    { lane: 1, points: 3, name: 'Cowrie shell' },
+  coin:     { lane: 2, points: 5, name: 'Gold coin' },
+};
+// n treasures in different cells of a maze (never the entrance or the chest's
+// cell), each a kind chosen at random; the same seed gives the same layout.
+export function treasureSpots(maze, n, seed = 1, skip = []) {
+  const rnd = seeded(seed * 7 + 3);
+  const cells = [];
+  for (let r = 0; r < maze.rows; r++) for (let c = 0; c < maze.cols; c++) {
+    if (c === maze.entrance.c && r === maze.entrance.r) continue;
+    if (maze.chest && c === maze.chest.c && r === maze.chest.r) continue;
+    if (skip.some(k => k.c === c && k.r === r)) continue;
+    cells.push({ c, r });
+  }
+  for (let i = cells.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [cells[i], cells[j]] = [cells[j], cells[i]]; }
+  // Shells are the most common find (Ken), starfish and gold coins rarer.
+  const pick = () => { const r = rnd(); return r < 0.5 ? 'shell' : r < 0.78 ? 'starfish' : 'coin'; };
+  return cells.slice(0, n).map(cell => ({ cell, kind: pick() }));
+}
+// Is Wally close enough to pick one up? Near it across, and at its depth.
+export function canCollect(wx, wz, depth, tx, tz, ty) {
+  return Math.hypot(wx - tx, wz - tz) < 1.3 && Math.abs(depth - ty) < 1.0;
+}
+
 // ---- Air ----------------------------------------------------------------------
 export const AIR = {
   max: 100,
@@ -200,9 +246,11 @@ export function cellAt(maze, x, z, ox, oz, size) {
 
 // ---- The reef level's score ------------------------------------------------------
 // Pearls found and the chest, plus a bonus for finishing with air to spare.
-export const REEF_STARS = [50, 85, 115];
-export function reefRunScore({ found = 0, chest = false, airLeft = 0, finished = false }) {
+export const REEF_STARS = [80, 140, 190];   // raised with the treasures (about 100 more points on a full run)
+// treasure: points from the starfish, shells and coins picked up.
+export function reefRunScore({ found = 0, chest = false, airLeft = 0, finished = false, treasure = 0 }) {
   const pearls = Math.max(0, found) * PEARL_POINTS, chestPts = chest ? CHEST_POINTS : 0;
   const finishBonus = finished ? 20 + Math.round(Math.max(0, airLeft) / 5) : 0;
-  return { pearls, chest: chestPts, finishBonus, total: pearls + chestPts + finishBonus };
+  const tr = Math.max(0, treasure);
+  return { pearls, chest: chestPts, treasure: tr, finishBonus, total: pearls + chestPts + tr + finishBonus };
 }

@@ -69,6 +69,44 @@ The jaw must open, because he catches food in his mouth.
 | `food-pizza.glb` | A slice of pepperoni pizza with melted cheese and a thick crust |
 | `toast.glb` | Kenny's power-up: a slice of golden toast thinly spread with a dark brown, almost black spread, a little butter melting on top. No packaging. |
 
+### How to make every character from now on (Blender pipeline, 2026-10-16)
+
+Wally showed the way: an unrigged model from Meshy, rigged and animated in Blender by script
+(`tools/blender-rig-wally.py`, `tools/blender-animate-wally.py`), looks and moves far better than
+Meshy's own auto-rig. So for every character and creature:
+
+1. **Same look as Wally.** Add to every prompt: *"Stylised 3D animated-feature character, same art style
+   as a modern family animated film, detailed hand-painted textures, soft appealing shapes."* Everyone
+   should look like they belong in Wally's world.
+2. **Pose for rigging.** People: a **T-pose** (arms straight out, legs slightly apart, mouth closed,
+   fingers spread). Creatures: a **neutral pose with limbs clear of the body** (pelican with wings
+   slightly open and legs straight; toad with legs out from the body; croc lying straight, legs out to
+   the sides, tail straight, mouth slightly open).
+3. **Export without a rig.** In Meshy choose the **game-ready (about 10k triangles), no rig, for Blender**
+   GLB, the same kind as `Meshy_AI_wally_game_ready_10k_Withoutrigfor_blender.glb`.
+4. Save to Downloads and say which character it is. The rest (shrinking, rig, moves, phone copies) is done here.
+
+People can also go through **Mixamo** (free, from Adobe, made for human figures): upload the T-pose
+model there and it rigs it and gives hundreds of ready moves (throwing, waving, cheering, phone photo,
+running away). Use whichever is quicker; the Blender route works for people too.
+
+### Tourists from pictures (Ken, 2026-10-17): match the promo video
+
+The quickest way to tourists that look like the people in Ken's video and title art: make a picture
+of each in the **same image tool and style**, then build the model from it in **Meshy, image to 3D**.
+
+1. In the image tool, one picture per person with this frame around the description below:
+   > *Full-body character design of [DESCRIPTION], standing in a T-pose (arms straight out to the
+   > sides, legs slightly apart), facing the camera, plain light grey background, even soft light,
+   > no shadows, whole body in frame from head to shoes. Stylised 3D animated-feature look, the same
+   > warm Pixar-like style as a family animated film, friendly happy expression.*
+2. In Meshy: **image to 3D** from that picture, then download **game-ready (about 10k), no rig, for
+   Blender** (GLB), as with Wally. Name it `tourist-1.glb` to `tourist-10.glb` in the order below.
+3. The rest (shrinking, rig, moves) is done here: watching, waving, phone photos, throwing, cheering,
+   and running off laughing when Wally gets too close.
+
+The ten people are the ones listed under section 4 just below (use each description as [DESCRIPTION]).
+
 ### 4. Tourists: `tourist-1.glb` to `tourist-10.glb`
 Everyday Australians and visitors on a sunny day out, each one a distinct individual. Make about ten that vary in age, build, height, skin tone, hair and clothes. Dress them in ordinary holiday clothes only: no costumes and nothing meant to signal a culture. Show them as warm, friendly, happy people.
 
@@ -114,6 +152,37 @@ Done 2026-10-16 from Ken's Meshy export. The game fits it to 0.42 m tall (bigger
 | `boat.glb` | A white tourist reef boat, about 12 m, with a blue stripe and an upper deck |
 
 The lagoon, banks, water and sky stay built by the game, so they don't need models.
+
+## Kuranda and Barron Falls (level 4, Ken 2026-10-17)
+
+For every one: add the style line *"Stylised 3D animated-feature look, same art style as a modern family
+animated film, detailed hand-painted textures, warm and inviting"*; export **game-ready, no rig, for Blender**
+(GLB). Props are fine at about 5k triangles. No words, logos or brand names on anything.
+
+| File | Prompt |
+|---|---|
+| `kur-stall-1.glb` | A tropical market stall: a timber frame with a striped red-and-cream canvas awning, a wooden counter piled with tropical fruit (mangoes, pineapples, bananas, papayas) in woven baskets, hanging string lights, about 3 m wide and 3 m tall. |
+| `kur-stall-2.glb` | A tropical market stall: a timber frame with a green-and-white striped canvas awning, racks of colourful sarongs and sun hats, a wooden counter, a small hand-painted sign with no writing, about 3 m wide and 3 m tall. |
+| `kur-stall-3.glb` | A tropical market food stall: a timber hut with a palm-thatch roof, a counter with jars of honey, fudge and local treats, an old-fashioned set of scales, about 3 m wide and 3 m tall. |
+| `kur-shopfront.glb` | A Queenslander-style shopfront: a single-storey timber building on a low raised floor, a wide shady veranda with white wooden posts and lacework, a corrugated iron roof painted green, big shop windows, cream and sage weatherboards, about 8 m wide. |
+| `kur-gondola.glb` | A small enclosed cable-car gondola cabin with big windows on all sides, rounded corners, painted forest green with a silver roof hanger arm on top, seats inside for six, about 2 m tall, no logos. |
+| `kur-cable-tower.glb` | A tall steel cable-car support tower, a slim lattice tower with a crossbar and pulley wheels at the top, painted dark green, about 30 m tall. |
+| `kur-lookout.glb` | A rainforest lookout platform: a timber boardwalk deck jutting out on tall posts, with sturdy timber railings, a little shade roof over the end, about 6 m long. |
+| `kur-bungee.glb` | A bungee jumping platform: a timber and steel tower about 20 m tall with stairs up the side, a small jump platform with a gate at the top sticking out over the edge, safety railings, a rope anchor point, no logos. |
+| `kur-zipline.glb` | A zip line launch platform built around a big rainforest tree trunk: a round timber deck with railings, a steel cable starting from a post above the deck, a small ramp to step off, about 6 m tall. |
+| `kur-pulley.glb` | A zip line trolley and harness: a steel pulley trolley with two wheels on top, a sturdy hanging strap below with a seat harness, bright orange, about 1 m tall. |
+| `kur-cliff-1.glb` | A large rainforest cliff rock face: dark grey and brown granite with vertical cracks, ferns and small plants growing from ledges, moss and wet streaks, about 15 m tall and 15 m wide. |
+| `kur-cliff-2.glb` | A tall jagged rock outcrop for a gorge edge: dark wet granite with hanging vines and ferns, about 12 m tall. |
+| `kur-river-rock.glb` | A cluster of big smooth river boulders, grey granite worn round by water, some wet and dark, about 5 m across. |
+| `kur-crates.glb` | A stack of wooden market crates full of tropical fruit: mangoes, pineapples, coconuts and bananas, about 1.2 m tall. |
+
+**Clothes from the Kuranda markets** (small, about 2k triangles, no rig; they are fitted on in the game):
+
+| File | Prompt |
+|---|---|
+| `acc-sunnies.glb` | A pair of chunky, fun round sunglasses with bright yellow frames and dark lenses, cartoon style. |
+| `acc-lei.glb` | A Hawaiian-style flower lei necklace: a full ring of bright pink, yellow and white hibiscus and frangipani flowers. |
+| `acc-bandana.glb` | A red bandana with a white paisley pattern, folded and tied in a knot, shaped to sit around a neck. |
 
 ## Backdrops (pictures, not models)
 

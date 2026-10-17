@@ -6,14 +6,14 @@
 import * as THREE from 'three';
 import { buildWorld, GATE } from './world.js';
 import { Wally } from './wally.js';
-import { Food, randomKind } from './food.js';
+import { Food, randomKind, useJarModel } from './food.js';
 import { Tourists } from './tourists.js';
 import { Kenny } from './kenny.js';
 import { Crocs } from './crocs.js';
 import { Jellies, FlyingFoxes, Pelicans, CaneToads } from './hazards.js';
 import { Clusters } from './clusters.js';
 import { Input } from './input.js';
-import { Bubbles, pickLine } from './bubbles.js';
+import { Bubbles, pickLine, chatty } from './bubbles.js';
 import { Effects, CRUMBS } from './fx.js';
 import { loadModels } from './models.js';
 import { createPost } from './post.js';
@@ -21,7 +21,7 @@ import { loadRealism } from './realism.js';
 import { usePalmCrown } from './palms.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from './quality.js';
 import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
-import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL } from './progress.js';
+import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds } from './progress.js';
 import * as sound from './sound.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, difficulty,
          clampToPark, terrainHeight, onDeck, LIVES, REVIVE_ENERGY, inRedZone,
@@ -56,6 +56,7 @@ addEventListener('resize', resize); resize();
 
 // Ken's models and backdrop pictures, where they exist; stand-ins otherwise.
 const models = await loadModels(undefined, { light: touch || quality.name === 'low' });
+useJarModel(models.get('jar'));                    // Ken's jar for Kenny's rescue, when present
 const backdrops = await loadBackdrops();
 async function loadBackdrops() {
   const out = {};
@@ -303,16 +304,16 @@ function caught(item) {
   fx.burst(item.mesh.position, CRUMBS[item.kind] || [0xffffff]);
   fx.shake(0.12, 0.12);
   food.take(item, 'eaten');
-  wally.chomp();
+  const how = item.landed ? 'ground' : (wally.airborne ? 'leap' : 'air');
+  wally.chomp(how);
   sound.play.chomp();
   game.streak++; game.catches++;
-  const how = item.landed ? 'ground' : (wally.airborne ? 'leap' : 'air');
   const pts = catchPoints(how, game.streak, game.boost > 0);
   game.score += pts;
   game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[item.kind].energy);
   toast(`+${pts} ${how === 'leap' ? 'Jumping catch!' : how === 'air' ? 'In the air!' : item.name}`);
   const leapt = wally.airborne && wally.fromWater;
-  if (leapt || Math.random() < 0.3) bubbles.say(wally.root, pickLine(leapt ? 'wallyLeap' : 'wallyCatch'), 3.6);
+  if (chatty(leapt ? 0.9 : 0.6)) bubbles.say(wally.root, pickLine(leapt || how === 'leap' ? 'wallyLeap' : 'wallyCatch'), 3.6);
   const q = game.quest;
   const done = [...q.record('catch')];
   if (leapt) done.push(...q.record('leapCatch'));
@@ -381,7 +382,7 @@ function step(dt, t) {
     else if (e === 'splash') { sound.play.splash(); fx.splash(wally.pos, 26); fx.shake(0.2, 0.15); } else if (e === 'land') sound.play.land();
   }
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (game.boost <= 0 && game.nap <= 0) game.energy -= energyDrain(wally.mode, moving) * dt;
+  if (game.boost <= 0 && game.nap <= 0) game.energy -= energyDrain(wally.mode, moving, 'park') * dt;
   if (game.nap > 0) napping(dt);
 
   tourists.update(dt, wally.pos);                // strollers on the boardwalk: scenery, no food
@@ -426,6 +427,7 @@ function step(dt, t) {
   }
 
   const k2 = kenny.update(dt, wally.pos, game.energy);
+  if (k2 === 'revived') revive();
   if (k2 === 'coming') { toast('Kenny is on his way with his jar!', 'info'); bubbles.say(kenny.mesh, pickLine('kennyComing'), 1.9); }
   if (k2 === 'dropped') { toast('Kenny is holding out his jar. Get to him!', 'info'); bubbles.say(kenny.mesh, pickLine('kennyJar'), 1.9); }
   if (k2 === 'eaten') {
@@ -449,18 +451,23 @@ function loseLife() {
   game.lives--; game.energy = 0; game.streak = 0;
   sound.play.lose();
   if (game.lives <= 0) { finish(false); return; }
-  game.nap = 3;
+  // Down he goes, and he stays down until Kenny brings his jar (Ken's rule).
+  game.nap = 1;
   wally.setNapping(true);
-  toast(`Wally's knackered! ${game.lives} ${game.lives === 1 ? 'life' : 'lives'} left`, 'bad');
+  kenny.reviveWally();
+  toast(`Wally's knackered! ${game.lives} ${game.lives === 1 ? 'life' : 'lives'} left. Here comes Kenny!`, 'bad');
   bubbles.say(wally.root, 'Need a quick kip...', 2.6, 2.8);
+  bubbles.say(kenny.mesh, "Hang on, Wally! Comin'!", 2.4);
 }
 
-function napping(dt) {
-  game.nap -= dt;
-  if (game.nap > 0) return;
+// While he is down, nothing happens until Kenny's jar arrives ('revived' below).
+function napping(dt) {}
+
+function revive() {
   game.nap = 0; game.energy = REVIVE_ENERGY;
   wally.setNapping(false);
-  bubbles.say(wally.root, 'Right, back into it!', 3.6);
+  sound.play.powerup();
+  bubbles.say(wally.root, pickLine('wallyToast'), 3.6);
 }
 
 // First visit to an area: the camera sweeps over it while its name comes up,
@@ -530,7 +537,7 @@ function followCamera(dt) {
 // ---- Start, pause, end ------------------------------------------------------------
 
 function start() {
-  sound.start();
+  sound.start(); sound.startMusic('park'); sound.moodMusic('park');
   $('title').hidden = true; $('over').hidden = true; $('win').hidden = true;
   $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true; game.paused = false;
@@ -553,6 +560,7 @@ function finish(won, why = '') {
   game.running = false;
   if (game.score > best) { best = game.score; try { localStorage.setItem('chomp-best', String(best)); } catch { /* not saved */ } }
   $('hud').hidden = true; $('touch').hidden = true;
+  if (won) sound.fanfare();                         // Wally's theme hook: well done, mate
   if (won) {
     const stars = starsFor(game.score, PARK_STARS);
     progress = completeArea(progress, 'park', { score: game.score, stars });
@@ -587,7 +595,11 @@ function showMap() {
   $('title').hidden = true; $('win').hidden = true; $('over').hidden = true;
   const grid = $('map-grid'); grid.innerHTML = '';
   for (const a of AREAS) {
-    const open = (OPEN_ALL && !params.has('locked') && a.ready) || isOpen(progress, a.id);
+    // What the area needs from the one before (the ticket chain). While building,
+    // every built area stays open (OPEN_ALL); ?locked plays by the real rules.
+    const needs = entryNeeds(progress, a.id);
+    const testing = OPEN_ALL && !params.has('locked');
+    const open = (testing && a.ready) || (isOpen(progress, a.id) && !needs);
     const b = document.createElement('button');
     b.type = 'button'; b.className = `map-area ${open ? 'open' : 'locked'}`;
     const stars = progress.stars[a.id] || 0;
@@ -595,16 +607,41 @@ function showMap() {
     b.children[0].textContent = a.name;
     b.children[1].textContent = !a.ready ? 'Coming soon' : open ? (a.place || '') : 'Finish the area before to open';
     b.children[2].textContent = a.ready ? a.objective || '' : '';       // what to do there
+    if (needs) { const n = document.createElement('span'); n.className = 'needs'; n.textContent = `Needs ${needs.text}`; b.appendChild(n); }
     b.children[3].textContent = a.ready ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
     if (open) b.onclick = () => { if (PAGES[a.id]) location.href = PAGES[a.id]; else { $('map').hidden = true; start(); } };
     grid.appendChild(b);
   }
-  $('map-mangoes').textContent = `Golden Mangoes: ${progress.mangoes} · Pearls: ${progress.pearls || 0}`;
+  // The adventures stars open (Ken, 2026-10-17), shown so players see what they are working toward.
+  const have = totalStars(progress);
+  $('map-stars').textContent = `★ ${have}`;
+  const acts = $('map-acts'); acts.innerHTML = '';
+  for (const a of ACTIVITIES) {
+    const area = AREAS.find(x => x.id === a.area);
+    const open = activityOpen(progress, a.id);
+    const d = document.createElement('div');
+    d.className = `map-act ${open ? 'open' : ''}`;
+    d.innerHTML = '<b></b><small></small><span class="need"></span>';
+    d.children[0].textContent = `${a.name} · ${area ? area.name : ''}`;
+    d.children[1].textContent = a.about;
+    d.children[2].textContent = open ? 'Open!' : !area || !area.ready ? (a.stars ? `★ ${a.stars} needed · coming soon` : 'Coming soon')
+      : a.stars > have ? `★ ${a.stars} needed (${a.stars - have} to go)` : `Reach ${area.name} to open`;
+    acts.appendChild(d);
+  }
+  $('map-mangoes').textContent = `Golden Mangoes: ${progress.mangoes} · Pearls: ${progress.pearls || 0} · Gold coins: ${progress.coins || 0}${progress.badge ? ' · Ranger badge ✓' : ''}${progress.skyrail ? ' · Skyrail pass ✓' : ''}${progress.boatTicket ? ' · Boat ticket ✓' : ''}`;
   $('map-postcards').textContent = `Postcards: ${progress.postcards.length} of ${AREAS.length}`;
   $('map').hidden = false;
 }
 
-$('play').onclick = () => { sound.start(); showMap(); };
+// The opener: How to play opens the instructions over the art; Got it closes them.
+$('how').onclick = () => { $('how-card').hidden = false; };
+$('how-close').onclick = () => { $('how-card').hidden = true; };
+$('credits').onclick = () => { $('credits-card').hidden = false; };
+// Ken's promo trailer (the brand name on the jar covered with a V: tools/cover-label-keys.py).
+$('trailer').onclick = () => { $('trailer-box').hidden = false; const v = $('trailer-video'); v.muted = false; v.volume = 1; v.currentTime = 0; v.play().catch(() => {}); };
+$('trailer-close').onclick = () => { const v = $('trailer-video'); v.pause(); $('trailer-box').hidden = true; };
+$('credits-close').onclick = () => { $('credits-card').hidden = true; };
+$('play').onclick = () => { sound.start(); sound.startMusic('theme'); sound.moodMusic('theme'); showMap(); };
 $('to-map').onclick = () => location.href = 'index.html?map';
 $('resume').onclick = () => setPaused(false);
 $('again').onclick = restart; $('again2').onclick = e => { e.preventDefault(); location.href = 'index.html?play'; };

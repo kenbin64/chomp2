@@ -9,7 +9,7 @@
 
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { SEABED_Y, SWIM_Y, WALL_TOP, wallBoxes, cellCentre, pearlCells, inMaze, mazePath } from './reef-rules.js';
+import { SEABED_Y, SWIM_Y, WALL_TOP, LANES, TREASURES, wallBoxes, cellCentre, pearlCells, inMaze, mazePath } from './reef-rules.js';
 import { dressedJelly } from '../hazards.js';
 import { mangoModel } from './esplanade-scene.js';
 
@@ -312,7 +312,61 @@ function fishSchool(rnd, centre, count, colour, radius, depth) {
 }
 
 // ---- Build it ------------------------------------------------------------------------------
-export function buildReef(scene, quality, { maze, outer, jellyGltf = null }) {
+// ---- Reef treasures (Ken: things to collect at different depths) -----------------
+// A soft glow behind each, so it can be spotted through the water.
+let glowTex = null;
+function glowSprite(color, size) {
+  if (!glowTex) {
+    const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+    const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,255,255,0.9)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r; g.fillRect(0, 0, 64, 64); glowTex = new THREE.CanvasTexture(c);
+  }
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
+  sp.scale.setScalar(size); return sp;
+}
+function starfish() {
+  const sh = new THREE.Shape();
+  for (let i = 0; i <= 10; i++) { const a = (i / 10) * Math.PI * 2 + Math.PI / 2, r = i % 2 ? 0.17 : 0.42; i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r); }
+  const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.07, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 3 });
+  geo.center();
+  return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xff7a3d, roughness: 0.55, emissive: 0x4a1400, emissiveIntensity: 0.6 }));
+}
+function cowrie() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.3, 28, 18), new THREE.MeshStandardMaterial({ color: 0xf3e2c4, roughness: 0.18, metalness: 0.05, emissive: 0x2a2010, emissiveIntensity: 0.5 }));
+  body.scale.set(0.8, 0.55, 1.25);
+  const spots = new THREE.Mesh(new THREE.SphereGeometry(0.302, 28, 18, 0, Math.PI * 2, 0, Math.PI * 0.42), new THREE.MeshStandardMaterial({ color: 0x9a5a32, roughness: 0.2 }));
+  spots.scale.copy(body.scale);
+  const slit = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.02, 0.62), new THREE.MeshStandardMaterial({ color: 0x5a3018 }));
+  slit.position.y = -0.165;
+  g.add(body, spots, slit); return g;
+}
+function coin() {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.06, 36), new THREE.MeshStandardMaterial({ color: 0xffc83d, metalness: 0.9, roughness: 0.22, emissive: 0x3a2600, emissiveIntensity: 0.7 }));
+  m.rotation.x = Math.PI / 2; return m;
+}
+const GLOW = { starfish: 0xff9a5a, shell: 0xfff0d0, coin: 0xffd24a };
+// spots: [{ kind, x, z }]. Returns [{ kind, x, y, z, mesh, taken }].
+// Ken's seashell model (models/seashell.glb), when present, for the shells.
+function kensShell(gltf) {
+  const m = gltf.scene.clone(true);
+  const size = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3());
+  m.scale.multiplyScalar(0.6 / Math.max(size.x, size.y, size.z));
+  const c = new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3()); m.position.sub(c);
+  const g = new THREE.Group(); g.add(m); return g;
+}
+export function buildTreasures(root, shellGltf, spots) {
+  return spots.map(({ kind, x, z }) => {
+    const g = new THREE.Group();
+    const thing = kind === 'starfish' ? starfish() : kind === 'shell' ? (shellGltf ? kensShell(shellGltf) : cowrie()) : coin();
+    g.add(glowSprite(GLOW[kind], 1.6), thing);
+    const y = LANES[TREASURES[kind].lane];
+    g.position.set(x, y, z); root.add(g);
+    return { kind, x, y, z, mesh: g, thing, taken: false, phase: Math.random() * 6 };
+  });
+}
+
+export function buildReef(scene, quality, { maze, outer, jellyGltf = null, coralGltf = null }) {
   const rnd = seeded(77);
   const root = new THREE.Group(); root.visible = false; scene.add(root);
   const { ox, oz, size } = MAZE;
@@ -552,14 +606,52 @@ export function buildReef(scene, quality, { maze, outer, jellyGltf = null }) {
 
   // Box jellyfish drifting over the open reef.
   const jellies = [];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 9; i++) {
     let x, z;
-    if (i < 3) {                                                       // three in the coral maze's corridors
+    if (i < 6) {                                                       // six in the coral maze's corridors
       const c = { c: Math.floor(rnd() * outer.cols), r: Math.floor(rnd() * outer.rows) }, p = cellCentre(outer, c, OUTER.ox, OUTER.oz, OUTER.size);
       x = p.x; z = p.z;
     } else do { x = BOUNDS.x0 + 10 + rnd() * (BOUNDS.x1 - BOUNDS.x0 - 20); z = BOUNDS.z0 + 10 + rnd() * (BOUNDS.z1 - BOUNDS.z0 - 20); } while (inCaveArea(x, z, 4) || Math.hypot(x - DIVE.x, z - DIVE.z) < 10);
     const m = dressedJelly(jellyGltf); root.add(m);
-    jellies.push({ m, x, z, y: SWIM_Y + 0.5 + rnd() * 2, phase: rnd() * 6, cool: 0 });
+    // Each drifts slowly up and down through the three swimming depths (Ken: dodge them).
+    jellies.push({ m, x, z, y: SWIM_Y, phase: rnd() * 6, rise: 0.25 + rnd() * 0.2, cool: 0, inMaze: i < 6 });
+  }
+
+  // Ken's coral (models/coral.glb), when present: clumps growing along the tops
+  // of the coral maze's walls and round the open reef, each turned and sized
+  // differently. One draw per part of the model, however many clumps.
+  if (coralGltf) {
+    const spots = [];
+    let cseed = 97; const crnd = () => ((cseed = (cseed * 16807) % 2147483647) / 2147483647);
+    for (const b of outerBoxes) {
+      const len = Math.hypot(b.x1 - b.x0, b.z1 - b.z0);
+      for (let k = 0; k < Math.max(1, Math.round(len / 4)); k++) {
+        if (crnd() < 0.35) continue;
+        const t = (k + 0.5) / Math.max(1, Math.round(len / 4));
+        spots.push([b.x0 + (b.x1 - b.x0) * t, CORAL_TOP - 0.2, b.z0 + (b.z1 - b.z0) * t, 1.6 + crnd() * 1.6]);
+      }
+    }
+    for (let k = 0; k < (quality.name === 'low' ? 10 : 30); k++) {
+      const x = BOUNDS.x0 + 8 + crnd() * (BOUNDS.x1 - BOUNDS.x0 - 16), z = BOUNDS.z0 + 8 + crnd() * (BOUNDS.z1 - BOUNDS.z0 - 16);
+      if (inCaveArea(x, z, 6) || Math.hypot(x - DIVE.x, z - DIVE.z) < 8 || inMaze(outer, x, z, OUTER.ox, OUTER.oz, OUTER.size, 2)) continue;
+      spots.push([x, SEABED_Y, z, 2.2 + crnd() * 2.5]);
+    }
+    const src = coralGltf.scene.clone(true);
+    src.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(src), size = box.getSize(new THREE.Vector3());
+    const norm = new THREE.Matrix4().makeScale(1 / size.y, 1 / size.y, 1 / size.y)
+      .multiply(new THREE.Matrix4().makeTranslation(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2));
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+    src.traverse(o => {
+      if (!o.isMesh) return;
+      const inst = new THREE.InstancedMesh(o.geometry, o.material, spots.length);
+      spots.forEach(([x, y, z, h], i) => {
+        q.setFromAxisAngle(up, crnd() * Math.PI * 2);
+        inst.setMatrixAt(i, m.compose(p.set(x, y, z), q, sc.setScalar(h)).multiply(norm).multiply(o.matrixWorld));
+      });
+      inst.castShadow = true; inst.receiveShadow = true;
+      root.add(inst);
+    });
   }
 
   return {
@@ -574,7 +666,9 @@ export function buildReef(scene, quality, { maze, outer, jellyGltf = null }) {
       for (const p of pearls) if (!p.taken) p.mesh.userData.pearl.position.y = 0.16 + Math.sin(t * 2 + p.x) * 0.03;
       for (const j of jellies) {
         j.phase += dt;
-        j.m.position.set(j.x + Math.sin(j.phase * 0.3) * 2.5, j.y + Math.sin(j.phase * 1.2) * 0.4, j.z + Math.cos(j.phase * 0.25) * 2.5);
+        const drift = j.inMaze ? 1.0 : 2.5;                            // in a corridor it keeps clear of the coral walls
+        const depth = (LANES[0] + LANES[2]) / 2 + Math.sin(j.phase * j.rise) * (LANES[0] - LANES[2]) / 2 * 1.1;
+        j.m.position.set(j.x + Math.sin(j.phase * 0.3) * drift, depth + Math.sin(j.phase * 1.2) * 0.2, j.z + Math.cos(j.phase * 0.25) * drift);
         const pulse = Math.sin(j.phase * 3) * 0.5 + 0.5;
         j.m.scale.set(1 + pulse * 0.08, 1 - pulse * 0.08, 1 + pulse * 0.08);
       }
