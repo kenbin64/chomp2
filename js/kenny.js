@@ -11,6 +11,7 @@ import { jarLabelTexture } from './textures.js';
 import { dress } from './models.js';
 import { HumanoidPoser } from './rig.js';
 
+const OFFER_TIME = 1.5;           // seconds his Offer move takes: jar held out, set down, stand up
 const HELP_COOLDOWN = 12;       // seconds before he will set off again after a delivery
 const WHIM_EVERY = 75;          // he also turns up now and then on his own
 const PICKUP = 1.8;
@@ -120,16 +121,22 @@ export class Kenny {
     } else if (this.state === 'help') {
       this.dropToast();
       this.state = 'sit'; this.timer = 3; this.helpCool = HELP_COOLDOWN;
+      this.offering = OFFER_TIME; this.waving = OFFER_TIME + 2;      // hands it over, then a big wave
       event = 'dropped';
     } else {
-      if (Math.random() < 0.5) { this.state = 'sit'; this.timer = 3 + Math.random() * 5; }
+      if (Math.random() < 0.5) {
+        this.state = 'sit'; this.timer = 3 + Math.random() * 5;
+        if (Math.random() < 0.4) this.waving = 2.5;                     // a cheery wave now and then
+      }
       else this.goal = this.randomSpot();
     }
 
     this.pos.y = Math.max(0, terrainHeight(this.pos.x, this.pos.z));
     // Always a happy bounce in him, bigger when he is hurrying, and a wave now and then.
     const moving = this.state !== 'sit';
-    const bounce = moving ? Math.abs(Math.sin(this.t * (this.state === 'help' ? 14 : 8))) * 0.16 : Math.abs(Math.sin(this.t * 3)) * 0.05;
+    // Ken's Blender Kenny bounces in his own moves, so the code bounce is only for older models.
+    const ownMoves = !!(this.skin && this.skin.has('offer'));
+    const bounce = ownMoves ? 0 : moving ? Math.abs(Math.sin(this.t * (this.state === 'help' ? 14 : 8))) * 0.16 : Math.abs(Math.sin(this.t * 3)) * 0.05;
     this.mesh.position.set(this.pos.x, this.pos.y + bounce, this.pos.z);
     this.parts.head.rotation.z = Math.sin(this.t * (moving ? 6 : 1.8)) * (moving ? 0.08 : 0.14);
     const waving = this.state === 'sit' || event === 'dropped';
@@ -139,13 +146,23 @@ export class Kenny {
     if (this.skin) {
       const sk = this.skin;
       let playing;
-      if (this.state === 'help') playing = sk.play('run', { alternatives: ['walk'] });
+      this.offering = Math.max(0, (this.offering || 0) - dt);
+      this.waving = Math.max(0, (this.waving || 0) - dt);
+      if (this.offering > 0 && sk.has('offer')) playing = sk.play('offer', { once: true });
+      else if (this.state === 'help') playing = sk.play('run', { alternatives: ['walk'] });
+      else if (this.state === 'sit' && this.waving > 0) playing = sk.play('wave', { alternatives: ['idle'] });
       else if (this.state === 'sit') playing = sk.play('idle');
       else playing = sk.play('walk', { speed: 0.8 });
       if (!playing) sk.stop();
       sk.update(dt);
       // Standing about, or holding out his jar: posed in code, always happy.
       if (!playing && this.poser && this.poser.ok) this.poser.pose({ time: this.t, cheer: this.toast ? 1 : 0, napping: false });
+      // The jar in his hand goes on the ground half-way through handing it over,
+      // and comes back once Wally has it (or it is gone).
+      if (this.heldJar === undefined) { this.heldJar = null; sk.root.traverse(o => { if (/heldjar/i.test(o.name)) this.heldJar = o; }); }
+      const handedOver = this.toast && this.offering < OFFER_TIME / 2;
+      if (this.heldJar) this.heldJar.visible = !handedOver;
+      if (this.toast) this.toast.mesh.visible = handedOver || !this.heldJar;
     }
 
     if (this.toast) {
