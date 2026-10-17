@@ -86,7 +86,7 @@ npm test                    # all rule tests: rules, quests, progress, esplanade
 URL switches (any page): `?q=low|medium|high` force graphics quality, `?real=0` turn off the photographic
 layer (compare with the painted look), `?bot` a test pilot plays, `?play` skip the title.
 For now every built area is open on the trip map (`OPEN_ALL` in `js/progress.js`); add `?locked` to play with
-the real unlocking. Esplanade: `?seed=7` course. Reef: `?pearls=3` start with that many pearls (instead of the banked ones), `?seed=7` mazes.
+the real unlocking. Esplanade and reef are random every visit (Ken: never the same twice); `?seed=7` fixes the course or mazes for testing. Reef: `?pearls=3` start with that many pearls (instead of the banked ones).
 
 Test hooks in the browser console: `window.chomp` holds `game`, `wally`, `food`, `cam`, and per level
 `pelicans`, `jellies`, `toads`, `clusters`, `kenny` (park) or `reef`, `maze`, `camera`, `scene` (Esplanade).

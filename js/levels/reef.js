@@ -151,7 +151,9 @@ const islandTrees = new Trees(scene, { light });
 }
 
 // The reef below: the coral maze, the cave and everything in it.
-const seed = Number(params.get('seed')) || 7;
+// A new maze every dive (Ken: never the same twice, or people just memorise it).
+// ?seed=N still gives a fixed one, for testing.
+const seed = Number(params.get('seed')) || 1 + Math.floor(Math.random() * 2147483000);
 const maze = makeMaze(MAZE.cols, MAZE.rows, seed);
 const outer = makeReefMaze(OUTER.cols, OUTER.rows, seed + 4);
 const reef = buildReef(scene, quality, { maze, outer, jellyGltf: models.get('jellyfish') });

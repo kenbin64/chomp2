@@ -118,7 +118,8 @@ const bubbles = new Bubbles(scene, touch ? 3 : 4);
 const fx = new Effects(scene, food);
 
 // The course: obstacles, mangoes, picnic shelters with people throwing food.
-const course = generateCourse(Number(params.get('seed')) || 7);
+// A new course every visit (Ken: never the same twice). ?seed=N gives a fixed one, for testing.
+const course = generateCourse(Number(params.get('seed')) || 1 + Math.floor(Math.random() * 2147483000));
 const obstacles = course.obstacles.map(o => {
   const mesh = obstacleModel(o.kind);
   mesh.position.set(o.x, G, o.z);
