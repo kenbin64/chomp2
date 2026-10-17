@@ -141,3 +141,12 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
   .opener-blur { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(22px) brightness(0.55); transform: scale(1.1); }
   .opener-art { object-fit: contain; object-position: 50% 38%; }
 }
+/* Credits: who did what, the free assets, and the Acknowledgement of Country. */
+.link { font: inherit; color: #ffd166; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+.credits-card h2 { margin: 0 0 4px; color: #ffd166; font-size: 28px; }
+.credits-card .go { margin: 4px 0 0; }
+.credits-list { margin: 0; text-align: center; }
+.credits-list dt { margin-top: 8px; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: #8fd3c7; }
+.credits-list dd { margin: 2px 0 0; font-size: 16px; }
+.credits-list dd.small { font-size: 13px; opacity: 0.85; }
+.acknowledge { margin: 10px 0 6px; font-size: 13px; line-height: 1.45; opacity: 0.9; font-style: italic; }

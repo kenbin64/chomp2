@@ -631,6 +631,8 @@ function showMap() {
 // The opener: How to play opens the instructions over the art; Got it closes them.
 $('how').onclick = () => { $('how-card').hidden = false; };
 $('how-close').onclick = () => { $('how-card').hidden = true; };
+$('credits').onclick = () => { $('credits-card').hidden = false; };
+$('credits-close').onclick = () => { $('credits-card').hidden = true; };
 $('play').onclick = () => { sound.start(); sound.startMusic('theme'); sound.moodMusic('theme'); showMap(); };
 $('to-map').onclick = () => location.href = 'index.html?map';
 $('resume').onclick = () => setPaused(false);
