@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b6e8c">
+<title>Chomp! The Great Barrier Reef</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" hidden>
+  <div class="panel score"><b id="score">0</b><span class="mango-count">&#x1F96D; <span id="mangoes">0</span></span><span class="pearl-count" title="Pearls">&#x26AA; <span id="pearls">0</span></span></div>
+  <div class="panel quest"><h2>The Great Barrier Reef</h2><p id="job" style="margin:0"></p></div>
+  <div class="panel energy air" id="feed">
+    <div class="feed-head"><span class="label" id="meter-label">Air</span><span id="lives" aria-label="Lives"></span></div>
+    <div class="bar"><div class="red-zone"></div><div id="energy-fill"></div></div>
+        <span class="red-note" id="red-note">Low on air! Swim up (Space) or find a bubble vent</span>
+  </div>
+  <div id="arrow" class="guide-arrow" hidden><span class="tip">&#x27A4;</span><small id="arrow-text"></small></div>
+  <div id="count"></div>
+  <div id="toasts" aria-live="polite"></div>
+</div>
+
+<div id="touch" hidden>
+  <div id="stick"><div id="knob"></div></div>
+  <button id="t-fours" type="button">Fours</button>
+  <button id="t-jump" type="button">Jump</button>
+  <button id="t-pause" type="button" aria-label="Pause">II</button>
+  <button id="t-cam" type="button">Cam</button>
+</div>
+
+<div id="dive-buttons" class="dive-buttons" hidden>
+  <button id="b-dive" type="button">Dive<small>Shift</small></button>
+  <button id="b-up" type="button">Up<small>Space</small></button>
+</div>
+<section id="title" class="overlay">
+  <div class="card">
+    <p class="area">Level 3</p>
+    <h1>The Great Barrier Reef</h1>
+    <p>Off Green Island, Wally dives from the end of the jetty. Under water there's no food, only air: watch the air meter, swim up to breathe, or stop at a bubble vent. Follow the glowing guide fish through the coral maze to the coral cave, then find the old pirate chest deep inside. Taking it makes the giant clam at the cave mouth snap shut, and only a pearl will open it, so bring pearls from the Esplanade and collect more on the way. Mind the box jellyfish.</p>
+    <button id="play" class="go" type="button">Play</button>
+    <div class="keys pc">
+      <span><kbd>W A S D</kbd> move</span><span><kbd>Shift</kbd> dive, <kbd>Space</kbd> up (or the Dive and Up buttons)</span><span><kbd>Drag</kbd> or <kbd>Q E</kbd> camera</span>
+      <span>Follow the guide fish and the arrow to the cave</span><span>Swim to the jetty and push toward it to climb out</span><span><kbd>P</kbd> pause</span>
+    </div>
+    <div class="keys phone"><span>Left thumb: steer</span><span>Dive and Up buttons</span></div>
+    <p class="fine"><a href="index.html?map">Back to the map</a></p>
+  </div>
+</section>
+
+<section id="paused" class="overlay" hidden>
+  <div class="card"><h1>Paused</h1><button id="resume" class="go" type="button">Keep going</button>
+  <p class="fine"><a href="index.html?map">Back to the map</a></p></div>
+</section>
+
+<section id="result" class="overlay" hidden>
+  <div class="card">
+    <h1 id="result-title"></h1>
+    <p class="stars" id="result-stars"></p>
+    <p id="result-why"></p>
+    <ul class="result-lines" id="result-lines"></ul>
+    <div class="postcard" id="postcard" hidden><b>Postcard collected</b><p id="postcard-text"></p></div>
+    <button id="again" class="go" type="button">Dive again</button>
+    <p class="fine"><a href="index.html?map">Back to the map</a></p>
+  </div>
+</section>
+
+<script type="module" src="js/levels/reef.js"></script>
+</body>
+</html>

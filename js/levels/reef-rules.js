@@ -158,3 +158,51 @@ export function pearlCells(maze, n) {
   }
   return out;
 }
+
+// ---- The coral maze on the open reef, between the jetty and the cave ------------
+// A maze like the cave's, but walled in coral and open to the sky: in from the
+// east (the jetty side) and out on the west side, in the row that faces the cave
+// mouth. The way through is long enough to need finding (tested).
+export function makeReefMaze(cols, rows, seed = 1, row = Math.floor(rows / 2)) {
+  const m = makeMaze(cols, rows, seed, row);
+  m.exit = { c: 0, r: row };
+  m.open[row * cols][2] = true;                      // the gap in the west wall, toward the cave
+  return m;
+}
+
+// The cells from one cell to another, through open sides only, both ends
+// included. The guide fish swims this route.
+export function mazePath(maze, from, to) {
+  const key = (c, r) => r * maze.cols + c;
+  const prev = new Array(maze.cols * maze.rows).fill(-1), seen = new Array(maze.cols * maze.rows).fill(false);
+  const q = [from]; seen[key(from.c, from.r)] = true;
+  while (q.length) {
+    const cur = q.shift();
+    if (cur.c === to.c && cur.r === to.r) break;
+    for (let d = 0; d < 4; d++) {
+      if (!maze.open[key(cur.c, cur.r)][d]) continue;
+      const nc = cur.c + DX[d], nr = cur.r + DZ[d];
+      if (nc < 0 || nc >= maze.cols || nr < 0 || nr >= maze.rows || seen[key(nc, nr)]) continue;
+      seen[key(nc, nr)] = true; prev[key(nc, nr)] = key(cur.c, cur.r); q.push({ c: nc, r: nr });
+    }
+  }
+  if (!seen[key(to.c, to.r)]) return [];
+  const out = [];
+  for (let k = key(to.c, to.r); k !== -1; k = prev[k]) out.unshift({ c: k % maze.cols, r: Math.floor(k / maze.cols) });
+  return out;
+}
+
+// Which cell a point is in (or null outside the maze).
+export function cellAt(maze, x, z, ox, oz, size) {
+  const c = Math.floor((x - ox) / size), r = Math.floor((z - oz) / size);
+  return c >= 0 && c < maze.cols && r >= 0 && r < maze.rows ? { c, r } : null;
+}
+
+// ---- The reef level's score ------------------------------------------------------
+// Pearls found and the chest, plus a bonus for finishing with air to spare.
+export const REEF_STARS = [50, 85, 115];
+export function reefRunScore({ found = 0, chest = false, airLeft = 0, finished = false }) {
+  const pearls = Math.max(0, found) * PEARL_POINTS, chestPts = chest ? CHEST_POINTS : 0;
+  const finishBonus = finished ? 20 + Math.round(Math.max(0, airLeft) / 5) : 0;
+  return { pearls, chest: chestPts, finishBonus, total: pearls + chestPts + finishBonus };
+}

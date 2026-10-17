@@ -1,6 +1,6 @@
 // Tests for js/levels/reef-rules.js. Run:  node test/reef.test.mjs
 
-import { makeMaze, distances, deadEnds, pearlCells, wallBoxes, cellCentre, collide, inMaze, airStep, AIR, reefScore, PEARL_POINTS, CHEST_POINTS } from '../js/levels/reef-rules.js';
+import { makeMaze, distances, deadEnds, pearlCells, makeReefMaze, mazePath, cellAt, reefRunScore, REEF_STARS, wallBoxes, cellCentre, collide, inMaze, airStep, AIR, reefScore, PEARL_POINTS, CHEST_POINTS } from '../js/levels/reef-rules.js';
 
 let passed = 0, failed = 0;
 function check(name, ok, detail = '') {
@@ -78,5 +78,27 @@ check('air never goes above full', airStep(95, 'surface', 1) === AIR.max);
 check('pearls and the chest score', reefScore({ pearls: 4, chest: true }) === 4 * PEARL_POINTS + CHEST_POINTS);
 check('nothing scores nothing', reefScore({}) === 0);
 
+// ---- The coral maze on the open reef ----
+for (const seed of [3, 7, 11, 19]) {
+  const m = makeReefMaze(6, 5, seed);
+  check(`reef maze ${seed}: in from the east`, m.entrance.c === 5 && m.open[m.entrance.r * 6 + 5][0]);
+  check(`reef maze ${seed}: out on the west, in the same row as the way in`, m.exit.c === 0 && m.exit.r === m.entrance.r && m.open[m.exit.r * 6][2]);
+  const path = mazePath(m, m.entrance, m.exit);
+  check(`reef maze ${seed}: there is a way through`, path.length > 0);
+  check(`reef maze ${seed}: the way through runs from the entrance to the exit`, path[0].c === m.entrance.c && path[0].r === m.entrance.r && path.at(-1).c === 0 && path.at(-1).r === m.exit.r);
+  check(`reef maze ${seed}: every step of the way goes through an open side`, path.every((p, i) => {
+    if (i === 0) return true;
+    const q = path[i - 1], d = p.c > q.c ? 0 : p.r > q.r ? 1 : p.c < q.c ? 2 : 3;
+    return Math.abs(p.c - q.c) + Math.abs(p.r - q.r) === 1 && m.open[q.r * 6 + q.c][d];
+  }));
+  check(`reef maze ${seed}: it is a real maze, not a straight swim`, path.length >= 8, `${path.length} cells`);
+}
+check('a point is placed in the right cell', JSON.stringify(cellAt(makeReefMaze(6, 5, 7), 13, 21, 0, 0, 8)) === '{"c":1,"r":2}');
+check('a point outside the maze is in no cell', cellAt(makeReefMaze(6, 5, 7), -1, 3, 0, 0, 8) === null);
+check('no way between cells that are not joined gives no path', mazePath({ cols: 2, rows: 1, open: [[false, false, false, false], [false, false, false, false]] }, { c: 0, r: 0 }, { c: 1, r: 0 }).length === 0);
+// ---- The reef level's score ----
+check('reef score adds pearls, chest and air left', reefRunScore({ found: 4, chest: true, airLeft: 50, finished: true }).total === 20 + 30 + 20 + 10);
+check('no finish, no finish bonus', reefRunScore({ found: 4, finished: false }).finishBonus === 0);
+check('reef stars rise and three are reachable', REEF_STARS[0] < REEF_STARS[1] && REEF_STARS[1] < REEF_STARS[2] && reefRunScore({ found: 14, chest: true, airLeft: 60, finished: true }).total >= REEF_STARS[2]);
 console.log(`${passed} passed, ${failed} failed`);
 if (failed) process.exitCode = 1;

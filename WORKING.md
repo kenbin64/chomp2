@@ -20,11 +20,11 @@ The trip (areas, in order; `js/quests.js` `AREAS`, unlocks in `js/progress.js`):
 | # | Area | State | Page and code |
 |---|---|---|---|
 | 1 | Croc Park | playable | `index.html`, `js/main.js`, `js/world.js` |
-| 2 | The Esplanade, with the reef dive | playable | `esplanade.html`, `js/levels/esplanade*.js`, `js/levels/reef-*.js` |
-| 3 | Daintree River | not started | |
-| 4 | Mossman Gorge | not started | |
-| 5 | Kuranda | not started | |
-| 6 | Green Island and the Great Barrier Reef | not started | |
+| 2 | The Esplanade | playable | `esplanade.html`, `js/levels/esplanade*.js` |
+| 3 | The Great Barrier Reef | playable | `reef.html`, `js/levels/reef.js`, `js/levels/reef-*.js` |
+| 4 | Daintree River | not started | |
+| 5 | Mossman Gorge | not started | |
+| 6 | Kuranda | not started | |
 
 ### Level 1: Croc Park
 Feed out every group of visitors around the lagoon (they throw when Wally is in the "sweet spot": close, not
@@ -70,7 +70,7 @@ npm test                    # all rule tests: rules, quests, progress, esplanade
 URL switches (any page): `?q=low|medium|high` force graphics quality, `?real=0` turn off the photographic
 layer (compare with the painted look), `?bot` a test pilot plays, `?play` skip the title.
 For now every built area is open on the trip map (`OPEN_ALL` in `js/progress.js`); add `?locked` to play with
-the real unlocking. Esplanade only: `?dive` jump straight to the dive, `&pearls=3` start with pearls, `?seed=7` course and maze.
+the real unlocking. Esplanade: `?seed=7` course. Reef: `?pearls=3` start with that many pearls (instead of the banked ones), `?seed=7` mazes.
 
 Test hooks in the browser console: `window.chomp` holds `game`, `wally`, `food`, `cam`, and per level
 `pelicans`, `jellies`, `toads`, `clusters`, `kenny` (park) or `reef`, `maze`, `camera`, `scene` (Esplanade).
@@ -217,6 +217,7 @@ In progress / next (in Ken's order of asking):
 ## Log
 
 - 2026-10-16: git started (baseline commit). Working document written. Reef dive added to level 2.
+- 2026-10-16 (branch reef-level): level 3, The Great Barrier Reef (`reef.html`, `js/levels/reef.js`): Green Island jetty, Dive/Up buttons, guide fish and arrow, coral maze on the reef (walls 4 m down, solid at every depth), the cave, pearls carried over from the bank. The Esplanade ends at the Lagoon again. Played end to end in a browser.
 - 2026-10-16 (branch map-objectives): each built area's objective is on the trip map (`objective` in `js/quests.js`, tested); the map footer shows lifetime pearls.
 - 2026-10-16 (branch open-all): every built area is open on the trip map for now (`OPEN_ALL`), `?locked` for the real game.
 - 2026-10-16 (branch esplanade-water): crawl out onto the boardwalk, swim under water beside it (sea floor now 5.5 m down), jellyfish at the surface and deep, Kenny's rescue shared by sea and reef. Name back to Chomp 3D.

@@ -9,16 +9,20 @@
 
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { SEABED_Y, SWIM_Y, WALL_TOP, wallBoxes, cellCentre, pearlCells, inMaze } from './reef-rules.js';
+import { SEABED_Y, SWIM_Y, WALL_TOP, wallBoxes, cellCentre, pearlCells, inMaze, mazePath } from './reef-rules.js';
 import { dressedJelly } from '../hazards.js';
 import { mangoModel } from './esplanade-scene.js';
 
-// Where the reef is: under the sea west of the boardwalk, near the far end.
-// The maze's north-west corner is at (MAZE.ox, MAZE.oz); its entrance faces
-// east, toward the boardwalk and the dive spot.
+// Where things are, in metres. The cave maze's north-west corner is at
+// (MAZE.ox, MAZE.oz) and its mouth faces east. East of it, the coral maze on the
+// open reef (OUTER), in from the east and out on the west, straight across from
+// the cave mouth. East of that, the dive spot by the end of Green Island's jetty.
 export const MAZE = { ox: -96, oz: 402, size: 5, cols: 7, rows: 7 };
-export const DIVE = { x: -22, z: 420 };            // where he goes down (marked at the surface)
-export const BOUNDS = { x0: -104, x1: -12, z0: 368, z1: 472 };
+export const OUTER = { ox: -59, oz: 399.5, size: 8, cols: 6, rows: 5 };
+export const DIVE = { x: -6, z: 419.5 };           // where he goes down, off the end of the jetty
+export const BOUNDS = { x0: -104, x1: -1, z0: 368, z1: 472 };
+export const CORAL_TOP = -4.2;                     // the coral maze's walls stop 4 m down, so the camera can look down into it;
+                                                   // they still block him at every depth (too shallow to swim over)
 
 function seeded(seed) {
   let s = seed % 2147483647 || 1;
@@ -74,14 +78,14 @@ function rockPicture() {
   return canvasTexture(256, 256, (g, w, h) => {
     g.fillStyle = '#5d5a52'; g.fillRect(0, 0, w, h);
     const rnd = seeded(13);
-    for (let i = 0; i < 900; i++) {
-      const v = 60 + rnd() * 70;
-      g.fillStyle = `rgba(${v},${v - 4},${v - 12},0.5)`;
-      g.beginPath(); g.arc(rnd() * w, rnd() * h, 2 + rnd() * 9, 0, Math.PI * 2); g.fill();
+    for (let i = 0; i < 2600; i++) {                                    // fine grit and pits
+      const v = 55 + rnd() * 75;
+      g.fillStyle = `rgba(${v},${v - 4},${v - 12},0.55)`;
+      g.beginPath(); g.arc(rnd() * w, rnd() * h, 0.6 + rnd() * 2.6, 0, Math.PI * 2); g.fill();
     }
-    for (let i = 0; i < 160; i++) {                                     // crusts of pink coralline algae
-      g.fillStyle = `rgba(${200 + rnd() * 50},${90 + rnd() * 60},${120 + rnd() * 60},0.35)`;
-      g.beginPath(); g.arc(rnd() * w, rnd() * h, 3 + rnd() * 8, 0, Math.PI * 2); g.fill();
+    for (let i = 0; i < 420; i++) {                                     // small crusts of pink coralline algae
+      g.fillStyle = `rgba(${190 + rnd() * 50},${85 + rnd() * 60},${115 + rnd() * 60},0.4)`;
+      g.beginPath(); g.arc(rnd() * w, rnd() * h, 1 + rnd() * 2.8, 0, Math.PI * 2); g.fill();
     }
   }, 1);
 }
@@ -308,12 +312,14 @@ function fishSchool(rnd, centre, count, colour, radius, depth) {
 }
 
 // ---- Build it ------------------------------------------------------------------------------
-export function buildReef(scene, quality, { maze, jellyGltf = null }) {
+export function buildReef(scene, quality, { maze, outer, jellyGltf = null }) {
   const rnd = seeded(77);
   const root = new THREE.Group(); root.visible = false; scene.add(root);
   const { ox, oz, size } = MAZE;
   const caveW = maze.cols * size, caveD = maze.rows * size;
-  const inCaveArea = (x, z, margin = 2) => inMaze(maze, x, z, ox, oz, size, margin);
+  const inOuter = (x, z, margin = 0) => inMaze(outer, x, z, OUTER.ox, OUTER.oz, OUTER.size, margin);
+  // Open reef only: not the cave, not the coral maze, not where he dives in.
+  const inCaveArea = (x, z, margin = 2) => inMaze(maze, x, z, ox, oz, size, margin) || inOuter(x, z, margin);
 
   // Light under the water: cool and from above.
   const lights = new THREE.Group();
@@ -410,6 +416,43 @@ export function buildReef(scene, quality, { maze, jellyGltf = null }) {
   ];
   for (const s of schools) root.add(s.mesh);
 
+  // The coral maze on the open reef: walls of reef rock crusted in coral, from the
+  // seabed to just under the surface, so the way through has to be found.
+  const outerBoxes = wallBoxes(outer, OUTER.ox, OUTER.oz, OUTER.size, 1.8);
+  { const h = CORAL_TOP - SEABED_Y;
+    const geos = outerBoxes.map(b => { const g = new THREE.BoxGeometry(b.x1 - b.x0, h, b.z1 - b.z0, 3, 5, 3); g.translate((b.x0 + b.x1) / 2, SEABED_Y + h / 2, (b.z0 + b.z1) / 2); return keepPosNorm(g); });
+    const g = mergeGeometries(geos), p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); p.setXYZ(i, x + Math.sin(y * 1.7 + z * 0.8) * 0.3, y, z + Math.sin(y * 1.9 + x * 0.7) * 0.3); }
+    g.computeVertexNormals();
+    const nrm = g.attributes.normal, uv = new Float32Array(p.count * 2);
+    for (let i = 0; i < p.count; i++) {
+      const ax = Math.abs(nrm.getX(i)), ay = Math.abs(nrm.getY(i)), az = Math.abs(nrm.getZ(i));
+      const [u, v] = ay >= ax && ay >= az ? [p.getX(i), p.getZ(i)] : ax >= az ? [p.getZ(i), p.getY(i)] : [p.getX(i), p.getY(i)];
+      uv[i * 2] = u * 0.4; uv[i * 2 + 1] = v * 0.4;
+    }
+    g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    const walls = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: rockPicture(), roughness: 0.9, color: 0xc9b8c0 }));
+    walls.castShadow = true; walls.receiveShadow = true; root.add(walls);
+    // Coral all over them: along the tops (seen from the surface) and up the sides.
+    const crust = [];
+    for (const b of outerBoxes) {
+      const len = Math.max(b.x1 - b.x0, b.z1 - b.z0), along = (b.x1 - b.x0) >= (b.z1 - b.z0);
+      for (let i = 0; i < Math.floor(len / 1.3); i++) {
+        const t = (i + rnd()) / Math.floor(len / 1.3), x = b.x0 + (b.x1 - b.x0) * t, z = b.z0 + (b.z1 - b.z0) * t;
+        const kind = [staghorn, brain, tubes, anemone][Math.floor(rnd() * 4)];
+        const top = kind(rnd, PALETTE[Math.floor(rnd() * PALETTE.length)]); const s1 = 0.5 + rnd() * 0.5;
+        top.scale(s1, s1, s1); top.translate(x, CORAL_TOP - 0.15, z); crust.push(top);
+        for (const side of [-1, 1]) {                                   // a growth on each face, part way up
+          if (rnd() < 0.45) continue;
+          const g2 = (rnd() < 0.5 ? brain : tubes)(rnd, PALETTE[Math.floor(rnd() * PALETTE.length)]); const s2 = 0.35 + rnd() * 0.4;
+          g2.scale(s2, s2, s2);
+          const off = side * 1.0;
+          g2.translate(along ? x : x + off, SEABED_Y + 1 + rnd() * (h - 2), along ? z + off : z); crust.push(g2);
+        }
+      }
+    }
+    if (crust.length) root.add(new THREE.Mesh(mergeGeometries(crust), coralMat)); }
+
   // The cave: a coral maze walled in rock, with a roof over it.
   const rock = new THREE.MeshStandardMaterial({ map: rockPicture(), roughness: 0.95 });
   const boxes = wallBoxes(maze, ox, oz, size);
@@ -424,7 +467,7 @@ export function buildReef(scene, quality, { maze, jellyGltf = null }) {
     for (let i = 0; i < p.count; i++) {
       const ax = Math.abs(nrm.getX(i)), ay = Math.abs(nrm.getY(i)), az = Math.abs(nrm.getZ(i));
       const [u, v] = ay >= ax && ay >= az ? [p.getX(i), p.getZ(i)] : ax >= az ? [p.getZ(i), p.getY(i)] : [p.getX(i), p.getY(i)];
-      uv[i * 2] = u * 0.25; uv[i * 2 + 1] = v * 0.25;
+      uv[i * 2] = u * 0.4; uv[i * 2 + 1] = v * 0.4;
     }
     g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
     const walls = new THREE.Mesh(g, rock); walls.castShadow = true; walls.receiveShadow = true; root.add(walls); }
@@ -473,7 +516,8 @@ export function buildReef(scene, quality, { maze, jellyGltf = null }) {
     const c = clamWithPearl(); c.position.set(x, SEABED_Y + 0.05, z); c.rotation.y = rnd() * Math.PI * 2; c.scale.setScalar(1.3);
     root.add(c); pearls.push({ x, z, mesh: c, taken: false, inCave });
   };
-  for (let tries = 0, n = 0; n < 8 && tries < 400; tries++) {
+  for (const cell of pearlCells(outer, 4)) { const p = cellCentre(outer, cell, OUTER.ox, OUTER.oz, OUTER.size); addPearl(p.x, p.z, false); }
+  for (let tries = 0, n = 0; n < 5 && tries < 400; tries++) {
     const x = BOUNDS.x0 + 8 + rnd() * (BOUNDS.x1 - BOUNDS.x0 - 16), z = BOUNDS.z0 + 8 + rnd() * (BOUNDS.z1 - BOUNDS.z0 - 16);
     if (inCaveArea(x, z, 4) || Math.hypot(x - DIVE.x, z - DIVE.z) < 6) continue;
     addPearl(x, z, false); n++;
@@ -486,7 +530,9 @@ export function buildReef(scene, quality, { maze, jellyGltf = null }) {
     for (let r = 0; r < maze.rows; r++) for (let c = 0; c < maze.cols; c++) if (maze.dist[r * maze.cols + c] === d) return { c, r };
     return maze.entrance;
   });
-  const vents = [vent(ox + caveW + 7, oz + (maze.entrance.r + 0.5) * size + 6, false), ...ventCells.map(c => { const p = cellCentre(maze, c, ox, oz, size); return vent(p.x, p.z, true); })];
+  const route = mazePath(outer, outer.entrance, outer.exit), half = route[Math.floor(route.length / 2)] || outer.entrance;
+  const hp = cellCentre(outer, half, OUTER.ox, OUTER.oz, OUTER.size);
+  const vents = [vent(hp.x, hp.z, false), ...ventCells.map(c => { const p = cellCentre(maze, c, ox, oz, size); return vent(p.x, p.z, true); })];
   for (const v of vents) root.add(v.group);
 
   // The chest, in the furthest cell.
@@ -508,13 +554,16 @@ export function buildReef(scene, quality, { maze, jellyGltf = null }) {
   const jellies = [];
   for (let i = 0; i < 6; i++) {
     let x, z;
-    do { x = BOUNDS.x0 + 10 + rnd() * (BOUNDS.x1 - BOUNDS.x0 - 20); z = BOUNDS.z0 + 10 + rnd() * (BOUNDS.z1 - BOUNDS.z0 - 20); } while (inCaveArea(x, z, 4) || Math.hypot(x - DIVE.x, z - DIVE.z) < 10);
+    if (i < 3) {                                                       // three in the coral maze's corridors
+      const c = { c: Math.floor(rnd() * outer.cols), r: Math.floor(rnd() * outer.rows) }, p = cellCentre(outer, c, OUTER.ox, OUTER.oz, OUTER.size);
+      x = p.x; z = p.z;
+    } else do { x = BOUNDS.x0 + 10 + rnd() * (BOUNDS.x1 - BOUNDS.x0 - 20); z = BOUNDS.z0 + 10 + rnd() * (BOUNDS.z1 - BOUNDS.z0 - 20); } while (inCaveArea(x, z, 4) || Math.hypot(x - DIVE.x, z - DIVE.z) < 10);
     const m = dressedJelly(jellyGltf); root.add(m);
     jellies.push({ m, x, z, y: SWIM_Y + 0.5 + rnd() * 2, phase: rnd() * 6, cool: 0 });
   }
 
   return {
-    root, roof, pearls, vents, jellies, clam, mouth, boxes,
+    root, roof, pearls, vents, jellies, clam, mouth, boxes, outerBoxes,
     chest: { ...chest, x: cp.x, z: cp.z, opened: false, open: 0 },
     update(t, dt) {
       caustics.offset.set(t * 0.02, t * 0.013); surfMap.offset.set(-t * 0.015, t * 0.02);
