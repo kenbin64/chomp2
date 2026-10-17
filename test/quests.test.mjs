@@ -77,7 +77,8 @@ check('the park, the Esplanade and the reef are playable so far', AREAS.filter(a
 check('the reef is third (Ken, 2026-10-16)', AREAS[2].id === 'reef' && AREAS[2].name === 'The Great Barrier Reef');
 check('after the Esplanade comes the reef', nextArea('esplanade').id === 'reef');
 check('after the park comes the Esplanade', nextArea('park').id === 'esplanade');
-check('nothing after Kuranda', nextArea('kuranda') === null);
+check('Kuranda is fourth, after the reef (Ken, 2026-10-17)', AREAS[3].id === 'kuranda' && nextArea('reef').id === 'kuranda');
+check('nothing after Mossman Gorge', nextArea('mossman') === null);
 check('unknown area has no next', nextArea('nowhere') === null);
 
 // Visits and the map

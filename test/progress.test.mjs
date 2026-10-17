@@ -56,5 +56,39 @@ check('every area has a postcard', AREAS.every(a => typeof POSTCARDS[a.id] === '
   check('no stars yet, none earned', totalStars(freshProgress()) === 0);
 }
 
+// The wardrobe (Ken: new clothes for Wally and Kenny at the Kuranda markets).
+{
+  const P = await import('../js/progress.js');
+  const p0 = { ...P.freshProgress(), mangoes: 50 };
+  check('they start in their own clothes, owned', p0.wardrobe.owned.includes('shirt-sunset') && p0.wardrobe.owned.includes('vest-ranger'));
+  const b1 = P.buyItem(p0, 'shirt-reef');
+  check('buying takes the mangoes', b1.ok && b1.progress.mangoes === 25 && b1.progress.wardrobe.owned.includes('shirt-reef'));
+  check('cannot buy it twice', P.buyItem(b1.progress, 'shirt-reef').why === 'owned');
+  check('cannot buy without enough mangoes', P.buyItem({ ...p0, mangoes: 10 }, 'shirt-wattle').why === 'mangoes');
+  check('cannot buy what is not for sale', P.buyItem(p0, 'tuxedo').why === 'unknown');
+  const w1 = P.wearItem(b1.progress, 'shirt-reef');
+  check('wearing what was bought', P.wearing(w1, 'wally').shirt.id === 'shirt-reef');
+  check('cannot wear what is not owned', P.wearing(P.wearItem(p0, 'vest-ocean'), 'kenny').vest.id === 'vest-ranger');
+  const b2 = P.buyItem(w1, 'wally-sunnies'), w2 = P.wearItem(b2.progress, 'wally-sunnies');
+  check('an extra goes on, and comes off when chosen again', P.wearing(w2, 'wally').extra.id === 'wally-sunnies' && P.wearing(P.wearItem(w2, 'wally-sunnies'), 'wally').extra === null);
+  const saved = P.readProgress(JSON.stringify(w2));
+  check('the wardrobe is saved and read back', P.wearing(saved, 'wally').shirt.id === 'shirt-reef' && saved.wardrobe.owned.includes('wally-sunnies'));
+  const broken = P.readProgress(JSON.stringify({ unlocked: ['park'], wardrobe: { owned: ['made-up'], wear: { wally: { shirt: 'made-up' } } } }));
+  check('a broken saved wardrobe falls back to their own clothes', P.wearing(broken, 'wally').shirt.id === 'shirt-sunset' && !broken.wardrobe.owned.includes('made-up'));
+  check('every item belongs to Wally or Kenny and has a price', P.WARDROBE.every(i => ['wally', 'kenny'].includes(i.who) && i.price >= 0));
+}
+
+// Going back (Ken): a finished or visited area stays open, and every return trip banks more.
+{
+  const P = await import('../js/progress.js');
+  let p = P.freshProgress();
+  p = P.completeArea(p, 'park', { score: 50, stars: 1 });
+  p = P.completeArea(p, 'esplanade', { score: 80, stars: 2, mangoes: 40, pearls: 3 });
+  p = P.completeArea(p, 'esplanade', { score: 60, stars: 1, mangoes: 35, pearls: 2 });
+  check('going back to an area banks more mangoes and pearls', p.mangoes === 75 && p.pearls === 5);
+  check('a weaker return trip never lowers the best stars or score', p.stars.esplanade === 2 && p.best.esplanade === 80);
+  check('areas already reached stay open', p.unlocked.includes('park') && p.unlocked.includes('esplanade'));
+}
+
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

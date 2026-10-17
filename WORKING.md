@@ -76,6 +76,15 @@ when the feed-o-meter is in the red.
   `tools/blender-animate-*.py`); heavy Meshy models are rebuilt with `tools/blender-bake-lowpoly.py`.
 - **One AI at a time:** Ken works with one Claude session on this project now.
 
+### Kuranda design, 2026-10-17 (Ken)
+- **Trip order:** 1 Croc Park, 2 The Esplanade, 3 The Great Barrier Reef, **4 Kuranda**, then Daintree River and Mossman Gorge.
+- **Main job:** feed through the Kuranda markets (visitors and stallholders throw food among the stalls; sweet spot;
+  fill the meter), as in the park and the Esplanade.
+- **The shop:** a market stall where Wally and Kenny get **new clothes**, paid for with banked Golden Mangoes.
+- **Barron Falls** (a trail from the village): **zip line** across the gorge and **bungee** jump, both opened by
+  stars, both about **catching food on the way** (time the bungee's lowest point; steer the zip line).
+- **Boomerang** (respectfully, learning from a local guide; Kuranda is Djabugay country).
+
 ## Run and test
 
 ```

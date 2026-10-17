@@ -15,12 +15,13 @@ export const AREAS = [
   { id: 'reef', name: 'The Great Barrier Reef', place: 'Green Island, off Cairns', ready: true,
     objective: 'Dive from the Green Island jetty, follow the guide fish through the coral maze to the cave, find the pirate chest and get out before your air runs out. Bring pearls: one opens the giant clam.',
     notes: 'Green Island jetty, then under water: coral maze on the reef, box jellyfish, bubble vents, the coral cave with the pirate chest and the giant clam.' },
+  { id: 'kuranda', name: 'Kuranda', place: 'The village in the rainforest', ready: false,
+    objective: 'Feed through the Kuranda markets without scaring the shoppers off, and fill the feed-o-meter. Spend Golden Mangoes on new clothes for Wally and Kenny, and take the trail to Barron Falls for the zip line and the bungee.',
+    notes: 'Kuranda village and markets in the rainforest, the Skyrail gondolas overhead; a trail to the Barron Falls gorge: zip line across it, bungee over it (catch food on the way). Djabugay country: the boomerang is taught by a local guide.' },
   { id: 'daintree', name: 'Daintree River', ready: false,
     notes: 'Tourists on river boats. Swim, swing on vines, jump rock to rock, run the beach. Mangroves, rainforest to the water.' },
   { id: 'mossman', name: 'Mossman Gorge', ready: false,
     notes: 'River rafts, climbing vines and cliffs, a vine-swinging challenge, line traversing over the gorge catching food along the line. Rainforest over the hills.' },
-  { id: 'kuranda', name: 'Kuranda', ready: false,
-    notes: 'Kuranda markets, a bungee challenge (catch something at the bottom of the jump), line traversing over Barron Falls. Cane fields and rainforest on the way up.' },
 ];
 
 // The rule for moving on from any scene (Ken, 2026-10-16): feed out every group
