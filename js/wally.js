@@ -21,7 +21,7 @@ const SPIN = 14;                 // and how fast down spins him round
 const FALL = 22;                 // Wally's own gravity: snappier than the food's
 const FLOAT_Y = -0.45;           // root height while swimming
 const HIP = 1.1;                 // where a model is pivoted for leaning and swimming
-const SWIM_LIFT = -0.45;         // Blender model, swimming: hips from about 1 m up to 0.55 m (as the old lying pose)
+const SWIM_LIFT = -0.92;         // Blender model, swimming: body just under the surface, eyes and snout above (Ken: like a real croc)
 
 // Body shape for each way of moving. lean tips the torso forward,
 // hipY is the height of the hips, tail is how steeply the tail drops.
@@ -309,7 +309,7 @@ export class Wally {
     let playing = false;
     if (this.napping) playing = s.play('nap');
     else if (this.airborne) playing = s.play(this.standingJump ? 'jump' : 'leap', { once: true, alternatives: ['jump'], fit: airTime });
-    else if (this.hurt > 0 && blender) playing = s.play('hurt', { once: true });
+    else if (this.hurt > 0 && blender && this.mode !== 'swim') playing = s.play('hurt', { once: true });   // in the water a sting keeps him swimming
     else if (this.picking > 0) playing = s.play('groundpick', { once: true });
     // Catches set cheer to 0.8 and the eating moves show those; Celebrate is for
     // the big moments (level done, treasure), which set it to 1.2 or more.

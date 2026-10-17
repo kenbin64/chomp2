@@ -201,16 +201,19 @@ def swim(t):
     p['Spine1'].append((Z, 6 * s(t, 0.25)))              # a little roll with each stroke
     p['Tail5'].append((X, 12 * s(t * 2, 0.3)))           # the tail tip flicks up: a show-off flourish
     p['Tail1'].insert(0, (X, -37))                       # tail straight out behind, in line
-    p['Neck'] = [(X, -40), (Y, -7 * s(t, 0.08))]         # head held level...
-    p['Head'] = [(X, -48 + 4 * s(t * 2, 0.2)), (Z, -5 * s(t, 0.05)), (Y, 6 * s(t, 0.3))]   # ...against the wave, with a happy bob and tilt
+    # Like a real croc at the surface (Ken): the neck lifts so the eyes and snout
+    # ride above the water while the body sits just under it; the head turns
+    # back down to keep the snout level.
+    p['Neck'] = [(X, -66), (Y, -7 * s(t, 0.08))]         # head held up and level...
+    p['Head'] = [(X, -22 + 4 * s(t * 2, 0.2)), (Z, -5 * s(t, 0.05)), (Y, 6 * s(t, 0.3))]   # ...against the wave, with a happy bob and tilt
     p['Jaw'] = [(X, 2 + 3 * s(t * 2, 0.5))]              # grinning as he goes
     arms_down(p, 78, 78)                                 # arms back along his sides
     p['LeftArm'].append((X, 12)); p['RightArm'].append((X, 12))
     elbow(p, 10, 10)
     for side in ('Left', 'Right'):
-        p[side + 'UpLeg'] = [(X, 8), (Y, (-6 if side == 'Left' else 6))]   # legs together behind
-        p[side + 'Leg'] = [(X, 10)]
-        p[side + 'Foot'] = [(X, 70)]                     # feet pointed back
+        p[side + 'UpLeg'] = [(X, 2), (Y, (-6 if side == 'Left' else 6))]   # legs straight and together behind,
+        p[side + 'Leg'] = [(X, 0)]                       # under the water
+        p[side + 'Foot'] = [(X, 35)]                     # feet pointed back
     p['_hips'] = (0, 0, 0)
     return p
 
