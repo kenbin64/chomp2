@@ -50,9 +50,14 @@ export function clampToPark(x, z) {
 export const ENERGY_MAX = 100;
 
 // Energy used per second for what he is doing.
-export function energyDrain(mode, moving) {
+// How fast the feed-o-meter runs down on each level (Ken: the first level is
+// the training level, so it gives the most time, and each level after is a
+// little harder). 1 is the full rate.
+export const LEVEL_DRAIN = { park: 0.6, esplanade: 0.8, reef: 1, kuranda: 1.1, daintree: 1.15, mossman: 1.2 };
+
+export function energyDrain(mode, moving, level = null) {
   const base = { upright: 1.6, fours: 2.6, swim: 1.3 }[mode] ?? 1.6;
-  return moving ? base * 1.4 : base;
+  return (moving ? base * 1.4 : base) * (LEVEL_DRAIN[level] ?? 1);
 }
 
 // Below 40 energy he slows down, to just under half speed when empty.

@@ -354,7 +354,7 @@ function step(dt, t) {
   looksUnder(camera.position.y < -0.2);
   if (seaCeiling.visible) { seaCeiling.position.x = camera.position.x; seaCeiling.position.z = camera.position.z; }
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (!game.done && game.boost <= 0 && !napping) game.energy -= energyDrain(wally.mode, moving) * dt;
+  if (!game.done && game.boost <= 0 && !napping) game.energy -= energyDrain(wally.mode, moving, 'esplanade') * dt;
 
   // Obstacles
   for (const o of obstacles) {

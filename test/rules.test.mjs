@@ -211,5 +211,15 @@ check('food passing under the deck carries on to the water', R.foodSurface(0, B.
   check('away from the steps, from the ground he stays on the ground', sh(B.flat + 4, B.z, 0.0).surface !== 'deck');
 }
 
+// The first level is the training level: the meter lasts longest there, and each level after drains a little faster (Ken).
+{
+  const { energyDrain: d, LEVEL_DRAIN: L } = await import('../js/rules.js');
+  const secs = lvl => 100 / d('upright', true, lvl);
+  check('Croc Park gives the most time on the meter', secs('park') > secs('esplanade') && secs('esplanade') > secs('reef'));
+  check('running flat out in Croc Park, a full meter lasts over a minute', secs('park') > 60);
+  check('levels get harder in trip order', ['park', 'esplanade', 'reef', 'kuranda', 'daintree', 'mossman'].every((k, i, a) => i === 0 || L[k] >= L[a[i - 1]]));
+  check('no level given means the full rate', d('upright', true) === d('upright', true, 'reef'));
+}
+
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

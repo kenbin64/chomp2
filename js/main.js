@@ -382,7 +382,7 @@ function step(dt, t) {
     else if (e === 'splash') { sound.play.splash(); fx.splash(wally.pos, 26); fx.shake(0.2, 0.15); } else if (e === 'land') sound.play.land();
   }
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (game.boost <= 0 && game.nap <= 0) game.energy -= energyDrain(wally.mode, moving) * dt;
+  if (game.boost <= 0 && game.nap <= 0) game.energy -= energyDrain(wally.mode, moving, 'park') * dt;
   if (game.nap > 0) napping(dt);
 
   tourists.update(dt, wally.pos);                // strollers on the boardwalk: scenery, no food
