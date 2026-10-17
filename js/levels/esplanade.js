@@ -315,6 +315,7 @@ function step(dt, t) {
   $('dive-buttons').hidden = !inTheSea || game.done;
   $('b-dive').disabled = seaDive.under; $('b-up').disabled = !seaDive.under;
   if (!inTheSea && wally.surface !== 'water') seaDive.under = false;
+  sound.underwaterMusic(seaDive.under);              // the music goes soft and muffled under water
   if (inTheSea && !game.seaTip) { game.seaTip = true; toast_('Shift (Fours) to dive under. Swim to the boardwalk edge to climb out', 'info'); }
   const wantSea = seaDive.under ? SEA_SWIM : SEA_TOP;
   seaDive.depth += Math.sign(wantSea - seaDive.depth) * Math.min(Math.abs(wantSea - seaDive.depth), 4 * dt);
@@ -549,7 +550,7 @@ function drawHud() {
 }
 
 function start() {
-  sound.start();
+  sound.start(); sound.startMusic('esplanade');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true;
   cam.yaw = Math.PI;                    // start behind him, looking down the boardwalk

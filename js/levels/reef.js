@@ -349,6 +349,7 @@ function step(dt, t) {
 
   const inWater = wally.surface === 'water';
   const atTop = game.depth > -1.2;
+  sound.underwaterMusic(!atTop);                    // the music goes soft and muffled under water
   game.inCave = !atTop && inMaze(maze, wally.pos.x, wally.pos.z, MAZE.ox, MAZE.oz, MAZE.size);
 
   // Dive with Shift, come up with Ctrl+Shift (Ken's keys, or the on-screen
@@ -504,7 +505,7 @@ function drawHud() {
 }
 
 function start() {
-  sound.start();
+  sound.start(); sound.startMusic('reef');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true;
   bubbles.say(wally.root, game.pearls ? `G'day! I've got ${game.pearls} pearl${game.pearls === 1 ? '' : 's'}. Let's find that cave!` : "G'day! Better find some pearls down there.", 3.6, 3);

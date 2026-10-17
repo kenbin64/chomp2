@@ -3,6 +3,8 @@
 // files to load. The browser only allows sound after the player has tapped or
 // clicked, so start() is called from the Play button.
 
+import { music } from './music.js';
+
 let ctx = null, master = null, muted = false;
 
 export function start() {
@@ -12,6 +14,10 @@ export function start() {
     master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination);
   } catch { ctx = null; }
 }
+
+// Background music (music.js), through the same volume and mute as the effects.
+export function startMusic(mood) { if (ctx) music.start(ctx, master, mood); }
+export function underwaterMusic(on) { music.setUnderwater(on); }
 
 export function toggleMute() {
   muted = !muted;

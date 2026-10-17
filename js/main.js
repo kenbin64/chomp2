@@ -537,7 +537,7 @@ function followCamera(dt) {
 // ---- Start, pause, end ------------------------------------------------------------
 
 function start() {
-  sound.start();
+  sound.start(); sound.startMusic('park');
   $('title').hidden = true; $('over').hidden = true; $('win').hidden = true;
   $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true; game.paused = false;
@@ -627,7 +627,7 @@ function showMap() {
   $('map').hidden = false;
 }
 
-$('play').onclick = () => { sound.start(); showMap(); };
+$('play').onclick = () => { sound.start(); sound.startMusic('park'); showMap(); };
 $('to-map').onclick = () => location.href = 'index.html?map';
 $('resume').onclick = () => setPaused(false);
 $('again').onclick = restart; $('again2').onclick = e => { e.preventDefault(); location.href = 'index.html?play'; };
