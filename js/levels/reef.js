@@ -344,9 +344,12 @@ function step(dt, t) {
   const atTop = game.depth > -1.2;
   game.inCave = !atTop && inMaze(maze, wally.pos.x, wally.pos.z, MAZE.ox, MAZE.oz, MAZE.size);
 
-  // Dive and Up (Shift / Space, or the buttons). Not up from inside the cave: rock overhead.
+  // Dive with Shift, come up with Ctrl+Shift (Ken's keys; Space under water and
+  // the on-screen buttons work too). Not up from inside the cave: rock overhead.
   const foursPressed = k.fours && !game.foursWas; game.foursWas = k.fours;
-  const dive = foursPressed || game.diveQueued, up = (k.jump && !atTop) || game.upQueued;
+  const ctrlShift = k.fours && k.ctrl, ctrlShiftPressed = ctrlShift && !game.ctrlShiftWas; game.ctrlShiftWas = ctrlShift;
+  const dive = (foursPressed && !k.ctrl) || game.diveQueued;
+  const up = ctrlShiftPressed || (k.jump && !atTop) || game.upQueued;
   game.diveQueued = game.upQueued = false;
   if (game.faint <= 0 && !game.done && inWater) {
     if (dive && atTop) game.wantDepth = SWIM_Y;
@@ -370,8 +373,10 @@ function step(dt, t) {
     wally.root.position.copy(wally.pos);
     if (game.climb <= 0) { wally.pos.copy(climbTo); wally.vel.set(0, 0, 0); wally.vy = 0; wally.grounded = true; wally.surface = 'deck'; }
   } else {
-    const wantX = -Math.sin(cam.yaw) * control.forward + Math.cos(cam.yaw) * control.right;
-    const wantZ = -Math.cos(cam.yaw) * control.forward - Math.sin(cam.yaw) * control.right;
+    // Which way he is pushing: with the keyboard, straight ahead while Up is held;
+    // with the phone stick, relative to the camera.
+    const wantX = control.steer ? Math.sin(wally.facing) * (control.forward > 0 ? 1 : 0) : -Math.sin(cam.yaw) * control.forward + Math.cos(cam.yaw) * control.right;
+    const wantZ = control.steer ? Math.cos(wally.facing) * (control.forward > 0 ? 1 : 0) : -Math.cos(cam.yaw) * control.forward - Math.sin(cam.yaw) * control.right;
     const nearJetty = wally.pos.x >= JETTY.x0 - 1.2 && wally.pos.x <= JETTY.x1 && Math.abs(wally.pos.z - JETTY.z) <= JETTY.half + 1.2;
     if (inWater && atTop && nearJetty && Math.hypot(wantX, wantZ) > 0.35) {
       // Pushing toward the jetty from beside it or off its end: haul up onto the deck.

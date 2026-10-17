@@ -104,6 +104,7 @@ export class Input {
       steer: !this.stick,
       jump: this.jumpQueued,
       fours: k.has('shift') || this.foursToggle,
+      ctrl: k.has('control'),          // with Shift: come up from a dive (the reef and the sea)
       turn: this.turn, turnKeys, tilt: this.tilt, zoom: this.zoom, recenter: this.recenterQueued,
     };
     this.recenterQueued = false;
