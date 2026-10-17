@@ -113,7 +113,7 @@ others = [g for g in body.vertex_groups if g.name not in ('Jaw', 'Head')]
 # but is joined to the upper gum, so it stays with the head.
 import heapq
 verts = body.data.vertices
-snout = {v.index for v in verts if v.co.y < -0.10 and 0.30 < v.co.z < 0.62}
+snout = {v.index for v in verts if v.co.y < -0.10 and 0.30 < v.co.z < 0.62 and not (v.co.y > -0.26 and v.co.z < 0.40)}   # snout only; the throat keeps the neck's weights
 links = {i: [] for i in snout}
 for e in body.data.edges:
     a, b = e.vertices
@@ -145,6 +145,32 @@ for v in verts:
     head.add([v.index], 1.0 - w, 'REPLACE')
     for g in others:
         g.remove([v.index])
+
+# ---- The arms, along their length ----------------------------------------------
+# Automatic weights let the short shoulder bone reach out past the elbow, so a
+# lowered arm dragged a sheet of skin with it. Out along the arm, each point now
+# belongs to the bone it sits on, blending only across the joints: upper arm to
+# forearm at the elbow (x 0.52), forearm to hand at the wrist (x 0.80). Near the
+# shoulder (x 0.22 to 0.30) the arm blends into what automatic weights chose.
+def arm_chain(u, side):
+    elbow_k, wrist_k = smooth(0.48, 0.56, u), smooth(0.76, 0.84, u)
+    return {side + 'Arm': 1 - elbow_k, side + 'ForeArm': elbow_k * (1 - wrist_k), side + 'Hand': wrist_k}
+
+for v in body.data.vertices:
+    x, y, z = v.co
+    if z < 0.10 or abs(x) < 0.22:
+        continue
+    side = 'Left' if x > 0 else 'Right'
+    k = smooth(0.22, 0.30, abs(x))
+    old_w = {body.vertex_groups[g.group].name: g.weight * (1 - k) for g in v.groups}
+    for name, w in arm_chain(abs(x), side).items():
+        old_w[name] = old_w.get(name, 0) + w * k
+    total = sum(old_w.values()) or 1
+    for g in list(v.groups):
+        body.vertex_groups[g.group].remove([v.index])
+    for name, w in old_w.items():
+        if w / total > 0.01:
+            body.vertex_groups[name].add([v.index], w / total, 'REPLACE')
 
 # Anything left with no weight at all (it only had the Jaw before) follows the Head.
 for v in body.data.vertices:
