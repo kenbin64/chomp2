@@ -69,6 +69,27 @@ The jaw must open, because he catches food in his mouth.
 | `food-pizza.glb` | A slice of pepperoni pizza with melted cheese and a thick crust |
 | `toast.glb` | Kenny's power-up: a slice of golden toast thinly spread with a dark brown, almost black spread, a little butter melting on top. No packaging. |
 
+### How to make every character from now on (Blender pipeline, 2026-10-16)
+
+Wally showed the way: an unrigged model from Meshy, rigged and animated in Blender by script
+(`tools/blender-rig-wally.py`, `tools/blender-animate-wally.py`), looks and moves far better than
+Meshy's own auto-rig. So for every character and creature:
+
+1. **Same look as Wally.** Add to every prompt: *"Stylised 3D animated-feature character, same art style
+   as a modern family animated film, detailed hand-painted textures, soft appealing shapes."* Everyone
+   should look like they belong in Wally's world.
+2. **Pose for rigging.** People: a **T-pose** (arms straight out, legs slightly apart, mouth closed,
+   fingers spread). Creatures: a **neutral pose with limbs clear of the body** (pelican with wings
+   slightly open and legs straight; toad with legs out from the body; croc lying straight, legs out to
+   the sides, tail straight, mouth slightly open).
+3. **Export without a rig.** In Meshy choose the **game-ready (about 10k triangles), no rig, for Blender**
+   GLB, the same kind as `Meshy_AI_wally_game_ready_10k_Withoutrigfor_blender.glb`.
+4. Save to Downloads and say which character it is. The rest (shrinking, rig, moves, phone copies) is done here.
+
+People can also go through **Mixamo** (free, from Adobe, made for human figures): upload the T-pose
+model there and it rigs it and gives hundreds of ready moves (throwing, waving, cheering, phone photo,
+running away). Use whichever is quicker; the Blender route works for people too.
+
 ### 4. Tourists: `tourist-1.glb` to `tourist-10.glb`
 Everyday Australians and visitors on a sunny day out, each one a distinct individual. Make about ten that vary in age, build, height, skin tone, hair and clothes. Dress them in ordinary holiday clothes only: no costumes and nothing meant to signal a culture. Show them as warm, friendly, happy people.
 
