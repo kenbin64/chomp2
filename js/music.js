@@ -2,7 +2,7 @@
 // Background music, made on the fly with Web Audio like the sound effects, so
 // there is nothing to download. A placeholder (Ken, 2026-10-17): a cheerful
 // island groove of plucked guitar, warm bass and light percussion (shaker, soft
-// kick, woodblock). It deliberately does not imitate the didgeridoo (yidaki) or
+// kick, woodblock); on the reef, calypso with steel drums. It deliberately does not imitate the didgeridoo (yidaki) or
 // other Aboriginal and Torres Strait Islander instruments: those belong in real
 // recordings by Indigenous musicians, licensed and credited, which can replace
 // this later one area at a time (see TRACKS).
@@ -16,7 +16,8 @@
 const MOODS = {
   park:      { bpm: 104, root: 196.0, drums: 1.0, swing: 0.12, bright: 1.0 },    // G: bouncy
   esplanade: { bpm: 96,  root: 220.0, drums: 0.8, swing: 0.16, bright: 0.9 },    // A: breezy
-  reef:      { bpm: 84,  root: 174.6, drums: 0.4, swing: 0.10, bright: 0.7 },    // F: dreamy
+  // The reef is calypso (Ken): steel drums over a bouncy 3-3-2 bass.
+  reef:      { bpm: 112, root: 233.1, drums: 0.8, swing: 0.06, bright: 1.0, style: 'calypso' },   // B flat
 };
 
 // A happy four-chord loop (I, V, vi, IV) in scale steps of the major scale.
@@ -28,6 +29,15 @@ const PHRASES = [
   [6, null, 4, 6, 7, 6, 4, 2],
   [5, null, 7, 5, 4, null, 2, 4],
   [3, 4, 5, null, 4, 2, 0, null],
+];
+
+// The calypso tune: syncopated, in sixteenths (null = rest), one bar per chord.
+const _ = null;
+const CALYPSO = [
+  [4, _, _, 4, _, _, 5, _, 4, _, 2, _, 0, _, 2, _],
+  [6, _, _, 6, _, _, 7, _, 8, _, 7, _, 6, _, 4, _],
+  [5, _, _, 7, _, _, 9, _, 7, _, 5, _, 4, _, 2, _],
+  [3, _, 4, _, 5, _, _, 4, _, 2, _, 0, _, _, _, _],
 ];
 
 function note(root, step, octave = 0) {
@@ -70,15 +80,27 @@ export class Music {
       const chord = CHORDS[bar % 4];
       const swing = pos % 2 ? sixteenth * m.swing : 0;   // a laid-back lilt
       const t = this.next + swing;
-      // Bass: root on the beat, fifth on the "and".
-      if (pos === 0 || pos === 8) this.pluck(note(m.root / 2, chord[0]), t, 0.5, 0.22, 'bass');
-      if (pos === 6 || pos === 14) this.pluck(note(m.root / 2, chord[0] + 4), t, 0.25, 0.14, 'bass');
-      // Strummed chord on the off-beats, like a ukulele.
-      if (pos === 4 || pos === 12 || (pos === 10 && bar % 2)) chord.forEach((s, k) => this.pluck(note(m.root, s), t + k * 0.012, 0.35, 0.06 * m.bright, 'strum'));
-      // Melody in eighth notes; the second time round it goes up an octave.
-      if (pos % 2 === 0) {
-        const step = PHRASES[bar % 4][pos / 2];
-        if (step !== null) this.pluck(note(m.root, step, bar >= 4 ? 1 : 0), t, 0.3, 0.09 * m.bright, 'lead');
+      if (m.style === 'calypso') {
+        // Calypso: the bass bounces 3+3+2 (sixteenths 0, 6, 12), strums on every
+        // off-beat, and the melody is played on steel drums, answered an octave up.
+        if (pos === 0) this.pluck(note(m.root / 2, chord[0]), t, 0.3, 0.22, 'bass');
+        if (pos === 6) this.pluck(note(m.root / 2, chord[0] + 4), t, 0.3, 0.18, 'bass');
+        if (pos === 12) this.pluck(note(m.root / 2, chord[0] + 7), t, 0.25, 0.18, 'bass');
+        if (pos % 4 === 2) chord.forEach((s, k) => this.pluck(note(m.root, s), t + k * 0.008, 0.18, 0.045, 'strum'));
+        const step = CALYPSO[bar % 4][pos];
+        if (step !== null) this.pan(note(m.root, step, bar >= 4 ? 1 : 0), t, 0.11);
+        if (bar % 2 === 1 && (pos === 3 || pos === 11)) this.pan(note(m.root, chord[2], 1), t, 0.05);   // a little answer
+      } else {
+        // Bass: root on the beat, fifth on the "and".
+        if (pos === 0 || pos === 8) this.pluck(note(m.root / 2, chord[0]), t, 0.5, 0.22, 'bass');
+        if (pos === 6 || pos === 14) this.pluck(note(m.root / 2, chord[0] + 4), t, 0.25, 0.14, 'bass');
+        // Strummed chord on the off-beats, like a ukulele.
+        if (pos === 4 || pos === 12 || (pos === 10 && bar % 2)) chord.forEach((s, k) => this.pluck(note(m.root, s), t + k * 0.012, 0.35, 0.06 * m.bright, 'strum'));
+        // Melody in eighth notes; the second time round it goes up an octave.
+        if (pos % 2 === 0) {
+          const step = PHRASES[bar % 4][pos / 2];
+          if (step !== null) this.pluck(note(m.root, step, bar >= 4 ? 1 : 0), t, 0.3, 0.09 * m.bright, 'lead');
+        }
       }
       // Percussion.
       if (m.drums > 0) {
@@ -103,6 +125,24 @@ export class Music {
     g.gain.exponentialRampToValueAtTime(0.0001, t + length);
     o.connect(f); o2.connect(f); f.connect(g); g.connect(this.out);
     o.start(t); o2.start(t); o.stop(t + length + 0.05); o2.stop(t + length + 0.05);
+  }
+
+  // A steel drum (steelpan) note: a bright strike, then a ringing tone with the
+  // pan's own overtones (an octave and an octave and a fifth above) and a slight
+  // shimmer from two tones a hair apart.
+  pan(freq, t, volume) {
+    const ctx = this.ctx, g = ctx.createGain(), length = 0.9;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(volume, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(volume * 0.35, t + 0.12);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + length);
+    g.connect(this.out);
+    for (const [mult, level, detune] of [[1, 1, 0], [1, 0.6, 7], [2, 0.45, 0], [3, 0.18, 0], [4.2, 0.08, 0]]) {
+      const o = ctx.createOscillator(), og = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = freq * mult; o.detune.value = detune;
+      og.gain.value = level; o.connect(og); og.connect(g);
+      o.start(t); o.stop(t + length + 0.05);
+    }
   }
 
   kick(t, volume) {
