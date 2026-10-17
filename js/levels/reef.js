@@ -25,7 +25,7 @@ import { LIVES } from '../rules.js';
 import { HumanoidPoser } from '../rig.js';
 import { kennysJar, useJarModel } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
-import { readProgress, completeArea, starsFor, POSTCARDS } from '../progress.js';
+import { readProgress, completeArea, starsFor, POSTCARDS, bankFinds } from '../progress.js';
 import { makeMaze, makeReefMaze, mazePath, cellAt, cellCentre, collide, inMaze, airStep, AIR,
          SWIM_Y, SURFACE_Y, SEABED_Y, reefRunScore, REEF_STARS, PEARL_POINTS, CHEST_POINTS,
          LANES, LANE_NAMES, TREASURES, nextDepth, treasureSpots, canCollect } from './reef-rules.js';
@@ -213,7 +213,7 @@ const banked = params.has('pearls') ? Number(params.get('pearls')) : (progress.p
 const game = {
   running: false, paused: false, done: false, time: 0,
   lives: LIVES, air: AIR.max, depth: SURFACE_Y, wantDepth: SURFACE_Y,
-  pearls: banked, found: 0, spent: 0, points: 0, mangoes: 0, treasure: 0, treasures: 0,
+  pearls: banked, found: 0, spent: 0, points: 0, mangoes: 0, treasure: 0, treasures: 0, coins: 0,
   chest: false, doorShut: false, inCave: false, faint: 0, stun: 0, hint: 0,
   foursWas: false, diveQueued: false, upQueued: false, climb: 0, guideSaid: false,
 };
@@ -331,7 +331,7 @@ function outOfAir() {
   game.wantDepth = SURFACE_Y; game.faint = 3.2; wally.setNapping(true);
   kennyFloat.visible = vegemite.visible = true;
   toast_(`Out of air! ${game.lives} left. Here comes Kenny`, 'bad');
-  bubbles.say(kennyMesh, 'Hang on, Wally! Vegemite!', 2.6);
+  bubbles.say(kennyMesh, "Hang on, Wally! Here's me jar!", 2.6);
   return true;
 }
 function rescueStep(dt, t) {
@@ -343,7 +343,7 @@ function rescueStep(dt, t) {
     game.air = AIR.max; kennyFloat.visible = vegemite.visible = false;
     kennyMesh.position.copy(kennyHome);
     wally.setNapping(false); sound.play.powerup();
-    toast_("Kenny's Vegemite! Full of beans. Dive when you're ready", 'good'); bubbles.say(wally.root, 'Thanks, Kenny! Back down I go!', 3.4);
+    toast_("Kenny's jar! Full of beans. Dive when you're ready", 'good'); bubbles.say(wally.root, 'Thanks, Kenny! Back down I go!', 3.4);
   }
 }
 
@@ -444,6 +444,7 @@ function step(dt, t) {
       const T = TREASURES[tr.kind];
       tr.taken = true; tr.mesh.visible = false;
       game.treasure += T.points; game.treasures++; game.points += T.points;
+      if (tr.kind === 'coin') game.coins++;                         // gold coins pay the Skyrail up to Kuranda
       sound.play.goal(); fx.burst(tr.mesh.position.clone(), tr.kind === 'coin' ? [0xffd24a, 0xffffff] : tr.kind === 'shell' ? [0xfff0d0, 0xffffff] : [0xff9a5a, 0xffd0a0], 10);
       toast_(`+${T.points} ${T.name}!`, 'good');
     }
@@ -551,17 +552,19 @@ function finish(won, why = '') {
   const s = reefRunScore({ found: game.found, chest: game.chest, airLeft: game.air, finished: won, treasure: game.treasure });
   const stars = won ? starsFor(s.total, REEF_STARS) : 0;
   if (won) sound.fanfare();                         // Wally's theme hook: well done, mate
-  if (won) {
+  {
     // Pearls are a bank across the trip: what was spent at the clam comes off, what was found goes on.
+    // Finished or not, what he found is kept (Ken), gold coins included.
     progress = { ...progress, pearls: Math.max(0, (progress.pearls || 0) - game.spent) };
-    progress = completeArea(progress, 'reef', { score: s.total, stars, mangoes: game.mangoes, pearls: game.found });
+    if (won) progress = completeArea(progress, 'reef', { score: s.total, stars, mangoes: game.mangoes, pearls: game.found, coins: game.coins });
+    else progress = bankFinds(progress, { mangoes: game.mangoes, pearls: game.found, coins: game.coins });
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
   }
   $('result-title').textContent = won ? 'Found the pirate treasure!' : why === 'air' ? 'Out of air!' : 'Not this time';
-  $('result-why').textContent = won ? '' : 'Kenny can only bring so much Vegemite. Swim up for air sooner, and use the bubble vents.';
+  $('result-why').textContent = won ? '' : 'Kenny can only bring his jar so many times. Swim up for air sooner, and use the bubble vents.';
   $('result-stars').textContent = won ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
   $('result-lines').innerHTML = '';
-  for (const [label, v] of [['Pearls found', `${game.found} (${s.pearls})`], ['Reef treasures', `${game.treasures}/${treasures.length} (${s.treasure})`], ['Pearl spent on the clam', game.spent], ['Pirate chest', s.chest], ['Air left bonus', s.finishBonus], ['Total', s.total]]) {
+  for (const [label, v] of [['Pearls found', `${game.found} (${s.pearls})`], ['Reef treasures', `${game.treasures}/${treasures.length} (${s.treasure})`], ['Gold coins (Skyrail fare)', game.coins], ['Pearl spent on the clam', game.spent], ['Pirate chest', s.chest], ['Air left bonus', s.finishBonus], ['Total', s.total]]) {
     const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }
   $('postcard').hidden = !won;

@@ -24,7 +24,7 @@ import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocit
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
 import { jellyModel, dressedJelly } from '../hazards.js';
-import { completeArea, readProgress, starsFor, POSTCARDS } from '../progress.js';
+import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds } from '../progress.js';
 import { PATH, generateCourse, hits, runScore, STARS, MANGO_SET_BONUS } from './esplanade-rules.js';
 import { buildEsplanade, obstacleModel, mangoModel } from './esplanade-scene.js';
 import { Clusters } from '../clusters.js';
@@ -243,7 +243,7 @@ function outOfAir() {
   game.faint = 3.2; wally.setNapping(true);
   kennyFloat.visible = vegemite.visible = kennyMesh.visible = true;
   toast_(`Out of air! ${game.lives} left. Here comes Kenny`, 'bad');
-  bubbles.say(kennyMesh, 'Hang on, Wally! Vegemite!', 2.6);
+  bubbles.say(kennyMesh, "Hang on, Wally! Here's me jar!", 2.6);
   return true;
 }
 // Kenny on his float beside Wally, holding out the Vegemite, until Wally is revived.
@@ -568,10 +568,9 @@ function finish(won, why = '') {
   const s = runScore({ food: game.foodPoints, mangoes: game.mangoes, mangoSet: game.mangoes === mangoes.length, energyLeft: game.energy, stumbles: game.stumbles, finished: won, pearls: game.pearls });
   const stars = won ? starsFor(s.total, STARS) : 0;
   if (won) sound.fanfare();                         // Wally's theme hook: well done, mate
-  if (won) {
-    progress = completeArea(progress, 'esplanade', { score: s.total, stars, mangoes: game.mangoes, pearls: game.pearls });
-    try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
-  }
+  if (won) progress = completeArea(progress, 'esplanade', { score: s.total, stars, mangoes: game.mangoes, pearls: game.pearls });
+  else progress = bankFinds(progress, { mangoes: game.mangoes, pearls: game.pearls });   // Ken: keep what was found, finished or not
+  try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
   $('result-title').textContent = won ? 'Made it to the Lagoon!' : why === 'hungry' ? 'Still peckish!' : why === 'air' ? 'Out of air!' : 'Out of puff';
   $('result-why').textContent = why === 'hungry' ? `Wally made it, but his feed-o-meter isn't full. He needs a full tank (${FULL}%) to head on.` : '';
   $('result-stars').textContent = won ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';

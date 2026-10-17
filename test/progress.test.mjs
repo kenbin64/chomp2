@@ -90,5 +90,30 @@ check('every area has a postcard', AREAS.every(a => typeof POSTCARDS[a.id] === '
   check('areas already reached stay open', p.unlocked.includes('park') && p.unlocked.includes('esplanade'));
 }
 
+// The ticket chain (Ken): each level gives what the next one needs; finds are kept even after a failed run.
+{
+  const P = await import('../js/progress.js');
+  let p = P.freshProgress();
+  check('the Esplanade needs the ranger badge', P.entryNeeds(p, 'esplanade').what === 'badge');
+  p = P.completeArea(p, 'park', { score: 50, stars: 1 });
+  check('finishing Croc Park gives the badge', p.badge && P.entryNeeds(p, 'esplanade') === null);
+  check('the reef needs a pearl', P.entryNeeds(p, 'reef').what === 'pearls');
+  p = P.bankFinds(p, { mangoes: 12, pearls: 2 });                 // a failed Esplanade run still banks its finds
+  check('a failed run keeps its mangoes and pearls', p.mangoes === 12 && p.pearls === 2 && P.entryNeeds(p, 'reef') === null);
+  check('Kuranda needs the Skyrail fare in gold coins', P.entryNeeds({ ...p, coins: 3 }, 'kuranda').what === 'coins');
+  const rich = { ...p, coins: P.SKYRAIL_FARE + 2 };
+  check('with enough coins Kuranda is open', P.entryNeeds(rich, 'kuranda') === null);
+  const paid = P.payEntry(rich, 'kuranda');
+  check('the fare is paid once and the pass kept', paid.coins === 2 && paid.skyrail && P.entryNeeds({ ...paid, coins: 0 }, 'kuranda') === null);
+  check('paying again costs nothing', P.payEntry(paid, 'kuranda').coins === 2);
+  check('the Daintree needs a river-boat ticket', P.entryNeeds(paid, 'daintree').what === 'ticket');
+  check('the ticket needs enough mangoes', P.buyBoatTicket({ ...paid, mangoes: 10 }).why === 'mangoes');
+  const t = P.buyBoatTicket({ ...paid, mangoes: P.BOAT_TICKET_PRICE + 5 });
+  check('buying the ticket opens the Daintree', t.ok && t.progress.mangoes === 5 && P.entryNeeds(t.progress, 'daintree') === null);
+  const back = P.readProgress(JSON.stringify(t.progress));
+  check('badge, coins, Skyrail pass and ticket are saved', back.badge && back.coins === 2 && back.skyrail && back.boatTicket);
+  check('an older save that finished the park still has its badge', P.readProgress(JSON.stringify({ unlocked: ['park', 'esplanade'], stars: { park: 2 } })).badge);
+}
+
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

@@ -21,7 +21,7 @@ import { loadRealism } from './realism.js';
 import { usePalmCrown } from './palms.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from './quality.js';
 import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
-import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen } from './progress.js';
+import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds } from './progress.js';
 import * as sound from './sound.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, difficulty,
          clampToPark, terrainHeight, onDeck, LIVES, REVIVE_ENERGY, inRedZone,
@@ -595,7 +595,11 @@ function showMap() {
   $('title').hidden = true; $('win').hidden = true; $('over').hidden = true;
   const grid = $('map-grid'); grid.innerHTML = '';
   for (const a of AREAS) {
-    const open = (OPEN_ALL && !params.has('locked') && a.ready) || isOpen(progress, a.id);
+    // What the area needs from the one before (the ticket chain). While building,
+    // every built area stays open (OPEN_ALL); ?locked plays by the real rules.
+    const needs = entryNeeds(progress, a.id);
+    const testing = OPEN_ALL && !params.has('locked');
+    const open = (testing && a.ready) || (isOpen(progress, a.id) && !needs);
     const b = document.createElement('button');
     b.type = 'button'; b.className = `map-area ${open ? 'open' : 'locked'}`;
     const stars = progress.stars[a.id] || 0;
@@ -603,6 +607,7 @@ function showMap() {
     b.children[0].textContent = a.name;
     b.children[1].textContent = !a.ready ? 'Coming soon' : open ? (a.place || '') : 'Finish the area before to open';
     b.children[2].textContent = a.ready ? a.objective || '' : '';       // what to do there
+    if (needs) { const n = document.createElement('span'); n.className = 'needs'; n.textContent = `Needs ${needs.text}`; b.appendChild(n); }
     b.children[3].textContent = a.ready ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
     if (open) b.onclick = () => { if (PAGES[a.id]) location.href = PAGES[a.id]; else { $('map').hidden = true; start(); } };
     grid.appendChild(b);
@@ -623,7 +628,7 @@ function showMap() {
       : a.stars > have ? `★ ${a.stars} needed (${a.stars - have} to go)` : `Reach ${area.name} to open`;
     acts.appendChild(d);
   }
-  $('map-mangoes').textContent = `Golden Mangoes: ${progress.mangoes} · Pearls: ${progress.pearls || 0}`;
+  $('map-mangoes').textContent = `Golden Mangoes: ${progress.mangoes} · Pearls: ${progress.pearls || 0} · Gold coins: ${progress.coins || 0}${progress.badge ? ' · Ranger badge ✓' : ''}${progress.skyrail ? ' · Skyrail pass ✓' : ''}${progress.boatTicket ? ' · Boat ticket ✓' : ''}`;
   $('map-postcards').textContent = `Postcards: ${progress.postcards.length} of ${AREAS.length}`;
   $('map').hidden = false;
 }
