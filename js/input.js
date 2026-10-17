@@ -39,6 +39,8 @@ export class Input {
   }
 
   key(e, down) {
+    // Typing in a box (the leaderboard name) is typing, not playing: leave those keys alone.
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
     const k = e.key.toLowerCase();
     if (down && k === ' ' && !this.keys.has(' ')) this.jumpQueued = true;
     if (down && k === 'p' && this.onPause) this.onPause();

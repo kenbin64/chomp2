@@ -21,6 +21,7 @@ import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
+import { showLeaderboard } from '../leaderboard.js';
 import { dressOutfit } from '../outfit.js';
 import { LIVES } from '../rules.js';
 import { HumanoidPoser } from '../rig.js';
@@ -574,6 +575,7 @@ function finish(won, why = '') {
   $('postcard').hidden = !won;
   $('postcard-text').textContent = POSTCARDS.reef;
   $('result').hidden = false;
+  showLeaderboard($('board'), 'reef', won ? s.total : 0, won ? stars : 0);   // finished runs go on the board; the top ten either way
   window.chomp.result = { won, ...s, stars, found: game.found, spent: game.spent };
 }
 

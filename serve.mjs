@@ -5,7 +5,8 @@
 // same Wi-Fi open it at this computer's address.
 
 import { createServer } from 'node:http';
-import { createReadStream, statSync, readdirSync } from 'node:fs';
+import { createReadStream, statSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { LEVELS, cleanName, validScore, addScore } from './js/leaderboard-rules.js';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { networkInterfaces } from 'node:os';
@@ -16,8 +17,36 @@ const lan = process.argv.includes('--lan');
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
                 '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.glb': 'model/gltf-binary', '.json': 'application/json' };
 
+// The leaderboard, kept in scores.json beside the game (Ken, 2026-10-17). The
+// same rules as an online one would use (js/leaderboard-rules.js).
+const SCORES = join(root, 'scores.json');
+function loadScores() { try { return JSON.parse(readFileSync(SCORES, 'utf8')); } catch { return {}; } }
+function leaderboard(req, res, url) {
+  const send = (code, body) => res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' }).end(JSON.stringify(body));
+  const level = url.searchParams.get('level');
+  if (!LEVELS.includes(level)) return send(400, { error: 'unknown level' });
+  const all = loadScores();
+  if (req.method === 'GET') return send(200, { board: all[level] || [] });
+  if (req.method !== 'POST') return send(405, { error: 'GET or POST' });
+  let body = '';
+  req.on('data', c => { body += c; if (body.length > 2000) req.destroy(); });
+  req.on('end', () => {
+    let entry;
+    try { entry = JSON.parse(body); } catch { return send(400, { error: 'not JSON' }); }
+    const name = cleanName(entry.name);
+    if (!name) return send(400, { error: 'name' });
+    if (!validScore(level, entry.score, entry.stars || 0)) return send(400, { error: 'score' });
+    const r = addScore(all[level] || [], { name, score: entry.score, stars: entry.stars || 0 });
+    all[level] = r.board;
+    try { writeFileSync(SCORES, JSON.stringify(all, null, 1)); } catch { return send(500, { error: 'not saved' }); }
+    send(200, { board: r.board, rank: r.rank, best: r.best, name });
+  });
+}
+
 createServer((req, res) => {
-  const path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+  const url = new URL(req.url, 'http://x');
+  const path = decodeURIComponent(url.pathname);
+  if (path === '/api/scores') { leaderboard(req, res, url); return; }
   // The list of model and backdrop files present, so the game only asks for those.
   if (path === '/models/index.json' || path === '/backdrops/index.json') {
     const folder = path.split('/')[1];

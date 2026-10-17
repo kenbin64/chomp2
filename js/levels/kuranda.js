@@ -17,6 +17,7 @@ import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
+import { showLeaderboard } from '../leaderboard.js';
 import { loadRealism } from '../realism.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone } from '../rules.js';
 import { FULL } from '../quests.js';
@@ -386,6 +387,7 @@ function finish(won, why = '') {
   $('postcard').hidden = !won;
   $('postcard-text').textContent = POSTCARDS.kuranda;
   $('result').hidden = false;
+  showLeaderboard($('board'), 'kuranda', won ? total : 0, won ? stars : 0);   // finished runs go on the board; the top ten either way
   window.chomp.result = { won, total, stars };
 }
 

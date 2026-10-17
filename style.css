@@ -175,3 +175,16 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .shop-list li.grp { display: block; border: 0; padding: 8px 4px 2px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #ffd166; }
 .shop-list .soon { font-size: 12px; opacity: 0.6; font-style: italic; }
 .shop-card { max-height: calc(100vh - 24px); overflow: auto; }
+/* The leaderboard on the end screens */
+.board { margin: 10px 0; text-align: left; }
+.board-title { margin: 6px 0; text-align: center; color: #ffd166; font-size: 18px; }
+.board-list { margin: 0; padding: 0 0 0 26px; }
+.board-list li { display: flex; gap: 8px; padding: 3px 6px; border-radius: 8px; }
+.board-list li.me { background: rgba(255, 209, 102, 0.22); }
+.board-list li.empty { list-style: none; opacity: 0.7; }
+.board-list .bn { flex: 1; } .board-list .bs { color: #ffd166; font-size: 13px; }
+.board-note { text-align: center; font-size: 14px; margin: 6px 0; }
+.board-form { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
+.board-form label { width: 100%; text-align: center; font-size: 14px; }
+.board-form input { font: inherit; padding: 8px 12px; border-radius: 999px; border: 2px solid rgba(255,209,102,0.5); background: rgba(255,255,255,0.08); color: inherit; width: 12em; }
+.board-form .go { margin: 0; padding: 8px 20px; font-size: 16px; }

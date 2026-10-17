@@ -23,6 +23,7 @@ import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from './qua
 import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
 import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing } from './progress.js';
 import { dressOutfit } from './outfit.js';
+import { showLeaderboard } from './leaderboard.js';
 import * as sound from './sound.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, difficulty,
          clampToPark, terrainHeight, onDeck, LIVES, REVIVE_ENERGY, inRedZone,
@@ -575,6 +576,7 @@ function finish(won, why = '') {
     $('win-postcard').textContent = POSTCARDS.park;
     $('next-area').textContent = nextArea('park').name;
     $('win').hidden = false;
+    showLeaderboard($('win-board'), 'park', game.score, stars);   // post the score, show the top ten
   } else {
     sound.play.lose();
     if (why === 'hungry') {
@@ -584,6 +586,7 @@ function finish(won, why = '') {
     $('final-score').textContent = game.score.toLocaleString();
     $('best').textContent = `Best: ${best.toLocaleString()}`;
     $('over').hidden = false;
+    showLeaderboard($('over-board'), 'park', 0);                  // the top ten (only finished runs go on the board)
   }
 }
 
