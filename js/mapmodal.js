@@ -40,7 +40,7 @@ function build() {
   modal = el('div', 'map-modal'); modal.hidden = true; modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-label', "Wally's Big Trip map");
   const card = el('div', 'card map-card');
   const close = el('button', 'map-close', '✕'); close.type = 'button'; close.setAttribute('aria-label', 'Close the map'); close.onclick = closeMap;
-  card.append(close, el('h1', null, "Wally's Big Trip"), el('p', 'sub', 'Click a place to see it; click again (or Play) to go there.'));
+  card.append(close, el('h1', null, "Wally's Big Trip"), el('p', 'sub', 'Click an open place to go there. Locked places show what they need.'));
   const wrap = el('div', 'tripmap'), art = el('div', 'tripmap-art'), info = el('div', 'tripmap-info');
   art.innerHTML = mapSvg(); wrap.append(art, info); card.append(wrap);
   card.append(el('p', 'fine map-bank'));
@@ -81,7 +81,7 @@ function render() {
       <text x="${dx}" y="${44 + dy}" class="pin-label"></text><text x="${dx}" y="${66 + dy}" class="pin-stars"></text>`;
     g.querySelector('.pin-label').textContent = a.name + (a.id === HERE ? ' (here)' : '');
     g.querySelector('.pin-stars').textContent = !a.ready ? 'coming soon' : active ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '🔒';
-    const pick = () => { if (active && g.classList.contains('picked')) go(a); else show(a); };
+    const pick = () => { if (active) go(a); else show(a); };          // Ken: one click on an open area goes there
     g.addEventListener('click', pick);
     g.addEventListener('keydown', e => { if (e.key === 'Enter') pick(); });
     pins.appendChild(g);
@@ -105,7 +105,9 @@ function render() {
     const m = MARKERS[a.id]; if (!m) continue;
     const area = AREAS.find(x => x.id === a.area);
     const active = activityOpen(progress, a.id) && mapActive(progress, visited, a.area);
+    const pages = { zipline: 'zipline.html', boomerang: 'boomerang.html' };
     addMark(a.id, m.icon, m.label, active, () => {
+      if ((active || testing) && pages[a.id]) { location.href = pages[a.id] + (testing ? '?all' : ''); return; }
       box.innerHTML = '';
       box.append(el('h2', null, a.name), el('p', 'place', area ? area.name : ''), el('p', 'goal', a.about));
       box.append(el('p', active ? 'place' : 'needs', active ? 'Open!' : a.stars > have ? `★ ${a.stars} needed (${a.stars - have} to go)` : !area || !area.ready ? 'Coming soon' : `Reach ${area.name} to open`));
