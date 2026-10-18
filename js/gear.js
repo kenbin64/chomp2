@@ -19,6 +19,9 @@ let cfg = null, badge = null, swishUntil = 0, snorkelUntil = 0, vitaminUntil = 0
 // A net swing in progress (Ken: he swings round, the net gets bigger and scoops up the food near him).
 let swing = null;
 const SWING_TIME = 0.6;
+// The reach ring on the ground (Ken: show a circle; anything inside it the net
+// picks up) and the button that uses the item, which says how much is in reach.
+let reachRing = null, useBtn = null, lastLabel = '';
 const load = () => readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
 
 // For the rest of the game: is the tail sweeping right now, is the snorkel in?
@@ -100,6 +103,14 @@ export function installGear(options) {
   const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'map-button gear-button'; btn.textContent = '🎒 Gear'; btn.title = "What Wally carries (G)";
   btn.onclick = () => (modal && !modal.hidden ? closeGear() : openGear());
   document.body.append(btn);
+  useBtn = document.createElement('button'); useBtn.type = 'button'; useBtn.className = 'gear-use'; useBtn.hidden = true;
+  useBtn.onclick = e => { e.stopPropagation(); useItem(); };
+  document.body.append(useBtn);
+  reachRing = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 64), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide }));
+  reachRing.rotation.x = -Math.PI / 2; reachRing.visible = false; reachRing.userData.noAO = true; reachRing.renderOrder = 2;
+  const fill = new THREE.Mesh(new THREE.CircleGeometry(0.94, 64), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0.08, depthWrite: false, side: THREE.DoubleSide }));
+  fill.userData.noAO = true; reachRing.add(fill); reachRing.userData.fill = fill;
+  cfg.scene.add(reachRing);
   drawBadge(); showProp();
   addEventListener(PROGRESS_CHANGED, () => { drawBadge(); showProp(); if (modal && !modal.hidden) drawGear(); });
   requestAnimationFrame(follow);
@@ -225,9 +236,42 @@ function swingStep() {
 }
 function me(w) { return w.pos; }
 
+// What is in reach of the net (food) or the tail swish (food and pickups).
+function inReach(reach) {
+  if (!cfg.food) return 0;
+  const me = cfg.wally.pos, c = new THREE.Vector3(me.x, me.y + 1, me.z);
+  return cfg.food.items.filter(it => !it.taken && !it.claimed && it.mesh.position.distanceTo(c) < reach).length;
+}
+function ringStep() {
+  if (!reachRing) return;
+  const id = propFor, a = ABILITIES.find(x => x.id === id);
+  const reach = id === 'net' ? NET_REACH : id === 'swisher' ? SWISH_REACH : 0;
+  const playing = !cfg.running || cfg.running();
+  reachRing.visible = !!reach && playing;
+  if (reachRing.visible) {
+    const w = cfg.wally.pos, n = id === 'net' ? inReach(reach) : 0;
+    reachRing.position.set(w.x, Math.max(w.y, cfg.ground ? cfg.ground(w.x, w.z) : w.y) + 0.06, w.z);
+    reachRing.scale.setScalar(reach);
+    const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 180);
+    reachRing.material.opacity = n ? 0.6 + 0.35 * pulse : 0.45;
+    reachRing.material.color.set(n ? 0xffd166 : 0x9fe8ff);
+    reachRing.userData.fill.material.opacity = n ? 0.16 : 0.07;
+  }
+  // The button: what F does now.
+  const show = !!a && playing;
+  useBtn.hidden = !show;
+  if (show) {
+    const n = id === 'net' ? inReach(NET_REACH) : 0;
+    const label = id === 'net' ? `${a.icon} Swing the net${n ? `: ${n} in reach` : ''}` : id === 'swisher' ? `${a.icon} Tail swish` : id === 'snorkel' ? `${a.icon} Snorkel in` : id === 'spring' ? `${a.icon} Spring jump` : `${a.icon} Take vitamins`;
+    if (label !== lastLabel) { useBtn.innerHTML = ''; useBtn.append(document.createTextNode(label + ' '), Object.assign(document.createElement('kbd'), { textContent: 'F' })); lastLabel = label; }
+    useBtn.classList.toggle('ready', n > 0);
+  }
+}
+
 function follow() {
   requestAnimationFrame(follow);
   if (!cfg) return;
+  ringStep();
   if (swingStep() || !prop) return;
   const w = cfg.wally, id = propFor;
   const b = id === 'net' ? bone(/right.*hand/i) : id === 'snorkel' ? bone(/^head$/i) : id === 'swisher' ? bone(/tail4/i) : bone(/hips/i);

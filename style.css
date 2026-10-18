@@ -358,3 +358,10 @@ body.touch .gear-badge { bottom: 150px; }
 .gear-badge.bump .count { animation: count-bump 0.4s ease-out; }
 @keyframes count-bump { 0% { transform: scale(1.7); color: #fff; } 100% { transform: scale(1); } }
 .book-ability .gear-count { font-size: 26px; font-weight: 800; color: #ffd166; min-width: 1.4em; text-align: center; }
+/* The use button by the gear badge (Ken: some way to activate it) */
+.gear-use { position: fixed; left: 16px; bottom: 92px; z-index: 6; font: 800 16px var(--font); padding: 9px 16px; border-radius: 999px; border: 2px solid #9fe8ff; background: rgba(16,32,48,0.85); color: #fff; cursor: pointer; }
+.gear-use[hidden] { display: none; }
+.gear-use kbd { margin-left: 4px; }
+.gear-use.ready { border-color: #ffd166; background: rgba(255,209,102,0.25); animation: use-ready 0.6s ease-in-out infinite alternate; }
+@keyframes use-ready { from { transform: scale(1); } to { transform: scale(1.06); } }
+body.touch .gear-use { bottom: 224px; }
