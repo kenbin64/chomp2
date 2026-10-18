@@ -211,11 +211,16 @@ function swingStep() {
   w.facing = swing.facing + ease * Math.PI * 2;
   if (!swing.caught && u >= 0.5) {
     swing.caught = true;
-    const me = w.pos, mouth = cfg.mouth(), centre = new THREE.Vector3(me.x, me.y + 1, me.z);
+    const mouth = cfg.mouth();
     let n = 0;
     for (const it of [...cfg.food.items]) {
-      if (it.taken || it.claimed) continue;
-      if (it.mesh.position.distanceTo(centre) < NET_REACH) { it.mesh.position.copy(mouth); n++; }
+      if (!within(it, NET_REACH)) continue;
+      // Into the net, and so to his mouth: landed food sits at its resting place
+      // every frame, so that moves too (otherwise it snaps back and is missed).
+      it.mesh.position.copy(mouth);
+      if (it.landed && it.rest) it.rest.copy(mouth);
+      it.claimed = false;
+      n++;
     }
     cfg.toast(n ? `Swoosh! The net scooped up ${n}` : 'Swoosh! Nothing in range that time', n ? 'good' : 'info');
   }
@@ -236,12 +241,14 @@ function swingStep() {
 }
 function me(w) { return w.pos; }
 
-// What is in reach of the net (food) or the tail swish (food and pickups).
-function inReach(reach) {
-  if (!cfg.food) return 0;
-  const me = cfg.wally.pos, c = new THREE.Vector3(me.x, me.y + 1, me.z);
-  return cfg.food.items.filter(it => !it.taken && !it.claimed && it.mesh.position.distanceTo(c) < reach).length;
+// In the net's reach: the same as the ring on the ground shows (flat distance
+// inside the circle), from a little below his feet to well over his head. Food a
+// croc or pelican is after counts too: Wally gets there first.
+function within(it, reach) {
+  const me = cfg.wally.pos, p = it.mesh.position;
+  return !it.taken && Math.hypot(p.x - me.x, p.z - me.z) < reach && p.y > me.y - 1.6 && p.y < me.y + 5.5;
 }
+function inReach(reach) { return cfg.food ? cfg.food.items.filter(it => within(it, reach)).length : 0; }
 function ringStep() {
   if (!reachRing) return;
   const id = propFor, a = ABILITIES.find(x => x.id === id);
