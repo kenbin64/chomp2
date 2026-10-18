@@ -52,6 +52,7 @@ export function contactShadow(radius = 0.5, opacity = 0.35) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2, radius * 2),
     new THREE.MeshBasicMaterial({ map: blobTexture, transparent: true, opacity, depthWrite: false }));
   m.rotation.x = -Math.PI / 2; m.position.y = 0.03; m.renderOrder = 2;
+  m.userData.contactShadow = true;
   return m;
 }
 

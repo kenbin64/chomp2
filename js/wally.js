@@ -207,6 +207,7 @@ export class Wally {
   useModel(gltf) {
     this.skin = dress(this.root, gltf, { height: 2.7 });
     if (!this.skin) return;
+    this.skin.source = gltf;
     // Hang the model from a pivot at hip height, so it can lean, lie forward to
     // swim and tip back for a leap like a body, not like a post.
     const pivot = new THREE.Group();
@@ -234,6 +235,20 @@ export class Wally {
         this.motion = new WallyMotion(bones, shape);
       }
     }
+  }
+
+  // Put on a different model in the middle of a level (Ken: a whole-model
+  // outfit from the catalogue, like the safari explorer, goes on straight away).
+  // The old model and its pivot go; the soft shadow under him stays just one.
+  changeModel(gltf) {
+    if (!gltf || (this.skin && this.skin.source === gltf)) return false;
+    const keep = new Set(this.root.children);
+    if (this.skin) { keep.delete(this.skin.pivot); this.skin.pivot.removeFromParent(); }
+    this.skin = null; this.poser = null; this.motion = null;
+    this.useModel(gltf);
+    const hadShadow = [...keep].some(o => o.userData && o.userData.contactShadow);
+    for (const o of [...this.root.children]) if (!keep.has(o) && o !== (this.skin && this.skin.pivot) && hadShadow && o.userData && o.userData.contactShadow) o.removeFromParent();
+    return true;
   }
 
   // Bones do the limbs; the pivot still lays him along the water to swim and

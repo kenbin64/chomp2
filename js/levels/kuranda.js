@@ -168,7 +168,7 @@ function throwFrom(hand) {
 }
 
 // ---- The stalls: walking up to the clothes stall opens the outfit catalogue (shopmodal.js) ----
-window.chompDress = () => { progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); dressUp(); };
+window.chompDress = () => { progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); wally.changeModel(models.get(outfitModel(progress)) || models.get('wally')); dressUp(); };
 
 // ---- One frame ----------------------------------------------------------------------
 const cam = { yaw: 0, pitch: 0.35, dist: 11, manual: 0, recenter: false, side: 'behind', still: 0 };

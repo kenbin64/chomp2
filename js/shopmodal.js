@@ -11,7 +11,7 @@ import { loadModels, ModelSkin } from './models.js';
 import { dressOutfit } from './outfit.js';
 import { cleanName } from './leaderboard-rules.js';
 
-let modal = null, onPause = null, preview = null, picked = null, startModel = null;
+let modal = null, onPause = null, preview = null, picked = null;
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function load() { return readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); }
 function save(p) { try { localStorage.setItem('chomp-progress', JSON.stringify(p)); } catch { /* not saved */ } }
@@ -121,13 +121,8 @@ function render() {
   }
   function after() {
     render();
-    const p = load();
-    if (outfitModel(p) !== startModel) {
-      msg.innerHTML = '';
-      msg.append(el('span', null, "That's a whole new look: it goes on at the start of the next level. "));
-      const r = el('button', 'link', 'Start this level again in it'); r.type = 'button'; r.onclick = () => location.reload();
-      msg.append(r);
-    } else { msg.textContent = 'Ripper! Looking good.'; if (window.chompDress) window.chompDress(); }
+    msg.textContent = 'Ripper! Looking good.';
+    if (window.chompDress) window.chompDress();          // on straight away, whole-model outfits too
   }
 }
 
@@ -165,7 +160,6 @@ function build() {
 
 export function openShop() {
   if (!modal) build();
-  startModel = startModel || outfitModel(load());
   picked = picked || outfitOn(load(), 'wally');
   modal.querySelector('.shop-msg').textContent = '';
   render(); modal.hidden = false;
@@ -176,7 +170,6 @@ export function closeShop() { if (!modal || modal.hidden) return; modal.hidden =
 // The Outfits button, on every page. pause(on): the page's own pause.
 export function installShop({ pause = null } = {}) {
   onPause = pause;
-  startModel = outfitModel(load());
   const b = el('button', 'map-button shop-button', '🛍 Outfits'); b.type = 'button';
   b.onclick = () => (modal && !modal.hidden ? closeShop() : openShop());
   document.body.append(b);

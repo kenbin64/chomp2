@@ -839,6 +839,7 @@ installShop({ pause: on => { if (game.running) game.paused = on; } });
 window.chompStartHere = () => { if (!game.running) { $('title').hidden = true; $('win').hidden = true; $('over').hidden = true; start(); } };
 window.chompDress = () => {
   const p = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
+  wally.changeModel(models.get(outfitModel(p)) || models.get('wally'));     // a whole-model outfit goes on now
   if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(p, 'wally'));
   if (kenny.skin) dressOutfit(kenny.skin.root, 'kenny', wearing(p, 'kenny'));
 };
