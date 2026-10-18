@@ -65,7 +65,7 @@ export function questStep(dt, t, events, pos) {
     if (q.stage === 'hidden') {
       q.stage = nextStage(q.stage, 'met');
       const s = cfg.spot(q.quest.where, q.giver);
-      q.item = new Pickups(cfg.scene, [s], lostThing, { glint: 2.6, scale: () => ability('swisher') });
+      q.item = new Pickups(cfg.scene, [s], lostThing, { glint: 2.6 });
       q.sign = bangSign(); q.giver.root.add(q.sign);
       say(`"Oi, Wally! ${q.quest.ask}"`);
       cfg.say(q.giver, 'Could you help us out, mate?');
@@ -79,7 +79,7 @@ export function questStep(dt, t, events, pos) {
       say(`"You little ripper! Thanks for the ${q.quest.thing}." You get 3 Tourist Tokens and ${giftText(gift)}.`, 'No worries!');
       cfg.say(q.giver, 'Legend! Thanks, Wally!');
       bookEvent('sidequest');
-      bookFound(gift.kind === 'ability' ? gift.id : 'token');
+      bookFound(gift.kind === 'item' ? gift.id : 'token');
     } else if (q.stage === 'asked') say(`"Any luck with my ${q.quest.thing}, Wally?"`, 'On it!');
   }
   if (q.item && q.stage === 'asked') {

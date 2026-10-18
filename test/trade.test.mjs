@@ -33,11 +33,11 @@ for (const land of ['park', 'esplanade', 'kuranda']) {
 const almost = { ...p, souvenirs: SOUVENIRS.park.slice(0, 3).map(([id]) => id) };
 check('the souvenir is one not yet collected', [1, 2, 3, 4, 5].every(s => makeOffer('park', seeded(s), almost).souvenir.id === SOUVENIRS.park[3][0]));
 // Receiving.
-const ab = receive(p, { gift: { kind: 'ability', id: 'net' }, souvenir: { id: 'croc-tooth' } });
-check('an ability gift goes up a level and the souvenir is kept', ab.abilities.net === 1 && ab.souvenirs.includes('croc-tooth'));
+const ab = receive(p, { gift: { kind: 'item', id: 'net' }, souvenir: { id: 'croc-tooth' } });
+check('an item gift goes in the bag and the souvenir is kept', ab.gear.net === 1 && ab.souvenirs.includes('croc-tooth'));
 check('a tokens gift adds tokens', receive(p, { gift: { kind: 'tokens', n: 3 }, souvenir: { id: 'feather' } }).tokens === 3);
 const maxed = { ...p, abilities: Object.fromEntries(ABILITIES.map(a => [a.id, MAX_LEVEL])) };
-check('with every ability at the top, no ability gift is offered', [1, 2, 3, 4, 5, 6, 7, 8].every(s => makeOffer('park', seeded(s), maxed).gift.kind !== 'ability'));
+check('gifts are items, tokens or a full feed-o-meter', [1, 2, 3, 4, 5, 6, 7, 8].every(s => ['item', 'tokens', 'feed'].includes(makeOffer('park', seeded(s), maxed).gift.kind)));
 check('souvenirs are saved', readProgress(JSON.stringify(ab)).souvenirs.includes('croc-tooth'));
 
 // Paying: this visit's finds first, then the bank.

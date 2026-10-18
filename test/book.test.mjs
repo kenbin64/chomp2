@@ -1,6 +1,7 @@
 // Wally's Tourist Book (Ken, 2026-10-18): stamps, tiers by visit, abilities and hidden finds.
 import { STAMPS, LANDS, ABILITIES, MAX_LEVEL, UPGRADE_COST, abilityLevel, abilityValue, upgradeAbility, upgradeCost,
-         countVisit, tierFor, openStamps, award, StampRun, hiddenReward, applyReward, ITEMS, discover, EVENT_ITEM } from '../js/book-rules.js';
+         countVisit, tierFor, openStamps, award, StampRun, hiddenReward, applyReward, ITEMS, discover, EVENT_ITEM,
+         GEAR_USES, GEAR_PRICE, gearStock, giveGear, equip, unequip, useGear, buyGear, fullUses } from '../js/book-rules.js';
 import { freshProgress, readProgress } from '../js/progress.js';
 
 let pass = 0, fail = 0;
@@ -46,7 +47,7 @@ let a = { ...freshProgress(), tokens: 20 };
 check('abilities start at level 0, plain', ABILITIES.every(x => abilityLevel(a, x.id) === 0 && abilityValue(a, x.id) === 1));
 const up = upgradeAbility(a, 'swisher');
 check('tokens buy the next level', up.ok && abilityLevel(up.progress, 'swisher') === 1 && up.progress.tokens === 20 - UPGRADE_COST[0]);
-check('each level makes it easier', abilityValue(up.progress, 'swisher') > abilityValue(a, 'swisher'));
+check('each level gives an item more uses', fullUses(up.progress, 'swisher') > fullUses(a, 'swisher'));
 let top = a; for (let i = 0; i < MAX_LEVEL; i++) top = upgradeAbility({ ...top, tokens: 99 }, 'net').progress;
 check('no further than the top level', upgradeAbility({ ...top, tokens: 99 }, 'net').why === 'max' && upgradeCost(top, 'net') === null);
 check('not without enough tokens', upgradeAbility({ ...a, tokens: 1 }, 'spring').why === 'tokens');
@@ -55,9 +56,33 @@ check('not without enough tokens', upgradeAbility({ ...a, tokens: 1 }, 'spring')
 const seq = v => () => v;
 check('a hidden find can give tokens', hiddenReward(seq(0.9), a).kind === 'tokens');
 const ab = hiddenReward(seq(0.1), a);
-check('or an ability level', ab.kind === 'ability' && applyReward(a, ab).abilities[ab.id] === 1);
+check('or an item to use', ab.kind === 'item' && gearStock(applyReward(a, ab), ab.id) === 1);
 const maxed = { ...a, abilities: Object.fromEntries(ABILITIES.map(x => [x.id, MAX_LEVEL])) };
-check('with every ability at the top, it gives tokens', hiddenReward(seq(0.1), maxed).kind === 'tokens');
+// Gear (Ken): owning is not using; equip one at a time; it wears out; more can be found.
+let g = giveGear(freshProgress(), 'net', 2);
+check('an item in the bag is not in use', gearStock(g, 'net') === 2 && !g.equipped);
+check('he cannot equip what he does not have', equip(g, 'snorkel').why === 'none');
+g = equip(g, 'net').progress;
+check('equipping takes one out of the bag, full of swings', g.equipped === 'net' && g.uses === GEAR_USES.net(0) && gearStock(g, 'net') === 1);
+let worn = g; for (let i = 0; i < GEAR_USES.net(0); i++) worn = useGear(worn).progress;
+check('used up, the next net comes out of the bag', worn.equipped === 'net' && worn.uses === GEAR_USES.net(0) && gearStock(worn, 'net') === 0);
+for (let i = 0; i < GEAR_USES.net(0); i++) worn = useGear(worn).progress;
+check('the last one used up: empty hands', worn.equipped === null && !useGear(worn).ok);
+let sn = equip(giveGear(freshProgress(), 'snorkel'), 'snorkel').progress;
+const once = useGear(sn);
+check('the snorkel is used once', once.ok && once.wornOut && once.progress.equipped === null);
+let sw = equip(giveGear(giveGear(freshProgress(), 'swisher'), 'spring'), 'swisher').progress;
+sw = useGear(sw).progress;
+const left = sw.uses;
+sw = equip(sw, 'spring').progress;
+check('one item at a time: equipping another puts the first away', sw.equipped === 'spring');
+sw = equip(sw, 'swisher').progress;
+check('a part-used item keeps its uses for next time', sw.equipped === 'swisher' && sw.uses === left && gearStock(sw, 'swisher') === 0);
+check('putting it away keeps it too', unequip(sw).partial.swisher === left);
+const bought = buyGear({ ...freshProgress(), tokens: GEAR_PRICE }, 'snorkel');
+check('a fresh one costs Tourist Tokens', bought.ok && gearStock(bought.progress, 'snorkel') === 1 && bought.progress.tokens === 0);
+check('not without enough tokens', buyGear({ ...freshProgress(), tokens: 1 }, 'net').why === 'tokens');
+check('gear is saved', (() => { const r = readProgress(JSON.stringify({ ...g, gear: { net: 1, bogus: 3 } })); return r.equipped === 'net' && r.uses === g.uses && r.gear.net === 1 && !('bogus' in r.gear); })());
 
 // Saved.
 const saved = readProgress(JSON.stringify({ ...q, abilities: { swisher: 2, bogus: 9 }, visits: { park: 4 }, tokens: 3 }));

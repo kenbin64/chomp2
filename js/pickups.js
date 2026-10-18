@@ -6,6 +6,7 @@
 
 import * as THREE from 'three';
 import { ModelSkin } from './models.js';
+import { swishing, SWISH } from './gear.js';
 
 let glintTex = null;
 function glintTexture() {
@@ -60,7 +61,8 @@ export class Pickups {
       p.shine.material.opacity = 0.45 + 0.4 * Math.sin(t * 3 + p.phase);
       // His body spans from his feet to about 2 m up: touching it anywhere counts.
       const dy = p.y - pos.y;
-      if (Math.hypot(pos.x - p.x, pos.z - p.z) < this.reach * this.scale() && dy > -0.8 && dy < 2.4) { p.taken = true; got.push(p); }
+      const reach = swishing() ? SWISH : this.reach * this.scale();            // the Tail Swisher sweeps things in
+      if (Math.hypot(pos.x - p.x, pos.z - p.z) < reach && dy > -0.8 && dy < (swishing() ? 3.2 : 2.4)) { p.taken = true; got.push(p); }
     }
     return got;
   }

@@ -7,6 +7,7 @@
 // to the surface wins. Pearls carry over from the Esplanade (progress.pearls).
 // Rules: reef-rules.js (tested). Scenery under water: reef-scene.js.
 
+import { installGear, snorkelling } from '../gear.js';
 import * as THREE from 'three';
 import { Water } from 'three/addons/objects/Water.js';
 import { Wally } from '../wally.js';
@@ -34,7 +35,7 @@ import { makeMaze, makeReefMaze, mazePath, cellAt, cellCentre, collide, inMaze, 
          SWIM_Y, SURFACE_Y, SEABED_Y, reefRunScore, REEF_STARS, PEARL_POINTS, CHEST_POINTS,
          LANES, LANE_NAMES, TREASURES, nextDepth, treasureSpots, canCollect } from './reef-rules.js';
 import { buildReef, buildTreasures, MAZE, OUTER, DIVE, BOUNDS } from './reef-scene.js';
-import { installBook, bookEvent, ability, HiddenFinds } from '../book.js';
+import { installBook, bookEvent, ability, HiddenFinds, openBook } from '../book.js';
 import { DayNight } from '../daynight.js';
 import { StreetLamps } from '../lamps.js';
 
@@ -451,11 +452,10 @@ function step(dt, t) {
 
   // Air: at the top it fills, in a vent it fills, anywhere else under water it runs down.
   const inVent = !atTop && reef.vents.some(v => Math.hypot(wally.pos.x - v.x, wally.pos.z - v.z) < v.r);
-  if (!game.done && game.faint <= 0) { const mode = game.depth > -1.0 ? 'surface' : inVent ? 'vent' : 'under'; game.air = airStep(game.air, mode, mode === 'under' ? dt / ability('snorkel') : dt); }   // the Snorkel: longer under
+  if (!game.done && game.faint <= 0) { const mode = game.depth > -1.0 ? 'surface' : inVent ? 'vent' : 'under'; game.air = airStep(game.air, mode, mode === 'under' && snorkelling() ? 0 : dt); }   // the Snorkel (gear.js): air stays full
   if (inVent && game.air < AIR.max - 1 && game.hint <= 0) { toast_('Bubbles! Air filling up', 'good'); game.hint = 4; }
 
   // Pearls.
-  wally.jumpBoost = ability('spring');
   for (const f of hiddenFinds.update(dt, t, wally.pos)) { toast_(f.text, 'good'); sound.play.powerup(); }
   for (const p of reef.pearls) {
     if (p.taken || atTop) continue;
@@ -633,6 +633,7 @@ if (params.has('play')) start();
 installMap({ pause: on => { if (game.running) game.paused = on; } });
 installShop({ pause: on => { if (game.running) game.paused = on; } });
 installBook({ here: 'reef', pause: on => { if (game.running) game.paused = on; } });
+installGear({ scene, wally, hasAir: true, noFeed: true, underWater: () => game.depth < -1.0, toast: (t, k) => toast_(t, k), openBook: () => openBook('wally'), running: () => game.running && !game.paused, pause: on => { if (game.running) game.paused = on; } });
 window.chompStartHere = () => { if (!game.running) start(); };
 window.chompDress = () => {
   const p = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());

@@ -57,12 +57,14 @@ export const STAMPS = [
 ];
 
 // ---- Abilities (Ken: levels that make it easier to pick things up) -----------------
-// Each has a level from 0 (not yet) to 3. value(level) is what the game uses.
+// Items Wally carries and uses (see Gear below); each also has a level from 0 to 3,
+// bought with Tourist Tokens, that gives it more uses.
 export const ABILITIES = [
-  { id: 'swisher', name: 'Tail Swisher', icon: '🦎', about: "Wally's tail sweeps things to him: he picks things up from further away.", value: L => 1 + 0.45 * L },
-  { id: 'net',     name: 'Big Net',      icon: '🥅', about: 'A big net: thrown tucker is caught from further away.',                 value: L => 1 + 0.25 * L },
-  { id: 'snorkel', name: 'Snorkel',      icon: '🤿', about: 'Longer under water before he needs air.',                               value: L => 1 + 0.3 * L },
-  { id: 'spring',  name: 'Spring Step',  icon: '🦘', about: 'Jumps higher, for the things up high.',                                 value: L => 1 + 0.1 * L },
+  { id: 'swisher', name: 'Tail Swisher', icon: '🦎', about: 'Equip it and press F: a sweep of the tail pulls in mangoes, gold and lost things all round him. A few sweeps each.', value: () => 1 },
+  { id: 'net',     name: 'Big Net',      icon: '🥅', about: 'Equip it and press F: he swings the net round and scoops up all the tucker near him, in the air or on the ground. A few swings each.', value: () => 1 },
+  { id: 'snorkel', name: 'Snorkel',      icon: '🤿', about: 'Equip it and press F under water: his air stays full for one long dive. One use.', value: () => 1 },
+  { id: 'vitamins', name: 'Vitamins',    icon: '💊', about: 'Equip them and press F: for a minute his feed-o-meter runs down at half speed. A few doses a bottle; the Kuranda trader sells them too.', value: () => 1 },
+  { id: 'spring',  name: 'Spring Step',  icon: '🦘', about: 'Equip it and press F: his next jump goes much higher, for the things up high. A few jumps each.', value: () => 1 },
 ];
 export const MAX_LEVEL = 3;
 export const UPGRADE_COST = [3, 5, 8];              // Tourist Tokens for levels 1, 2 and 3
@@ -106,15 +108,61 @@ export class StampRun {
   }
 }
 
+// ---- Gear: items Wally owns, equips and uses up (Ken, 2026-10-18) -------------------------
+// Owning an item is not using it: he carries one at a time (equipped), uses it
+// with a key, and it wears out (the snorkel after one dive, the net after a few
+// swings). Used-up items turn up again in hidden finds, from traders and quests,
+// or a fresh one costs a few Tourist Tokens. An item's level (bought with
+// tokens, as before) gives it more uses.
+export const GEAR_USES = { swisher: L => 5 + L, net: L => 5 + 2 * L, snorkel: () => 1, spring: L => 4 + L, vitamins: L => 3 + L };
+export const GEAR_PRICE = 4;                          // Tourist Tokens for a fresh one
+export function gearStock(progress, id) { return Math.max(0, (progress.gear || {})[id] || 0); }
+export function giveGear(progress, id, n = 1) { return { ...progress, gear: { ...(progress.gear || {}), [id]: gearStock(progress, id) + n } }; }
+export function fullUses(progress, id) { return GEAR_USES[id](abilityLevel(progress, id)); }
+// Carry an item (put away the one in hand: a part-used one keeps its uses for next time).
+export function equip(progress, id) {
+  if (!GEAR_USES[id]) return { progress, ok: false, why: 'unknown' };
+  if (progress.equipped === id) return { progress, ok: true };
+  const partial = { ...(progress.partial || {}) };
+  if (progress.equipped && progress.uses > 0) partial[progress.equipped] = progress.uses;
+  let p = { ...progress, partial };
+  if (partial[id] > 0) { p.uses = partial[id]; delete p.partial[id]; }
+  else if (gearStock(p, id) > 0) { p = { ...p, gear: { ...p.gear, [id]: gearStock(p, id) - 1 }, uses: fullUses(p, id) }; }
+  else return { progress, ok: false, why: 'none' };
+  return { ok: true, progress: { ...p, equipped: id } };
+}
+export function unequip(progress) {
+  if (!progress.equipped) return progress;
+  const partial = { ...(progress.partial || {}) };
+  if (progress.uses > 0) partial[progress.equipped] = progress.uses;
+  return { ...progress, partial, equipped: null, uses: 0 };
+}
+// One use of what he is carrying. When it is worn out the next one of the same
+// kind comes out of his bag, if he has one; otherwise his hands are empty.
+export function useGear(progress) {
+  if (!progress.equipped || !(progress.uses > 0)) return { progress, ok: false };
+  let p = { ...progress, uses: progress.uses - 1 };
+  const id = p.equipped;
+  if (p.uses <= 0) {
+    p = gearStock(p, id) > 0 ? { ...p, gear: { ...p.gear, [id]: gearStock(p, id) - 1 }, uses: fullUses(p, id) } : { ...p, equipped: null, uses: 0 };
+    return { ok: true, used: id, wornOut: true, progress: p };
+  }
+  return { ok: true, used: id, wornOut: false, progress: p };
+}
+export function buyGear(progress, id) {
+  if (!GEAR_USES[id]) return { progress, ok: false, why: 'unknown' };
+  if ((progress.tokens || 0) < GEAR_PRICE) return { progress, ok: false, why: 'tokens' };
+  return { ok: true, progress: { ...giveGear(progress, id), tokens: progress.tokens - GEAR_PRICE } };
+}
+
 // ---- Hidden finds ----------------------------------------------------------------------
-// What one holds: Tourist Tokens, or the next level of an ability not yet at its top.
+// What one holds: Tourist Tokens, or an item to use.
 export function hiddenReward(rnd, progress) {
-  const growable = ABILITIES.filter(a => abilityLevel(progress, a.id) < MAX_LEVEL);
-  if (growable.length && rnd() < 0.35) return { kind: 'ability', id: growable[Math.floor(rnd() * growable.length)].id };
+  if (rnd() < 0.45) return { kind: 'item', id: ABILITIES[Math.floor(rnd() * ABILITIES.length)].id };
   return { kind: 'tokens', n: 1 + Math.floor(rnd() * 3) };
 }
 export function applyReward(progress, r) {
-  if (r.kind === 'ability') return { ...progress, abilities: { ...(progress.abilities || {}), [r.id]: Math.min(MAX_LEVEL, abilityLevel(progress, r.id) + 1) } };
+  if (r.kind === 'item') return giveGear(progress, r.id);
   return { ...progress, tokens: (progress.tokens || 0) + r.n };
 }
 
@@ -131,7 +179,7 @@ export const ITEMS = [
   { id: 'token',     icon: '🎟️', name: 'Tourist Token',   is: 'A token for every stamp, hidden find and favour done.', does: "Spend them on Wally's page to grow his abilities." },
   { id: 'hidden',    icon: '📦', name: 'Hidden find',     is: 'A crate tucked away somewhere; it only shows when Wally is close.', does: 'Holds Tourist Tokens or a level of one of his abilities.' },
   { id: 'souvenir',  icon: '🎁', name: 'Souvenir',        is: 'A keepsake from a friendly trader.', does: "Kept on the souvenir shelf on Wally's page: collect them all." },
-  ...ABILITIES.map(a => ({ id: a.id, icon: a.icon, name: a.name, is: 'One of Wally\'s abilities, with three levels.', does: a.about })),
+  ...ABILITIES.map(a => ({ id: a.id, icon: a.icon, name: a.name, is: 'An item Wally can carry: equip it on his page in the book. It wears out, and more can be found.', does: a.about })),
 ];
 // The first time a thing is found: { progress, first }.
 export function discover(progress, id) {

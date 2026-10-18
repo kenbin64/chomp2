@@ -10,6 +10,7 @@ import { AREAS } from './quests.js';
 // saveProgress, which tells the page, so the level can reload its copy and
 // never write back an older one over theirs.
 export const PROGRESS_CHANGED = 'chomp-progress-changed';
+const GEAR_IDS = ['swisher', 'net', 'snorkel', 'spring', 'vitamins'];
 export function saveProgress(p) {
   try { localStorage.setItem('chomp-progress', JSON.stringify(p)); } catch { /* not saved */ }
   if (typeof dispatchEvent === 'function') dispatchEvent(new Event(PROGRESS_CHANGED));
@@ -18,7 +19,8 @@ export function saveProgress(p) {
 export function freshProgress() {
   return { unlocked: ['park'], stars: {}, best: {}, postcards: [], mangoes: 0, pearls: 0, coins: 0, shells: 0, pier: false,
            badge: false, skyrail: false, boatTicket: false, wardrobe: freshWardrobe(), extras: [], crocName: null, treasures: [],
-           stamps: [], tokens: 0, abilities: {}, visits: {}, souvenirs: [], sidequests: 0, discovered: [] };
+           stamps: [], tokens: 0, abilities: {}, visits: {}, souvenirs: [], sidequests: 0, discovered: [],
+           gear: {}, equipped: null, uses: 0, partial: {} };
 }
 
 // Stars from a score: thresholds are [one, two, three].
@@ -96,6 +98,13 @@ export function sellToVendor(progress, { mangoes = 0, shells = 0 } = {}) {
   const m = Math.max(0, Math.min(mangoes, progress.mangoes || 0)), sh = Math.max(0, Math.min(shells, progress.shells || 0));
   const gold = m * VENDOR_PAYS.mangoes + sh * VENDOR_PAYS.shells;
   return { gold, progress: { ...progress, mangoes: (progress.mangoes || 0) - m, shells: (progress.shells || 0) - sh, coins: (progress.coins || 0) + gold } };
+}
+
+// Vitamins from the Kuranda trader, for gold (Ken).
+export const VITAMIN_PRICE = 3;
+export function buyVitamins(progress) {
+  if ((progress.coins || 0) < VITAMIN_PRICE) return { progress, ok: false, why: 'gold' };
+  return { ok: true, progress: { ...progress, coins: progress.coins - VITAMIN_PRICE, gear: { ...(progress.gear || {}), vitamins: ((progress.gear || {}).vitamins || 0) + 1 } } };
 }
 
 // The river-boat ticket, from the Kuranda markets, in gold.
@@ -277,11 +286,16 @@ export function readProgress(text) {
       // Wally's Tourist Book (book-rules.js): stamps, tokens, abilities and visits.
       stamps: Array.isArray(p.stamps) ? p.stamps.filter(id => typeof id === 'string') : [],
       tokens: Number.isFinite(p.tokens) ? p.tokens : 0,
-      abilities: p.abilities && typeof p.abilities === 'object' ? Object.fromEntries(Object.entries(p.abilities).filter(([k, v]) => ['swisher', 'net', 'snorkel', 'spring'].includes(k) && Number.isFinite(v))) : {},
+      abilities: p.abilities && typeof p.abilities === 'object' ? Object.fromEntries(Object.entries(p.abilities).filter(([k, v]) => ['swisher', 'net', 'snorkel', 'spring', 'vitamins'].includes(k) && Number.isFinite(v))) : {},
       visits: p.visits && typeof p.visits === 'object' ? Object.fromEntries(Object.entries(p.visits).filter(([, v]) => Number.isFinite(v))) : {},
       souvenirs: Array.isArray(p.souvenirs) ? p.souvenirs.filter(id => typeof id === 'string') : [],
       sidequests: Number.isFinite(p.sidequests) ? p.sidequests : 0,
       discovered: Array.isArray(p.discovered) ? p.discovered.filter(id => typeof id === 'string') : [],
+      // Gear (book-rules.js): items owned, the one carried, its uses left, and part-used ones put away.
+      gear: p.gear && typeof p.gear === 'object' ? Object.fromEntries(Object.entries(p.gear).filter(([k, v]) => GEAR_IDS.includes(k) && Number.isFinite(v) && v >= 0)) : {},
+      equipped: GEAR_IDS.includes(p.equipped) ? p.equipped : null,
+      uses: Number.isFinite(p.uses) ? p.uses : 0,
+      partial: p.partial && typeof p.partial === 'object' ? Object.fromEntries(Object.entries(p.partial).filter(([k, v]) => GEAR_IDS.includes(k) && Number.isFinite(v))) : {},
     };
   } catch { return freshProgress(); }
 }

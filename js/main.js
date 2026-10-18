@@ -3,6 +3,7 @@
 // controls, moves Wally, has the tourists throw, flies the food, checks what
 // was caught, missed or stolen, and keeps the quest and the screen up to date.
 
+import { installGear, snorkelling, drainFactor } from './gear.js';
 import * as THREE from 'three';
 import { buildWorld, GATE } from './world.js';
 import { Wally } from './wally.js';
@@ -18,7 +19,7 @@ import { setGround, parkGround } from './ground.js';
 import { DayNight } from './daynight.js';
 import { StreetLamps } from './lamps.js';
 import { Pickups, mangoMaker } from './pickups.js';
-import { installBook, bookEvent, ability, HiddenFinds } from './book.js';
+import { installBook, bookEvent, ability, HiddenFinds, openBook } from './book.js';
 import { startTrading, tradeStep } from './trade.js';
 import { startQuest, questStep } from './sidequest.js';
 import { Input } from './input.js';
@@ -221,7 +222,7 @@ function parkMangoSpots() {
   }
   return spots;
 }
-const parkMangoes = new Pickups(scene, parkMangoSpots(), mangoMaker(models.get('mango')), { scale: () => ability('swisher') });
+const parkMangoes = new Pickups(scene, parkMangoSpots(), mangoMaker(models.get('mango')));
 // Hidden finds (Ken): tucked by the fence, behind boulders and under the palms;
 // three of these places each visit, unseen till Wally is close.
 const hidden = new HiddenFinds(scene, [
@@ -455,7 +456,7 @@ function lost(item, text) {
 
 function checkCatches() {
   const mouth = wally.mouthPosition();
-  const reach = 1.25 * (game.boost > 0 ? 1.5 : 1) * ability('net');   // the Big Net reaches further
+  const reach = 1.25 * (game.boost > 0 ? 1.5 : 1);
   let closest = Infinity;
   for (const it of [...food.items]) {
     const p = it.mesh.position;
@@ -510,7 +511,7 @@ function step(dt, t) {
     else if (e === 'splash') { sound.play.splash(); fx.splash(wally.pos, 26); fx.shake(0.2, 0.15); } else if (e === 'land') sound.play.land();
   }
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (game.boost <= 0 && game.nap <= 0) game.energy -= energyDrain(wally.mode, moving, 'park') * dt;
+  if (game.boost <= 0 && game.nap <= 0) game.energy -= energyDrain(wally.mode, moving, 'park') * drainFactor() * dt;   // vitamins (gear.js) halve it
   if (game.nap > 0) napping(dt);
 
   tourists.update(dt, wally.pos);                // strollers on the boardwalk: scenery, no food
@@ -556,7 +557,6 @@ function step(dt, t) {
   }
 
   treasureStep(dt, t);
-  wally.jumpBoost = ability('spring');
   for (const f of hidden.update(dt, t, wally.pos)) { toast(f.text, 'good'); sound.play.powerup(); }
   for (const m of parkMangoes.update(dt, t, wally.pos)) {
     bookEvent('mango');
@@ -905,6 +905,7 @@ else if (params.has('map')) showMap();
 installMap({ pause: on => { if (game.running) game.paused = on; } });
 installShop({ pause: on => { if (game.running) game.paused = on; } });
 installBook({ here: 'park', pause: on => { if (game.running) game.paused = on; } });
+installGear({ scene, wally, food, mouth: () => wally.mouthPosition(), hasAir: false, toast: (t, k) => toast(t, k), openBook: () => openBook('wally'), running: () => game.running && !game.paused, pause: on => { if (game.running) game.paused = on; } });
 window.chompStartHere = () => { if (!game.running) { $('title').hidden = true; $('win').hidden = true; $('over').hidden = true; start(); } };
 window.chompDress = () => {
   const p = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());

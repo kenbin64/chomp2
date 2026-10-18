@@ -4,8 +4,8 @@
 // seashells from the reef for gold pieces, and gold buys the river-boat ticket
 // to the Daintree (in the Outfits catalogue, under Gear and tickets).
 
-import { readProgress, sellToVendor, VENDOR_PAYS, BOAT_TICKET_PRICE, saveProgress } from './progress.js';
-import { bookEvent } from './book.js';
+import { readProgress, sellToVendor, VENDOR_PAYS, BOAT_TICKET_PRICE, saveProgress, buyVitamins, VITAMIN_PRICE } from './progress.js';
+import { bookEvent, bookFound } from './book.js';
 
 let modal = null, onPause = null, onChange = null;
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -42,6 +42,12 @@ function render(message = '') {
     }
     rows.append(row);
   }
+  // And he sells vitamins (Ken): a bottle for a little gold.
+  const vrow = el('div', 'vendor-row');
+  vrow.append(el('span', 'vendor-what', `💊 Vitamins (in your bag: ${(p.gear || {}).vitamins || 0})`), el('span', 'vendor-rate', `${VITAMIN_PRICE} gold a bottle`));
+  const vb = el('button', 'buy', 'Buy a bottle'); vb.type = 'button'; vb.disabled = (p.coins || 0) < VITAMIN_PRICE;
+  vb.onclick = () => { const r = buyVitamins(load()); if (r.ok) { save(r.progress); if (onChange) onChange(r.progress); bookFound('vitamins'); render('Vitamins! Equip them in your Gear (G)'); } };
+  vrow.append(vb); rows.append(vrow);
   modal.querySelector('.vendor-bank').textContent = `Your gold: ${p.coins || 0}`;
   modal.querySelector('.vendor-msg').textContent = message;
 }

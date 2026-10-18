@@ -345,3 +345,16 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .book-back { display: block; margin: 16px auto 4px; }
 .trade-go { font-size: 14px; padding: 6px 14px; } .trade-tip { opacity: 0.8; }
 .trade-buttons { flex-wrap: wrap; }
+/* Gear: the item Wally carries (gear.js) and its row in the book */
+.gear-badge { position: fixed; left: 16px; bottom: 18px; z-index: 6; display: grid; grid-template-columns: auto auto; column-gap: 8px; align-items: center; padding: 8px 14px; border-radius: 16px; border: 2px solid #ffd166; background: rgba(16,32,48,0.85); color: #fff; font: inherit; cursor: pointer; text-align: left; }
+.gear-badge .icon { grid-row: span 2; font-size: 28px; } .gear-badge small { opacity: 0.8; } .gear-badge.empty { border-color: rgba(255,255,255,0.3); opacity: 0.75; }
+body.touch .gear-badge { bottom: 150px; }
+.book-ability { grid-template-columns: 40px 1fr auto; } .book-ability .gear-btns { grid-column: 2 / span 2; display: flex; flex-wrap: wrap; gap: 6px; }
+.book-ability.equipped { background: rgba(255,209,102,0.1); border-radius: 12px; } .book-ability .stock { color: #8fd3c7; }
+.book-ability .buy.alt { background: rgba(255,255,255,0.14); color: #fff; }
+/* The Gear button and panel, and the uses count (Ken) */
+.gear-button { left: auto; right: 50%; transform: translateX(-62px); }   /* left of the Map button, clear of the feed-o-meter */
+.gear-badge { grid-template-columns: auto auto auto; } .gear-badge .count { grid-row: span 2; font-size: 30px; font-weight: 800; color: #ffd166; min-width: 1.2em; text-align: center; }
+.gear-badge.bump .count { animation: count-bump 0.4s ease-out; }
+@keyframes count-bump { 0% { transform: scale(1.7); color: #fff; } 100% { transform: scale(1); } }
+.book-ability .gear-count { font-size: 26px; font-weight: 800; color: #ffd166; min-width: 1.4em; text-align: center; }

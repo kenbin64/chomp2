@@ -5,7 +5,7 @@
 // nobody can tell until Wally steps inside their circle. Plain JavaScript, no
 // three.js, so it can be tested (test/trade.test.mjs).
 
-import { ABILITIES, abilityLevel, MAX_LEVEL } from './book-rules.js';
+import { ABILITIES, giveGear } from './book-rules.js';
 
 // Souvenirs: the keepsakes traders hand over, collected in Wally's Tourist Book.
 export const SOUVENIRS = {
@@ -43,9 +43,8 @@ export function pickTraders(n, rnd, chance = 0.25) {
 export function makeOffer(land, rnd, progress) {
   const prices = PRICES[land] || PRICES.park;
   const price = prices[Math.floor(rnd() * prices.length)];
-  const growable = ABILITIES.filter(a => abilityLevel(progress, a.id) < MAX_LEVEL);
   const r = rnd();
-  const gift = growable.length && r < 0.4 ? { kind: 'ability', id: growable[Math.floor(rnd() * growable.length)].id }
+  const gift = r < 0.4 ? { kind: 'item', id: ABILITIES[Math.floor(rnd() * ABILITIES.length)].id }
     : r < 0.7 ? { kind: 'tokens', n: 3 } : { kind: 'feed' };
   const pool = SOUVENIRS[land] || SOUVENIRS.park, have = progress.souvenirs || [];
   const fresh = pool.filter(([id]) => !have.includes(id));
@@ -55,7 +54,7 @@ export function makeOffer(land, rnd, progress) {
 
 // What the gift is, in words.
 export function giftText(gift) {
-  if (gift.kind === 'ability') { const a = ABILITIES.find(x => x.id === gift.id); return `${a.name} (one level up)`; }
+  if (gift.kind === 'item') { const a = ABILITIES.find(x => x.id === gift.id); return `a ${a.name}`; }
   if (gift.kind === 'tokens') return `${gift.n} Tourist Tokens`;
   return 'a full feed-o-meter';
 }
@@ -67,7 +66,7 @@ export function receive(progress, offer) {
 }
 // The saved side of a gift alone (also a sidequest's thank-you): an ability level or tokens.
 export function applyGift(progress, g) {
-  if (g.kind === 'ability') return { ...progress, abilities: { ...(progress.abilities || {}), [g.id]: Math.min(MAX_LEVEL, abilityLevel(progress, g.id) + 1) } };
+  if (g.kind === 'item') return giveGear(progress, g.id);
   if (g.kind === 'tokens') return { ...progress, tokens: (progress.tokens || 0) + g.n };
   return progress;
 }

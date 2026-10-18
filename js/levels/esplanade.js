@@ -8,6 +8,7 @@
 // leave pearls, which carry on to the Great Barrier Reef. In the sea he can
 // swim under water (air meter) and crawl back up onto the boardwalk.
 
+import { installGear, snorkelling, drainFactor } from '../gear.js';
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
 import { Food, randomKind, kennysToast, useJarModel, useToastModel } from '../food.js';
@@ -30,7 +31,7 @@ import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
 import { jellyModel, dressedJelly } from '../hazards.js';
 import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE, outfitModel, openPier, PIER_PRICE, PROGRESS_CHANGED, saveProgress } from '../progress.js';
-import { installBook, bookEvent, ability, HiddenFinds } from '../book.js';
+import { installBook, bookEvent, ability, HiddenFinds, openBook } from '../book.js';
 import { startTrading, tradeStep } from '../trade.js';
 import { startQuest, questStep } from '../sidequest.js';
 import { DayNight } from '../daynight.js';
@@ -473,13 +474,13 @@ function step(dt, t) {
     }
   }
   // Air: it runs down under the water and fills again at the top.
-  if (!game.done && game.faint <= 0) game.air = airStep(game.air, seaDive.depth < -1.0 ? 'under' : 'surface', seaDive.depth < -1.0 ? dt / ability('snorkel') : dt);   // the Snorkel: longer under
+  if (!game.done && game.faint <= 0) game.air = airStep(game.air, seaDive.depth < -1.0 ? 'under' : 'surface', snorkelling() ? 0 : dt);   // the Snorkel (gear.js): air stays full
   if (game.faint > 0) rescueStep(dt, t);
   else if (game.air <= 0 && !game.done) { seaDive.under = false; if (!outOfAir()) return; }
   looksUnder(camera.position.y < -0.2);
   if (seaCeiling.visible) { seaCeiling.position.x = camera.position.x; seaCeiling.position.z = camera.position.z; }
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (!game.done && game.boost <= 0 && !napping) game.energy -= energyDrain(wally.mode, moving, 'esplanade') * dt;
+  if (!game.done && game.boost <= 0 && !napping) game.energy -= energyDrain(wally.mode, moving, 'esplanade') * drainFactor() * dt;   // vitamins (gear.js) halve it
 
   // Obstacles
   for (const o of obstacles) {
@@ -538,7 +539,6 @@ function step(dt, t) {
     }
   }
   pierGate(dt);
-  wally.jumpBoost = ability('spring');
   for (const f of hiddenFinds.update(dt, t, wally.pos)) { toast_(f.text, 'good'); sound.play.powerup(); }
   for (const p of landPearls) {
     if (p.taken) continue;
@@ -565,7 +565,7 @@ function step(dt, t) {
   for (const it of [...food.items]) {
     const p = it.mesh.position;
     const d = it.landed && !wally.airborne ? Math.hypot(p.x - mouth.x, p.z - mouth.z) + (mouth.y - p.y > 3.2 ? 99 : 0) : p.distanceTo(mouth);
-    if (d < 1.4 * (game.boost > 0 ? 1.4 : 1) * ability('net')) {                  // the Big Net reaches further
+    if (d < 1.4 * (game.boost > 0 ? 1.4 : 1)) {
       clusters.cheer(it.cluster);
       fx.burst(p, CRUMBS[it.kind] || [0xffffff]); food.take(it, 'eaten'); wally.chomp(); sound.play.chomp(); fx.shake(0.1, 0.1);
       game.streak++; game.caught++;
@@ -777,6 +777,7 @@ if (params.has('play') || bot) start();
 installMap({ pause: on => { if (game.running) game.paused = on; } });
 installShop({ pause: on => { if (game.running) game.paused = on; } });
 installBook({ here: 'esplanade', pause: on => { if (game.running) game.paused = on; } });
+installGear({ scene, wally, food, mouth: () => wally.mouthPosition(), hasAir: true, underWater: () => seaDive.depth < -1.0, toast: (t, k) => toast_(t, k), openBook: () => openBook('wally'), running: () => game.running && !game.paused, pause: on => { if (game.running) game.paused = on; } });
 window.chompStartHere = () => { if (!game.running) start(); };
 window.chompDress = () => {
   const p = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());

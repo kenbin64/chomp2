@@ -15,8 +15,10 @@
 import * as THREE from 'three';
 import { readProgress, OUTFITS, saveProgress } from './progress.js';
 import { SOUVENIRS } from './trade-rules.js';
+import { swishing, SWISH } from './gear.js';
 import { STAMPS, LANDS, ABILITIES, MAX_LEVEL, abilityLevel, abilityValue, upgradeAbility, upgradeCost,
-         countVisit, tierFor, openStamps, award, StampRun, hiddenReward, applyReward, ITEMS, discover, EVENT_ITEM } from './book-rules.js';
+         countVisit, tierFor, openStamps, award, StampRun, hiddenReward, applyReward, ITEMS, discover, EVENT_ITEM,
+         gearStock, equip, unequip, buyGear, GEAR_PRICE, fullUses } from './book-rules.js';
 
 const LAND_NAMES = { park: 'Croc Park', esplanade: 'The Esplanade', reef: 'Great Barrier Reef', kuranda: 'Kuranda' };
 let modal = null, onPause = null, land = null, run = null, tab = 'stamps';
@@ -101,17 +103,22 @@ function stampsPage(p, body) {
 
 function wallyPage(p, body) {
   body.append(el('p', 'book-tokens', `Tourist Tokens: ${p.tokens || 0}`),
-    el('p', 'fine', 'Earn tokens with stamps and hidden finds; spend them to grow an ability.'));
+    el('p', 'fine', 'Items: carry one at a time (Equip), press F in the game to use it. They wear out; find more in hidden finds, from traders and favours, or buy one. A level gives an item more uses.'));
   for (const a of ABILITIES) {
-    const L = abilityLevel(p, a.id), cost = upgradeCost(p, a.id);
-    const row = el('div', 'book-ability');
-    const pips = el('span', 'pips', '●'.repeat(L) + '○'.repeat(MAX_LEVEL - L));
-    row.append(el('span', 'icon', a.icon), el('div', 'what'), pips);
-    row.querySelector('.what').append(el('b', null, a.name), el('small', null, a.about));
-    const b = el('button', 'buy', cost === null ? 'Top level' : `Level ${L + 1}: ${cost} tokens`); b.type = 'button';
-    b.disabled = cost === null || (p.tokens || 0) < cost;
-    b.onclick = () => { const r = upgradeAbility(load(), a.id); if (r.ok) { save(r.progress); render(); } };
-    row.append(b); body.append(row);
+    const L = abilityLevel(p, a.id), cost = upgradeCost(p, a.id), stock = gearStock(p, a.id), part = (p.partial || {})[a.id] || 0, on = p.equipped === a.id;
+    const row = el('div', `book-ability${on ? ' equipped' : ''}`);
+    row.append(el('span', 'icon', a.icon), el('div', 'what'), el('span', 'pips', '●'.repeat(L) + '○'.repeat(MAX_LEVEL - L)));
+    row.querySelector('.what').append(el('b', null, a.name + (on ? `  (carrying: ${p.uses} left)` : '')), el('small', null, a.about),
+      el('small', 'stock', `In the bag: ${stock}${part ? ` (+1 part-used, ${part} left)` : ''} · ${fullUses(p, a.id)} uses each`));
+    const btns = el('div', 'gear-btns');
+    const eq = el('button', 'buy', on ? 'Put away' : 'Equip'); eq.type = 'button'; eq.disabled = !on && !stock && !part;
+    eq.onclick = () => { const q = load(); save(on ? unequip(q) : equip(q, a.id).progress); render(); };
+    const buy = el('button', 'buy alt', `Buy one: ${GEAR_PRICE} tokens`); buy.type = 'button'; buy.disabled = (p.tokens || 0) < GEAR_PRICE;
+    buy.onclick = () => { const r = buyGear(load(), a.id); if (r.ok) { save(r.progress); bookFound(a.id); render(); } };
+    const up = el('button', 'buy alt', cost === null ? 'Top level' : `Level ${L + 1}: ${cost} tokens`); up.type = 'button';
+    up.disabled = cost === null || (p.tokens || 0) < cost;
+    up.onclick = () => { const r = upgradeAbility(load(), a.id); if (r.ok) { save(r.progress); render(); } };
+    btns.append(eq, buy, up); row.append(btns); body.append(row);
   }
   const bank = el('div', 'book-bank');
   const owned = (p.wardrobe && p.wardrobe.owned || []).length;
@@ -218,11 +225,11 @@ export class HiddenFinds {
       const d = Math.hypot(pos.x - f.x, pos.z - f.z);
       f.mesh.visible = d < 6;                                       // hidden until he is close
       if (f.mesh.visible) f.mesh.position.y = f.y + 0.28 + Math.abs(Math.sin(t * 3)) * 0.06;
-      if (d < 1.3 * ability('swisher') && Math.abs(pos.y - f.y) < 2) {
+      if (d < (swishing() ? SWISH : 1.3) && Math.abs(pos.y - f.y) < 2) {
         f.found = true;
         let p = load(); const r = hiddenReward(Math.random, p); p = applyReward(p, r); save(p);
-        const a = r.kind === 'ability' && ABILITIES.find(x => x.id === r.id);
-        out.push({ text: a ? `Hidden find: ${a.name}, now level ${abilityLevel(p, a.id)}!` : `Hidden find: ${r.n} Tourist Token${r.n > 1 ? 's' : ''}!` });
+        const a = r.kind === 'item' && ABILITIES.find(x => x.id === r.id);
+        out.push({ text: a ? `Hidden find: a ${a.name}! Equip it in the book` : `Hidden find: ${r.n} Tourist Token${r.n > 1 ? 's' : ''}!` });
         bookEvent('hidden');
         bookFound(a ? a.id : 'token');
         if (this.found === this.list.length) bookEvent('hiddenAll');

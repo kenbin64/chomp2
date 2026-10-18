@@ -61,7 +61,7 @@ function accept() {
   cfg.toast(`Traded! ${giftText(c.offer.gift)} and a ${c.offer.souvenir.name}`);
   cfg.say(c, 'Pleasure doing business, mate!');
   bookEvent('gift');
-  if (c.offer.gift.kind === 'ability') bookFound(c.offer.gift.id); else if (c.offer.gift.kind === 'tokens') bookFound('token');
+  if (c.offer.gift.kind === 'item') bookFound(c.offer.gift.id); else if (c.offer.gift.kind === 'tokens') bookFound('token');
 }
 
 export function startTrading(options) { cfg = options; if (!panel) build(); }

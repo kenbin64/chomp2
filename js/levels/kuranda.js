@@ -6,6 +6,7 @@
 // the end of the street. The clothes stall sells new gear for Wally and Kenny
 // for Golden Mangoes, and the river-boat ticket for the Daintree.
 
+import { installGear, snorkelling, drainFactor } from '../gear.js';
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
 import { Food, randomKind, useJarModel } from '../food.js';
@@ -30,7 +31,7 @@ import { peopleModels } from '../tourists.js';
 import { kennysJar } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
 import { dressOutfit } from '../outfit.js';
-import { installBook, bookEvent, ability, HiddenFinds } from '../book.js';
+import { installBook, bookEvent, ability, HiddenFinds, openBook } from '../book.js';
 import { startTrading, tradeStep } from '../trade.js';
 import { startQuest, questStep } from '../sidequest.js';
 import { DayNight } from '../daynight.js';
@@ -162,7 +163,7 @@ const streetGold = new Pickups(scene, (() => {
     spots.push({ x, y: STREET.ground + 0.6, z });
   }
   return spots;
-})(), goldPiece, { size: 1.2, scale: () => ability('swisher') });
+})(), goldPiece, { size: 1.2 });
 installVendor({ pause: on => { if (game.running) game.paused = on; }, change: p => { progress = p; } });
 
 // Day and night, and street lamps along the market street (Ken, 2026-10-18).
@@ -231,7 +232,7 @@ function step(dt, t) {
     if (e === 'jump') sound.play.jump(); else if (e === 'land') sound.play.land();
   }
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (!game.done && game.boost <= 0 && !down) game.energy -= energyDrain(wally.mode, moving, 'kuranda') * dt;
+  if (!game.done && game.boost <= 0 && !down) game.energy -= energyDrain(wally.mode, moving, 'kuranda') * drainFactor() * dt;   // vitamins (gear.js) halve it
 
   // The shell and mango trader: walk up to the stall and the trading opens.
   const nearVendor = Math.hypot(wally.pos.x - Math.sign(VENDOR.x) * STREET.half, wally.pos.z - VENDOR.z) < 3;
@@ -245,7 +246,6 @@ function step(dt, t) {
     toast_(`A gold piece someone dropped! ${streetGold.found}/${streetGold.total}`, 'good');
   }
 
-  wally.jumpBoost = ability('spring');
   for (const f of hiddenFinds.update(dt, t, wally.pos)) { toast_(f.text, 'good'); sound.play.powerup(); }
 
   // The clothes stall: walk up to it and it opens.
@@ -277,7 +277,7 @@ function step(dt, t) {
   for (const it of [...food.items]) {
     const p = it.mesh.position;
     const d = it.landed && !wally.airborne ? Math.hypot(p.x - mouth.x, p.z - mouth.z) + (mouth.y - p.y > 3.2 ? 99 : 0) : p.distanceTo(mouth);
-    if (d < 1.4 * (game.boost > 0 ? 1.4 : 1) * ability('net')) {                  // the Big Net reaches further
+    if (d < 1.4 * (game.boost > 0 ? 1.4 : 1)) {
       clusters.cheer(it.cluster);
       const how = it.landed ? 'ground' : (wally.airborne ? 'leap' : 'air');
       fx.burst(p, CRUMBS[it.kind] || [0xffffff]); food.take(it, 'eaten'); wally.chomp(how); sound.play.chomp(); fx.shake(0.1, 0.1);
@@ -460,4 +460,5 @@ if (params.has('play') || bot) start();
 installMap({ pause: on => { if (game.running) game.paused = on; } });
 installShop({ pause: on => { if (game.running) game.paused = on; } });
 installBook({ here: 'kuranda', pause: on => { if (game.running) game.paused = on; } });
+installGear({ scene, wally, food, mouth: () => wally.mouthPosition(), hasAir: false, toast: (t, k) => toast_(t, k), openBook: () => openBook('wally'), running: () => game.running && !game.paused, pause: on => { if (game.running) game.paused = on; } });
 window.chompStartHere = () => { if (!game.running) start(); };

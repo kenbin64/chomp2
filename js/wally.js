@@ -410,7 +410,8 @@ export class Wally {
       // Standing still, he puts on a show: a big high jump (the Jump move, with a
       // spin). On the run it is a quick straight leap forward (the Leap move).
       this.standingJump = !inWater && Math.hypot(this.vel.x, this.vel.z) < 1.5;
-      this.vy = (inWater ? JUMP.water : (this.standingJump ? JUMP.show : JUMP.land)) * (this.jumpBoost || 1);   // Spring Step (book.js)
+      this.vy = (inWater ? JUMP.water : (this.standingJump ? JUMP.show : JUMP.land)) * (this.springNext ? 1.8 : 1);   // Spring Step (gear.js): one big jump
+      this.springNext = false;
       this.fromWater = inWater;
       this.grounded = false;
       events.push(inWater ? 'leap' : 'jump');
