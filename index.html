@@ -119,18 +119,6 @@
   </div>
 </section>
 
-<section id="map" class="overlay" hidden>
-  <div class="card">
-    <h1>Wally's Big Trip</h1>
-    <p class="sub">Pick where to go. Finish an area to open the next one.</p>
-    <div class="map-grid" id="map-grid"></div>
-    <h2 class="map-head">Adventures <span id="map-stars"></span></h2>
-    <p class="fine">Earn stars in each area to open them. Clothes at the Kuranda markets cost Golden Mangoes.</p>
-    <div class="map-acts" id="map-acts"></div>
-    <p class="fine"><span id="map-mangoes"></span> &middot; <span id="map-postcards"></span></p>
-  </div>
-</section>
-
 <section id="paused" class="overlay" hidden>
   <div class="card">
     <h1>Paused</h1>
@@ -147,7 +135,7 @@
     <p class="big">Score <b id="final-score">0</b></p>
     <p class="fine" id="best"></p>
     <div class="board" id="over-board"></div>
-    <button id="again" class="go" type="button">Try again</button>
+    <div class="end-buttons"><button id="again" class="go" type="button">Try again</button><a class="go map-btn" href="index.html?map">Back to the map</a></div>
   </div>
 </section>
 
@@ -160,7 +148,7 @@
     <div class="postcard"><b>Postcard collected</b><p id="win-postcard"></p></div>
     <div class="board" id="win-board"></div>
     <p>Next stop: <b id="next-area"></b>.</p>
-    <button id="to-map" class="go" type="button">On to the map</button>
+    <div class="end-buttons"><button id="to-map" class="go" type="button">Back to the map</button></div>
     <p class="fine"><a href="#" id="again2">Play the park again</a></p>
   </div>
 </section>

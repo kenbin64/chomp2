@@ -20,6 +20,7 @@ import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
+import { installMap, recordVisit } from '../mapmodal.js';
 import { showLeaderboard } from '../leaderboard.js';
 import { dressOutfit } from '../outfit.js';
 import { loadRealism } from '../realism.js';
@@ -567,6 +568,7 @@ function drawHud() {
 }
 
 function start() {
+  recordVisit('esplanade');
   sound.start(); sound.startMusic('esplanade');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true;
@@ -647,3 +649,6 @@ function frame() {
 requestAnimationFrame(frame);
 if (params.has('play') || bot) start();
 
+// The map, from anywhere (mapmodal.js): the Map button or Tab. Play pauses while it is open.
+installMap({ pause: on => { if (game.running) game.paused = on; } });
+window.chompStartHere = () => { if (!game.running) start(); };

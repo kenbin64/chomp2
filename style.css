@@ -188,3 +188,51 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .board-form label { width: 100%; text-align: center; font-size: 14px; }
 .board-form input { font: inherit; padding: 8px 12px; border-radius: 999px; border: 2px solid rgba(255,209,102,0.5); background: rgba(255,255,255,0.08); color: inherit; width: 12em; }
 .board-form .go { margin: 0; padding: 8px 20px; font-size: 16px; }
+/* Back to the map on every end screen */
+.end-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 6px; }
+.end-buttons .go { margin: 0; text-decoration: none; display: inline-block; }
+.end-buttons .map-btn { background: linear-gradient(#bfeee6, #7fd3c7); box-shadow: 0 6px 0 #3f9c90; }
+/* The drawn trip map */
+.map-card { width: min(1100px, 100%); }
+.tripmap { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px; align-items: start; margin: 8px 0 12px; }
+@media (max-width: 760px) { .tripmap { grid-template-columns: 1fr; } }
+.tripmap-art svg { width: 100%; height: auto; display: block; border-radius: 16px; box-shadow: 0 8px 26px rgba(0,0,0,0.35); }
+.tripmap-info { text-align: left; background: rgba(255,255,255,0.06); border-radius: 16px; padding: 14px 16px; }
+.tripmap-info h2 { margin: 0; color: #ffd166; font-size: 26px; }
+.tripmap-info .place { margin: 2px 0 6px; opacity: 0.85; }
+.tripmap-info .stars { color: #ffd166; font-size: 22px; margin: 4px 0; letter-spacing: 0.1em; }
+.tripmap-info .goal { font-size: 15px; line-height: 1.4; }
+.tripmap-info .needs { color: #ffb38a; font-size: 14px; }
+.tripmap-info .go { margin: 8px 0 0; }
+.tripmap-svg .sea-label { fill: rgba(255,255,255,0.75); font: italic 700 26px var(--font); text-anchor: middle; }
+.tripmap-svg .sea-label.small { font-size: 18px; }
+.tripmap-svg .land-label { fill: rgba(30,60,35,0.55); font: 700 22px var(--font); text-anchor: middle; letter-spacing: 0.08em; }
+.tripmap-svg .land-label.town { fill: #3a2a18; font-size: 24px; letter-spacing: 0; }
+.pin { cursor: pointer; }
+.pin .drop { fill: #ffd166; stroke: #8a4a12; stroke-width: 1.5; }
+.pin .dot { fill: #8a4a12; }
+.pin .halo { fill: rgba(255,209,102,0); }
+.pin.open .halo { fill: rgba(255,209,102,0.25); animation: pinPulse 2s ease-in-out infinite; }
+.pin.locked .drop { fill: #d9d2c0; } .pin.soon .drop { fill: #b8b8b8; } .pin.soon, .pin.locked { opacity: 0.75; }
+.pin.picked .drop { fill: #ff8a3d; } .pin:hover .drop, .pin:focus .drop { fill: #ffe9a8; }
+.pin .pin-label { fill: #fff; font: 800 22px var(--font); text-anchor: middle; paint-order: stroke; stroke: rgba(10,30,40,0.85); stroke-width: 5px; }
+.pin .pin-stars { fill: #ffd166; font: 700 18px var(--font); text-anchor: middle; paint-order: stroke; stroke: rgba(10,30,40,0.85); stroke-width: 4px; }
+@keyframes pinPulse { 50% { fill: rgba(255,209,102,0.5); } }
+.tripmap-svg .legend { fill: #fff; font: 700 18px var(--font); paint-order: stroke; stroke: rgba(10,30,40,0.7); stroke-width: 4px; }
+.tripmap-svg .land-label.small { font-size: 18px; }
+.mark { cursor: pointer; }
+.mark .mark-bg { fill: rgba(255,255,255,0.92); stroke: #8a5ac8; stroke-width: 3; }
+.mark.locked { opacity: 0.7; } .mark.locked .mark-bg { stroke: #999; }
+.mark .mark-icon { font-size: 20px; text-anchor: middle; }
+.mark .mark-label { fill: #fff; font: 700 15px var(--font); text-anchor: middle; paint-order: stroke; stroke: rgba(10,30,40,0.85); stroke-width: 4px; }
+.mark:hover .mark-bg, .mark:focus .mark-bg { fill: #ffe9a8; }
+/* The map as a pop-up, from any screen */
+.map-modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 12px; background: rgba(4, 16, 24, 0.72); }
+.map-modal[hidden] { display: none; }
+.map-modal .map-card { position: relative; max-height: calc(100vh - 24px); overflow: auto; }
+.map-close { position: absolute; top: 10px; right: 12px; font: 800 20px var(--font); width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer; background: rgba(255,255,255,0.15); color: #fff; }
+.map-close:hover { background: rgba(255,255,255,0.3); }
+.map-button { position: fixed; z-index: 40; top: max(10px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); font: 800 16px var(--font); padding: 8px 16px; border-radius: 999px; border: 2px solid rgba(255,209,102,0.7); background: rgba(10, 30, 44, 0.75); color: #ffd166; cursor: pointer; }
+.map-button:hover { background: rgba(255,209,102,0.25); }
+.pin.here .drop { fill: #ff8a3d; }
+.map-bank { margin-top: 4px; }

@@ -17,6 +17,7 @@ import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
+import { installMap, recordVisit } from '../mapmodal.js';
 import { showLeaderboard } from '../leaderboard.js';
 import { loadRealism } from '../realism.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone } from '../rules.js';
@@ -373,6 +374,7 @@ function drawHud() {
 }
 
 function start() {
+  recordVisit('kuranda');
   sound.start(); sound.startMusic('park');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true; cam.yaw = Math.PI;
@@ -446,3 +448,7 @@ function frame() {
 requestAnimationFrame(frame);
 if (params.has('play') || bot) start();
 if (params.has('changed')) { wally.pos.set(Math.sign(SHOP.x) * (STREET.half - 1.5), 0, SHOP.z - 3); setTimeout(() => bubbles.say(wally.root, 'Ripper! How do I look?', 3), 600); }
+
+// The map, from anywhere (mapmodal.js): the Map button or Tab. Play pauses while it is open.
+installMap({ pause: on => { if (game.running) game.paused = on; } });
+window.chompStartHere = () => { if (!game.running) start(); };

@@ -24,6 +24,7 @@ import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './
 import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE } from './progress.js';
 import { dressOutfit } from './outfit.js';
 import { showLeaderboard } from './leaderboard.js';
+import { installMap, openMap, recordVisit } from './mapmodal.js';
 import * as sound from './sound.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, difficulty,
          clampToPark, terrainHeight, onDeck, LIVES, REVIVE_ENERGY, inRedZone,
@@ -553,6 +554,7 @@ function start() {
   $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true; game.paused = false;
   drawQuest();
+  recordVisit('park');
   const v = markVisited(visited, 'park');
   visited = v.visited;
   try { localStorage.setItem('chomp-visited', JSON.stringify(visited)); } catch { /* not saved */ }
@@ -606,44 +608,7 @@ const PARK_STARS = [40, 70, 100];               // park score for one, two and t
 
 function showMap() {
   $('title').hidden = true; $('win').hidden = true; $('over').hidden = true;
-  const grid = $('map-grid'); grid.innerHTML = '';
-  for (const a of AREAS) {
-    // What the area needs from the one before (the ticket chain). While building,
-    // every built area stays open (OPEN_ALL); ?locked plays by the real rules.
-    const needs = entryNeeds(progress, a.id);
-    const testing = OPEN_ALL && !params.has('locked');
-    const open = (testing && a.ready) || (isOpen(progress, a.id) && !needs);
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = `map-area ${open ? 'open' : 'locked'}`;
-    const stars = progress.stars[a.id] || 0;
-    b.innerHTML = '<b></b><small></small><span class="goal"></span><span class="s"></span>';
-    b.children[0].textContent = a.name;
-    b.children[1].textContent = !a.ready ? 'Coming soon' : open ? (a.place || '') : 'Finish the area before to open';
-    b.children[2].textContent = a.ready ? a.objective || '' : '';       // what to do there
-    if (needs) { const n = document.createElement('span'); n.className = 'needs'; n.textContent = `Needs ${needs.text}`; b.appendChild(n); }
-    b.children[3].textContent = a.ready ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
-    if (open) b.onclick = () => { if (PAGES[a.id]) location.href = PAGES[a.id]; else { $('map').hidden = true; start(); } };
-    grid.appendChild(b);
-  }
-  // The adventures stars open (Ken, 2026-10-17), shown so players see what they are working toward.
-  const have = totalStars(progress);
-  $('map-stars').textContent = `★ ${have}`;
-  const acts = $('map-acts'); acts.innerHTML = '';
-  for (const a of ACTIVITIES) {
-    const area = AREAS.find(x => x.id === a.area);
-    const open = activityOpen(progress, a.id);
-    const d = document.createElement('div');
-    d.className = `map-act ${open ? 'open' : ''}`;
-    d.innerHTML = '<b></b><small></small><span class="need"></span>';
-    d.children[0].textContent = `${a.name} · ${area ? area.name : ''}`;
-    d.children[1].textContent = a.about;
-    d.children[2].textContent = open ? 'Open!' : !area || !area.ready ? (a.stars ? `★ ${a.stars} needed · coming soon` : 'Coming soon')
-      : a.stars > have ? `★ ${a.stars} needed (${a.stars - have} to go)` : `Reach ${area.name} to open`;
-    acts.appendChild(d);
-  }
-  $('map-mangoes').textContent = `Golden Mangoes: ${progress.mangoes} · Pearls: ${progress.pearls || 0} · Gold coins: ${progress.coins || 0}${progress.badge ? ' · Ranger badge ✓' : ''}${progress.skyrail ? ' · Skyrail pass ✓' : ''}${progress.boatTicket ? ' · Boat ticket ✓' : ''}`;
-  $('map-postcards').textContent = `Postcards: ${progress.postcards.length} of ${AREAS.length}`;
-  $('map').hidden = false;
+  openMap();
 }
 
 // The opener: How to play opens the instructions over the art; Got it closes them.
@@ -727,3 +692,7 @@ function frame() {
 requestAnimationFrame(frame);
 if (params.has('play') || bot) start();
 else if (params.has('map')) showMap();
+
+// The map, from anywhere (mapmodal.js): the Map button or Tab. Play pauses while it is open.
+installMap({ pause: on => { if (game.running) game.paused = on; } });
+window.chompStartHere = () => { if (!game.running) { $('title').hidden = true; $('win').hidden = true; $('over').hidden = true; start(); } };
