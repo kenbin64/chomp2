@@ -93,9 +93,14 @@ progress = payEntry(progress, 'kuranda');
 function save() { try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ } }
 save();
 
+// The Wally model to use: his own, or the fitted model of a garment he is wearing.
+function wallyModelName() {
+  try { const p = JSON.parse(localStorage.getItem('chomp-progress') || '{}'); const id = p.wardrobe && p.wardrobe.wear && p.wardrobe.wear.wally && p.wardrobe.wear.wally.shirt;
+        const item = WARDROBE.find(i => i.id === id); return (item && item.model) || 'wally'; } catch { return 'wally'; }
+}
 const wally = new Wally(scene);
 wally.facing = 0;
-wally.useModel(models.get('wally'));
+wally.useModel(models.get(wallyModelName()) || models.get('wally'));   // a garment outfit has its own fitted Wally model
 const food = new Food(scene); food.useModels(models);
 const bubbles = new Bubbles(scene, touch ? 3 : 4);
 const fx = new Effects(scene, food);
@@ -176,14 +181,14 @@ function drawShop() {
       else if (wearingIt) { const s = document.createElement('span'); s.className = 'on'; s.textContent = 'Wearing'; li.append(s); }
       else if (owned.includes(item.id)) {
         const b = document.createElement('button'); b.className = 'wear'; b.type = 'button'; b.textContent = 'Wear';
-        b.onclick = () => { progress = wearItem(progress, item.id); save(); dressUp(); drawShop(); sound.play.goal(); };
+        b.onclick = () => { progress = wearItem(progress, item.id); save(); if (changeIfNeeded()) return; dressUp(); drawShop(); sound.play.goal(); };
         li.append(b);
       } else {
         const b = document.createElement('button'); b.type = 'button'; b.textContent = `🥭 ${item.price}`;
         b.disabled = (progress.mangoes || 0) < item.price;
         b.onclick = () => {
           const r = buyItem(progress, item.id);
-          if (r.ok) { progress = wearItem(r.progress, item.id); save(); dressUp(); sound.play.powerup(); bubbles.say(wally.root, 'Ripper! How do I look?', 3); }
+          if (r.ok) { progress = wearItem(r.progress, item.id); save(); if (changeIfNeeded()) return; dressUp(); sound.play.powerup(); bubbles.say(wally.root, 'Ripper! How do I look?', 3); }
           drawShop();
         };
         li.append(b);
@@ -205,6 +210,13 @@ function drawShop() {
   t.append(li);
   $('shop-note').textContent = (progress.mangoes || 0) < 20 ? 'Short on mangoes? Collect Golden Mangoes on the Esplanade, then come back.' : '';
 }
+// Changing to or from a garment that has its own model needs the other Wally:
+// he pops into the changing room (the page reloads, coming back to the stall).
+function changeIfNeeded() {
+  if (wallyModelName() !== (window.__wallyModel || 'wally')) { save(); location.href = 'kuranda.html?play&changed=1'; return true; }
+  return false;
+}
+window.__wallyModel = wallyModelName();
 function openShop() { game.inShop = true; game.shopAway = false; drawShop(); $('shop').hidden = false; }
 $('shop-close').onclick = () => { $('shop').hidden = true; game.inShop = false; };
 
@@ -433,3 +445,4 @@ function frame() {
 }
 requestAnimationFrame(frame);
 if (params.has('play') || bot) start();
+if (params.has('changed')) { wally.pos.set(Math.sign(SHOP.x) * (STREET.half - 1.5), 0, SHOP.z - 3); setTimeout(() => bubbles.say(wally.root, 'Ripper! How do I look?', 3), 600); }

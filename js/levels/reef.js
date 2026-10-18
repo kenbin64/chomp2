@@ -27,7 +27,7 @@ import { LIVES } from '../rules.js';
 import { HumanoidPoser } from '../rig.js';
 import { kennysJar, useJarModel } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
-import { readProgress, completeArea, starsFor, POSTCARDS, bankFinds, wearing } from '../progress.js';
+import { readProgress, completeArea, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE } from '../progress.js';
 import { makeMaze, makeReefMaze, mazePath, cellAt, cellCentre, collide, inMaze, airStep, AIR,
          SWIM_Y, SURFACE_Y, SEABED_Y, reefRunScore, REEF_STARS, PEARL_POINTS, CHEST_POINTS,
          LANES, LANE_NAMES, TREASURES, nextDepth, treasureSpots, canCollect } from './reef-rules.js';
@@ -172,8 +172,13 @@ const post = createPost(renderer, scene, camera, quality);
 addEventListener('resize', () => post.setSize(innerWidth, innerHeight));
 
 // ---- Characters ------------------------------------------------------------------
+// The Wally model to use: his own, or the fitted model of a garment he is wearing.
+function wallyModelName() {
+  try { const p = JSON.parse(localStorage.getItem('chomp-progress') || '{}'); const id = p.wardrobe && p.wardrobe.wear && p.wardrobe.wear.wally && p.wardrobe.wear.wally.shirt;
+        const item = WARDROBE.find(i => i.id === id); return (item && item.model) || 'wally'; } catch { return 'wally'; }
+}
 const wally = new Wally(scene);
-wally.useModel(models.get('wally'));
+wally.useModel(models.get(wallyModelName()) || models.get('wally'));   // a garment outfit has its own fitted Wally model
 { const p0 = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
   if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(p0, 'wally')); }   // clothes from the Kuranda markets
 const bubbles = new Bubbles(scene, touch ? 3 : 4);

@@ -27,7 +27,7 @@ import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocit
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
 import { jellyModel, dressedJelly } from '../hazards.js';
-import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, wearing } from '../progress.js';
+import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE } from '../progress.js';
 import { PATH, generateCourse, hits, runScore, STARS, MANGO_SET_BONUS } from './esplanade-rules.js';
 import { buildEsplanade, obstacleModel, mangoModel, useMangoModel } from './esplanade-scene.js';
 import { Clusters } from '../clusters.js';
@@ -117,9 +117,14 @@ if (!scene.environment) {   // the photographed sky already lights the scene whe
   scene.environment = pmrem.fromScene(env, 0.04).texture; scene.environmentIntensity = 0.8; pmrem.dispose();
 }
 
+// The Wally model to use: his own, or the fitted model of a garment he is wearing.
+function wallyModelName() {
+  try { const p = JSON.parse(localStorage.getItem('chomp-progress') || '{}'); const id = p.wardrobe && p.wardrobe.wear && p.wardrobe.wear.wally && p.wardrobe.wear.wally.shirt;
+        const item = WARDROBE.find(i => i.id === id); return (item && item.model) || 'wally'; } catch { return 'wally'; }
+}
 const wally = new Wally(scene);
 wally.facing = 0;                                     // facing down the boardwalk
-wally.useModel(models.get('wally'));
+wally.useModel(models.get(wallyModelName()) || models.get('wally'));   // a garment outfit has its own fitted Wally model
 { const p0 = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
   if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(p0, 'wally')); }   // clothes from the Kuranda markets
 const food = new Food(scene); food.useModels(models);

@@ -19,7 +19,7 @@ loader.setDRACOLoader(draco);          // models exported with Draco compression
 
 // Every model file the game knows about.
 export const MODEL_FILES = [
-  'wally', 'kenny', 'croc', 'pelican', 'flyingfox', 'jellyfish', 'toad', 'toast',
+  'wally', 'wally-safari', 'kenny', 'croc', 'pelican', 'flyingfox', 'jellyfish', 'toad', 'toast',
   ...Array.from({ length: 10 }, (_, i) => `tourist-${i + 1}`),
   'food-fries', 'food-pizza', 'food-taco', 'food-hotdog', 'food-shrimp',
   'food-chicken', 'food-hoagie', 'food-hamburger', 'food-steak',

@@ -21,7 +21,7 @@ import { loadRealism } from './realism.js';
 import { usePalmCrown } from './palms.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from './quality.js';
 import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
-import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing } from './progress.js';
+import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE } from './progress.js';
 import { dressOutfit } from './outfit.js';
 import { showLeaderboard } from './leaderboard.js';
 import * as sound from './sound.js';
@@ -94,6 +94,11 @@ if (!world.photo) {
   scene.environmentIntensity = 0.8;
   pmrem.dispose();
 }
+// The Wally model to use: his own, or the fitted model of a garment he is wearing.
+function wallyModelName() {
+  try { const p = JSON.parse(localStorage.getItem('chomp-progress') || '{}'); const id = p.wardrobe && p.wardrobe.wear && p.wardrobe.wear.wally && p.wardrobe.wear.wally.shirt;
+        const item = WARDROBE.find(i => i.id === id); return (item && item.model) || 'wally'; } catch { return 'wally'; }
+}
 const wally = new Wally(scene);
 const food = new Food(scene);
 const tourists = new Tourists(scene, quality.tourists);
@@ -133,7 +138,7 @@ const toads = new CaneToads(scene, quality.name === 'low' ? 3 : 5, {
 });
 
 // Dress everyone in Ken's models where a file exists.
-wally.useModel(models.get('wally'));
+wally.useModel(models.get(wallyModelName()) || models.get('wally'));   // a garment outfit has its own fitted Wally model
 kenny.useModel(models.get('kenny'));
 // The clothes they own from the Kuranda markets (outfit.js).
 { const p0 = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
