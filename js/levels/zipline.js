@@ -54,6 +54,7 @@ const daynight = new DayNight(scene, { sun });
 // ---- The gorge: cliffs, river, rainforest, the falls --------------------------------------
 const LONGEST = 340;
 const rock = surfaceMaterial(realism, 'rock', 30, 8) || new THREE.MeshStandardMaterial({ color: 0x6a5e52, roughness: 0.95 });
+const rockMoss = rock.clone(); rockMoss.vertexColors = true;
 for (const side of [-1, 1]) {
   const geo = new THREE.PlaneGeometry(LONGEST + 200, 90, 80, 24);
   const p = geo.attributes.position;
@@ -62,15 +63,48 @@ for (const side of [-1, 1]) {
     p.setZ(i, Math.sin(u * 0.07) * 4 + Math.sin(u * 0.23 + v * 0.1) * 2 + Math.sin(v * 0.4 + u * 0.05) * 1.5 + (v + 45) * 0.12);
   }
   geo.computeVertexNormals();
-  const wall = new THREE.Mesh(geo, rock); wall.receiveShadow = true;
+  // Moss and ferns over the rock (Ken: the gorge is rocky and rainforest-lush):
+  // green where the wall leans back and in streaks running down it.
+  const col = [];
+  for (let i = 0; i < p.count; i++) {
+    const u = p.getX(i), v = p.getY(i);
+    const moss = Math.max(0, Math.sin(u * 0.11 + Math.sin(v * 0.07) * 2) * 0.6 + Math.sin(u * 0.37 + v * 0.05) * 0.4 + (v < -20 ? 0.3 : 0));
+    const k = Math.min(1, moss);
+    col.push(1 - 0.55 * k, 1 - 0.15 * k, 1 - 0.6 * k);
+  }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  const wall = new THREE.Mesh(geo, rockMoss); wall.receiveShadow = true;
   wall.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
   wall.position.set(side * 34, 40, -LONGEST / 2); scene.add(wall);
 }
-const river = new THREE.Mesh(new THREE.PlaneGeometry(80, LONGEST + 300), new THREE.MeshStandardMaterial({ color: 0x2f7a78, roughness: 0.15, metalness: 0.1 }));
+const river = new THREE.Mesh(new THREE.PlaneGeometry(80, LONGEST + 300), new THREE.MeshStandardMaterial({ color: 0x3f5f4a, roughness: 0.2, metalness: 0.1 })   /* the Barron: deep green-brown */);
 river.rotation.x = -Math.PI / 2; river.position.set(0, 0, -LONGEST / 2); scene.add(river);
 const trees = new Trees(scene, { light: quality.name === 'low' });
 for (let i = 0; i < 220; i++) { const side = i % 2 ? 1 : -1, x = side * (38 + Math.random() * 60), z = 60 - Math.random() * (LONGEST + 160); trees.add(['umbrella', 'eucalyptus', 'umbrella', 'palm'][i % 4], x, 80 + Math.random() * 6, z, 12 + Math.random() * 10); }
+// Trees and palms growing out of the cliff faces on ledges, all the way down,
+// and a thick rim of forest along the top.
+for (let i = 0; i < 520; i++) {
+  const side = i % 2 ? 1 : -1, y = 4 + Math.random() * 74, z = 50 - Math.random() * (LONGEST + 140);
+  const x = side * (30.5 - (y + 45 - 40) * 0.12 * 0.4 + Math.random() * 2.5);       // just in from the wall's face at that height
+  trees.add(Math.random() < 0.65 ? 'umbrella' : 'palm', x, y, z, 6 + Math.random() * 9);
+}
+for (let i = 0; i < 160; i++) { const side = i % 2 ? 1 : -1; trees.add(['umbrella', 'eucalyptus', 'umbrella'][i % 3], side * (34 + Math.random() * 8), 80, 60 - Math.random() * (LONGEST + 160), 14 + Math.random() * 10); }
 trees.build();
+// Boulders in the river and along its banks, white water round them.
+{
+  const stone = new THREE.MeshStandardMaterial({ color: 0x7a7266, roughness: 0.9 });
+  const foam = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, roughness: 0.4, depthWrite: false });
+  const geo = new THREE.DodecahedronGeometry(1, 1);
+  const n = 90, rocks = new THREE.InstancedMesh(geo, stone, n), m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+  for (let i = 0; i < n; i++) {
+    const bank = Math.random() < 0.55, x = bank ? (Math.random() < 0.5 ? -1 : 1) * (24 + Math.random() * 9) : (Math.random() - 0.5) * 40, z = 40 - Math.random() * (LONGEST + 100);
+    const r = 1 + Math.random() * 3.5;
+    q.setFromEuler(e.set(Math.random(), Math.random() * 6, Math.random()));
+    m.compose(new THREE.Vector3(x, r * 0.35, z), q, new THREE.Vector3(r, r * 0.7, r * 1.2)); rocks.setMatrixAt(i, m);
+    if (!bank) { const f = new THREE.Mesh(new THREE.RingGeometry(r * 0.9, r * 1.6, 20), foam); f.rotation.x = -Math.PI / 2; f.position.set(x, 0.06, z); scene.add(f); }
+  }
+  rocks.castShadow = true; rocks.receiveShadow = true; scene.add(rocks);
+}
 // The cliff tops: rainforest floor.
 for (const side of [-1, 1]) { const top = new THREE.Mesh(new THREE.PlaneGeometry(200, LONGEST + 300), new THREE.MeshStandardMaterial({ color: 0x2f5a2a, roughness: 1 })); top.rotation.x = -Math.PI / 2; top.position.set(side * 134, 82, -LONGEST / 2); scene.add(top); }
 // Barron Falls: a wide fall of white water down the far wall, beside the middle of the line.
