@@ -70,14 +70,22 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
   const street = surfaceMaterial(realism, 'paving', STREET.half * 2 / 2.4, len / 2.4, { color: 0xd8c6b0 }) || mat(0xc8b49a);
   const road = shadowed(new THREE.Mesh(new THREE.PlaneGeometry(STREET.half * 2, len), street), false, true);
   road.rotation.x = -Math.PI / 2; road.position.set(0, 0.01, mid); scene.add(road);
-  const lawn = surfaceMaterial(realism, 'grass', 300 / 3, 500 / 3, { color: 0xc8d4b8 }) || mat(0x5f8f42);
-  const field = shadowed(new THREE.Mesh(new THREE.PlaneGeometry(300, 500), lawn), false, true);
+  // Kuranda is in the middle of the rainforest (Ken): no grassland. The ground is
+  // rainforest floor, leaf litter, dark soil and moss, under a thick forest.
+  const litter = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
+    g.fillStyle = '#3b2e1f'; g.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 160; i++) { g.fillStyle = `rgba(${40 + rnd() * 30},${60 + rnd() * 40},${25 + rnd() * 15},${0.25 + rnd() * 0.3})`; g.beginPath(); g.arc(rnd() * 512, rnd() * 512, 10 + rnd() * 40, 0, Math.PI * 2); g.fill(); }   // moss
+    for (let i = 0; i < 2200; i++) {                                 // fallen leaves
+      const x = rnd() * 512, y = rnd() * 512, a = rnd() * Math.PI, l = 5 + rnd() * 9;
+      const tone = [[110, 70, 35], [140, 95, 45], [90, 60, 30], [70, 85, 40], [160, 110, 55]][Math.floor(rnd() * 5)];
+      g.fillStyle = `rgba(${tone},${0.6 + rnd() * 0.4})`; g.save(); g.translate(x, y); g.rotate(a); g.beginPath(); g.ellipse(0, 0, l, l * 0.4, 0, 0, Math.PI * 2); g.fill(); g.restore();
+    }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(300 / 6, 500 / 6); t.anisotropy = 4; return t;
+  })();
+  const field = shadowed(new THREE.Mesh(new THREE.PlaneGeometry(300, 500), new THREE.MeshStandardMaterial({ map: litter, color: 0x7f9a6a, roughness: 1 })), false, true);   // shaded, mossy green-brown
   field.rotation.x = -Math.PI / 2; field.position.set(0, -0.01, mid); scene.add(field);
-  const grass = new Grass(scene, {
-    x0: -40, x1: 40, z0: STREET.z0, z1: STREET.z1 + 10, heightAt: () => 0,
-    tufts: q.name === 'high' ? 30000 : q.name === 'medium' ? 14000 : 4000,
-    density: x => Math.abs(x) < STREET.half + 0.3 ? 0 : Math.abs(x) < 12 ? 0.5 : 1.3,
-  });
+  const grass = { update() {} };                                   // no grass in the rainforest
 
   // The market (Ken: rustic and hippy, like a bazaar or farmers market, like the
   // real Kuranda markets): the stalls the game uses, more stalls filling the
@@ -140,15 +148,21 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
 
   // The rainforest: Ken's trees, thick beyond the village.
   const trees = new Trees(scene, { light: q.name === 'low' });
-  const count = q.name === 'high' ? 600 : q.name === 'medium' ? 380 : 180;
+  const count = q.name === 'high' ? 1100 : q.name === 'medium' ? 720 : 320;
   for (let n = 0, tries = 0; n < count && tries < count * 10; tries++) {
-    const x = (rnd() * 2 - 1) * 150, z = STREET.z0 - 40 + rnd() * (len + 120);
-    if (Math.abs(x) < 28 && z > STREET.z0 - 6 && z < STREET.z1 + 6) continue;   // keep the village clear
+    const x = (rnd() * 2 - 1) * 120, z = STREET.z0 - 40 + rnd() * (len + 120);
+    if (Math.abs(x) < 22 && z > STREET.z0 - 6 && z < STREET.z1 + 6) continue;   // the forest closes in right behind the buildings
     const r = rnd();
     if (r < 0.45) trees.add('umbrella', x, 0, z, 10 + rnd() * 6);
     else if (r < 0.8) trees.add('eucalyptus', x, 0, z, 16 + rnd() * 12);
     else trees.add('palm', x, 0, z, 10 + rnd() * 5);
     n++;
+  }
+  // The understorey: smaller trees and palms under the tall ones, thick close to the village.
+  const under = q.name === 'high' ? 500 : q.name === 'medium' ? 320 : 140;
+  for (let n = 0, tries = 0; n < under && tries < under * 10; tries++) {
+    const side = rnd() < 0.5 ? -1 : 1, x = side * (21 + Math.pow(rnd(), 1.6) * 60), z = STREET.z0 - 20 + rnd() * (len + 40);
+    trees.add(rnd() < 0.55 ? 'umbrella' : 'palm', x, 0, z, 4 + rnd() * 6); n++;
   }
   // A few shade trees right along the street.
   for (let z = 0; z < STREET.z1 - 10; z += 26) for (const side of [-1, 1]) trees.add('umbrella', side * 12, 0, z + side * 9 + 13, 8 + rnd() * 3);
