@@ -119,6 +119,8 @@ export const WARDROBE = [
   { id: 'shirt-bush',       who: 'wally', slot: 'shirt', name: 'Bush khaki shirt',      price: 25, colour: 0x9a8a5a, style: 'plain' },
   // A real garment (Ken's safari shirt model, fitted and rigged by tools/blender-fit-garment.py): model: the Wally model wearing it.
   { id: 'shirt-safari',     who: 'wally', slot: 'shirt', name: 'Safari shirt',          price: 40, colour: 0x9a8a5a, model: 'wally-safari' },
+  // A whole new Wally (Ken's Meshy model, rigged from the template by tools/blender-rig-variant.py).
+  { id: 'outfit-explorer',  who: 'wally', slot: 'shirt', name: 'Safari explorer (full outfit)', price: 60, model: 'wally-explorer' },
   { id: 'shirt-greengold',  who: 'wally', slot: 'shirt', name: 'Green and gold jersey',  price: 35, colour: 0x1f7a3a, colour2: 0xf2c21b, style: 'stripes' },
   { id: 'shirt-pirate',     who: 'wally', slot: 'shirt', name: 'Pirate stripes',        price: 35, colour: 0xb81f2a, colour2: 0xf2ece0, style: 'stripes' },
   { id: 'shirt-neonpink',   who: 'wally', slot: 'shirt', name: 'Neon pink',             price: 45, colour: 0xff2fa8, style: 'neon' },

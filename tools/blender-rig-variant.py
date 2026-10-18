@@ -63,8 +63,22 @@ print('ALIGNED scale %.3f, size template %s variant %s' % (k, tuple(round(v, 2) 
 for g in body.vertex_groups:
     if g.name not in outfit.vertex_groups: outfit.vertex_groups.new(name=g.name)
 bpy.ops.object.select_all(action='DESELECT'); outfit.select_set(True); bpy.context.view_layer.objects.active = outfit
+# If the new model has no tail (Meshy sometimes leaves it off), the template's
+# tail must not lend its weights: it hangs between his legs, and the inner
+# thighs would follow the tail. Copy from a template body with the tail removed.
+src = body
+vlo2, vhi2 = box(outfit)
+has_tail = (vhi2.y - vlo2.y) > 0.85 * (bhi.y - blo.y)
+if not has_tail:
+    import bmesh
+    src = body.copy(); src.data = body.data.copy(); bpy.context.scene.collection.objects.link(src)
+    names = {g.index: g.name for g in src.vertex_groups}
+    bm = bmesh.new(); bm.from_mesh(src.data); dl = bm.verts.layers.deform.active; bm.verts.ensure_lookup_table()
+    tail = [v for v in bm.verts if v[dl] and names.get(max(v[dl].items(), key=lambda kv: kv[1])[0], '').startswith('Tail')]
+    bmesh.ops.delete(bm, geom=tail, context='VERTS'); bm.to_mesh(src.data); bm.free()
+    print('NO TAIL on the new model: copying weights without the template tail (%d points left out)' % len(tail))
 dt = outfit.modifiers.new('weights', 'DATA_TRANSFER')
-dt.object = body
+dt.object = src
 dt.use_vert_data = True; dt.data_types_verts = {'VGROUP_WEIGHTS'}
 dt.vert_mapping = 'POLYINTERP_NEAREST'
 dt.layers_vgroup_select_src = 'ALL'; dt.layers_vgroup_select_dst = 'NAME'
@@ -80,6 +94,7 @@ print('WEIGHTS copied; points with no weight:', bare, 'of', len(outfit.data.vert
 mod = outfit.modifiers.new('rig', 'ARMATURE'); mod.object = rig
 outfit.parent = rig
 bpy.data.objects.remove(body)
+if src is not body: bpy.data.objects.remove(src)
 for o in list(bpy.data.objects):
     if o.type == 'MESH' and o not in (outfit,) and o.parent != rig: bpy.data.objects.remove(o)
 for pb in rig.pose.bones: pb.custom_shape = None
