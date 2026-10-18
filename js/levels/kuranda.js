@@ -163,16 +163,6 @@ const streetGold = new Pickups(scene, (() => {
   }
   return spots;
 })(), goldPiece, { size: 1.2, scale: () => ability('swisher') });
-// The trader's sign over the stall.
-{
-  const c = document.createElement('canvas'); c.width = 512; c.height = 160;
-  const g = c.getContext('2d'); g.fillStyle = '#6b3d1e'; g.fillRect(0, 0, 512, 160); g.fillStyle = '#ffe7b0'; g.textAlign = 'center';
-  g.font = 'bold 54px "Trebuchet MS", sans-serif'; g.fillText('Shells & Mangoes', 256, 72);
-  g.font = '34px "Trebuchet MS", sans-serif'; g.fillText('Bought for gold', 256, 125);
-  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.95), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }));
-  sign.position.set(VENDOR.x - Math.sign(VENDOR.x) * 1.6, 3.45, VENDOR.z); sign.rotation.y = VENDOR.x < 0 ? Math.PI / 2 : -Math.PI / 2; scene.add(sign);
-}
 installVendor({ pause: on => { if (game.running) game.paused = on; }, change: p => { progress = p; } });
 
 // Day and night, and street lamps along the market street (Ken, 2026-10-18).
@@ -458,7 +448,7 @@ function frame() {
   bubbles.update(dt); fx.update(dt, t);
   world.update(t);
   followCamera(dt);
-  { const night = daynight.update(game.paused ? 0 : dt, camera); lamps.update(dt, night, wally.pos); }
+  { const night = daynight.update(game.paused ? 0 : dt, camera); lamps.update(dt, night, wally.pos); world.night(night); }
   fpsWatch(dt);
   post.render();
   requestAnimationFrame(frame);

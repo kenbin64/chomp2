@@ -7,6 +7,7 @@
 
 import * as THREE from 'three';
 import { addSky, addLights, addRanges } from '../world.js';
+import { marketStall, queenslander, overStreet, setMarketNight, bakeStall } from './kuranda-market.js';
 import { Trees } from '../trees.js';
 import { Grass } from '../grass.js';
 import { surfaceMaterial, applySky } from '../realism.js';
@@ -25,62 +26,6 @@ export const VENDOR = (() => { const s = STALLS.find(s => s[2] === 'crafts'); re
 
 function mat(color, extra = {}) { return new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra }); }
 function shadowed(m, cast = true, receive = true) { m.castShadow = cast; m.receiveShadow = receive; return m; }
-
-// A striped canvas awning picture.
-function stripes(a, b) {
-  const c = document.createElement('canvas'); c.width = 128; c.height = 8;
-  const g = c.getContext('2d');
-  for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? b : a; g.fillRect(i * 16, 0, 16, 8); }
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
-}
-
-// A market stall: timber posts, a striped awning, a counter with goods on it.
-function stall(kind, facing) {
-  const g = new THREE.Group();
-  const wood = mat(0x7a5536), dark = mat(0x5a3d26);
-  const colours = { fruit: ['#d8452f', '#f3e6cf'], crafts: ['#2f8c6a', '#f3efe2'], treats: ['#e2a530', '#fff3d6'], clothes: ['#7a4fb0', '#f8eefc'] }[kind];
-  for (const [x, z] of [[-1.5, -1.1], [1.5, -1.1], [-1.5, 1.1], [1.5, 1.1]]) {
-    const p = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 2.6, 8), wood)); p.position.set(x, 1.3, z); g.add(p);
-  }
-  const awning = shadowed(new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.08, 2.8), mat(0xffffff, { map: stripes(...colours), roughness: 0.9 })));
-  awning.position.y = 2.65; awning.rotation.x = -0.12; g.add(awning);
-  const counter = shadowed(new THREE.Mesh(new THREE.BoxGeometry(3, 0.9, 0.8), dark)); counter.position.set(0, 0.45, -0.7); g.add(counter);
-  // Goods on the counter.
-  const goods = kind === 'fruit' ? [0xffb51f, 0xf2d43a, 0x6aa83a, 0xe8662a] : kind === 'treats' ? [0xd9a560, 0x8a4f2a, 0xf0e2c0] : kind === 'clothes' ? [0x7a4fb0, 0x2f8fd8, 0x2e9a4a, 0xf2c21b] : [0xb8743a, 0x2f8c6a, 0xd8452f];
-  for (let i = 0; i < 9; i++) {
-    const shape = kind === 'clothes' ? new THREE.BoxGeometry(0.32, 0.06, 0.26) : kind === 'crafts' ? new THREE.CylinderGeometry(0.1, 0.13, 0.28, 10) : new THREE.SphereGeometry(0.11, 12, 10);
-    const m = shadowed(new THREE.Mesh(shape, mat(goods[i % goods.length], { roughness: 0.6 })));
-    m.position.set(-1.2 + (i % 5) * 0.6, 0.98 + Math.floor(i / 5) * 0.08, -0.7 + (Math.floor(i / 5) - 0.5) * 0.25); g.add(m);
-  }
-  if (kind === 'clothes') {                                   // a rail of shirts hanging at the back
-    const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.8, 8), mat(0xcfcfcf, { metalness: 0.6, roughness: 0.3 }));
-    rail.rotation.z = Math.PI / 2; rail.position.set(0, 2.1, 0.9); g.add(rail);
-    [0xf06a2a, 0x2f8fd8, 0x2e9a4a, 0x8a4fd0, 0xf2c21b].forEach((c, i) => {
-      const shirt = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.55, 0.06), mat(c)));
-      shirt.position.set(-1.1 + i * 0.55, 1.78, 0.9); g.add(shirt);
-    });
-  }
-  g.rotation.y = facing;
-  return g;
-}
-
-// A Queenslander-style shopfront: raised timber building, deep veranda, iron roof.
-function shopfront(w, colour) {
-  const g = new THREE.Group();
-  const wall = mat(colour, { roughness: 0.9 }), trim = mat(0xf4f1e8, { roughness: 0.7 }), roof = mat(0x4d7a52, { roughness: 0.55, metalness: 0.4 });
-  const body = shadowed(new THREE.Mesh(new THREE.BoxGeometry(w, 4.2, 7), wall)); body.position.set(0, 2.6, 2.5); g.add(body);
-  const floor = shadowed(new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.3, 10), mat(0x8a6a48))); floor.position.set(0, 0.5, 1); g.add(floor);
-  const top = shadowed(new THREE.Mesh(new THREE.BoxGeometry(w + 1.4, 0.2, 10.6), roof)); top.position.set(0, 4.9, 1); top.rotation.x = 0.05; g.add(top);
-  for (let x = -w / 2 + 0.4; x <= w / 2 - 0.3; x += 2.4) {
-    const p = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.15, 4.2, 0.15), trim)); p.position.set(x, 2.6, -3.7); g.add(p);
-  }
-  const rail = shadowed(new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, 0.08), trim)); rail.position.set(0, 1.6, -3.7); g.add(rail);
-  for (let x = -w / 2 + 1.2; x < w / 2 - 0.6; x += 2.4) {          // shop windows, warm inside
-    const win = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 0.08), mat(0x5a4a2e, { emissive: 0xffc06a, emissiveIntensity: 0.35, roughness: 0.2 }));
-    win.position.set(x, 2.4, -1.02); g.add(win);
-  }
-  return g;
-}
 
 // The Skyrail: a cable high over the treetops with gondolas gliding along it.
 function skyrail(scene) {
@@ -131,13 +76,41 @@ export function buildKuranda(scene, q, realism = null) {
     density: x => Math.abs(x) < STREET.half + 0.3 ? 0 : Math.abs(x) < 12 ? 0.5 : 1.3,
   });
 
-  // Stalls and shopfronts.
-  const stallMeshes = STALLS.map(([x, z, kind]) => { const s = stall(kind, x > 0 ? -Math.PI / 2 : Math.PI / 2); s.position.set(x, 0, z); scene.add(s); return s; });
-  const fronts = [0xf2e3c4, 0xdcebd8, 0xf5d6c2, 0xe4dcf0, 0xf0e9b8];
-  for (let z = 6; z < STREET.z1 - 20; z += 22 + rnd() * 8) for (const side of [-1, 1]) {
-    const f = shopfront(10 + rnd() * 4, fronts[Math.floor(rnd() * fronts.length)]);
-    f.position.set(side * 19, 0, z + side * 6); f.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2; scene.add(f);   // verandas face the street
+  // The market (Ken: rustic and hippy, like a bazaar or farmers market, like the
+  // real Kuranda markets): the stalls the game uses, more stalls filling the
+  // gaps so it is one rambling bazaar, a mulched floor under them, and over the
+  // street bunting, shade sails and fairy lights (kuranda-market.js).
+  const SIGNS = { fruit: 'Tropical Fruit', treats: 'Honey & Jams', crafts: 'Rainforest Crafts', clothes: 'Hippie Threads' };
+  const face = x => (x > 0 ? -Math.PI / 2 : Math.PI / 2);
+  let tone = 0;
+  const market = new THREE.Group();                    // every stall, merged together at the end
+  const stallMeshes = STALLS.map(([x, z, kind]) => {
+    const sign = x === VENDOR.x && z === VENDOR.z ? 'Shells & Mangoes' : SIGNS[kind];
+    const s = marketStall(kind, sign, { roof: tone % 3 === 2 ? 'canvas' : 'iron', tone: tone++ });
+    s.position.set(x, 0, z); s.rotation.y = face(x); market.add(s); return s;
+  });
+  const EXTRA = [['fruit', 'Organic Veggies'], ['crafts', 'Crystals & Gems'], ['clothes', 'Tie-Dye'], ['treats', 'Local Coffee'], ['clothes', 'Leather & Hats'],
+                 ['crafts', 'Pottery'], ['fruit', 'Fresh Juice'], ['treats', 'Bush Honey'], ['crafts', 'Hand-made Soap'], ['fruit', 'Dragonfruit']];
+  let e = 0;
+  for (const side of [-1, 1]) for (let z = STREET.z0 + 6; z < TRAIL_Z - 8; z += 6.5) {
+    if (STALLS.some(([sx, sz]) => Math.sign(sx) === side && Math.abs(sz - z) < 5)) continue;
+    const [kind, sign] = EXTRA[e++ % EXTRA.length];
+    const s = marketStall(kind, sign, { roof: e % 3 === 0 ? 'canvas' : 'iron', tone: e, w: 3.4 + rnd() * 0.8 });
+    s.position.set(side * 8.2, 0, z); s.rotation.y = face(side); market.add(s);
   }
+  scene.add(bakeStall(market));
+  // A mulched floor under the stalls, between the street and the houses.
+  const mulch = new THREE.MeshStandardMaterial({ color: 0x6b4f35, roughness: 1 });
+  for (const side of [-1, 1]) { const m = shadowed(new THREE.Mesh(new THREE.PlaneGeometry(7, len), mulch), false, true); m.rotation.x = -Math.PI / 2; m.position.set(side * 8.6, 0.015, mid); scene.add(m); }
+  overStreet(scene, STREET.half, STREET.z0, TRAIL_Z - 6);
+  // Queenslanders behind the market (Ken: the bungalows looked cheap).
+  const fronts = ['#f2e3c4', '#dcebd8', '#f5d6c2', '#e4dcf0', '#f0e9b8', '#cfe3ea'], shutters = ['#2f6b5a', '#8a3b2a', '#2f4f7a', '#6a4a8a'];
+  const houses = new THREE.Group();
+  for (let z = 6; z < STREET.z1 - 20; z += 22 + rnd() * 8) for (const side of [-1, 1]) {
+    const f = queenslander(10 + rnd() * 4, fronts[Math.floor(rnd() * fronts.length)], shutters[Math.floor(rnd() * shutters.length)]);
+    f.position.set(side * 20, 0, z + side * 6); f.rotation.y = face(side); houses.add(f);   // verandas face the street
+  }
+  scene.add(bakeStall(houses));
 
   // The rainforest: Ken's trees, thick beyond the village.
   const trees = new Trees(scene, { light: q.name === 'low' });
@@ -169,5 +142,6 @@ export function buildKuranda(scene, q, realism = null) {
 
   const glide = skyrail(scene);
   return { sun, ranges, trees, grass, stalls: stallMeshes, gate, bar,
+    night: setMarketNight,                       // the fairy lights glow after dark
     update(t) { trees.update(t); grass.update(t); glide(t); } };
 }
