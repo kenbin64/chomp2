@@ -6,7 +6,7 @@
 import { AREAS } from './quests.js';
 
 export function freshProgress() {
-  return { unlocked: ['park'], stars: {}, best: {}, postcards: [], mangoes: 0, pearls: 0, coins: 0,
+  return { unlocked: ['park'], stars: {}, best: {}, postcards: [], mangoes: 0, pearls: 0, coins: 0, shells: 0, pier: false,
            badge: false, skyrail: false, boatTicket: false, wardrobe: freshWardrobe(), extras: [], crocName: null, treasures: [] };
 }
 
@@ -17,12 +17,13 @@ export function starsFor(score, thresholds) {
 
 // Record a finished area. Never lowers stars or best score; opens the next
 // area that is built; the area's postcard is collected once.
-export function completeArea(progress, id, { score = 0, stars = 0, mangoes = 0, pearls = 0, coins = 0 } = {}) {
+export function completeArea(progress, id, { score = 0, stars = 0, mangoes = 0, pearls = 0, coins = 0, shells = 0 } = {}) {
   const p = bankFinds({ ...progress, stars: { ...progress.stars }, best: { ...progress.best }, unlocked: [...progress.unlocked], postcards: [...progress.postcards] },
-                      { mangoes, pearls, coins });
+                      { mangoes, pearls, coins, shells });
   p.stars[id] = Math.max(p.stars[id] || 0, stars);
   p.best[id] = Math.max(p.best[id] || 0, score);
   if (id === 'park') p.badge = true;                     // the Croc Park ranger badge: the way onto the Esplanade
+  if (id === 'reef') p.skyrail = true;                   // clearing the reef earns the Skyrail pass up to Kuranda
   if (!p.postcards.includes(id)) p.postcards.push(id);
   const i = AREAS.findIndex(a => a.id === id);
   const next = AREAS[i + 1];
@@ -40,38 +41,57 @@ export function findTreasure(progress, id, reward = { first: 10, again: 2 }) {
 }
 
 // Keep what was collected, finished or not (Ken: go back for more of something).
-export function bankFinds(progress, { mangoes = 0, pearls = 0, coins = 0 } = {}) {
+export function bankFinds(progress, { mangoes = 0, pearls = 0, coins = 0, shells = 0 } = {}) {
   return { ...progress, mangoes: (progress.mangoes || 0) + Math.max(0, mangoes),
-           pearls: (progress.pearls || 0) + Math.max(0, pearls), coins: (progress.coins || 0) + Math.max(0, coins) };
+           pearls: (progress.pearls || 0) + Math.max(0, pearls), coins: (progress.coins || 0) + Math.max(0, coins),
+           shells: (progress.shells || 0) + Math.max(0, shells) };
 }
 
-// ---- The ticket chain (Ken, 2026-10-17): each level gives what the next one needs ----
-//   Croc Park   -> a ranger badge, to get onto the Esplanade
-//   Esplanade   -> pearls, one of which opens the reef's giant clam
-//   Reef        -> gold coins, SKYRAIL_FARE of them for the Skyrail up to Kuranda (paid once)
-//   Kuranda     -> a river-boat ticket for the Daintree, bought at the markets with mangoes
-export const SKYRAIL_FARE = 5;
-export const BOAT_TICKET_PRICE = 30;
+// ---- The chain (Ken, 2026-10-18): each level builds on the one before ----------
+//   Croc Park  -> Golden Mangoes (and the ranger badge onto the Esplanade)
+//   Esplanade  -> the pier opens for mangoes brought from earlier (PIER_PRICE); pearls
+//   Reef       -> a pearl opens the giant clam; seashells; clearing it earns the Skyrail pass
+//   Kuranda    -> sell mangoes and shells to the market vendor for gold, and find
+//                 the gold pieces visitors have dropped
+//   Daintree   -> a river-boat ticket, bought with gold
+// "coins" in the save are the gold pieces.
+export const PIER_PRICE = 8;
+export const VENDOR_PAYS = { mangoes: 1, shells: 2 };      // gold pieces for each one sold
+export const BOAT_TICKET_PRICE = 20;                       // gold pieces
+// Kept for older pages: the Skyrail no longer has a fare.
+export const SKYRAIL_FARE = 0;
+
 // What an area still needs before Wally can go in, or null when he can.
 export function entryNeeds(progress, id) {
   if (id === 'esplanade' && !progress.badge) return { what: 'badge', text: 'a Croc Park ranger badge: finish Croc Park' };
-  if (id === 'reef' && (progress.pearls || 0) < 1) return { what: 'pearls', text: 'a pearl for the giant clam: feed the picnic groups on the Esplanade' };
-  if (id === 'kuranda' && !progress.skyrail && (progress.coins || 0) < SKYRAIL_FARE)
-    return { what: 'coins', text: `${SKYRAIL_FARE} gold coins for the Skyrail (you have ${progress.coins || 0}): dive the reef`, have: progress.coins || 0, need: SKYRAIL_FARE };
-  if (id === 'daintree' && !progress.boatTicket) return { what: 'ticket', text: 'a river-boat ticket: buy one at the Kuranda markets' };
+  if (id === 'reef' && (progress.pearls || 0) < 1) return { what: 'pearls', text: 'a pearl for the giant clam: find pearls on the Esplanade and out on its pier' };
+  if (id === 'kuranda' && !progress.skyrail) return { what: 'skyrail', text: 'the Skyrail pass: clear the reef' };
+  if (id === 'daintree' && !progress.boatTicket) return { what: 'ticket', text: `a river-boat ticket: ${BOAT_TICKET_PRICE} gold pieces at the Kuranda markets` };
   return null;
 }
-// Going in pays what it costs: the Skyrail fare, the first time only (then the pass is kept).
-export function payEntry(progress, id) {
-  if (id === 'kuranda' && !progress.skyrail && (progress.coins || 0) >= SKYRAIL_FARE)
-    return { ...progress, coins: progress.coins - SKYRAIL_FARE, skyrail: true };
-  return progress;
+// Nothing to pay at the gate any more (the Skyrail pass is earned); kept for the pages that call it.
+export function payEntry(progress) { return progress; }
+
+// The Esplanade pier: opened once, with Golden Mangoes banked from earlier
+// (Ken: the second land needs what the first gave).
+export function openPier(progress) {
+  if (progress.pier) return { progress, ok: false, why: 'open' };
+  if ((progress.mangoes || 0) < PIER_PRICE) return { progress, ok: false, why: 'mangoes' };
+  return { ok: true, progress: { ...progress, mangoes: progress.mangoes - PIER_PRICE, pier: true } };
 }
-// The river-boat ticket, from the Kuranda markets.
+
+// The Kuranda market vendor buys Golden Mangoes and seashells for gold pieces.
+export function sellToVendor(progress, { mangoes = 0, shells = 0 } = {}) {
+  const m = Math.max(0, Math.min(mangoes, progress.mangoes || 0)), sh = Math.max(0, Math.min(shells, progress.shells || 0));
+  const gold = m * VENDOR_PAYS.mangoes + sh * VENDOR_PAYS.shells;
+  return { gold, progress: { ...progress, mangoes: (progress.mangoes || 0) - m, shells: (progress.shells || 0) - sh, coins: (progress.coins || 0) + gold } };
+}
+
+// The river-boat ticket, from the Kuranda markets, in gold.
 export function buyBoatTicket(progress) {
   if (progress.boatTicket) return { progress, ok: false, why: 'owned' };
-  if ((progress.mangoes || 0) < BOAT_TICKET_PRICE) return { progress, ok: false, why: 'mangoes' };
-  return { ok: true, progress: { ...progress, mangoes: progress.mangoes - BOAT_TICKET_PRICE, boatTicket: true } };
+  if ((progress.coins || 0) < BOAT_TICKET_PRICE) return { progress, ok: false, why: 'gold' };
+  return { ok: true, progress: { ...progress, coins: progress.coins - BOAT_TICKET_PRICE, boatTicket: true } };
 }
 
 // What stars are for (Ken, 2026-10-17): they open the adventure activities.
@@ -192,7 +212,7 @@ export const EXTRAS = [
   { id: 'boomerang',       kind: 'gear',   name: 'Boomerang',          price: 60, ready: false, about: 'Thrown and caught again: handy in later levels.' },
   { id: 'ticket-zipline',  kind: 'ticket', name: 'Zip line ticket',    price: 25, ready: false, activity: 'zipline', about: 'A ride across the Barron Gorge on the zip line.' },
   { id: 'ticket-bungee',   kind: 'ticket', name: 'Bungee jump ticket', price: 35, ready: false, activity: 'bungee', about: 'A leap over Barron Falls.' },
-  { id: 'ticket-cruise',   kind: 'ticket', name: 'River cruise ticket', price: BOAT_TICKET_PRICE, ready: true, about: 'The river boat on the Daintree (opens the Daintree River).' },
+  { id: 'ticket-cruise',   kind: 'ticket', name: 'River cruise ticket', price: BOAT_TICKET_PRICE, pay: 'coins', ready: true, about: 'The river boat on the Daintree (opens the Daintree River).' },
   { id: 'ticket-rapids',   kind: 'ticket', name: 'River rapids ticket', price: 30, ready: false, activity: 'rapids', about: 'A raft down the white water at Mossman Gorge.' },
 ];
 export function hasExtra(progress, id) { return id === 'ticket-cruise' ? !!progress.boatTicket : (progress.extras || []).includes(id); }
@@ -202,8 +222,9 @@ export function buyExtra(progress, id) {
   if (!x) return { progress, ok: false, why: 'unknown' };
   if (!x.ready) return { progress, ok: false, why: 'soon' };
   if (hasExtra(progress, id)) return { progress, ok: false, why: 'owned' };
-  if ((progress.mangoes || 0) < x.price) return { progress, ok: false, why: 'mangoes' };
-  const p = { ...progress, mangoes: progress.mangoes - x.price };
+  const pay = x.pay || 'mangoes';
+  if ((progress[pay] || 0) < x.price) return { progress, ok: false, why: pay === 'coins' ? 'gold' : 'mangoes' };
+  const p = { ...progress, [pay]: progress[pay] - x.price };
   if (id === 'ticket-cruise') p.boatTicket = true; else p.extras = [...(progress.extras || []), id];
   return { ok: true, progress: p };
 }
@@ -234,6 +255,8 @@ export function readProgress(text) {
       mangoes: Number.isFinite(p.mangoes) ? p.mangoes : 0,
       pearls: Number.isFinite(p.pearls) ? p.pearls : 0,
       coins: Number.isFinite(p.coins) ? p.coins : 0,
+      shells: Number.isFinite(p.shells) ? p.shells : 0,
+      pier: p.pier === true,
       badge: p.badge === true || (p.stars && p.stars.park > 0) || (Array.isArray(p.postcards) && p.postcards.includes('park')),
       skyrail: p.skyrail === true, boatTicket: p.boatTicket === true,
       wardrobe: readWardrobe(p.wardrobe),

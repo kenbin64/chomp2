@@ -29,10 +29,10 @@ import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocit
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
 import { jellyModel, dressedJelly } from '../hazards.js';
-import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE, outfitModel } from '../progress.js';
+import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE, outfitModel, openPier, PIER_PRICE } from '../progress.js';
 import { DayNight } from '../daynight.js';
 import { StreetLamps } from '../lamps.js';
-import { PATH, generateCourse, hits, runScore, STARS, MANGO_SET_BONUS } from './esplanade-rules.js';
+import { PATH, generateCourse, hits, runScore, STARS, MANGO_SET_BONUS, SPUR, onSpur } from './esplanade-rules.js';
 import { buildEsplanade, obstacleModel, mangoModel, useMangoModel } from './esplanade-scene.js';
 import { Clusters } from '../clusters.js';
 import { peopleModels } from '../tourists.js';
@@ -60,15 +60,25 @@ const POOL_WATER = G - 0.3;
 const SEA_FLOOR = -5.5, SEA_SWIM = -2.6, SEA_TOP = -0.45;
 const seaDive = { under: false, depth: SEA_TOP };
 let poolOpen = () => false;              // set below, once the game state exists
+let pierOpen = () => false;              // the pier: open once paid for in mangoes (set below)
 const landGround = {
   stand(x, z, feetY) {
     if (inPool(x, z)) return { y: POOL_WATER - 0.45, surface: 'water' };
+    if (onSpur(x, z) && pierOpen() && feetY >= G - 0.35) return { y: G, surface: 'deck' };   // out on the pier
     if (inSea(x, z)) return { y: seaDive.depth, surface: 'water' };
     if (feetY < G - 0.35) return { y: seaDive.depth, surface: 'water' };   // in the water right against the boardwalk
     return { y: G, surface: Math.abs(x) <= PATH.half ? 'deck' : 'land' };
   },
   move(x, z, nx, nz, y) {
     if (inPool(nx, nz) && !poolOpen()) nz = Math.min(nz, POOL_Z + 0.5);       // the Lagoon opens when the job is done
+    // The pier: shut, there is no way on (gate from the walk, piles from the sea);
+    // open, its deck is walked like the boardwalk.
+    if (onSpur(nx, nz) && !onSpur(x, z) && !pierOpen()) return { x, z };
+    if (onSpur(x, z) && pierOpen() && y >= G - 0.35) {
+      const sx = Math.max(-PATH.half - SPUR.length + 0.4, Math.min(PATH.half - 0.4, nx));
+      const sz = sx < -PATH.half ? Math.max(SPUR.z - SPUR.half + 0.35, Math.min(SPUR.z + SPUR.half - 0.35, nz)) : nz;
+      return { x: sx, z: sz };
+    }
     if (inPool(nx, nz)) return { x: Math.max(-12, Math.min(12, nx)), z: Math.min(nz, POOL_Z + 28) };
     let tx = Math.min(PATH.half - 0.4, Math.max(-40, nx));            // the city side is the picnickers'; the sea goes on
     if (y < G - 0.35 && tx > -PATH.half - 0.3) tx = -PATH.half - 0.3;  // from the water the boardwalk edge is a wall: leap up
@@ -211,7 +221,8 @@ window.chomp = { game, wally, food };
 // Day and night, and street lamps along the promenade (Ken, 2026-10-18).
 const daynight = new DayNight(scene, { sun: world.sun });
 const lamps = new StreetLamps(scene, models.get('streetlamp'),
-  Array.from({ length: Math.floor((PATH.finish - 6) / 16) + 1 }, (_, i) => ({ x: (i % 2 ? 1 : -1) * (PATH.half - 0.3), y: PATH.ground, z: 6 + i * 16, rot: i % 2 ? -Math.PI / 2 : Math.PI / 2 })),
+  [...Array.from({ length: Math.floor((PATH.finish - 6) / 16) + 1 }, (_, i) => ({ x: (i % 2 ? 1 : -1) * (PATH.half - 0.3), y: PATH.ground, z: 6 + i * 16, rot: i % 2 ? -Math.PI / 2 : Math.PI / 2 })),
+   ...[12, 24, 33].map((d, i) => ({ x: -PATH.half - d, y: PATH.ground, z: SPUR.z + (i % 2 ? 1 : -1) * (SPUR.half - 0.15) }))],
   { real: quality.name === 'high' ? 8 : quality.name === 'medium' ? 6 : 4 });
 Object.assign(window.chomp, { daynight, lamps });
 
@@ -232,6 +243,75 @@ function dropPearl(cluster) {
   mesh.position.set(x, G, z); mesh.scale.setScalar(1.4);
   scene.add(mesh); landPearls.push({ mesh, x, z, taken: false });
   toast_('They left you a pearl!', 'info');
+}
+
+// ---- The pier (Ken, 2026-10-18) ----------------------------------------------------
+// A timber jetty out over the sea from the middle of the timber section. Its
+// gate opens once, for PIER_PRICE Golden Mangoes banked from Croc Park (the
+// second land needs what the first gave); pearls lie out along it.
+const pier = (() => {
+  const g = new THREE.Group(); scene.add(g);
+  const wood = new THREE.MeshStandardMaterial({ color: 0x8f6a45, roughness: 0.85 }), dark = new THREE.MeshStandardMaterial({ color: 0x5e4630, roughness: 0.9 });
+  const L = SPUR.length, x0 = -PATH.half, xm = x0 - L / 2;
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(L, 0.25, SPUR.half * 2), wood); deck.position.set(xm, G - 0.125, SPUR.z); deck.receiveShadow = deck.castShadow = true; g.add(deck);
+  for (let i = 0; i < L / 0.6; i++) {                                   // the gaps between the boards
+    const seam = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.02, SPUR.half * 2), dark); seam.position.set(x0 - 0.3 - i * 0.6, G + 0.005, SPUR.z); g.add(seam);
+  }
+  const pile = new THREE.CylinderGeometry(0.16, 0.18, G + 5.5, 10);
+  for (let x = x0 - 2; x > x0 - L; x -= 3.5) for (const s of [-1, 1]) { const p = new THREE.Mesh(pile, dark); p.position.set(x, (G - 5.5) / 2, SPUR.z + s * (SPUR.half - 0.2)); g.add(p); }
+  for (const s of [-1, 1]) {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(L, 0.08, 0.08), dark); rail.position.set(xm, G + 0.95, SPUR.z + s * (SPUR.half - 0.05)); g.add(rail);
+    for (let x = x0 - 0.5; x > x0 - L; x -= 2.5) { const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1, 0.1), dark); post.position.set(x, G + 0.5, SPUR.z + s * (SPUR.half - 0.05)); g.add(post); }
+  }
+  // The gate, two leaves that swing open, and its sign.
+  const leaves = [-1, 1].map(s => {
+    const hinge = new THREE.Group(); hinge.position.set(x0 - 0.15, G, SPUR.z + s * SPUR.half); g.add(hinge);
+    const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.1, SPUR.half), wood); leaf.position.set(0, 0.6, -s * SPUR.half / 2); hinge.add(leaf);
+    return { hinge, s };
+  });
+  const c = document.createElement('canvas'); c.width = 512; c.height = 256;
+  const cx = c.getContext('2d'); cx.fillStyle = '#2f5d50'; cx.fillRect(0, 0, 512, 256); cx.fillStyle = '#fff4d6'; cx.textAlign = 'center';
+  cx.font = 'bold 64px "Trebuchet MS", sans-serif'; cx.fillText('The Pier', 256, 95);
+  cx.font = '40px "Trebuchet MS", sans-serif'; cx.fillText(`Open: ${PIER_PRICE} Golden Mangoes`, 256, 170);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.1), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 }));
+  sign.position.set(x0 + 0.2, G + 2.0, SPUR.z + SPUR.half + 0.4); sign.rotation.y = Math.PI / 2; g.add(sign);
+  const signPost = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2, 0.1), dark); signPost.position.set(x0 + 0.2, G + 1, SPUR.z + SPUR.half + 0.4); g.add(signPost);
+  let open = 0, pearlsOut = false;
+  return {
+    get open() { return progress.pier; },
+    // Pearls along the pier, once it is open (one set each visit).
+    lay() {
+      if (pearlsOut) return; pearlsOut = true;
+      for (const d of [10, 20, 31]) {
+        const mesh = clamWithPearl(); const x = x0 - d, z = SPUR.z + (d % 2 ? 0.5 : -0.5);
+        mesh.position.set(x, G, z); mesh.scale.setScalar(1.4); scene.add(mesh); landPearls.push({ mesh, x, z, taken: false });
+      }
+    },
+    update(dt) {
+      const want = progress.pier ? 1 : 0;
+      open += Math.sign(want - open) * Math.min(Math.abs(want - open), dt * 1.5);
+      for (const L of leaves) L.hinge.rotation.y = L.s * open * 1.6;
+    },
+  };
+})();
+pierOpen = () => progress.pier;
+if (progress.pier) pier.lay();
+let pierHint = 0;
+function pierGate(dt) {
+  pier.update(dt);
+  pierHint -= dt;
+  const atGate = wally.pos.x < -PATH.half + 1.4 && Math.abs(wally.pos.z - SPUR.z) < 2.2 && wally.pos.y > G - 0.4;
+  if (!atGate || progress.pier || pierHint > 0) return;
+  pierHint = 4;
+  const r = openPier(progress);
+  if (r.ok) {
+    progress = r.progress;
+    try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
+    toast_(`The pier is open! (${PIER_PRICE} Golden Mangoes from Croc Park)`, 'good'); sound.play.powerup();
+    bubbles.say(wally.root, 'Ripper! Pearls out on the pier!', 3.4);
+    pier.lay();
+  } else toast_(`The pier opens for ${PIER_PRICE} Golden Mangoes from Croc Park (you have ${progress.mangoes || 0})`, 'info');
 }
 
 // Crawling out of the sea onto the boardwalk: from where he was to the deck's edge.
@@ -430,6 +510,7 @@ function step(dt, t) {
       if (e.type === 'empty') dropPearl(e.cluster);          // fed out to the last bite: a pearl for Wally
     }
   }
+  pierGate(dt);
   for (const p of landPearls) {
     if (p.taken) continue;
     p.mesh.userData.pearl.position.y = 0.16 + Math.sin(t * 3 + p.z) * 0.05;

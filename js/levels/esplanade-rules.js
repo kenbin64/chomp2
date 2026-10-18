@@ -7,6 +7,10 @@
 import { PEARL_POINTS, CHEST_POINTS } from './reef-rules.js';
 
 export const PATH = { half: 4.5, start: 0, finish: 480, ground: 1.4 };
+// The pier (Ken, 2026-10-18): a timber jetty out over the sea from the middle
+// of the timber section, opened with Golden Mangoes brought from Croc Park.
+export const SPUR = { z: 240, half: 1.6, length: 34 };
+export const onSpur = (x, z) => x < -PATH.half && x > -PATH.half - SPUR.length && Math.abs(z - SPUR.z) < SPUR.half;
 
 // What can be on the path. h: height (jump clear of it); r: reach around it;
 // w, d: width and depth for boxes; low: a branch Wally must go under on all fours.

@@ -94,40 +94,52 @@ check('every area has a postcard', AREAS.every(a => typeof POSTCARDS[a.id] === '
   check('areas already reached stay open', p.unlocked.includes('park') && p.unlocked.includes('esplanade'));
 }
 
-// The ticket chain (Ken): each level gives what the next one needs; finds are kept even after a failed run.
+// The chain (Ken, 2026-10-18): each level builds on the one before; finds are kept even after a failed run.
 {
   const P = await import('../js/progress.js');
   let p = P.freshProgress();
   check('the Esplanade needs the ranger badge', P.entryNeeds(p, 'esplanade').what === 'badge');
-  p = P.completeArea(p, 'park', { score: 50, stars: 1 });
-  check('finishing Croc Park gives the badge', p.badge && P.entryNeeds(p, 'esplanade') === null);
+  p = P.completeArea(p, 'park', { score: 50, stars: 1, mangoes: 6 });
+  check('finishing Croc Park gives the badge and banks its mangoes', p.badge && p.mangoes === 6 && P.entryNeeds(p, 'esplanade') === null);
+  // The Esplanade pier opens for mangoes brought from Croc Park.
+  check('the pier is shut to start with', !p.pier);
+  check('not enough mangoes: the pier stays shut', P.openPier(p).why === 'mangoes');
+  p = P.bankFinds(p, { mangoes: P.PIER_PRICE });
+  const pier = P.openPier(p);
+  check('with enough mangoes the pier opens, once, and they are spent', pier.ok && pier.progress.pier && pier.progress.mangoes === 6 && P.openPier(pier.progress).why === 'open');
+  p = pier.progress;
   check('the reef needs a pearl', P.entryNeeds(p, 'reef').what === 'pearls');
-  p = P.bankFinds(p, { mangoes: 12, pearls: 2 });                 // a failed Esplanade run still banks its finds
-  check('a failed run keeps its mangoes and pearls', p.mangoes === 12 && p.pearls === 2 && P.entryNeeds(p, 'reef') === null);
-  check('Kuranda needs the Skyrail fare in gold coins', P.entryNeeds({ ...p, coins: 3 }, 'kuranda').what === 'coins');
-  const rich = { ...p, coins: P.SKYRAIL_FARE + 2 };
-  check('with enough coins Kuranda is open', P.entryNeeds(rich, 'kuranda') === null);
-  const paid = P.payEntry(rich, 'kuranda');
-  check('the fare is paid once and the pass kept', paid.coins === 2 && paid.skyrail && P.entryNeeds({ ...paid, coins: 0 }, 'kuranda') === null);
-  check('paying again costs nothing', P.payEntry(paid, 'kuranda').coins === 2);
-  check('the Daintree needs a river-boat ticket', P.entryNeeds(paid, 'daintree').what === 'ticket');
-  check('the ticket needs enough mangoes', P.buyBoatTicket({ ...paid, mangoes: 10 }).why === 'mangoes');
-  const t = P.buyBoatTicket({ ...paid, mangoes: P.BOAT_TICKET_PRICE + 5 });
-  check('buying the ticket opens the Daintree', t.ok && t.progress.mangoes === 5 && P.entryNeeds(t.progress, 'daintree') === null);
+  p = P.bankFinds(p, { pearls: 2 });                               // a failed Esplanade run still banks its finds
+  check('a failed run keeps its pearls, and the reef is open', p.pearls === 2 && P.entryNeeds(p, 'reef') === null);
+  // The reef gives seashells; clearing it earns the Skyrail pass.
+  check('Kuranda needs the Skyrail pass', P.entryNeeds(p, 'kuranda').what === 'skyrail');
+  p = P.bankFinds(p, { shells: 5 });
+  check('a failed reef dive keeps its shells but not the pass', p.shells === 5 && P.entryNeeds(p, 'kuranda').what === 'skyrail');
+  p = P.completeArea(p, 'reef', { score: 80, stars: 1, shells: 4 });
+  check('clearing the reef earns the Skyrail pass', p.skyrail && p.shells === 9 && P.entryNeeds(p, 'kuranda') === null);
+  // Kuranda: the vendor buys mangoes and shells for gold; gold buys the boat ticket.
+  const sold = P.sellToVendor(p, { mangoes: 4, shells: 9 });
+  check('the vendor pays gold for mangoes and shells', sold.gold === 4 * P.VENDOR_PAYS.mangoes + 9 * P.VENDOR_PAYS.shells && sold.progress.mangoes === 2 && sold.progress.shells === 0 && sold.progress.coins === sold.gold);
+  check('you cannot sell what you do not have', P.sellToVendor(p, { shells: 99 }).progress.shells === 0 && P.sellToVendor(p, { shells: 99 }).gold === 9 * P.VENDOR_PAYS.shells);
+  check('the Daintree needs a river-boat ticket', P.entryNeeds(sold.progress, 'daintree').what === 'ticket');
+  check('the ticket needs enough gold', P.buyBoatTicket({ ...sold.progress, coins: 3 }).why === 'gold');
+  const t = P.buyBoatTicket({ ...sold.progress, coins: P.BOAT_TICKET_PRICE + 5 });
+  check('buying the ticket with gold opens the Daintree', t.ok && t.progress.coins === 5 && P.entryNeeds(t.progress, 'daintree') === null);
   const back = P.readProgress(JSON.stringify(t.progress));
-  check('badge, coins, Skyrail pass and ticket are saved', back.badge && back.coins === 2 && back.skyrail && back.boatTicket);
+  check('badge, pier, shells, gold, Skyrail pass and ticket are saved', back.badge && back.pier && back.shells === 0 && back.coins === 5 && back.skyrail && back.boatTicket);
   check('an older save that finished the park still has its badge', P.readProgress(JSON.stringify({ unlocked: ['park', 'esplanade'], stars: { park: 2 } })).badge);
 }
 
 // Gear and tickets (Ken): the exception to complete outfits.
 {
   const P = await import('../js/progress.js');
-  const p0 = { ...P.freshProgress(), mangoes: 100 };
+  const p0 = { ...P.freshProgress(), mangoes: 100, coins: 100 };
   const c = P.buyExtra(p0, 'ticket-cruise');
   check('the river cruise ticket is the Daintree boat ticket', c.ok && c.progress.boatTicket && P.entryNeeds(c.progress, 'daintree') === null && P.hasExtra(c.progress, 'ticket-cruise'));
   check('cannot buy it twice', P.buyExtra(c.progress, 'ticket-cruise').why === 'owned');
   check('gear still to come cannot be bought yet', P.buyExtra(p0, 'boomerang').why === 'soon');
-  check('not enough mangoes', P.buyExtra({ ...p0, mangoes: 5 }, 'ticket-cruise').why === 'mangoes');
+  check('the cruise ticket is paid in gold', c.progress.coins === 100 - P.BOAT_TICKET_PRICE && c.progress.mangoes === 100);
+  check('not enough gold', P.buyExtra({ ...p0, coins: 5 }, 'ticket-cruise').why === 'gold');
   check('owned extras are saved', P.readProgress(JSON.stringify({ ...p0, extras: ['boomerang', 'nonsense'] })).extras.join() === 'boomerang');
 }
 
