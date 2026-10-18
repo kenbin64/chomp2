@@ -34,8 +34,11 @@ const GradeShader = {
 };
 
 export function createPost(renderer, scene, camera, quality) {
+  // Frame cost, for finding what is slow (window.__frame: draw calls and triangles last frame).
+  renderer.info.autoReset = false; window.__scene = scene;
+  const measure = draw => () => { renderer.info.reset(); draw(); window.__frame = { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }; };
   if (quality.name === 'low') {
-    return { render: () => renderer.render(scene, camera), setSize: () => {} };
+    return { render: measure(() => renderer.render(scene, camera)), setSize: () => {} };
   }
   // Effects work at the real drawing size: the screen size times the pixel ratio
   // (2 on high, where the game draws at double size for sharpness).
@@ -66,7 +69,7 @@ export function createPost(renderer, scene, camera, quality) {
   composer.addPass(new OutputPass());                 // tone mapping and colour space, as the plain render had
   composer.addPass(new ShaderPass(GradeShader));
   return {
-    render: () => composer.render(),
+    render: measure(() => composer.render()),
     setSize: (w, h) => composer.setSize(w, h),          // the composer resizes every effect, pixel ratio included
   };
 }

@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { addSky, addLights, addRanges } from '../world.js';
 import { marketStall, queenslander, overStreet, setMarketNight, bakeStall, stockedCanopy, placeModel, paverTexture, leafCanopy, chalkboard, clothesRack, edgeRocks } from './kuranda-market.js';
 import { shopVariant, WALLS, ROOFS, NAMES } from './kuranda-shops.js';
+import { forestTiles, bandCells } from '../forest-tiles.js';
 import { Trees } from '../trees.js';
 import { Grass } from '../grass.js';
 import { surfaceMaterial, applySky } from '../realism.js';
@@ -163,10 +164,14 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
   // The rainforest: Ken's trees, thick beyond the village.
   const trees = new Trees(scene, { light: q.name === 'low' });
   // Ken: not a lot of trees, just dense enough to cover everything: fewer, bigger trees.
-  const count = q.name === 'high' ? 420 : q.name === 'medium' ? 300 : 160;
+  // Ken's rainforest tile, in a grid round the village: the thick canopy close by
+  // (the tree pictures carry on further out, where they are cheaper).
+  const tile = models.get('rainforest-tile');
+  if (tile) forestTiles(scene, tile, bandCells(24, q.name === 'low' ? 44 : 58, STREET.z0 - 30, STREET.z1 + 30, 14), 14);
+  const count = tile ? (q.name === 'high' ? 260 : q.name === 'medium' ? 180 : 100) : (q.name === 'high' ? 420 : q.name === 'medium' ? 300 : 160);
   for (let n = 0, tries = 0; n < count && tries < count * 10; tries++) {
     const x = (rnd() * 2 - 1) * 120, z = STREET.z0 - 40 + rnd() * (len + 120);
-    if (Math.abs(x) < 22 && z > STREET.z0 - 6 && z < STREET.z1 + 6) continue;   // the forest closes in right behind the buildings
+    if (Math.abs(x) < (tile ? 58 : 22) && z > STREET.z0 - 6 && z < STREET.z1 + 6) continue;   // the forest closes in right behind the buildings (the tiles do the near part)
     const r = rnd();
     if (r < 0.55) trees.add('umbrella', x, 0, z, 16 + rnd() * 8);
     else if (r < 0.85) trees.add('eucalyptus', x, 0, z, 22 + rnd() * 12);
