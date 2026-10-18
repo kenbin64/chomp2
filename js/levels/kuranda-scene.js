@@ -5,6 +5,7 @@
 // trail to Barron Falls. Stalls, shopfronts and gondolas are built here as
 // placeholders until Ken's Meshy models arrive (MODELS.md, Kuranda section).
 
+import { fitText } from '../signtext.js';
 import * as THREE from 'three';
 import { addSky, addLights, addRanges } from '../world.js';
 import { marketStall, queenslander, overStreet, setMarketNight, bakeStall } from './kuranda-market.js';
@@ -153,7 +154,7 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
   for (const s of [-1, 1]) { const p = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.5, 5, 0.5), timber)); p.position.set(s * (STREET.half + 0.3), 2.5, 0); gate.add(p); }
   const beam = shadowed(new THREE.Mesh(new THREE.BoxGeometry(STREET.half * 2 + 1.6, 0.6, 0.6), timber)); beam.position.y = 5; gate.add(beam);
   const sign = document.createElement('canvas'); sign.width = 512; sign.height = 96;
-  { const g = sign.getContext('2d'); g.fillStyle = '#3d2a18'; g.fillRect(0, 0, 512, 96); g.fillStyle = '#f6e7c4'; g.font = 'bold 52px "Trebuchet MS", sans-serif'; g.textAlign = 'center'; g.fillText('Barron Falls trail', 256, 64); }
+  { const g = sign.getContext('2d'); g.fillStyle = '#3d2a18'; g.fillRect(0, 0, 512, 96); g.fillStyle = '#f6e7c4'; g.textAlign = 'center'; fitText(g, 'Barron Falls trail', 256, 64, 470, 52, 'bold {size}px "Trebuchet MS", sans-serif'); }
   const signTex = new THREE.CanvasTexture(sign); signTex.colorSpace = THREE.SRGBColorSpace;
   const board = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.1), mat(0xffffff, { map: signTex })); board.position.set(0, 4.1, -0.32); board.rotation.y = Math.PI; gate.add(board);
   const bar = shadowed(new THREE.Mesh(new THREE.BoxGeometry(STREET.half * 2, 0.15, 0.15), mat(0xd8452f))); bar.position.y = 1.1; gate.add(bar);

@@ -3,6 +3,7 @@
 // the sign, palms, the marina beyond, and flying foxes overhead.
 // Scenery only. Where Wally may go is decided in rules.js.
 
+import { fitText } from './signtext.js';
 import * as THREE from 'three';
 import { LAGOON, BANK_Y, BOARDWALK, ROCKS, lagoonDistance, terrainHeight, deckHeight, deckOpenAt, PARK_EDGE } from './rules.js';
 import { signTexture, skyTexture, plankTexture, horizonTexture } from './textures.js';
@@ -357,8 +358,8 @@ function addGate(scene) {
   beam.position.y = 3.5; g.add(beam);
   const [c, ctx] = (() => { const cv = document.createElement('canvas'); cv.width = 512; cv.height = 96; return [cv, cv.getContext('2d')]; })();
   ctx.fillStyle = '#2f6b3a'; ctx.fillRect(0, 0, 512, 96);
-  ctx.fillStyle = '#fff6d8'; ctx.font = 'bold 44px "Trebuchet MS", sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('To the Esplanade', 256, 62);
+  ctx.fillStyle = '#fff6d8'; ctx.textAlign = 'center';
+  fitText(ctx, 'To the Esplanade', 256, 62, 470, 44, 'bold {size}px "Trebuchet MS", sans-serif');
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   for (const side of [-1, 1]) {
     const board = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 0.68), mat(0xffffff, { map: tex }));

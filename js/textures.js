@@ -3,6 +3,7 @@
 // so the game ships with no image files: the shirt, the sign, the jar label,
 // the sky and the boardwalk planks.
 
+import { fitText } from './signtext.js';
 import * as THREE from 'three';
 
 function canvas(w, h) {
@@ -66,8 +67,7 @@ export function signTexture() {
   }
   g.fillStyle = '#fbf3e4';
   g.textAlign = 'center';
-  g.font = 'bold 82px "Trebuchet MS", sans-serif';
-  g.fillText('Wally the Cairns Crocodile', 512, 110);
+  fitText(g, 'Wally the Cairns Crocodile', 512, 110, 960, 82, 'bold {size}px "Trebuchet MS", sans-serif');
   g.font = 'bold 96px "Trebuchet MS", sans-serif';
   g.fillText("Please DON'T", 512, 290);
   g.fillText('feed the croc.', 512, 420);

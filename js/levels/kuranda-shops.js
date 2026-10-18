@@ -9,6 +9,7 @@
 // vary a little so the row never looks stamped out.
 
 import * as THREE from 'three';
+import { fitText } from '../signtext.js';
 
 // Heritage colours for weatherboards, iron roofs, and the names on the boards.
 export const WALLS = ['#e9dcc0', '#cfe0cf', '#cfdde8', '#f1e3a6', '#e8c3a8', '#e2d2ea', '#f4efe4'];
@@ -23,7 +24,7 @@ function board(text) {
   g.fillStyle = '#2b3a2e'; g.fillRect(0, 0, 512, 128);
   g.strokeStyle = '#e8d9a8'; g.lineWidth = 5; g.strokeRect(8, 8, 496, 112);
   g.fillStyle = '#f3e6c0'; g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.font = `bold ${text.length > 16 ? 46 : 56}px Georgia, "Times New Roman", serif`; g.fillText(text.toUpperCase(), 256, 66);
+  fitText(g, text.toUpperCase(), 256, 66, 460, 58, 'bold {size}px Georgia, "Times New Roman", serif');   // always fits inside the frame
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
   return new THREE.Mesh(new THREE.PlaneGeometry(1, 0.25), new THREE.MeshStandardMaterial({ map: t, roughness: 0.7 }));
 }

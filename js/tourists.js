@@ -195,13 +195,11 @@ export function peopleModels(models) {
   return list;
 }
 
-// The people in one scene (Ken: the same character is never in a scene twice).
-// Each model can be worn by one visitor at a time. Groups that throw food are
-// dressed first; strollers get whoever is left. When nobody is free, a lender
-// (a stroller, then the biggest group) gives someone up for a group that has
-// nobody; when a group leaves, its people come back.
+// The people made for a level (Ken, corrected: the same person can appear in
+// different groups and parts of a level, just never twice in the same group).
 export class Cast {
   constructor(list) {
+    this.all = [...list];
     this.free = [...list];
     for (let i = this.free.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [this.free[i], this.free[j]] = [this.free[j], this.free[i]]; }
     this.lenders = [];
@@ -247,21 +245,11 @@ export class Tourists {
   // Wear Ken's people from the scene's Cast: only as many strollers as there
   // are people left over (no one twice in a scene), the rest stay home.
   useModels(cast) {
-    if (!cast) return;
-    this.scene = this.scene || this.list[0]?.body.g.parent;
-    for (const t of [...this.list]) {
-      const g = cast.take();
-      if (g) t.skin = wearModel(t.body, g);
-      else { t.body.g.removeFromParent(); this.list.splice(this.list.indexOf(t), 1); }
-    }
-    // A group with nobody to throw can borrow a stroller.
-    cast.lenders.push(() => {
-      const t = this.list.find(x => x.state === 'walk' && x.skin);
-      if (!t) return null;
-      t.body.g.removeFromParent(); this.list.splice(this.list.indexOf(t), 1);
-      return t.skin.cast;
-    });
+    const list = Array.isArray(cast) ? cast : cast && cast.all ? cast.all : [];
+    if (!list.length) return;
+    this.list.forEach((t, i) => { t.skin = wearModel(t.body, list[(i + Math.floor(Math.random() * list.length)) % list.length]); });
   }
+
 
   // Ask the nearest free tourist to throw at Wally. Returns true if one agreed.
   requestThrow(wallyPos) {

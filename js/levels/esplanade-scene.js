@@ -4,6 +4,7 @@
 // other (+x), and the Lagoon pool at the finish. Scenery and the obstacle
 // models only; what happens is in esplanade.js.
 
+import { fitText } from '../signtext.js';
 import * as THREE from 'three';
 import { PATH } from './esplanade-rules.js';
 import { addSky, addLights, addHorizon, addRanges, palm } from '../world.js';
@@ -270,8 +271,8 @@ function addLagoon(scene) {
   }
   const sign = canvasTexture(1024, 256, (g, w, h) => {
     g.fillStyle = '#1d5f73'; g.fillRect(0, 0, w, h);
-    g.fillStyle = '#ffffff'; g.font = 'bold 120px "Trebuchet MS", sans-serif'; g.textAlign = 'center';
-    g.fillText('Esplanade Lagoon', w / 2, 170);
+    g.fillStyle = '#ffffff'; g.textAlign = 'center';
+    fitText(g, 'Esplanade Lagoon', w / 2, 170, w - 80, 120, 'bold {size}px "Trebuchet MS", sans-serif');
   });
   const board = shadowed(new THREE.Mesh(new THREE.BoxGeometry(8, 2, 0.2), [mat(0x1d5f73), mat(0x1d5f73), mat(0x1d5f73), mat(0x1d5f73), mat(0xffffff, { map: sign }), mat(0x1d5f73)]));
   board.position.set(0, G + 5, z0 + 2); board.rotation.y = Math.PI;                // faces back down the promenade

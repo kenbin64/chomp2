@@ -16,6 +16,7 @@
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { fitText } from '../signtext.js';
 
 // ---- Painted textures ---------------------------------------------------------------------
 const cache = new Map();
@@ -92,8 +93,7 @@ function signTex(text, bg, fg) {
     g.fillStyle = bg; g.fillRect(0, 0, w, h);
     for (let i = 0; i < 60; i++) { g.fillStyle = `rgba(0,0,0,${rand() * 0.08})`; g.fillRect(0, rand() * h, w, 1 + rand() * 2); }
     g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = 'italic bold 62px "Comic Sans MS", "Segoe Print", "Trebuchet MS", cursive';
-    g.fillText(text, w / 2, h / 2 + 4);
+    fitText(g, text, w / 2, h / 2 + 4, w - 64, 66, 'italic bold {size}px "Comic Sans MS", "Segoe Print", "Trebuchet MS", cursive');   // always fits inside the border
     g.strokeStyle = fg; g.lineWidth = 4; g.strokeRect(10, 10, w - 20, h - 20);
   });
 }

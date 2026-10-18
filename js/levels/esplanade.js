@@ -8,6 +8,7 @@
 // leave pearls, which carry on to the Great Barrier Reef. In the sea he can
 // swim under water (air meter) and crawl back up onto the boardwalk.
 
+import { fitText } from '../signtext.js';
 import { installGear, snorkelling, drainFactor } from '../gear.js';
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
@@ -295,8 +296,8 @@ const pier = (() => {
   });
   const c = document.createElement('canvas'); c.width = 512; c.height = 256;
   const cx = c.getContext('2d'); cx.fillStyle = '#2f5d50'; cx.fillRect(0, 0, 512, 256); cx.fillStyle = '#fff4d6'; cx.textAlign = 'center';
-  cx.font = 'bold 64px "Trebuchet MS", sans-serif'; cx.fillText('The Pier', 256, 95);
-  cx.font = '40px "Trebuchet MS", sans-serif'; cx.fillText(`Open: ${PIER_PRICE} Golden Mangoes`, 256, 170);
+  fitText(cx, 'The Pier', 256, 95, 460, 64, 'bold {size}px "Trebuchet MS", sans-serif');
+  fitText(cx, `Open: ${PIER_PRICE} Golden Mangoes`, 256, 170, 470, 40, '{size}px "Trebuchet MS", sans-serif');
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.1), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 }));
   sign.position.set(x0 + 0.2, G + 2.0, SPUR.z + SPUR.half + 0.4); sign.rotation.y = Math.PI / 2; g.add(sign);

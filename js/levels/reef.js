@@ -7,6 +7,7 @@
 // to the surface wins. Pearls carry over from the Esplanade (progress.pearls).
 // Rules: reef-rules.js (tested). Scenery under water: reef-scene.js.
 
+import { fitText } from '../signtext.js';
 import { installGear, snorkelling } from '../gear.js';
 import * as THREE from 'three';
 import { Water } from 'three/addons/objects/Water.js';
@@ -151,7 +152,7 @@ const islandTrees = new Trees(scene, { light });
   // A sign at the end of the jetty, pointing out to the reef.
   const c = document.createElement('canvas'); c.width = 512; c.height = 160; const g2 = c.getContext('2d');
   g2.fillStyle = '#1d5f73'; g2.fillRect(0, 0, 512, 160); g2.fillStyle = '#fff6d8'; g2.textAlign = 'center';
-  g2.font = 'bold 50px "Trebuchet MS", sans-serif'; g2.fillText('Reef dive', 256, 70); g2.font = '32px "Trebuchet MS", sans-serif'; g2.fillText('Coral cave this way', 256, 125);
+  fitText(g2, 'Reef dive', 256, 70, 470, 50, 'bold {size}px "Trebuchet MS", sans-serif'); fitText(g2, 'Coral cave this way', 256, 125, 470, 32, '{size}px "Trebuchet MS", sans-serif');
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.75), new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide }));
   sign.position.set(JETTY.x0 + 1.6, JETTY.y + 1.8, JETTY.z + JETTY.half - 0.1); sign.rotation.y = Math.PI; scene.add(sign);   // facing back up the jetty, so it reads the right way round
