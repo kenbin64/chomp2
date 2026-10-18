@@ -10,7 +10,7 @@
 
 import { readProgress, saveProgress } from './progress.js';
 import { makeOffer, giftText, pay, canPay, receive } from './trade-rules.js';
-import { bookEvent } from './book.js';
+import { bookEvent, bookFound } from './book.js';
 import { CLUSTER } from './rules.js';
 
 let panel = null, cfg = null, open = null;      // open: the cluster whose offer is showing
@@ -51,6 +51,7 @@ function accept() {
   cfg.toast(`Traded! ${giftText(c.offer.gift)} and a ${c.offer.souvenir.name}`);
   cfg.say(c, 'Pleasure doing business, mate!');
   bookEvent('gift');
+  if (c.offer.gift.kind === 'ability') bookFound(c.offer.gift.id); else if (c.offer.gift.kind === 'tokens') bookFound('token');
 }
 
 export function startTrading(options) { cfg = options; if (!panel) build(); }

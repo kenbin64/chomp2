@@ -1,6 +1,6 @@
 // Wally's Tourist Book (Ken, 2026-10-18): stamps, tiers by visit, abilities and hidden finds.
 import { STAMPS, LANDS, ABILITIES, MAX_LEVEL, UPGRADE_COST, abilityLevel, abilityValue, upgradeAbility, upgradeCost,
-         countVisit, tierFor, openStamps, award, StampRun, hiddenReward, applyReward } from '../js/book-rules.js';
+         countVisit, tierFor, openStamps, award, StampRun, hiddenReward, applyReward, ITEMS, discover, EVENT_ITEM } from '../js/book-rules.js';
 import { freshProgress, readProgress } from '../js/progress.js';
 
 let pass = 0, fail = 0;
@@ -63,6 +63,15 @@ check('with every ability at the top, it gives tokens', hiddenReward(seq(0.1), m
 const saved = readProgress(JSON.stringify({ ...q, abilities: { swisher: 2, bogus: 9 }, visits: { park: 4 }, tokens: 3 }));
 check('stamps, tokens, abilities and visits are saved', saved.stamps.includes('park-chest') && saved.tokens === 3 && saved.abilities.swisher === 2 && !('bogus' in saved.abilities) && saved.visits.park === 4);
 check('an older save starts with an empty book', readProgress(JSON.stringify({ unlocked: ['park'] })).stamps.length === 0);
+
+// Things found: the book opens on each the first time only, and lists it after.
+check('every thing says what it is and what it can do', ITEMS.every(i => i.name && i.is && i.does && i.icon));
+check('item ids are unique', new Set(ITEMS.map(i => i.id)).size === ITEMS.length);
+check('every event names a real thing', Object.values(EVENT_ITEM).every(id => ITEMS.some(i => i.id === id)));
+const d1 = discover(freshProgress(), 'mango');
+check('the first mango is news', d1.first && d1.progress.discovered.includes('mango'));
+check('the second is not', !discover(d1.progress, 'mango').first);
+check('things found are saved', readProgress(JSON.stringify(d1.progress)).discovered.includes('mango'));
 
 console.log(`${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

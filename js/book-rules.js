@@ -117,3 +117,27 @@ export function applyReward(progress, r) {
   if (r.kind === 'ability') return { ...progress, abilities: { ...(progress.abilities || {}), [r.id]: Math.min(MAX_LEVEL, abilityLevel(progress, r.id) + 1) } };
   return { ...progress, tokens: (progress.tokens || 0) + r.n };
 }
+
+// ---- Things found (Ken, 2026-10-18) ---------------------------------------------------------
+// The first time Wally gets each kind of thing, the book opens on it: what it
+// is and what it can do. It stays listed in the book after.
+export const ITEMS = [
+  { id: 'mango',     icon: '🥭', name: 'Golden Mango',   is: 'A ripe golden mango, found about Croc Park and along the Esplanade.', does: 'Opens the Esplanade pier (8 of them), buys outfits, and the Kuranda trader pays gold for them.' },
+  { id: 'lostThing', icon: '🕶️', name: 'Lost things',    is: 'Sunnies, a ring, a watch, a phone and a bangle that visitors dropped into the lagoon.', does: 'Find all five on the lagoon bottom and the treasure chest opens.' },
+  { id: 'jar',       icon: '🫙', name: "Kenny's jar",     is: "Kenny's jar of black spread: a scoop of it does wonders.", does: 'Fills the feed-o-meter right up. Under half full, go and find Kenny for a scoop.' },
+  { id: 'pearl',     icon: '⚪', name: 'Pearl',           is: 'A pearl, left by happy picnickers, found out on the pier and down in the coral cave.', does: 'Opens the giant clam at the reef. Esplanade traders take them too.' },
+  { id: 'shell',     icon: '🐚', name: 'Seashell',        is: 'Cowries and conch shells from the Great Barrier Reef.', does: 'The Kuranda shell and mango trader pays 2 gold for each one.' },
+  { id: 'gold',      icon: '🪙', name: 'Gold piece',      is: 'Gold, from the Kuranda trader or dropped by visitors along the market street.', does: 'Buys the river-boat ticket to the Daintree. Kuranda traders take it too.' },
+  { id: 'token',     icon: '🎟️', name: 'Tourist Token',   is: 'A token for every stamp, hidden find and favour done.', does: "Spend them on Wally's page to grow his abilities." },
+  { id: 'hidden',    icon: '📦', name: 'Hidden find',     is: 'A crate tucked away somewhere; it only shows when Wally is close.', does: 'Holds Tourist Tokens or a level of one of his abilities.' },
+  { id: 'souvenir',  icon: '🎁', name: 'Souvenir',        is: 'A keepsake from a friendly trader.', does: "Kept on the souvenir shelf on Wally's page: collect them all." },
+  ...ABILITIES.map(a => ({ id: a.id, icon: a.icon, name: a.name, is: 'One of Wally\'s abilities, with three levels.', does: a.about })),
+];
+// The first time a thing is found: { progress, first }.
+export function discover(progress, id) {
+  const have = progress.discovered || [];
+  if (have.includes(id) || !ITEMS.some(i => i.id === id)) return { progress, first: false };
+  return { progress: { ...progress, discovered: [...have, id] }, first: true };
+}
+// Which thing a game event means (book.js discovers it on the first one).
+export const EVENT_ITEM = { mango: 'mango', pearl: 'pearl', shell: 'shell', conch: 'shell', gold: 'gold', hidden: 'hidden', jar: 'jar', gift: 'souvenir', lostThing: 'lostThing', sell: 'gold' };

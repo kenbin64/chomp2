@@ -632,6 +632,7 @@ function treasureStep(dt, t) {
   }
   for (const e of treasure.update(dt, t, wally.pos.x, wally.pos.z, wally.pos.y)) {
     if (e.type === 'found') {
+      bookEvent('lostThing');
       sound.play.goal(); game.score += 50;
       const left = treasure.total - treasure.found;
       toast(left ? `Found: ${e.thing.name}! ${left} more down here` : `Found: ${e.thing.name}! That's the lot: now the chest`, 'good');

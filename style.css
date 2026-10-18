@@ -332,3 +332,13 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .tut-catch::after { left: 30px; top: 70px; width: 30px; height: 10px; background: #a8743f; border-radius: 10px; animation: tut-fly 2s linear infinite; }
 @keyframes ring-beat { from { transform: scale(0.9); } to { transform: scale(1.08); } }
 @keyframes tut-fly { from { transform: translateX(0) rotate(0); } to { transform: translateX(130px) rotate(1440deg); } }
+/* The book shows a fresh stamp going in, and a thing found for the first time (Ken) */
+.book-stamp.fresh.got { animation: stamp-thump 0.7s cubic-bezier(.2,1.6,.4,1) both; box-shadow: 0 0 0 3px #ffd166, 0 8px 24px rgba(226,87,76,0.45); }
+.book-stamp.fresh.got .ink { animation: ink-in 0.7s ease-out both; }
+@keyframes stamp-thump { 0% { transform: scale(2.2) rotate(-14deg); opacity: 0; } 60% { transform: scale(0.92) rotate(-1deg); opacity: 1; } 100% { transform: scale(1) rotate(-1deg); } }
+@keyframes ink-in { from { background: #e2574c; color: #fff; } to { background: transparent; } }
+.book-item.fresh { animation: item-glow 1.4s ease-in-out 2; box-shadow: 0 0 0 3px #ffd166; }
+@keyframes item-glow { 50% { box-shadow: 0 0 0 3px #ffd166, 0 0 28px #ffd166; } }
+.book-news { display: grid; grid-template-columns: 70px 1fr; gap: 12px; align-items: center; padding: 12px 16px; margin: 6px 0 14px; border-radius: 16px; background: rgba(255,209,102,0.12); border: 2px solid #ffd166; animation: news-in 0.5s ease-out; }
+.book-news .big { font-size: 52px; text-align: center; } .book-news b { font-size: 22px; color: #ffd166; } .book-news p { margin: 4px 0; } .book-news .does { color: #8fd3c7; font-weight: 700; }
+@keyframes news-in { from { transform: translateY(-12px); opacity: 0; } to { transform: none; opacity: 1; } }

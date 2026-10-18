@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import { readProgress, saveProgress } from './progress.js';
 import { pickQuest, nextStage, questReward } from './sidequest-rules.js';
 import { makeOffer, giftText, applyGift } from './trade-rules.js';
-import { bookEvent, ability } from './book.js';
+import { bookEvent, bookFound, ability } from './book.js';
 import { Pickups } from './pickups.js';
 
 let q = null, panel = null, cfg = null;
@@ -79,6 +79,7 @@ export function questStep(dt, t, events, pos) {
       say(`"You little ripper! Thanks for the ${q.quest.thing}." You get 3 Tourist Tokens and ${giftText(gift)}.`, 'No worries!');
       cfg.say(q.giver, 'Legend! Thanks, Wally!');
       bookEvent('sidequest');
+      bookFound(gift.kind === 'ability' ? gift.id : 'token');
     } else if (q.stage === 'asked') say(`"Any luck with my ${q.quest.thing}, Wally?"`, 'On it!');
   }
   if (q.item && q.stage === 'asked') {

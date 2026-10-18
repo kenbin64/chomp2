@@ -16,10 +16,12 @@ import * as THREE from 'three';
 import { readProgress, OUTFITS, saveProgress } from './progress.js';
 import { SOUVENIRS } from './trade-rules.js';
 import { STAMPS, LANDS, ABILITIES, MAX_LEVEL, abilityLevel, abilityValue, upgradeAbility, upgradeCost,
-         countVisit, tierFor, openStamps, award, StampRun, hiddenReward, applyReward } from './book-rules.js';
+         countVisit, tierFor, openStamps, award, StampRun, hiddenReward, applyReward, ITEMS, discover, EVENT_ITEM } from './book-rules.js';
 
 const LAND_NAMES = { park: 'Croc Park', esplanade: 'The Esplanade', reef: 'Great Barrier Reef', kuranda: 'Kuranda' };
-let modal = null, onPause = null, land = null, run = null, tab = 'stamps', banner = null;
+let modal = null, onPause = null, land = null, run = null, tab = 'stamps';
+// What the book has to show the player (Ken): a stamp going in, or a thing found for the first time.
+const queue = []; let focus = null;
 
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function load() { return readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); }
@@ -30,23 +32,35 @@ function save(p) { known = p.abilities || {}; saveProgress(p); }
 // The value an ability gives now (1 when he does not have it).
 export function ability(id) { if (!known) known = load().abilities || {}; return abilityValue({ abilities: known }, id); }
 
-// Something happened in this land. Stamps any challenge it completes.
+// Something happened in this land. The first of each kind of thing opens the
+// book on it, and any stamp it earns is stamped in the book in front of the
+// player (Ken: the book comes up and stamps it, so they can see it).
 export function bookEvent(event, n = 1) {
+  if (EVENT_ITEM[event]) bookFound(EVENT_ITEM[event]);
   if (!run) return [];
   let p = load();
   const ids = run.record(event, openStamps(p, land), n);
-  for (const id of ids) { p = award(p, id); notify(STAMPS.find(s => s.id === id)); }
-  if (ids.length) save(p);
+  for (const id of ids) { p = award(p, id); queue.push({ stamp: id }); }
+  if (ids.length) { save(p); bookFound('token'); }
+  showNext();
   return ids;
 }
 
-// A banner across the top: "Stamp! ..." with the stamp's name.
-function notify(stamp) {
-  if (!banner) { banner = el('div', 'book-banner'); document.body.append(banner); }
-  const b = el('div', 'book-stamp-note');
-  b.append(el('b', null, 'Stamp!'), el('span', null, ` ${stamp.name}`), el('small', null, ' +1 Tourist Token'));
-  banner.append(b);
-  setTimeout(() => b.remove(), 3200);
+// A thing got for the first time: the book opens on what it is and what it does. Only the first time.
+export function bookFound(id) {
+  const r = discover(load(), id);
+  if (!r.first) return false;
+  save(r.progress);
+  queue.push({ item: id });
+  showNext();
+  return true;
+}
+
+// Show what is waiting, one at a time (the next when the book is closed).
+function showNext() {
+  if (!queue.length || (modal && !modal.hidden)) return;
+  focus = queue.shift();
+  openBook(focus.stamp ? 'stamps' : 'items');
 }
 
 // ---- The book --------------------------------------------------------------------------
@@ -55,7 +69,7 @@ function build() {
   const card = el('div', 'card book-card');
   const close = el('button', 'map-close', '✕'); close.type = 'button'; close.setAttribute('aria-label', 'Close the book'); close.onclick = closeBook;
   const tabs = el('div', 'book-tabs');
-  for (const [id, label] of [['stamps', 'Stamps'], ['wally', "Wally's page"]]) {
+  for (const [id, label] of [['stamps', 'Stamps'], ['items', 'Things found'], ['wally', "Wally's page"]]) {
     const b = el('button', 'book-tab', label); b.type = 'button'; b.dataset.tab = id; b.onclick = () => { tab = id; render(); }; tabs.append(b);
   }
   card.append(close, el('h1', null, "Wally's Tourist Book"), tabs, el('div', 'book-body'));
@@ -74,7 +88,7 @@ function stampsPage(p, body) {
     const grid = el('div', 'book-grid');
     for (const s of STAMPS.filter(x => x.land === L)) {
       const got = have.includes(s.id), locked = s.visit > tier;
-      const c = el('div', `book-stamp ${got ? 'got' : locked ? 'locked' : 'open'}`);
+      const c = el('div', `book-stamp ${got ? 'got' : locked ? 'locked' : 'open'}${focus && focus.stamp === s.id ? ' fresh' : ''}`); c.dataset.stamp = s.id;
       if (got) c.append(el('span', 'ink', '✓'), el('b', null, s.name), el('small', null, s.how));
       else if (locked) c.append(el('span', 'ink', '?'), el('b', null, `Visit ${s.visit}`), el('small', null, 'Come back to open this one'));
       else c.append(el('span', 'ink', '○'), el('b', null, s.name), el('small', null, s.how));
@@ -114,10 +128,34 @@ function wallyPage(p, body) {
   body.append(shelf);
 }
 
+// Things found: what each is and what it can do, once he has had one.
+function itemsPage(p, body) {
+  const have = p.discovered || [];
+  body.append(el('p', 'fine', `${have.length} of ${ITEMS.length} things found`));
+  if (focus && focus.item) {
+    const it = ITEMS.find(i => i.id === focus.item);
+    const news = el('div', 'book-news');
+    news.append(el('span', 'big', it.icon), el('div'));
+    news.lastChild.append(el('b', null, `New: ${it.name}`), el('p', null, it.is), el('p', 'does', it.does));
+    body.append(news);
+  }
+  const grid = el('div', 'book-grid');
+  for (const it of ITEMS) {
+    const got = have.includes(it.id);
+    const c = el('div', `book-stamp book-item ${got ? 'got' : 'locked'}${focus && focus.item === it.id ? ' fresh' : ''}`);
+    if (got) c.append(el('span', 'ink', it.icon), el('b', null, it.name), el('small', null, it.does));
+    else c.append(el('span', 'ink', '?'), el('b', null, 'Not found yet'), el('small', null, 'Keep exploring'));
+    grid.append(c);
+  }
+  body.append(grid);
+}
+
 function render() {
   const p = load(), body = modal.querySelector('.book-body'); body.innerHTML = '';
   modal.querySelectorAll('.book-tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-  if (tab === 'stamps') stampsPage(p, body); else wallyPage(p, body);
+  if (tab === 'stamps') stampsPage(p, body); else if (tab === 'items') itemsPage(p, body); else wallyPage(p, body);
+  const fresh = body.querySelector('.fresh');
+  if (fresh) requestAnimationFrame(() => fresh.scrollIntoView({ block: 'center', behavior: 'smooth' }));
 }
 
 export function openBook(which = null) {
@@ -126,7 +164,12 @@ export function openBook(which = null) {
   render(); modal.hidden = false;
   if (onPause) onPause(true);
 }
-export function closeBook() { if (!modal || modal.hidden) return; modal.hidden = true; if (onPause) onPause(false); }
+export function closeBook() {
+  if (!modal || modal.hidden) return;
+  modal.hidden = true; focus = null;
+  if (onPause) onPause(false);
+  if (queue.length) setTimeout(showNext, 350);           // the next stamp or thing, if more are waiting
+}
 
 // On every page. here: the land being played (or null on menus). pause(on): the page's own pause.
 // Counts this as a visit (opening the next tier of challenges on a return).
@@ -180,6 +223,7 @@ export class HiddenFinds {
         const a = r.kind === 'ability' && ABILITIES.find(x => x.id === r.id);
         out.push({ text: a ? `Hidden find: ${a.name}, now level ${abilityLevel(p, a.id)}!` : `Hidden find: ${r.n} Tourist Token${r.n > 1 ? 's' : ''}!` });
         bookEvent('hidden');
+        bookFound(a ? a.id : 'token');
         if (this.found === this.list.length) bookEvent('hiddenAll');
       }
     }
