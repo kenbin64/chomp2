@@ -51,6 +51,7 @@ function build() {
 
 function render() {
   const progress = progressNow(), visited = visitedNow();
+  modal.querySelector('h1').textContent = `${progress.crocName || 'Wally'}'s Big Trip`;
   const art = modal.querySelector('.tripmap-art'), box = modal.querySelector('.tripmap-info');
   const pins = art.querySelector('#tripmap-pins'), marks = art.querySelector('#tripmap-markers');
   pins.innerHTML = ''; marks.innerHTML = '';

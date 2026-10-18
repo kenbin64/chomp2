@@ -18,13 +18,13 @@ import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../qu
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
 import { installMap, recordVisit } from '../mapmodal.js';
+import { installShop, openShop } from '../shopmodal.js';
 import { showLeaderboard } from '../leaderboard.js';
 import { loadRealism } from '../realism.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone } from '../rules.js';
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
-import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, payEntry, WARDROBE, buyItem, wearItem, wearing,
-         buyBoatTicket, BOAT_TICKET_PRICE } from '../progress.js';
+import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, payEntry, WARDROBE, buyItem, wearItem, wearing, buyBoatTicket, BOAT_TICKET_PRICE, outfitModel } from '../progress.js';
 import { Clusters } from '../clusters.js';
 import { kennysJar } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
@@ -94,10 +94,9 @@ progress = payEntry(progress, 'kuranda');
 function save() { try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ } }
 save();
 
-// The Wally model to use: his own, or the fitted model of a garment he is wearing.
+// The Wally model to use: his own, or the model of a complete outfit he is wearing.
 function wallyModelName() {
-  try { const p = JSON.parse(localStorage.getItem('chomp-progress') || '{}'); const id = p.wardrobe && p.wardrobe.wear && p.wardrobe.wear.wally && p.wardrobe.wear.wally.shirt;
-        const item = WARDROBE.find(i => i.id === id); return (item && item.model) || 'wally'; } catch { return 'wally'; }
+  return outfitModel(readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()));
 }
 const wally = new Wally(scene);
 wally.facing = 0;
@@ -157,69 +156,8 @@ function throwFrom(hand) {
   return food.throw(randomKind(), hand, launchVelocity(hand, new THREE.Vector3(tx, ty, tz), flight));
 }
 
-// ---- The clothes stall ------------------------------------------------------------------
-function drawShop() {
-  $('shop-mangoes').textContent = progress.mangoes || 0;
-  const owned = (progress.wardrobe && progress.wardrobe.owned) || [];
-  for (const who of ['wally', 'kenny']) {
-    const list = $(`shop-${who}`); list.innerHTML = '';
-    const on = wearing(progress, who);
-    const GROUP = { shirt: 'Shirts', shorts: 'Board shorts', vest: 'Vests', hat: 'Hats', glasses: 'Sunnies', face: 'Masks', wig: 'Wigs', held: 'Boomerangs' };
-    let lastSlot = null;
-    for (const item of WARDROBE.filter(i => i.who === who)) {
-      if (item.slot !== lastSlot) { lastSlot = item.slot; const h = document.createElement('li'); h.className = 'grp'; h.textContent = GROUP[item.slot] || item.slot; list.append(h); }
-      const li = document.createElement('li');
-      const sw = document.createElement('span'); sw.className = 'sw';
-      const hex = c => '#' + c.toString(16).padStart(6, '0');
-      sw.style.background = item.needs ? '#555' : item.colour == null ? (who === 'wally' ? 'linear-gradient(135deg,#f06a2a,#ffd166)' : '#8a6a48')
-        : item.style === 'stripes' ? `repeating-linear-gradient(0deg, ${hex(item.colour)} 0 4px, ${hex(item.colour2)} 4px 8px)`
-        : item.style === 'disco' ? 'linear-gradient(135deg,#ff2fa8,#ffd23a,#39ff6a,#40c0ff,#d040ff)' : hex(item.colour);
-      if (item.style === 'neon') sw.style.boxShadow = `0 0 8px ${hex(item.colour)}`;
-      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = item.name;
-      li.append(sw, nm);
-      const wearingIt = Object.values(on).some(x => x && x.id === item.id);
-      if (item.needs) { const s = document.createElement('span'); s.className = 'soon'; s.textContent = 'Coming soon'; li.append(s); }
-      else if (wearingIt) { const s = document.createElement('span'); s.className = 'on'; s.textContent = 'Wearing'; li.append(s); }
-      else if (owned.includes(item.id)) {
-        const b = document.createElement('button'); b.className = 'wear'; b.type = 'button'; b.textContent = 'Wear';
-        b.onclick = () => { progress = wearItem(progress, item.id); save(); if (changeIfNeeded()) return; dressUp(); drawShop(); sound.play.goal(); };
-        li.append(b);
-      } else {
-        const b = document.createElement('button'); b.type = 'button'; b.textContent = `🥭 ${item.price}`;
-        b.disabled = (progress.mangoes || 0) < item.price;
-        b.onclick = () => {
-          const r = buyItem(progress, item.id);
-          if (r.ok) { progress = wearItem(r.progress, item.id); save(); if (changeIfNeeded()) return; dressUp(); sound.play.powerup(); bubbles.say(wally.root, 'Ripper! How do I look?', 3); }
-          drawShop();
-        };
-        li.append(b);
-      }
-      list.append(li);
-    }
-  }
-  const t = $('shop-ticket'); t.innerHTML = '';
-  const li = document.createElement('li');
-  const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = 'River-boat ticket';
-  li.append(nm);
-  if (progress.boatTicket) { const s = document.createElement('span'); s.className = 'on'; s.textContent = 'Got it'; li.append(s); }
-  else {
-    const b = document.createElement('button'); b.type = 'button'; b.textContent = `🥭 ${BOAT_TICKET_PRICE}`;
-    b.disabled = (progress.mangoes || 0) < BOAT_TICKET_PRICE;
-    b.onclick = () => { const r = buyBoatTicket(progress); if (r.ok) { progress = r.progress; save(); sound.play.powerup(); } drawShop(); };
-    li.append(b);
-  }
-  t.append(li);
-  $('shop-note').textContent = (progress.mangoes || 0) < 20 ? 'Short on mangoes? Collect Golden Mangoes on the Esplanade, then come back.' : '';
-}
-// Changing to or from a garment that has its own model needs the other Wally:
-// he pops into the changing room (the page reloads, coming back to the stall).
-function changeIfNeeded() {
-  if (wallyModelName() !== (window.__wallyModel || 'wally')) { save(); location.href = 'kuranda.html?play&changed=1'; return true; }
-  return false;
-}
-window.__wallyModel = wallyModelName();
-function openShop() { game.inShop = true; game.shopAway = false; drawShop(); $('shop').hidden = false; }
-$('shop-close').onclick = () => { $('shop').hidden = true; game.inShop = false; };
+// ---- The stalls: walking up to the clothes stall opens the outfit catalogue (shopmodal.js) ----
+window.chompDress = () => { progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); dressUp(); };
 
 // ---- One frame ----------------------------------------------------------------------
 const cam = { yaw: 0, pitch: 0.35, dist: 11, manual: 0, recenter: false, side: 'behind', still: 0 };
@@ -249,7 +187,7 @@ function step(dt, t) {
   // The clothes stall: walk up to it and it opens.
   const nearShop = Math.hypot(wally.pos.x - Math.sign(SHOP.x) * STREET.half, wally.pos.z - SHOP.z) < 3;
   if (!nearShop) game.shopAway = true;
-  if (nearShop && game.shopAway && !game.done) { openShop(); return; }
+  if (nearShop && game.shopAway && !game.done) { game.shopAway = false; openShop(); return; }
 
   // Shoppers.
   if (!game.done) for (const e of clusters.update(dt, t, wally.pos, throwFrom)) {
@@ -437,7 +375,7 @@ function makeBot() {
 let t = 0, last = performance.now();
 function frame() {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt;
-  if (game.running && !game.paused && !game.inShop) step(dt, t);
+  if (game.running && !game.paused) step(dt, t);
   bubbles.update(dt); fx.update(dt, t);
   world.update(t);
   followCamera(dt);
@@ -447,8 +385,8 @@ function frame() {
 }
 requestAnimationFrame(frame);
 if (params.has('play') || bot) start();
-if (params.has('changed')) { wally.pos.set(Math.sign(SHOP.x) * (STREET.half - 1.5), 0, SHOP.z - 3); setTimeout(() => bubbles.say(wally.root, 'Ripper! How do I look?', 3), 600); }
 
 // The map, from anywhere (mapmodal.js): the Map button or Tab. Play pauses while it is open.
 installMap({ pause: on => { if (game.running) game.paused = on; } });
+installShop({ pause: on => { if (game.running) game.paused = on; } });
 window.chompStartHere = () => { if (!game.running) start(); };

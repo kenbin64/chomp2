@@ -22,13 +22,14 @@ import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../qu
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
 import { installMap, recordVisit } from '../mapmodal.js';
+import { installShop, openShop } from '../shopmodal.js';
 import { showLeaderboard } from '../leaderboard.js';
 import { dressOutfit } from '../outfit.js';
 import { LIVES } from '../rules.js';
 import { HumanoidPoser } from '../rig.js';
 import { kennysJar, useJarModel } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
-import { readProgress, completeArea, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE } from '../progress.js';
+import { readProgress, completeArea, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE, outfitModel } from '../progress.js';
 import { makeMaze, makeReefMaze, mazePath, cellAt, cellCentre, collide, inMaze, airStep, AIR,
          SWIM_Y, SURFACE_Y, SEABED_Y, reefRunScore, REEF_STARS, PEARL_POINTS, CHEST_POINTS,
          LANES, LANE_NAMES, TREASURES, nextDepth, treasureSpots, canCollect } from './reef-rules.js';
@@ -173,10 +174,9 @@ const post = createPost(renderer, scene, camera, quality);
 addEventListener('resize', () => post.setSize(innerWidth, innerHeight));
 
 // ---- Characters ------------------------------------------------------------------
-// The Wally model to use: his own, or the fitted model of a garment he is wearing.
+// The Wally model to use: his own, or the model of a complete outfit he is wearing.
 function wallyModelName() {
-  try { const p = JSON.parse(localStorage.getItem('chomp-progress') || '{}'); const id = p.wardrobe && p.wardrobe.wear && p.wardrobe.wear.wally && p.wardrobe.wear.wally.shirt;
-        const item = WARDROBE.find(i => i.id === id); return (item && item.model) || 'wally'; } catch { return 'wally'; }
+  return outfitModel(readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()));
 }
 const wally = new Wally(scene);
 wally.useModel(models.get(wallyModelName()) || models.get('wally'));   // a garment outfit has its own fitted Wally model
@@ -608,4 +608,9 @@ if (params.has('play')) start();
 
 // The map, from anywhere (mapmodal.js): the Map button or Tab. Play pauses while it is open.
 installMap({ pause: on => { if (game.running) game.paused = on; } });
+installShop({ pause: on => { if (game.running) game.paused = on; } });
 window.chompStartHere = () => { if (!game.running) start(); };
+window.chompDress = () => {
+  const p = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
+  if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(p, 'wally'));
+};

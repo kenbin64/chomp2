@@ -21,6 +21,7 @@ import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../qu
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
 import { installMap, recordVisit } from '../mapmodal.js';
+import { installShop, openShop } from '../shopmodal.js';
 import { showLeaderboard } from '../leaderboard.js';
 import { dressOutfit } from '../outfit.js';
 import { loadRealism } from '../realism.js';
@@ -28,7 +29,7 @@ import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocit
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
 import { jellyModel, dressedJelly } from '../hazards.js';
-import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE } from '../progress.js';
+import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE, outfitModel } from '../progress.js';
 import { PATH, generateCourse, hits, runScore, STARS, MANGO_SET_BONUS } from './esplanade-rules.js';
 import { buildEsplanade, obstacleModel, mangoModel, useMangoModel } from './esplanade-scene.js';
 import { Clusters } from '../clusters.js';
@@ -118,10 +119,9 @@ if (!scene.environment) {   // the photographed sky already lights the scene whe
   scene.environment = pmrem.fromScene(env, 0.04).texture; scene.environmentIntensity = 0.8; pmrem.dispose();
 }
 
-// The Wally model to use: his own, or the fitted model of a garment he is wearing.
+// The Wally model to use: his own, or the model of a complete outfit he is wearing.
 function wallyModelName() {
-  try { const p = JSON.parse(localStorage.getItem('chomp-progress') || '{}'); const id = p.wardrobe && p.wardrobe.wear && p.wardrobe.wear.wally && p.wardrobe.wear.wally.shirt;
-        const item = WARDROBE.find(i => i.id === id); return (item && item.model) || 'wally'; } catch { return 'wally'; }
+  return outfitModel(readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()));
 }
 const wally = new Wally(scene);
 wally.facing = 0;                                     // facing down the boardwalk
@@ -651,4 +651,9 @@ if (params.has('play') || bot) start();
 
 // The map, from anywhere (mapmodal.js): the Map button or Tab. Play pauses while it is open.
 installMap({ pause: on => { if (game.running) game.paused = on; } });
+installShop({ pause: on => { if (game.running) game.paused = on; } });
 window.chompStartHere = () => { if (!game.running) start(); };
+window.chompDress = () => {
+  const p = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
+  if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(p, 'wally'));
+};

@@ -71,6 +71,8 @@ export class Bubbles {
 
   // Show `text` above `target` (any Object3D) for a few seconds. height: metres above it.
   say(target, text, height = 3.2, seconds = 2.2) {
+    // The player's own name for their croc (Ken: name changes), wherever a line says Wally.
+    try { const n = JSON.parse(localStorage.getItem('chomp-progress') || '{}').crocName; if (n) text = text.replace(/\bWally\b/g, n); } catch { /* his own name */ }
     const old = this.list.find(b => b.target === target);
     if (old) this.remove(old);
     if (this.list.length >= this.max) this.remove(this.list[0]);

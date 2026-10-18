@@ -56,30 +56,30 @@ check('every area has a postcard', AREAS.every(a => typeof POSTCARDS[a.id] === '
   check('no stars yet, none earned', totalStars(freshProgress()) === 0);
 }
 
-// The wardrobe (Ken: new clothes for Wally and Kenny at the Kuranda markets).
+// The outfit catalogue (Ken): complete outfits only, a female croc to come, and a name of your own.
 {
   const P = await import('../js/progress.js');
   const p0 = { ...P.freshProgress(), mangoes: 50 };
-  check('they start in their own clothes, owned', p0.wardrobe.owned.includes('shirt-sunset') && p0.wardrobe.owned.includes('vest-ranger'));
-  const b1 = P.buyItem(p0, 'shirt-reef');
-  check('buying takes the mangoes', b1.ok && b1.progress.mangoes === 25 && b1.progress.wardrobe.owned.includes('shirt-reef'));
-  check('cannot buy it twice', P.buyItem(b1.progress, 'shirt-reef').why === 'owned');
-  check('cannot buy without enough mangoes', P.buyItem({ ...p0, mangoes: 10 }, 'shirt-wattle').why === 'mangoes');
+  check('they start in their own clothes, owned', p0.wardrobe.owned.includes('classic') && p0.wardrobe.owned.includes('vest-ranger') && P.outfitOn(p0, 'wally').id === 'classic');
+  const b1 = P.buyItem(p0, 'reef');
+  check('buying takes the mangoes', b1.ok && b1.progress.mangoes === 25 && b1.progress.wardrobe.owned.includes('reef'));
+  check('cannot buy it twice', P.buyItem(b1.progress, 'reef').why === 'owned');
+  check('cannot buy without enough mangoes', P.buyItem({ ...p0, mangoes: 10 }, 'disco').why === 'mangoes');
   check('cannot buy what is not for sale', P.buyItem(p0, 'tuxedo').why === 'unknown');
-  const w1 = P.wearItem(b1.progress, 'shirt-reef');
-  check('wearing what was bought', P.wearing(w1, 'wally').shirt.id === 'shirt-reef');
-  check('cannot wear what is not owned', P.wearing(P.wearItem(p0, 'vest-ocean'), 'kenny').vest.id === 'vest-ranger');
-  const b2 = P.buyItem(w1, 'wally-sunnies'), w2 = P.wearItem(b2.progress, 'wally-sunnies');
-  check('sunnies go on, and come off when chosen again', P.wearing(w2, 'wally').glasses.id === 'wally-sunnies' && P.wearing(P.wearItem(w2, 'wally-sunnies'), 'wally').glasses === null);
-  check('a shirt cannot be taken off, only swapped', P.wearing(P.wearItem(w2, 'shirt-reef'), 'wally').shirt.id === 'shirt-reef');
-  const w3 = P.wearItem(P.buyItem({ ...w2, mangoes: 99 }, 'shorts-surf').progress, 'shorts-surf');
-  check('shirt and shorts are chosen separately', P.wearing(w3, 'wally').shirt.id === 'shirt-reef' && P.wearing(w3, 'wally').shorts.id === 'shorts-surf');
-  check('Ken\'s list is in the shop', ['hat-cork', 'hat-lifeguard', 'hat-pirate', 'shirt-pirate', 'wally-mask', 'wig-rainbow', 'boomerang', 'shirt-neonpink', 'shirt-disco'].every(id => P.WARDROBE.some(i => i.id === id)));
-  const saved = P.readProgress(JSON.stringify(w2));
-  check('the wardrobe is saved and read back', P.wearing(saved, 'wally').shirt.id === 'shirt-reef' && saved.wardrobe.owned.includes('wally-sunnies'));
-  const broken = P.readProgress(JSON.stringify({ unlocked: ['park'], wardrobe: { owned: ['made-up'], wear: { wally: { shirt: 'made-up' } } } }));
-  check('a broken saved wardrobe falls back to their own clothes', P.wearing(broken, 'wally').shirt.id === 'shirt-sunset' && !broken.wardrobe.owned.includes('made-up'));
-  check('every item belongs to Wally or Kenny and has a price', P.WARDROBE.every(i => ['wally', 'kenny'].includes(i.who) && i.price >= 0));
+  check('one still to come cannot be bought yet', P.buyItem(p0, 'female').why === 'soon');
+  const w1 = P.wearItem(b1.progress, 'reef');
+  check('a complete outfit is worn whole: shirt and shorts together', P.outfitOn(w1, 'wally').id === 'reef' && P.wearing(w1, 'wally').shirt && P.wearing(w1, 'wally').shorts);
+  check('cannot wear what is not owned', P.outfitOn(P.wearItem(p0, 'vest-ocean'), 'kenny').id === 'vest-ranger');
+  const ex = P.wearItem({ ...P.buyItem({ ...p0, mangoes: 99 }, 'explorer').progress }, 'explorer');
+  check('a model outfit loads its own model, and no recolour', P.outfitModel(ex) === 'wally-explorer' && !P.wearing(ex, 'wally').shirt);
+  check('the classic outfit uses his own model', P.outfitModel(p0) === 'wally');
+  const named = P.setCrocName(w1, 'Wanda');
+  const back = P.readProgress(JSON.stringify(named));
+  check('the outfit and the name are saved', P.outfitOn(back, 'wally').id === 'reef' && P.crocName(back) === 'Wanda');
+  check('no name: he is Wally', P.crocName(p0) === 'Wally');
+  const old = P.readProgress(JSON.stringify({ unlocked: ['park'], wardrobe: { owned: ['shirt-reef', 'made-up'], wear: { wally: { shirt: 'shirt-reef' } } } }));
+  check('an older save starts again in his own clothes', P.outfitOn(old, 'wally').id === 'classic' && !old.wardrobe.owned.includes('made-up'));
+  check('every outfit belongs to Wally or Kenny and has a price', P.OUTFITS.every(i => ['wally', 'kenny'].includes(i.who) && i.price >= 0));
 }
 
 // Going back (Ken): a finished or visited area stays open, and every return trip banks more.
@@ -117,6 +117,18 @@ check('every area has a postcard', AREAS.every(a => typeof POSTCARDS[a.id] === '
   const back = P.readProgress(JSON.stringify(t.progress));
   check('badge, coins, Skyrail pass and ticket are saved', back.badge && back.coins === 2 && back.skyrail && back.boatTicket);
   check('an older save that finished the park still has its badge', P.readProgress(JSON.stringify({ unlocked: ['park', 'esplanade'], stars: { park: 2 } })).badge);
+}
+
+// Gear and tickets (Ken): the exception to complete outfits.
+{
+  const P = await import('../js/progress.js');
+  const p0 = { ...P.freshProgress(), mangoes: 100 };
+  const c = P.buyExtra(p0, 'ticket-cruise');
+  check('the river cruise ticket is the Daintree boat ticket', c.ok && c.progress.boatTicket && P.entryNeeds(c.progress, 'daintree') === null && P.hasExtra(c.progress, 'ticket-cruise'));
+  check('cannot buy it twice', P.buyExtra(c.progress, 'ticket-cruise').why === 'owned');
+  check('gear still to come cannot be bought yet', P.buyExtra(p0, 'boomerang').why === 'soon');
+  check('not enough mangoes', P.buyExtra({ ...p0, mangoes: 5 }, 'ticket-cruise').why === 'mangoes');
+  check('owned extras are saved', P.readProgress(JSON.stringify({ ...p0, extras: ['boomerang', 'nonsense'] })).extras.join() === 'boomerang');
 }
 
 console.log(`${passed} passed, ${failed} failed`);

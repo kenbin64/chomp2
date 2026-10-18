@@ -20,7 +20,7 @@ import * as THREE from 'three';
 // body (bind-pose height, model units): below WAIST is shorts; above HEAD is
 // his head and hat, left alone.
 const RANGE = {
-  wally: { lo: 0.94, hi: 0.13, sat: 0.45, waist: -0.22, head: 0.42 },   // head: his collar; above is his mouth and hat
+  wally: { lo: 0.94, hi: 0.13, sat: 0.5, waist: -0.22, head: 0.36 },   // head: his collar; above is his mouth and hat
   kenny: { lo: 0.07, hi: 0.15, sat: 0.28, waist: -99, head: 99 },
 };
 

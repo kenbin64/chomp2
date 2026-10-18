@@ -236,3 +236,26 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .map-button:hover { background: rgba(255,209,102,0.25); }
 .pin.here .drop { fill: #ff8a3d; }
 .map-bank { margin-top: 4px; }
+/* The outfit catalogue */
+.shop-button { left: auto; right: 50%; transform: translateX(calc(100% + 70px)); }
+.shop-cat { width: min(1100px, 100%); position: relative; max-height: calc(100vh - 24px); overflow: auto; }
+.shop-top { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; margin: 4px 0 10px; }
+.shop-name input { font: inherit; padding: 6px 12px; border-radius: 999px; border: 2px solid rgba(255,209,102,0.5); background: rgba(255,255,255,0.08); color: inherit; width: 10em; margin: 0 6px; }
+.shop-bank b { color: #ffd166; }
+.shop-body { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; text-align: left; }
+@media (max-width: 760px) { .shop-body { grid-template-columns: 1fr; } }
+.shop-lists h3 { margin: 6px 0; color: #8fd3c7; }
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.shop-item { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 8px 10px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.shop-item.picked { border-color: #ffd166; background: rgba(255,209,102,0.16); }
+.shop-item.soon { opacity: 0.6; }
+.shop-item b { font-size: 14px; } .shop-item small { font-size: 12px; opacity: 0.8; }
+.shop-item .sw { width: 34px; height: 22px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.4); }
+.shop-item .sw-model { display: grid; place-items: center; background: rgba(255,255,255,0.15); font-size: 15px; }
+.shop-item .st { font-size: 13px; color: #ffd166; } .shop-item .st.on { color: #8fd3c7; }
+.shop-item .buy { font: inherit; font-size: 13px; padding: 4px 12px; border-radius: 999px; border: 0; background: #ffd166; color: #102030; cursor: pointer; }
+.shop-item .buy[disabled] { opacity: 0.45; cursor: default; }
+.shop-preview { background: radial-gradient(circle at 50% 40%, rgba(143,211,199,0.25), rgba(0,0,0,0)); border-radius: 16px; }
+.shop-canvas { width: 100%; display: block; }
+.shop-detail h3 { margin: 4px 0; color: #ffd166; } .shop-detail .go { margin: 6px 0; }
+.shop-msg { min-height: 1.4em; }

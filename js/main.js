@@ -21,10 +21,11 @@ import { loadRealism } from './realism.js';
 import { usePalmCrown } from './palms.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from './quality.js';
 import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
-import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE } from './progress.js';
+import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE, outfitModel } from './progress.js';
 import { dressOutfit } from './outfit.js';
 import { showLeaderboard } from './leaderboard.js';
 import { installMap, openMap, recordVisit } from './mapmodal.js';
+import { installShop, openShop } from './shopmodal.js';
 import * as sound from './sound.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, difficulty,
          clampToPark, terrainHeight, onDeck, LIVES, REVIVE_ENERGY, inRedZone,
@@ -95,10 +96,9 @@ if (!world.photo) {
   scene.environmentIntensity = 0.8;
   pmrem.dispose();
 }
-// The Wally model to use: his own, or the fitted model of a garment he is wearing.
+// The Wally model to use: his own, or the model of a complete outfit he is wearing.
 function wallyModelName() {
-  try { const p = JSON.parse(localStorage.getItem('chomp-progress') || '{}'); const id = p.wardrobe && p.wardrobe.wear && p.wardrobe.wear.wally && p.wardrobe.wear.wally.shirt;
-        const item = WARDROBE.find(i => i.id === id); return (item && item.model) || 'wally'; } catch { return 'wally'; }
+  return outfitModel(readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()));
 }
 const wally = new Wally(scene);
 const food = new Food(scene);
@@ -695,4 +695,10 @@ else if (params.has('map')) showMap();
 
 // The map, from anywhere (mapmodal.js): the Map button or Tab. Play pauses while it is open.
 installMap({ pause: on => { if (game.running) game.paused = on; } });
+installShop({ pause: on => { if (game.running) game.paused = on; } });
 window.chompStartHere = () => { if (!game.running) { $('title').hidden = true; $('win').hidden = true; $('over').hidden = true; start(); } };
+window.chompDress = () => {
+  const p = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
+  if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(p, 'wally'));
+  if (kenny.skin) dressOutfit(kenny.skin.root, 'kenny', wearing(p, 'kenny'));
+};
