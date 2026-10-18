@@ -221,5 +221,11 @@ check('food passing under the deck carries on to the water', R.foodSurface(0, B.
   check('no level given means the full rate', d('upright', true) === d('upright', true, 'reef'));
 }
 
+// Ken: under half, Wally can go to Kenny for a scoop from his jar.
+check('under half and next to Kenny: he can ask', R.canAskKenny(R.FEED_HALF - 1, 0, 1));
+check('at half or more he cannot', !R.canAskKenny(R.FEED_HALF, 0, 1));
+check('not from across the park', !R.canAskKenny(20, 0, R.ASK_RANGE + 1));
+check('not while Kenny is filling the jar again', !R.canAskKenny(20, 5, 1));
+
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

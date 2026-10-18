@@ -247,6 +247,16 @@ export function inRedZone(energy) {
   return energy < FEED_RED;
 }
 
+// Ken (2026-10-18): once the feed-o-meter is under half, Wally can go and find
+// Kenny himself for a scoop from his jar, without waiting for the red zone.
+// Kenny needs a while to fill the jar again between scoops.
+export const FEED_HALF = 50;
+export const ASK_RANGE = 2.6;          // m: close enough to Kenny to ask
+export const ASK_COOLDOWN = 40;        // s between scoops he hands over this way
+export function canAskKenny(energy, cool, distance) {
+  return energy < FEED_HALF && cool <= 0 && distance < ASK_RANGE;
+}
+
 // ---- Food on the ground ------------------------------------------------------
 
 // Food that lands is still good for a while: it floats on the water or sits on

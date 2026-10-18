@@ -5,7 +5,7 @@
 // dark spread from his jar and leaves it on the bank nearby. Eating it is the power-up.
 
 import * as THREE from 'three';
-import { LAGOON, terrainHeight, isWater, lagoonDistance, PARK_EDGE, inRedZone } from './rules.js';
+import { LAGOON, terrainHeight, isWater, lagoonDistance, PARK_EDGE, inRedZone, canAskKenny, ASK_COOLDOWN, FEED_HALF } from './rules.js';
 import { kennysJar } from './food.js';
 import { jarLabelTexture } from './textures.js';
 import { dress } from './models.js';
@@ -71,6 +71,7 @@ export class Kenny {
     this.helpCool = 10;
     this.whim = WHIM_EVERY;
     this.rescuesLeft = 1;            // Ken's rule: Kenny can revive Wally once per level
+    this.askCool = 0;                // till he can hand over another scoop when Wally comes asking
     this.toast = null;
     this.t = 0;
   }
@@ -119,7 +120,7 @@ export class Kenny {
   // 'revived' when he has handed the jar to Wally lying down.
   update(dt, wallyPos, energy) {
     this.t += dt;
-    this.helpCool -= dt; this.whim -= dt;
+    this.helpCool -= dt; this.whim -= dt; this.askCool -= dt;
     let event = null;
 
     // Running to revive Wally, then handing him the jar.
@@ -141,6 +142,17 @@ export class Kenny {
     if (needs && !this.toast && (this.state === 'wander' || this.state === 'sit')) {
       this.state = 'help'; this.rescuesLeft--;
       event = 'coming';
+    }
+
+    // Under half, Wally can come to him (Ken): he holds the jar out right there.
+    const near = Math.hypot(wallyPos.x - this.pos.x, wallyPos.z - this.pos.z);
+    if (!event && !this.toast && (this.state === 'wander' || this.state === 'sit') && Math.abs(wallyPos.y - this.pos.y) < 2.5
+        && canAskKenny(energy, this.askCool, near)) {
+      this.goal = this.dropSpotNear(new THREE.Vector3((this.pos.x + wallyPos.x) / 2, 0, (this.pos.z + wallyPos.z) / 2));
+      this.dropToast();
+      this.state = 'sit'; this.timer = 3; this.askCool = ASK_COOLDOWN;
+      this.offering = OFFER_TIME; this.waving = OFFER_TIME + 2;
+      event = 'asked';
     }
 
     if (this.state === 'help') this.goal = this.dropSpotNear(wallyPos);
@@ -180,11 +192,12 @@ export class Kenny {
     this.parts.arms[1].rotation.z = waving ? -2.4 + Math.sin(this.t * 9) * 0.4 : Math.sin(this.t * 8) * 0.3;
     this.parts.arms[0].rotation.z = waving ? 0.3 : -Math.sin(this.t * 8) * 0.3;
 
+    // The hand-over and wave timers run whether or not his model loaded.
+    this.offering = Math.max(0, (this.offering || 0) - dt);
+    this.waving = Math.max(0, (this.waving || 0) - dt);
     if (this.skin) {
       const sk = this.skin;
       let playing;
-      this.offering = Math.max(0, (this.offering || 0) - dt);
-      this.waving = Math.max(0, (this.waving || 0) - dt);
       if (this.offering > 0 && sk.has('offer')) playing = sk.play('offer', { once: true });
       else if (this.state === 'help' || this.state === 'revive') playing = sk.play('run', { alternatives: ['walk'], speed: this.state === 'revive' ? 1.3 : 1 });
       else if (this.state === 'sit' && this.waving > 0) playing = sk.play('wave', { alternatives: ['idle'] });
@@ -209,11 +222,15 @@ export class Kenny {
       s.mesh.position.y = s.baseY + 0.6 + Math.sin(this.t * 3) * 0.15;
       s.glow.material.opacity = 0.35 + Math.sin(this.t * 6) * 0.15;
       const reach = Math.hypot(wallyPos.x - s.mesh.position.x, wallyPos.z - s.mesh.position.z);
-      if (reach < PICKUP && Math.abs(wallyPos.y - s.baseY) < 2.5) { this.removeToast(); event = 'eaten'; }
+      const handed = !(this.offering > OFFER_TIME / 2);              // only once he has actually handed it over
+      if (handed && reach < PICKUP && Math.abs(wallyPos.y - s.baseY) < 2.5) { this.removeToast(); event = 'eaten'; }
       else if (s.life <= 0) this.removeToast();
     }
     return event;
   }
+
+  // Ready to hand Wally a scoop if he comes over (he is under half and the jar is full).
+  ready(energy) { return energy < FEED_HALF && this.askCool <= 0 && !this.toast && this.state !== 'revive' && this.state !== 'reviving'; }
 
   // Koalas do not swim: he walks round the lagoon on the bank, moving his angle
   // around the oval and his distance out from it, never straight across the water.

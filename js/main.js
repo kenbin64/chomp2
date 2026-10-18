@@ -196,6 +196,7 @@ const game = {
   // Diving for the lagoon treasure: how deep he is, where he is heading, and the keys.
   depth: PARK_TREASURE.surfaceY, wantDepth: PARK_TREASURE.surfaceY, clear: 0, foursWas: false, ctrlShiftWas: false,
   diveQueued: false, upQueued: false, biteCool: 0, treasureHint: 0, diveHint: false,
+  kennyCall: 0, kennyTold: false,       // Ken: under half, Wally can go to Kenny for a scoop
 };
 
 // Under the water the lagoon's own ground: at the surface as always, or down
@@ -475,6 +476,14 @@ function step(dt, t) {
   const k2 = kenny.update(dt, wally.pos, game.energy);
   if (k2 === 'revived') revive();
   if (k2 === 'coming') { toast('Kenny is on his way with his jar!', 'info'); bubbles.say(kenny.mesh, pickLine('kennyComing'), 1.9); }
+  if (k2 === 'asked') { toast('Kenny\'s got you: grab the jar!', 'info'); bubbles.say(kenny.mesh, pickLine('kennyJar'), 1.9); }
+  // Under half: a nudge that Kenny can help, and Kenny calling him over now and then.
+  game.kennyCall -= dt;
+  if (kenny.ready(game.energy) && game.nap <= 0 && game.kennyCall <= 0) {
+    game.kennyCall = 20;
+    if (!game.kennyTold) { game.kennyTold = true; toast('Under half? Find Kenny for a scoop from his jar', 'info'); }
+    bubbles.say(kenny.mesh, 'Over here, Wally! Got your jar!', 1.9);
+  }
   if (k2 === 'dropped') { toast('Kenny is holding out his jar. Get to him!', 'info'); bubbles.say(kenny.mesh, pickLine('kennyJar'), 1.9); }
   if (k2 === 'eaten') {
     const close = inRedZone(game.energy);
