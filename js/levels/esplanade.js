@@ -32,6 +32,7 @@ import { jellyModel, dressedJelly } from '../hazards.js';
 import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE, outfitModel, openPier, PIER_PRICE, PROGRESS_CHANGED } from '../progress.js';
 import { installBook, bookEvent, ability, HiddenFinds } from '../book.js';
 import { startTrading, tradeStep } from '../trade.js';
+import { startQuest, questStep } from '../sidequest.js';
 import { DayNight } from '../daynight.js';
 import { StreetLamps } from '../lamps.js';
 import { PATH, generateCourse, hits, runScore, STARS, MANGO_SET_BONUS, SPUR, onSpur } from './esplanade-rules.js';
@@ -238,6 +239,14 @@ window.chomp.hiddenFinds = hiddenFinds;
 clusters.enableTraders(0.25);
 startTrading({ land: 'esplanade', run: () => ({ mangoes: game.mangoes, pearls: game.pearls }), setRun: r => { game.mangoes = r.mangoes; game.pearls = r.pearls; },
   feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c.people[0].g, text, 2.4), toast: text => toast_(text, 'good') });
+// A sidequest (Ken): one picnic group has lost something along the waterfront.
+startQuest({ land: 'esplanade', scene, clusters,
+  spot(where, giver) {
+    if (where === 'lampTop') { const ls = lamps.spots.filter(s => Math.abs(s.x) < PATH.half && Math.abs(s.z - giver.root.position.z) < 120); const l = ls[Math.floor(Math.random() * ls.length)] || lamps.spots[0]; return { x: l.x, y: G + 3.4, z: l.z }; }
+    if (where === 'pierEnd') return { x: -PATH.half - SPUR.length + 1.5, y: G + 0.45, z: SPUR.z };
+    return { x: -PATH.half - 7, y: -0.1, z: giver.root.position.z + 6 };            // floating out past the wall
+  },
+  feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c ? c.people[0].g : wally.root, text, c ? 2.4 : 3.4), toast: text => toast_(text, 'info') });
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -517,6 +526,7 @@ function step(dt, t) {
   // People at the shelters throw as he comes by, unless he scares them off.
   const clusterEvents = game.done ? [] : clusters.update(dt, t, wally.pos, throwFrom);
   tradeStep(clusterEvents, wally.pos);
+  questStep(dt, t, clusterEvents, wally.pos);
   for (const e of clusterEvents) {
     if (e.type === 'throw' && Math.random() < 0.35) bubbles.say(e.thrower.g, pickLine('touristThrow'), 2.3);
     if (e.type === 'flee') { game.scared++; toast_('Too close! They ran off with their lunch', 'bad'); }

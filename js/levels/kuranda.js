@@ -32,6 +32,7 @@ import { jarLabelTexture } from '../textures.js';
 import { dressOutfit } from '../outfit.js';
 import { installBook, bookEvent, ability, HiddenFinds } from '../book.js';
 import { startTrading, tradeStep } from '../trade.js';
+import { startQuest, questStep } from '../sidequest.js';
 import { DayNight } from '../daynight.js';
 import { StreetLamps } from '../lamps.js';
 import { buildKuranda, STREET, STALLS, SHOP, VENDOR, TRAIL_Z } from './kuranda-scene.js';
@@ -154,7 +155,7 @@ window.chomp = { game, wally, food, scene };
 // on stall awnings so he has to jump for them.
 const streetGold = new Pickups(scene, (() => {
   const spots = [];
-  for (const s of [...STALLS].sort(() => Math.random() - 0.5).slice(0, 2)) spots.push({ x: s[0] * 0.92, y: 3.3, z: s[1] });
+  for (const s of [...STALLS].sort(() => Math.random() - 0.5).slice(0, 2)) spots.push({ x: Math.sign(s[0]) * (STREET.half + 1.3), y: 3.3, z: s[1] });   // the street edge of an awning: jump for it
   while (spots.length < 8) {
     const z = STREET.z0 + 10 + Math.random() * (STREET.z1 - STREET.z0 - 30), x = (Math.random() * 2 - 1) * (STREET.half - 0.8);
     if (spots.some(p => Math.abs(p.z - z) < 10)) continue;
@@ -181,12 +182,21 @@ const lamps = new StreetLamps(scene, models.get('streetlamp'),
   { real: quality.name === 'high' ? 8 : quality.name === 'medium' ? 6 : 4 });
 Object.assign(window.chomp, { daynight, lamps, streetGold });
 // Hidden finds (Ken): behind the stalls, both sides of the street; three a visit.
-const hiddenFinds = new HiddenFinds(scene, STALLS.map(s => ({ x: s[0] + Math.sign(s[0]) * 2.4, y: STREET.ground, z: s[1] + 1.5 })));
+const hiddenFinds = new HiddenFinds(scene, STALLS.map(s => ({ x: Math.sign(s[0]) * (STREET.half + 0.2), y: STREET.ground, z: s[1] + 2.6 })));   // tucked in the gaps between the stalls
 window.chomp.hiddenFinds = hiddenFinds;
 // Friendly traders (Ken): some shoppers offer a trade instead of running off.
 clusters.enableTraders(0.25);
 startTrading({ land: 'kuranda', run: () => ({}), setRun: () => {},
   feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c.people[0].g, text, 2.4), toast: text => toast_(text, 'good') });
+// A sidequest (Ken): one group of shoppers has lost something about the markets.
+startQuest({ land: 'kuranda', scene, clusters,
+  spot(where) {
+    const s = STALLS[Math.floor(Math.random() * STALLS.length)];
+    if (where === 'behindStall') return { x: Math.sign(s[0]) * (STREET.half + 0.2), y: STREET.ground + 0.45, z: s[1] - 2.6 };   // in the gap beside a stall
+    if (where === 'awning') return { x: Math.sign(s[0]) * (STREET.half + 1.3), y: 3.3, z: s[1] };                               // the street edge of the awning
+    return { x: 1.5, y: STREET.ground + 0.45, z: TRAIL_Z - 5 };
+  },
+  feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c ? c.people[0].g : wally.root, text, c ? 2.4 : 3.4), toast: text => toast_(text, 'info') });
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -254,6 +264,7 @@ function step(dt, t) {
   // Shoppers.
   const clusterEvents = game.done ? [] : clusters.update(dt, t, wally.pos, throwFrom);
   tradeStep(clusterEvents, wally.pos);
+  questStep(dt, t, clusterEvents, wally.pos);
   for (const e of clusterEvents) {
     if (e.type === 'throw' && Math.random() < 0.35) bubbles.say(e.thrower.g, pickLine('touristThrow'), 2.3);
     if (e.type === 'flee') { game.scared++; toast_('Too close! They ran off with their snacks', 'bad'); }

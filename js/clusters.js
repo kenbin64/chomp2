@@ -122,6 +122,11 @@ export class Clusters {
     this.traderChance = chance;
     for (const i of pickTraders(this.list.length, Math.random, chance)) this.list[i].trader = true;
   }
+  // One group this visit has a sidequest (Ken): never a trader.
+  enableQuest() {
+    const pool = this.list.filter(c => !c.trader && !c.gone);
+    if (pool.length) pool[Math.floor(Math.random() * pool.length)].questGiver = true;
+  }
   // A sign over a trader group once Wally has found them.
   tradeSign(c) {
     if (c.tradeSign) { c.tradeSign.visible = true; return; }
@@ -153,7 +158,12 @@ export class Clusters {
       if (c.rate !== 1 && mood === 'throw') c.state.cooldown *= c.rate;
       // Traders (Ken): they never run off. Stepping inside their circle is the
       // only way to find out who they are, and brings their offer (trade.js).
-      if (c.trader && (mood === 'flee' || mood === 'nervous')) mood = 'watch';
+      if ((c.trader || c.questGiver) && (mood === 'flee' || mood === 'nervous')) mood = 'watch';
+      // The sidequest group (sidequest.js): the same, and they speak up each time he comes in.
+      if (c.questGiver) {
+        if (dist < CLUSTER.near + 0.3 && !c.questIn) { c.questIn = true; events.push({ type: 'quest', cluster: c }); }
+        else if (dist > CLUSTER.near + 3) c.questIn = false;
+      }
       if (c.trader && !c.traded) {
         if (dist < CLUSTER.near + 0.3 && !c.offered) { c.offered = true; this.tradeSign(c); events.push({ type: 'trade', cluster: c }); }
         else if (dist > CLUSTER.near + 3) c.offered = false;

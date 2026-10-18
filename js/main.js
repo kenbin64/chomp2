@@ -20,6 +20,7 @@ import { StreetLamps } from './lamps.js';
 import { Pickups, mangoMaker } from './pickups.js';
 import { installBook, bookEvent, ability, HiddenFinds } from './book.js';
 import { startTrading, tradeStep } from './trade.js';
+import { startQuest, questStep } from './sidequest.js';
 import { Input } from './input.js';
 import { Bubbles, pickLine, chatty } from './bubbles.js';
 import { Effects, CRUMBS } from './fx.js';
@@ -165,6 +166,14 @@ clusters.useModels(cast);
 clusters.enableTraders(0.25);
 startTrading({ land: 'park', run: () => ({ mangoes: game.mangoes }), setRun: r => { game.mangoes = r.mangoes; drawQuest(); },
   feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c.people[0].g, text, 2.4), toast: text => toast(text, 'good') });
+// A sidequest (Ken): one group has lost something; where it ends up in the park.
+startQuest({ land: 'park', scene, clusters,
+  spot(where) {
+    if (where === 'lagoonBottom') { const a = Math.random() * Math.PI * 2, r = 5 + Math.random() * 7, x = Math.cos(a) * r, z = Math.sin(a) * r * 0.6; return { x, y: terrainHeight(x, z) + 0.35, z }; }
+    if (where === 'boulderTop') { const r = [...ROCKS].sort((a, b) => b.top - a.top)[Math.floor(Math.random() * 2)]; return { x: r.x, y: r.top + 0.5, z: r.z }; }
+    const x = (Math.random() * 2 - 1) * 30; return { x, y: deckHeight(x) + 0.45, z: BOARDWALK.z + (Math.random() - 0.5) };
+  },
+  feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c ? c.people[0].g : wally.root, text, c ? 2.4 : 3.4), toast: text => toast(text, 'info') });
 tourists.useModels(cast);
 food.useModels(models);
 const treasure = new LagoonTreasure(scene, models.get('mango'));     // the chest on the lagoon bottom (Ken)
@@ -271,7 +280,7 @@ setGround({
 });
 window.chomp = { game, wally, food, quality: () => quality };   // for testing in the browser console
 function whenLoaded(fn) { if (document.readyState === 'complete') setTimeout(fn); else addEventListener('load', fn); }
-whenLoaded(() => { window.chomp.hidden = hidden; window.chomp.parkMangoes = parkMangoes; window.chomp.daynight = daynight; window.chomp.lamps = lamps; window.chomp.tourists = tourists; window.chomp.treasure = treasure; window.chomp.crocs = crocs; window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
+whenLoaded(() => { window.chomp.quest = () => window.__quest; window.chomp.hidden = hidden; window.chomp.parkMangoes = parkMangoes; window.chomp.daynight = daynight; window.chomp.lamps = lamps; window.chomp.tourists = tourists; window.chomp.treasure = treasure; window.chomp.crocs = crocs; window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
 
 // The camera follows Wally on a leash, the way Ocarina of Time follows Link:
 // run sideways and it swings round behind him, run toward it and it backs off.
@@ -381,6 +390,7 @@ function landingOf(from, v) {
 function updateClusters(dt, t) {
   const clusterEvents = clusters.update(dt, t, wally.pos, (hand) => throwFood(hand, true));
   tradeStep(clusterEvents, wally.pos);
+  questStep(dt, t, clusterEvents, wally.pos);
   for (const e of clusterEvents) {
     if (e.type === 'throw' && Math.random() < 0.25) bubbles.say(e.thrower.g, pickLine('touristThrow'), 2.3);
     if (e.type === 'nervous' && !game.warnedOnce) { game.warnedOnce = true; toast('Too close! Back off a bit or they will run', 'bad'); }

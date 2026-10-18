@@ -54,11 +54,13 @@ export function giftText(gift) {
 // The saved side of a trade: the souvenir, and an ability level or tokens.
 // (Paying, and a full feed-o-meter, belong to the level, which holds what he carries.)
 export function receive(progress, offer) {
-  let p = { ...progress, souvenirs: [...new Set([...(progress.souvenirs || []), offer.souvenir.id])] };
-  const g = offer.gift;
-  if (g.kind === 'ability') p = { ...p, abilities: { ...(p.abilities || {}), [g.id]: Math.min(MAX_LEVEL, abilityLevel(p, g.id) + 1) } };
-  if (g.kind === 'tokens') p = { ...p, tokens: (p.tokens || 0) + g.n };
-  return p;
+  return applyGift({ ...progress, souvenirs: [...new Set([...(progress.souvenirs || []), offer.souvenir.id])] }, offer.gift);
+}
+// The saved side of a gift alone (also a sidequest's thank-you): an ability level or tokens.
+export function applyGift(progress, g) {
+  if (g.kind === 'ability') return { ...progress, abilities: { ...(progress.abilities || {}), [g.id]: Math.min(MAX_LEVEL, abilityLevel(progress, g.id) + 1) } };
+  if (g.kind === 'tokens') return { ...progress, tokens: (progress.tokens || 0) + g.n };
+  return progress;
 }
 
 // Paying a trader: first from what Wally has picked up on this visit (run),

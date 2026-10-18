@@ -18,7 +18,7 @@ export function saveProgress(p) {
 export function freshProgress() {
   return { unlocked: ['park'], stars: {}, best: {}, postcards: [], mangoes: 0, pearls: 0, coins: 0, shells: 0, pier: false,
            badge: false, skyrail: false, boatTicket: false, wardrobe: freshWardrobe(), extras: [], crocName: null, treasures: [],
-           stamps: [], tokens: 0, abilities: {}, visits: {}, souvenirs: [] };
+           stamps: [], tokens: 0, abilities: {}, visits: {}, souvenirs: [], sidequests: 0 };
 }
 
 // Stars from a score: thresholds are [one, two, three].
@@ -280,6 +280,7 @@ export function readProgress(text) {
       abilities: p.abilities && typeof p.abilities === 'object' ? Object.fromEntries(Object.entries(p.abilities).filter(([k, v]) => ['swisher', 'net', 'snorkel', 'spring'].includes(k) && Number.isFinite(v))) : {},
       visits: p.visits && typeof p.visits === 'object' ? Object.fromEntries(Object.entries(p.visits).filter(([, v]) => Number.isFinite(v))) : {},
       souvenirs: Array.isArray(p.souvenirs) ? p.souvenirs.filter(id => typeof id === 'string') : [],
+      sidequests: Number.isFinite(p.sidequests) ? p.sidequests : 0,
     };
   } catch { return freshProgress(); }
 }
