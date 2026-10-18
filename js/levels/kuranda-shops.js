@@ -12,7 +12,7 @@ import * as THREE from 'three';
 
 // Heritage colours for weatherboards, iron roofs, and the names on the boards.
 export const WALLS = ['#e9dcc0', '#cfe0cf', '#cfdde8', '#f1e3a6', '#e8c3a8', '#e2d2ea', '#f4efe4'];
-export const ROOFS = ['#2f5d3a', '#8a2f25', '#2f4e72', '#7a4a2a', '#4a5a5e'];
+export const ROOFS = ['#3f6a48', '#8a4a38', '#4a5f72', '#8a6a4a', '#5f686a'];   // heritage iron: green, Indian red, blue-grey, rust, galvanised
 export const NAMES = ['Tropical Treats', 'Rainforest Gallery', 'Kuranda Coffee House', 'Bush Tucker Pantry', 'Butterfly Books',
   'Leather & Hats', 'Gelato Hut', 'Crystal Cave', 'Rainforest Honey', 'Op Shop', 'Tableland Fudge', 'Gecko Gifts'];
 
@@ -42,7 +42,7 @@ function repaint(material, wall, roof, eave) {
       .replace('#include <map_fragment>', `#include <map_fragment>
       {
         // The baked texture is dark, so colours are judged by ratios, not brightness.
-        vec3 c = diffuseColor.rgb;
+        vec3 c = min(diffuseColor.rgb * 1.75, vec3(1.0));                      // the bake came out dark: lift it
         float hi = max(c.r, max(c.g, c.b)), lo = min(c.r, min(c.g, c.b));
         float sat = hi > 0.001 ? (hi - lo) / hi : 0.0, lum = dot(c, vec3(0.299, 0.587, 0.114));
         float above = step(eave, vHeight);
@@ -50,9 +50,9 @@ function repaint(material, wall, roof, eave) {
         float green = smoothstep(1.12, 1.35, c.g / (max(c.r, c.b) + 0.004)) * above;
         // Weatherboards: low colour, not too dark, below the eaves (the ferns are green, so they are left alone).
         float wallness = (1.0 - above) * smoothstep(0.42, 0.22, sat) * smoothstep(0.05, 0.12, lum) * (1.0 - smoothstep(1.1, 1.3, c.g / (max(c.r, c.b) + 0.004)));
-        vec3 wallCol = wallTint * clamp(lum / 0.28, 0.25, 1.4);
-        vec3 roofCol = roofTint * clamp(lum / 0.07, 0.3, 1.6);
-        diffuseColor.rgb = mix(c, wallCol, wallness * 0.9);
+        vec3 wallCol = wallTint * clamp(0.75 + lum, 0.8, 1.15);                // clean paint, lightly shaded by the bake
+        vec3 roofCol = roofTint * clamp(0.6 + lum * 1.5, 0.6, 1.3);
+        diffuseColor.rgb = mix(c, wallCol, wallness);
         diffuseColor.rgb = mix(diffuseColor.rgb, roofCol, green);
       }`);
   };

@@ -62,7 +62,8 @@ function timberTex(tone = 0) {
 }
 // Tie-dye: spirals of bright colour radiating from the middle.
 function tieDyeTex(seed) {
-  const sets = [['#ff3d7f', '#ffb000', '#2ad1ff', '#7c4dff'], ['#00b894', '#fdcb6e', '#e17055', '#6c5ce7'], ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7'], ['#d63031', '#fd79a8', '#0984e3', '#00cec9']];
+  // Faded, sun-washed tie-dye: a little colour, not a rainbow (Ken: Kuranda was too colourful).
+  const sets = [['#b5654a', '#d9b26a', '#6f8f86', '#8a6a7a'], ['#7a8f5a', '#d7c08a', '#a8644a', '#6a7088'], ['#a0705a', '#7f9a90', '#c9a86a', '#94806a'], ['#8c4f3e', '#b08a6e', '#5f7f86', '#c2a77a']];
   const cols = sets[seed % sets.length];
   return canvasTex('tie' + seed, 128, 128, (g, w, h) => {
     for (let r = 90; r > 0; r -= 2) for (let a = 0; a < Math.PI * 2; a += 0.06) {
@@ -73,7 +74,7 @@ function tieDyeTex(seed) {
 }
 // Batik and sarong cloth: repeating hand-printed motifs on a coloured ground.
 function batikTex(seed) {
-  const grounds = ['#1e5a8a', '#a3341f', '#2f7a3a', '#6a2c8a', '#c47a14', '#0f7f86'];
+  const grounds = ['#3f5a6a', '#8a4a32', '#4f6a3e', '#6a4f5a', '#a07a3a', '#3f6a68'];   // indigo, rust, olive, plum, ochre, teal: hand-dyed, faded
   const ground = grounds[seed % grounds.length];
   return canvasTex('batik' + seed, 128, 128, (g, w, h) => {
     g.fillStyle = ground; g.fillRect(0, 0, w, h);
@@ -138,7 +139,7 @@ function mats() {
   const std = (o) => new THREE.MeshStandardMaterial({ roughness: 0.85, ...o });
   M.timber = std({ map: timberTex(0) }); M.timberDark = std({ map: timberTex(1) }); M.timberLight = std({ map: timberTex(2) });
   M.iron = std({ map: ironTex(0.5), roughness: 0.6, metalness: 0.35 }); M.ironRusty = std({ map: ironTex(1.2), roughness: 0.7, metalness: 0.25 });
-  M.canvas = [0xe8dcc0, 0x9a3b2a, 0x2f6b5a, 0xd99a2b].map(c => std({ color: c, side: THREE.DoubleSide }));
+  M.canvas = [0xe2d6bc, 0x8a5a44, 0x5f6e58, 0xb8975e].map(c => std({ color: c, side: THREE.DoubleSide }));
   M.cloth = Array.from({ length: 6 }, (_, i) => std({ map: batikTex(i), side: THREE.DoubleSide, roughness: 0.95 }));
   M.tie = Array.from({ length: 4 }, (_, i) => std({ map: tieDyeTex(i), side: THREE.DoubleSide, roughness: 0.95 }));
   M.rope = std({ color: 0xc9a46a }); M.metal = std({ color: 0xb8b8b0, metalness: 0.8, roughness: 0.3 });
@@ -232,7 +233,7 @@ export function marketStall(kind, sign, { w = 3.8, d = 2.6, roof = 'iron', tone 
   const hang = Math.floor(w / 0.75);
   for (let i = 0; i < hang; i++) {
     const x = -w / 2 + 0.45 + i * (w - 0.9) / Math.max(1, hang - 1);
-    if (kind === 'clothes' || (i % 2 === 0)) hangingCloth(0.62, 1.15, i % 3 ? M.cloth[(i + tone) % 6] : M.tie[(i + tone) % 4], x, 1.75, -d / 2 + 0.14, g);
+    if (kind === 'clothes' || (i % 3 === 0)) hangingCloth(0.62, 1.15, (i + tone) % 4 ? M.cloth[(i + tone) % 6] : M.tie[(i + tone) % 4], x, 1.75, -d / 2 + 0.14, g);
     else if (i % 4 === 1) dreamcatcher(x, 2.1, -d / 2 + 0.16, g);
     else windChime(x, 2.4, -d / 2 + 0.25, g);
   }
@@ -242,7 +243,7 @@ export function marketStall(kind, sign, { w = 3.8, d = 2.6, roof = 'iron', tone 
   const cloth = new THREE.Mesh(new THREE.BoxGeometry(w - 0.2, 0.4, 1.06, 1, 1, 1), M.cloth[(tone + 2) % 6]); cloth.position.set(0, 0.76, 0.2); g.add(cloth);
   const goodsGroup = new THREE.Group(); goodsGroup.position.set(0, 0, 0.2); g.add(goodsGroup); goods(kind, goodsGroup, w - 0.4);
   // A hand-painted sign on the front beam.
-  const palette = [['#2f4a32', '#ffe7a8'], ['#7a2e1e', '#fff1d0'], ['#1e3f5a', '#ffd2f0'], ['#4a2f5a', '#d8ffe0']][tone % 4];
+  const palette = [['#3a4a36', '#f0e2bc'], ['#6a3a2a', '#f3e6cc'], ['#3a4652', '#efe4cc'], ['#5a4a38', '#f2e8d0']][tone % 4];   // weathered timber boards, cream lettering
   const board = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 0.7), new THREE.MeshStandardMaterial({ map: signTex(sign, ...palette), roughness: 0.8 }));
   board.position.set(0, 3.25, d / 2 + 0.25); g.add(board);
   box(0.06, 0.55, 0.06, post, -1.0, 2.95, d / 2 + 0.22, g); box(0.06, 0.55, 0.06, post, 1.0, 2.95, d / 2 + 0.22, g);
@@ -252,7 +253,7 @@ export function marketStall(kind, sign, { w = 3.8, d = 2.6, roof = 'iron', tone 
   // A potted fern and a woven rug out front.
   cyl(0.18, 0.13, 0.32, M.pot, w / 2 + 0.35, 0.16, d / 2 + 0.4, g, 10);
   for (let k = 0; k < 7; k++) { const fr = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.6), M.leaf); fr.position.set(w / 2 + 0.35, 0.55, d / 2 + 0.4); fr.rotation.set(0.7, k / 7 * Math.PI * 2, 0); g.add(fr); }
-  const rug = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.4, 1.4), M.cloth[(tone + 4) % 6]); rug.rotation.x = -Math.PI / 2; rug.position.set(0, 0.02, d / 2 + 1.1); g.add(rug);
+  const rug = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.4, 1.4), M.hessian);                 // a hessian mat, not a bright rug rug.rotation.x = -Math.PI / 2; rug.position.set(0, 0.02, d / 2 + 1.1); g.add(rug);
   return g;
 }
 function parent0(o, g) { g.add(o); return o; }
@@ -314,7 +315,7 @@ export function overStreet(scene, half, z0, z1) {
   const g = new THREE.Group(), bulbs = [];
   const flagGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-0.16, 0, 0), new THREE.Vector3(0.16, 0, 0), new THREE.Vector3(0, -0.36, 0)]);
   flagGeo.setIndex([0, 1, 2]); flagGeo.computeVertexNormals();
-  const flagMats = ['#e84a3c', '#f4b400', '#2fa84f', '#2f7fd8', '#a04ad8', '#ff7ab6'].map(c => new THREE.MeshStandardMaterial({ color: c, side: THREE.DoubleSide, roughness: 0.9 }));
+  const flagMats = ['#b5654a', '#d9b26a', '#7a8f5a', '#5f7f86', '#e2d6bc', '#8a5a44'].map(c => new THREE.MeshStandardMaterial({ color: c, side: THREE.DoubleSide, roughness: 0.9 }));
   for (let z = z0 + 8; z < z1; z += 9) {
     const kind = Math.round((z - z0) / 9) % 2;                      // bunting and fairy lights in turn
     for (let i = 0; i <= 24; i++) {
