@@ -243,7 +243,15 @@ function addRealWater(scene, q, sun) {
   water.position.set(0, -0.02, -200);
   water.material.uniforms.size.value = 3.2;            // broader, calmer ripples
   scene.add(water);
-  return function ripple(t) { water.material.uniforms.time.value = t * 0.55; };
+  const ripple = function ripple(t) { water.material.uniforms.time.value = t * 0.55; };
+  // See into the lagoon while Wally is diving: k 0 is the usual mirror-like
+  // surface, 1 clear enough to watch him down at the bottom.
+  ripple.clear = k => {
+    water.material.transparent = k > 0.01;
+    water.material.uniforms.alpha.value = 1 - 0.62 * k;
+    water.material.depthWrite = k <= 0.01;
+  };
+  return ripple;
 }
 
 // The lagoon surface, gently moving. Returns a function that animates it.
@@ -263,7 +271,7 @@ function addWater(scene, q, sun) {
   scene.add(sea);
 
   const pos = geo.attributes.position;
-  return function wave(t) {
+  const wave = function wave(t) {
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), z = pos.getZ(i);
       pos.setY(i, 0.05 * Math.sin(x * 0.45 + t * 1.3) + 0.04 * Math.sin(z * 0.6 - t * 1.1));
@@ -271,6 +279,8 @@ function addWater(scene, q, sun) {
     pos.needsUpdate = true;
     geo.computeVertexNormals();
   };
+  wave.clear = k => { water.material.opacity = 0.8 - 0.45 * k; };   // see into the lagoon while diving
+  return wave;
 }
 
 // ---- Built things -------------------------------------------------------
@@ -540,5 +550,5 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
     gate(dt, gateOpen);
     boats.forEach((b, i) => { b.position.y = 0.6 + Math.sin(t * 0.8 + i) * 0.15; b.rotation.z = Math.sin(t * 0.6 + i) * 0.03; });
   };
-  return { update, sun, sky, photo };
+  return { update, sun, sky, photo, waterClear: k => wave.clear && wave.clear(k) };
 }

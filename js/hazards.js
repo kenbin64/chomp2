@@ -8,6 +8,7 @@
 //   that comes down low near them.
 
 import * as THREE from 'three';
+import { jellyDepth } from './treasure-rules.js';
 import { LAGOON, isWater, terrainHeight, clampToPark, PARK_EDGE } from './rules.js';
 import { dress, hideStandIn, ModelSkin } from './models.js';
 import { addFlap, rimAll, addRim, addStride } from './look.js';
@@ -43,12 +44,15 @@ export function jellyModel() {
 }
 
 export class Jellies {
-  constructor(scene, count = 6) {
+  // deep: how many drift up and down through the water round the lagoon's
+  // treasure chest (Ken: dodge the jellies on the way down), instead of
+  // floating at the surface.
+  constructor(scene, count = 6, { deep = 0 } = {}) {
     this.list = [];
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < count + deep; i++) {
       const mesh = jellyModel();
       scene.add(mesh);
-      const j = { mesh, pos: new THREE.Vector3(), dir: Math.random() * Math.PI * 2, phase: i * 1.3 };
+      const j = { mesh, pos: new THREE.Vector3(), dir: Math.random() * Math.PI * 2, phase: i * 1.3, deep: i >= count, y: -0.15 };
       this.place(j);
       this.list.push(j);
     }
@@ -62,24 +66,34 @@ export class Jellies {
   }
 
   place(j) {
+    if (j.deep) {                                    // round the chest in the middle
+      const a = Math.random() * Math.PI * 2, r = 3 + Math.random() * 6;
+      j.pos.set(Math.cos(a) * r, 0, Math.sin(a) * r * 0.65);
+      return;
+    }
     do {
       j.pos.set((Math.random() * 1.6 - 0.8) * LAGOON.rx, 0, (Math.random() * 1.6 - 0.8) * LAGOON.rz);
     } while (!isWater(j.pos.x, j.pos.z) || Math.hypot(j.pos.x, j.pos.z - 21) < 10);
   }
 
   // Drift slowly, turning back from the shallows. Returns the jelly that stung, if any.
-  update(dt, t, wallyPos, wallySwimming) {
+  // wallyY: his height, so a jelly only stings at its own depth (leave it out
+  // where he cannot dive).
+  update(dt, t, wallyPos, wallySwimming, wallyY = null) {
     let sting = null;
     for (const j of this.list) {
       j.dir += (Math.sin(t * 0.3 + j.phase) * 0.4) * dt;
       const nx = j.pos.x + Math.cos(j.dir) * 0.8 * dt, nz = j.pos.z + Math.sin(j.dir) * 0.8 * dt;
-      if (isWater(nx * 1.15, nz * 1.15)) { j.pos.x = nx; j.pos.z = nz; } else j.dir += Math.PI * 0.7;
+      const keep = j.deep ? Math.hypot(nx, nz / 0.65) < 10 : isWater(nx * 1.15, nz * 1.15);   // deep ones stay round the chest
+      if (keep) { j.pos.x = nx; j.pos.z = nz; } else j.dir += Math.PI * 0.7;
       const bob = Math.sin(t * 1.6 + j.phase);
-      j.mesh.position.set(j.pos.x, -0.15 + bob * 0.12, j.pos.z);
+      j.y = j.deep ? jellyDepth(t, j.phase) : -0.15;
+      j.mesh.position.set(j.pos.x, j.y + bob * 0.12, j.pos.z);
       j.mesh.scale.set(1 + bob * 0.08, 1 - bob * 0.08, 1 + bob * 0.08);
       j.mesh.userData.tentacles.forEach((ten, i) => { ten.rotation.x = Math.sin(t * 2 + i) * 0.25; ten.rotation.z = Math.cos(t * 1.7 + i) * 0.25; });
       if (j.skin) { j.skin.play('pulse', { alternatives: ['idle'] }); j.skin.update(dt); }
-      if (wallySwimming && Math.hypot(wallyPos.x - j.pos.x, wallyPos.z - j.pos.z) < STING_RANGE) sting = j;
+      const level = wallyY === null || Math.abs(wallyY - j.y) < 1.2;
+      if (wallySwimming && level && Math.hypot(wallyPos.x - j.pos.x, wallyPos.z - j.pos.z) < STING_RANGE) sting = j;
     }
     return sting;
   }
@@ -90,7 +104,7 @@ export class Jellies {
     for (const it of food.items) {
       const p = it.mesh.position;
       if (p.y > 0.7) continue;
-      if (this.list.some(j => Math.hypot(p.x - j.pos.x, p.z - j.pos.z) < JELLY_GRAB)) taken.push(it);
+      if (this.list.some(j => j.y > -0.6 && Math.hypot(p.x - j.pos.x, p.z - j.pos.z) < JELLY_GRAB)) taken.push(it);
     }
     return taken;
   }

@@ -7,7 +7,7 @@ import { AREAS } from './quests.js';
 
 export function freshProgress() {
   return { unlocked: ['park'], stars: {}, best: {}, postcards: [], mangoes: 0, pearls: 0, coins: 0,
-           badge: false, skyrail: false, boatTicket: false, wardrobe: freshWardrobe(), extras: [], crocName: null };
+           badge: false, skyrail: false, boatTicket: false, wardrobe: freshWardrobe(), extras: [], crocName: null, treasures: [] };
 }
 
 // Stars from a score: thresholds are [one, two, three].
@@ -28,6 +28,15 @@ export function completeArea(progress, id, { score = 0, stars = 0, mangoes = 0, 
   const next = AREAS[i + 1];
   if (next && next.ready && !p.unlocked.includes(next.id)) p.unlocked.push(next.id);
   return p;
+}
+
+// A level's treasure found (Ken: a treasure in every level). The first time
+// pays the big reward; going back for it again pays a little.
+export function findTreasure(progress, id, reward = { first: 10, again: 2 }) {
+  const had = (progress.treasures || []).includes(id);
+  const mangoes = had ? reward.again : reward.first;
+  return { first: !had, mangoes,
+           progress: { ...bankFinds(progress, { mangoes }), treasures: had ? [...progress.treasures] : [...(progress.treasures || []), id] } };
 }
 
 // Keep what was collected, finished or not (Ken: go back for more of something).
@@ -230,6 +239,7 @@ export function readProgress(text) {
       wardrobe: readWardrobe(p.wardrobe),
       extras: Array.isArray(p.extras) ? p.extras.filter(id => EXTRAS.some(e => e.id === id)) : [],
       crocName: typeof p.crocName === 'string' && p.crocName.length >= 2 && p.crocName.length <= 16 ? p.crocName : null,
+      treasures: Array.isArray(p.treasures) ? p.treasures.filter(id => typeof id === 'string') : [],
     };
   } catch { return freshProgress(); }
 }

@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { LAGOON, isWater } from './rules.js';
 import { dress } from './models.js';
+import { PARK_TREASURE, crocBites } from './treasure-rules.js';
 
 // Not Bruce or Shazza: those are the cassowary and the flying fox in Ken's design document.
 const NAMES = ['Big Kev', 'Dazza', 'Mick', 'Trev'];
@@ -63,15 +64,23 @@ function waterSpot() {
 }
 
 export class Crocs {
-  constructor(scene, count = 3) {
+  // guard: one more croc that circles the lagoon's treasure chest under water
+  // (Ken: get the treasure without the other crocs getting you).
+  constructor(scene, count = 3, { guard = false } = {}) {
     this.list = [];
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < count + (guard ? 1 : 0); i++) {
       const parts = buildCroc();
       scene.add(parts.g);
       const pos = waterSpot();
       this.list.push({ name: NAMES[i % NAMES.length], parts, pos, goal: waterSpot(), heading: 0,
-                       chase: null, lunge: 0, t: i * 2 });
+                       chase: null, lunge: 0, t: i * 2, y: -0.25, guard: i >= count, ang: Math.random() * Math.PI * 2 });
     }
+  }
+
+  // The croc that bites Wally under water, if one does (only down there: at the
+  // surface they just shove him aside).
+  bites(wally) {
+    return this.list.find(c => crocBites(wally.pos.x, wally.pos.z, wally.pos.y, c.pos.x, c.pos.z, c.y)) || null;
   }
 
   useModel(gltf) {
@@ -83,6 +92,7 @@ export class Crocs {
     const snatched = [];
     for (const c of this.list) {
       c.t += dt;
+      if (c.guard) { this.patrol(c, dt, wally); continue; }
       // Look for food coming down near by.
       if (!c.chase) {
         for (const it of food.items) {
@@ -118,7 +128,7 @@ export class Crocs {
       }
       // Wally and a croc cannot occupy the same water.
       const dx = wally.pos.x - c.pos.x, dz = wally.pos.z - c.pos.z, dd = Math.hypot(dx, dz);
-      if (dd < BUMP && wally.surface === 'water' && dd > 0.001) {
+      if (dd < BUMP && wally.surface === 'water' && dd > 0.001 && Math.abs(wally.pos.y - c.y) < 1.2) {
         wally.pos.x = c.pos.x + dx / dd * BUMP; wally.pos.z = c.pos.z + dz / dd * BUMP;
       }
 
@@ -131,6 +141,24 @@ export class Crocs {
       if (c.skin) { c.skin.play(c.lunge > 0 ? 'lunge_snap' : 'swim', { once: c.lunge > 0, alternatives: ['swim', 'idle'] }); c.skin.update(dt); }
     }
     return snatched;
+  }
+
+  // The guard: round and round the chest, under water, slow and steady, with
+  // a turn now and then to keep a diver guessing.
+  patrol(c, dt, wally) {
+    const T = PARK_TREASURE;
+    c.dirSign = c.dirSign || 1;
+    if (Math.random() < dt * 0.05) c.dirSign *= -1;
+    c.ang += dt * 0.32 * c.dirSign;
+    c.pos.x = T.chest.x + Math.cos(c.ang) * T.guardR; c.pos.z = T.chest.z + Math.sin(c.ang) * T.guardR * 0.65;
+    c.heading = Math.atan2(-Math.sin(c.ang) * c.dirSign, Math.cos(c.ang) * 0.65 * c.dirSign);
+    c.y = T.guardY + Math.sin(c.t * 0.9) * 0.15;
+    c.lunge = Math.max(0, c.lunge - dt);
+    const g = c.parts.g;
+    g.position.set(c.pos.x, c.y, c.pos.z); g.rotation.y = c.heading;
+    c.parts.jaw.rotation.x = c.lunge > 0 ? 0.7 * (c.lunge / 0.5) : 0.12;
+    c.parts.tail.forEach((s, i) => { s.rotation.y = Math.sin(c.t * 2.5 - i * 0.8) * 0.25; });
+    if (c.skin) { c.skin.play(c.lunge > 0 ? 'lunge_snap' : 'swim', { once: c.lunge > 0, alternatives: ['swim', 'idle'] }); c.skin.update(dt); }
   }
 
   headPos(c) {

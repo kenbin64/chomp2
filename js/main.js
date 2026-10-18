@@ -12,6 +12,9 @@ import { Kenny } from './kenny.js';
 import { Crocs } from './crocs.js';
 import { Jellies, FlyingFoxes, Pelicans, CaneToads } from './hazards.js';
 import { Clusters } from './clusters.js';
+import { LagoonTreasure } from './parktreasure.js';
+import { PARK_TREASURE, TREASURE_REWARD, swimDepth } from './treasure-rules.js';
+import { setGround, parkGround } from './ground.js';
 import { Input } from './input.js';
 import { Bubbles, pickLine, chatty } from './bubbles.js';
 import { Effects, CRUMBS } from './fx.js';
@@ -21,7 +24,7 @@ import { loadRealism } from './realism.js';
 import { usePalmCrown } from './palms.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from './quality.js';
 import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
-import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE, outfitModel } from './progress.js';
+import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE, outfitModel, findTreasure } from './progress.js';
 import { dressOutfit } from './outfit.js';
 import { showLeaderboard } from './leaderboard.js';
 import { installMap, openMap, recordVisit } from './mapmodal.js';
@@ -104,8 +107,8 @@ const wally = new Wally(scene);
 const food = new Food(scene);
 const tourists = new Tourists(scene, quality.tourists);
 const kenny = new Kenny(scene);
-const crocs = new Crocs(scene, 3);
-const jellies = new Jellies(scene, quality.jellies);
+const crocs = new Crocs(scene, 3, { guard: true });           // and one guarding the lagoon's treasure chest
+const jellies = new Jellies(scene, quality.jellies, { deep: 2 });   // two drifting up and down round the chest
 const bats = new FlyingFoxes(scene, quality.bats);
 const pelicans = new Pelicans(scene, quality.name === 'low' ? 1 : 2);
 const bubbles = new Bubbles(scene, touch ? 3 : 5);
@@ -154,6 +157,7 @@ const people = Array.from({ length: 24 }, (_, i) => models.get(`tourist-${i + 1}
 tourists.useModels(people);
 clusters.useModels(people);
 food.useModels(models);
+const treasure = new LagoonTreasure(scene, models.get('mango'));     // the chest on the lagoon bottom (Ken)
 
 // Drop graphics a level if the frame rate stays low.
 const fpsWatch = watchFrameRate(quality, (lower, fps) => {
@@ -170,6 +174,9 @@ const fpsWatch = watchFrameRate(quality, (lower, fps) => {
 // ---- Controls ---------------------------------------------------------------
 
 const input = new Input(canvas, touch ? { stick: $('stick'), knob: $('knob'), jump: $('t-jump'), fours: $('t-fours'), pause: $('t-pause'), cam: $('t-cam') } : null);
+for (const [id, flag] of [['b-dive', 'diveQueued'], ['b-up', 'upQueued']]) {
+  $(id).addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); game[flag] = true; });
+}
 input.onPause = () => setPaused(!game.paused);
 input.onMute = () => toast(sound.toggleMute() ? 'Sound off' : 'Sound on', 'info');
 
@@ -186,10 +193,23 @@ const game = {
   boost: 0, throwIn: 2, stingCool: 0, frenzyIn: -1, quest: createQuest(),
   catches: 0, misses: 0, stolen: 0, hungryCool: 0, lives: LIVES, nap: 0, intro: 0, newGroupIn: 25, groupsArrived: 4, tourGroup: false, scared: 0, warnedOnce: false,
   by: { bat: 0, pelican: 0, toad: 0, jelly: 0, croc: 0 },      // who took the food, for balancing
+  // Diving for the lagoon treasure: how deep he is, where he is heading, and the keys.
+  depth: PARK_TREASURE.surfaceY, wantDepth: PARK_TREASURE.surfaceY, clear: 0, foursWas: false, ctrlShiftWas: false,
+  diveQueued: false, upQueued: false, biteCool: 0, treasureHint: 0, diveHint: false,
 };
+
+// Under the water the lagoon's own ground: at the surface as always, or down
+// at the depth he has dived to (never into the bed).
+setGround({
+  stand(x, z, feetY, floatY, fromBelow) {
+    const s = parkGround.stand(x, z, feetY, floatY, fromBelow);
+    if (s.surface === 'water' && game.depth < PARK_TREASURE.surfaceY - 0.02) return { y: swimDepth(game.depth, terrainHeight(x, z)), surface: 'water' };
+    return s;
+  },
+});
 window.chomp = { game, wally, food, quality: () => quality };   // for testing in the browser console
 function whenLoaded(fn) { if (document.readyState === 'complete') setTimeout(fn); else addEventListener('load', fn); }
-whenLoaded(() => { window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
+whenLoaded(() => { window.chomp.treasure = treasure; window.chomp.crocs = crocs; window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
 
 // The camera follows Wally on a leash, the way Ocarina of Time follows Link:
 // run sideways and it swings round behind him, run toward it and it backs off.
@@ -217,6 +237,13 @@ function drawQuest() {
     li.className = g.have >= g.need ? 'done' : '';
     li.innerHTML = `<span></span><span>${Math.min(g.have, g.need)}/${g.need}</span>`;
     li.firstChild.textContent = g.text;
+    $('goals').appendChild(li);
+  }
+  if (treasure) {
+    const li = document.createElement('li');
+    li.className = 'extra' + (treasure.opened ? ' done' : '');
+    li.innerHTML = '<span>Lagoon treasure (dive!)</span><span></span>';
+    li.lastChild.textContent = treasure.opened ? 'found' : `${treasure.found}/${treasure.total}`;
     $('goals').appendChild(li);
   }
   if (q.goalsDone() && q.stage === 'goals') {
@@ -392,6 +419,7 @@ function step(dt, t) {
   game.stingCool = Math.max(0, game.stingCool - dt);
   const pace = speedFactor(game.energy) * (game.boost > 0 ? 1.35 : 1);
 
+  diveStep(dt, k);
   for (const e of wally.update(dt, k, cam.yaw, pace)) {
     if (e === 'leap') { sound.play.leap(); fx.splash(wally.pos, 22); } else if (e === 'jump') sound.play.jump();
     else if (e === 'splash') { sound.play.splash(); fx.splash(wally.pos, 26); fx.shake(0.2, 0.15); } else if (e === 'land') sound.play.land();
@@ -432,14 +460,17 @@ function step(dt, t) {
   }
   checkCatches();
 
-  const sting = jellies.update(dt, t, wally.pos, wally.surface === 'water');
+  const sting = jellies.update(dt, t, wally.pos, wally.surface === 'water', wally.pos.y);
   if (sting && game.stingCool <= 0) {
     game.stingCool = 1.5; game.energy -= 15; game.streak = 0;
+    game.wantDepth = PARK_TREASURE.surfaceY;                     // stung under water: back up he goes
     wally.knock(sting.pos.x, sting.pos.z);
     fx.shake(0.45, 0.3);
     sound.play.sting(); toast('Box jelly! Ouch!', 'bad');
     bubbles.say(wally.root, pickLine('wallySting'), 3.6);
   }
+
+  treasureStep(dt, t);
 
   const k2 = kenny.update(dt, wally.pos, game.energy);
   if (k2 === 'revived') revive();
@@ -458,6 +489,68 @@ function step(dt, t) {
 
   updateQuest(dt);
   if (game.energy <= 0 && game.nap <= 0) loseLife();
+}
+
+// ---- The lagoon treasure (Ken, 2026-10-18) -----------------------------------------
+// In the water Shift dives to the bottom and Ctrl+Shift comes up (the reef's keys),
+// or the Dive and Up buttons. No croc leap from down there. While he is under,
+// the water clears so the player can see him, and the camera looks down more.
+function diveStep(dt, k) {
+  const T = PARK_TREASURE, inWater = wally.surface === 'water';
+  const foursPressed = k.fours && !game.foursWas; game.foursWas = k.fours;
+  const ctrlShift = k.fours && k.ctrl, ctrlShiftPressed = ctrlShift && !game.ctrlShiftWas; game.ctrlShiftWas = ctrlShift;
+  const dive = (foursPressed && !k.ctrl) || game.diveQueued, up = ctrlShiftPressed || game.upQueued;
+  game.diveQueued = game.upQueued = false;
+  if (inWater && game.nap <= 0) {
+    if (dive) game.wantDepth = T.diveY;
+    if (up) game.wantDepth = T.surfaceY;
+    if (!game.diveHint && game.time > 3) { game.diveHint = true; toast('Shift dives, Ctrl+Shift comes up', 'info'); }
+  }
+  if (!inWater || game.nap > 0) game.wantDepth = T.surfaceY;
+  game.depth += Math.sign(game.wantDepth - game.depth) * Math.min(Math.abs(game.wantDepth - game.depth), 2.5 * dt);
+  const under = game.depth < T.surfaceY - 0.3;
+  if (under) k.jump = false;
+  game.clear += ((under ? 1 : 0) - game.clear) * Math.min(1, dt * 3);
+  if (world.waterClear) world.waterClear(game.clear);
+  if (under && cam.manual <= 0) cam.pitch += (Math.max(cam.pitch, 0.8) - cam.pitch) * Math.min(1, dt * 2);
+  if (sound.underwaterMusic) sound.underwaterMusic(under);
+  $('dive-buttons').hidden = !inWater || !game.running;
+  $('b-dive').disabled = game.wantDepth <= T.diveY + 0.01; $('b-up').disabled = !under;
+}
+
+function treasureStep(dt, t) {
+  game.biteCool = Math.max(0, game.biteCool - dt);
+  const biter = crocs.bites(wally);
+  if (biter && game.biteCool <= 0) {
+    game.biteCool = 2; biter.lunge = 0.5;
+    game.energy -= 15; game.streak = 0; game.wantDepth = PARK_TREASURE.surfaceY;
+    wally.knock(biter.pos.x, biter.pos.z); fx.shake(0.5, 0.3);
+    sound.play.sting(); toast(`${biter.name} snapped at you! Up you go`, 'bad');
+    bubbles.say(wally.root, 'Strewth! Back off, mate!', 3.6);
+  }
+  for (const e of treasure.update(dt, t, wally.pos.x, wally.pos.z, wally.pos.y)) {
+    if (e.type === 'found') {
+      sound.play.goal(); game.score += 50;
+      const left = treasure.total - treasure.found;
+      toast(left ? `Found: ${e.thing.name}! ${left} more down here` : `Found: ${e.thing.name}! That's the lot: now the chest`, 'good');
+      if (!left) bubbles.say(wally.root, "Crikey, that's everything! Now for that chest!", 3.6);
+      drawQuest();
+    } else if (e.type === 'open') {
+      const r = findTreasure(progress, 'park', TREASURE_REWARD);
+      progress = r.progress;
+      try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
+      game.score += 500; sound.play.powerup();
+      toast(`Treasure! +${r.mangoes} Golden Mangoes`, 'good');
+      bubbles.say(wally.root, 'Fair dinkum treasure! Ripper!', 3.6);
+      drawQuest();
+    }
+  }
+  // A nudge toward it, a little while in, if he has not found anything yet.
+  game.treasureHint -= dt;
+  if (game.time > 40 && treasure.found === 0 && game.treasureHint <= 0) {
+    game.treasureHint = 60;
+    bubbles.say(wally.root, "Hang on, what's bubbling up in the middle of the lagoon?", 3.6);
+  }
 }
 
 // Out of tucker: Wally flops down for a nap and it costs a life. Kenny's toast
