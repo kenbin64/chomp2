@@ -20,7 +20,7 @@ export function freshProgress() {
   return { unlocked: ['park'], stars: {}, best: {}, postcards: [], mangoes: 0, pearls: 0, coins: 0, shells: 0, pier: false,
            badge: false, skyrail: false, boatTicket: false, wardrobe: freshWardrobe(), extras: [], crocName: null, treasures: [],
            stamps: [], tokens: 0, abilities: {}, visits: {}, souvenirs: [], sidequests: 0, discovered: [],
-           gear: {}, equipped: null, uses: 0, partial: {} };
+           gear: {}, equipped: null, uses: 0, partial: {}, tickets: {} };
 }
 
 // Stars from a score: thresholds are [one, two, three].
@@ -230,22 +230,35 @@ export function wearing(progress, who) {
 // the ticket chain. ready: false shows it as coming soon (no model or no level yet).
 export const EXTRAS = [
   { id: 'boomerang',       kind: 'gear',   name: 'Boomerang',          price: 60, ready: false, about: 'Thrown and caught again: handy in later levels.' },
-  { id: 'ticket-zipline',  kind: 'ticket', name: 'Zip line ticket',    price: 25, ready: false, activity: 'zipline', about: 'A ride across the Barron Gorge on the zip line.' },
+  { id: 'ticket-zipline',  kind: 'ticket', name: 'Zip line ticket',    price: 25, ready: true, activity: 'zipline', about: 'One ride down the Barron Gorge on the zip line (Barron Falls, at the end of the Kuranda markets).' },
   { id: 'ticket-bungee',   kind: 'ticket', name: 'Bungee jump ticket', price: 35, ready: false, activity: 'bungee', about: 'A leap over Barron Falls.' },
   { id: 'ticket-cruise',   kind: 'ticket', name: 'River cruise ticket', price: BOAT_TICKET_PRICE, pay: 'coins', ready: true, about: 'The river boat on the Daintree (opens the Daintree River).' },
   { id: 'ticket-rapids',   kind: 'ticket', name: 'River rapids ticket', price: 30, ready: false, activity: 'rapids', about: 'A raft down the white water at Mossman Gorge.' },
 ];
-export function hasExtra(progress, id) { return id === 'ticket-cruise' ? !!progress.boatTicket : (progress.extras || []).includes(id); }
+export function hasExtra(progress, id) {
+  if (id === 'ticket-cruise') return !!progress.boatTicket;
+  const x = EXTRAS.find(e => e.id === id);
+  if (x && x.activity) return ticketsFor(progress, x.activity) > 0;
+  return (progress.extras || []).includes(id);
+}
+// Adventure tickets are good for one go each (Ken): buy as many as you like.
+export function ticketsFor(progress, activity) { return Math.max(0, (progress.tickets || {})[activity] || 0); }
+export function useTicket(progress, activity) {
+  if (ticketsFor(progress, activity) < 1) return { progress, ok: false };
+  return { ok: true, progress: { ...progress, tickets: { ...(progress.tickets || {}), [activity]: ticketsFor(progress, activity) - 1 } } };
+}
 // Buy gear or a ticket. why: 'unknown', 'soon', 'owned' or 'mangoes'.
 export function buyExtra(progress, id) {
   const x = EXTRAS.find(e => e.id === id);
   if (!x) return { progress, ok: false, why: 'unknown' };
   if (!x.ready) return { progress, ok: false, why: 'soon' };
-  if (hasExtra(progress, id)) return { progress, ok: false, why: 'owned' };
+  if (!x.activity && hasExtra(progress, id)) return { progress, ok: false, why: 'owned' };
   const pay = x.pay || 'mangoes';
   if ((progress[pay] || 0) < x.price) return { progress, ok: false, why: pay === 'coins' ? 'gold' : 'mangoes' };
   const p = { ...progress, [pay]: progress[pay] - x.price };
-  if (id === 'ticket-cruise') p.boatTicket = true; else p.extras = [...(progress.extras || []), id];
+  if (id === 'ticket-cruise') p.boatTicket = true;
+  else if (x.activity) p.tickets = { ...(progress.tickets || {}), [x.activity]: ticketsFor(progress, x.activity) + 1 };
+  else p.extras = [...(progress.extras || []), id];
   return { ok: true, progress: p };
 }
 
@@ -296,6 +309,7 @@ export function readProgress(text) {
       equipped: GEAR_IDS.includes(p.equipped) ? p.equipped : null,
       uses: Number.isFinite(p.uses) ? p.uses : 0,
       partial: p.partial && typeof p.partial === 'object' ? Object.fromEntries(Object.entries(p.partial).filter(([k, v]) => GEAR_IDS.includes(k) && Number.isFinite(v))) : {},
+      tickets: p.tickets && typeof p.tickets === 'object' ? Object.fromEntries(Object.entries(p.tickets).filter(([, v]) => Number.isFinite(v) && v >= 0)) : {},
     };
   } catch { return freshProgress(); }
 }

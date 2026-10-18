@@ -143,5 +143,17 @@ check('every area has a postcard', AREAS.every(a => typeof POSTCARDS[a.id] === '
   check('owned extras are saved', P.readProgress(JSON.stringify({ ...p0, extras: ['boomerang', 'nonsense'] })).extras.join() === 'boomerang');
 }
 
+// Adventure tickets (Ken): one go each, buy as many as you like.
+{
+  const P = await import('../js/progress.js');
+  let p = { ...P.freshProgress(), mangoes: 100 };
+  check('no zip line ticket to start', P.ticketsFor(p, 'zipline') === 0 && !P.useTicket(p, 'zipline').ok);
+  p = P.buyExtra(p, 'ticket-zipline').progress; p = P.buyExtra(p, 'ticket-zipline').progress;
+  check('two bought, two held', P.ticketsFor(p, 'zipline') === 2 && p.mangoes === 100 - 2 * 25);
+  const u = P.useTicket(p, 'zipline');
+  check('a ride uses one up', u.ok && P.ticketsFor(u.progress, 'zipline') === 1);
+  check('tickets are saved', P.ticketsFor(P.readProgress(JSON.stringify(u.progress)), 'zipline') === 1);
+}
+
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

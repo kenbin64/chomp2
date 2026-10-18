@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>html,body{background:#0b1d27}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b6e8c">
+<title>Zip line · Chomp 3D: Wally's Cairns Adventure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" hidden>
+  <div class="panel score"><b id="score">0</b><span class="mango-count">&#x1F96D; <span id="z-mango">0</span></span><span class="pearl-count">&#x1FA99; <span id="z-gold">0</span></span><span class="pearl-count">&#x1F39F;&#xFE0F; <span id="z-token">0</span></span></div>
+  <div class="panel zip-panel">
+    <div class="zip-row"><span id="z-line">Falls line</span><b id="z-speed">0 km/h</b></div>
+    <div class="zip-track"><div class="zip-brake"></div><div id="z-wally"></div></div>
+    <p class="zip-keys"><kbd>Left</kbd> <kbd>Right</kbd> swing · <kbd>Up</kbd> tuck · <kbd>Down</kbd> dangle · hold <kbd>Space</kbd> brake</p>
+  </div>
+  <div id="z-brake-hint" class="zip-hint" hidden>Brake zone: hold <kbd>Space</kbd>!</div>
+  <div id="toasts" aria-live="polite"></div>
+</div>
+
+<section id="title" class="overlay art-bg">
+  <div class="card">
+    <p class="area">Barron Falls adventure</p>
+    <h1>Ride the Gorge</h1>
+    <p>Ride the zip line down the Barron Gorge, past the falls. Swing and tuck to collect what hangs along the line, duck the branches, and brake in the brake zone to land cleanly on the far platform.</p>
+    <div class="zip-lines" id="z-lines"></div>
+    <p class="zip-tickets" id="z-tickets"></p>
+    <button id="ride" class="go" type="button">Ride</button>
+    <p class="fine"><button id="z-buy" class="link" type="button">Buy a ticket</button> · <a href="index.html?map">Back to the map</a></p>
+  </div>
+</section>
+
+<section id="result" class="overlay" hidden>
+  <div class="card">
+    <h1 id="result-title"></h1>
+    <ul class="result-lines" id="result-lines"></ul>
+    <div class="end-buttons"><button id="again" class="go" type="button">Ride again</button><a class="go map-btn" href="index.html?map">Back to the map</a></div>
+  </div>
+</section>
+
+<script type="module" src="js/levels/zipline.js"></script>
+</body>
+</html>

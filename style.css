@@ -365,3 +365,16 @@ body.touch .gear-badge { bottom: 150px; }
 .gear-use.ready { border-color: #ffd166; background: rgba(255,209,102,0.25); animation: use-ready 0.6s ease-in-out infinite alternate; }
 @keyframes use-ready { from { transform: scale(1); } to { transform: scale(1.06); } }
 body.touch .gear-use { bottom: 224px; }
+/* Ride the Gorge (zip line) */
+.zip-panel { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(620px, calc(100% - 32px)); padding: 10px 16px; }
+.zip-row { display: flex; justify-content: space-between; font-weight: 700; } .zip-row b { color: #ffd166; font-size: 20px; }
+.zip-track { position: relative; height: 12px; margin: 8px 0; border-radius: 999px; background: rgba(255,255,255,0.15); }
+.zip-brake { position: absolute; right: 0; top: 0; bottom: 0; width: 19%; border-radius: 0 999px 999px 0; background: rgba(226,87,76,0.6); }
+#z-wally { position: absolute; top: -5px; width: 22px; height: 22px; margin-left: -11px; border-radius: 50%; background: #ffd166; border: 3px solid #102030; }
+.zip-keys { font-size: 12px; opacity: 0.8; margin: 4px 0 0; }
+.zip-hint { position: fixed; left: 50%; top: 22%; transform: translateX(-50%); padding: 10px 22px; border-radius: 999px; background: rgba(226,87,76,0.9); color: #fff; font-size: 24px; font-weight: 800; animation: ring-pulse 0.4s ease-in-out infinite alternate; }
+.zip-hint[hidden] { display: none; }
+.zip-lines { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 10px 0; }
+.zip-line-btn { font: inherit; padding: 8px 16px; border-radius: 999px; border: 2px solid rgba(255,209,102,0.5); background: transparent; color: inherit; cursor: pointer; }
+.zip-line-btn.on { background: #ffd166; color: #102030; }
+.zip-tickets { color: #8fd3c7; font-weight: 700; }

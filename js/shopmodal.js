@@ -6,7 +6,7 @@
 // in-app purchase), wear what you own, and give your croc a name.
 
 import * as THREE from 'three';
-import { readProgress, OUTFITS, buyItem, wearItem, outfitOn, outfitModel, wearing, crocName, setCrocName, EXTRAS, hasExtra, buyExtra, saveProgress } from './progress.js';
+import { readProgress, OUTFITS, buyItem, wearItem, outfitOn, outfitModel, wearing, crocName, setCrocName, EXTRAS, hasExtra, buyExtra, saveProgress, ticketsFor } from './progress.js';
 import { loadModels, ModelSkin } from './models.js';
 import { dressOutfit } from './outfit.js';
 import { cleanName } from './leaderboard-rules.js';
@@ -93,7 +93,8 @@ function render() {
     const card = el('div', `shop-item extra${x.ready ? '' : ' soon'}`);
     const icon = el('span', 'sw sw-model', x.kind === 'gear' ? '🪃' : '🎟');
     card.append(icon, el('b', null, x.name), el('small', null, x.about));
-    if (hasExtra(progress, x.id)) card.append(el('span', 'st on', 'Got it'));
+    if (x.activity && x.ready) card.append(el('span', 'st on', `You have ${ticketsFor(progress, x.activity)}`));
+    if (!x.activity && hasExtra(progress, x.id)) card.append(el('span', 'st on', 'Got it'));
     else if (!x.ready) card.append(el('span', 'st', 'Coming soon'));
     else {
       const b = el('button', 'buy', `🥭 ${x.price}`); b.type = 'button'; b.disabled = (progress.mangoes || 0) < x.price;
