@@ -8,7 +8,7 @@
 import { fitText } from '../signtext.js';
 import * as THREE from 'three';
 import { addSky, addLights, addRanges } from '../world.js';
-import { marketStall, queenslander, overStreet, setMarketNight, bakeStall, stockedCanopy, placeModel } from './kuranda-market.js';
+import { marketStall, queenslander, overStreet, setMarketNight, bakeStall, stockedCanopy, placeModel, paverTexture, leafCanopy, chalkboard, clothesRack, edgeRocks } from './kuranda-market.js';
 import { shopVariant, WALLS, ROOFS, NAMES } from './kuranda-shops.js';
 import { Trees } from '../trees.js';
 import { Grass } from '../grass.js';
@@ -67,7 +67,8 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
 
   // Ground: a paved street through the village, grass and rainforest floor either side.
   const len = STREET.z1 - STREET.z0, mid = (STREET.z0 + STREET.z1) / 2;
-  const street = surfaceMaterial(realism, 'paving', STREET.half * 2 / 2.4, len / 2.4, { color: 0xd8c6b0 }) || mat(0xc8b49a);
+  // Brick pavers like Ken's photo of the real markets, right across to the shops.
+  const street = new THREE.MeshStandardMaterial({ map: paverTexture(STREET.half * 2 / 2.2, len / 2.2), roughness: 0.9 });
   const road = shadowed(new THREE.Mesh(new THREE.PlaneGeometry(STREET.half * 2, len), street), false, true);
   road.rotation.x = -Math.PI / 2; road.position.set(0, 0.01, mid); scene.add(road);
   // Kuranda is in the middle of the rainforest (Ken): no grassland. The ground is
@@ -115,8 +116,21 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
   }
   scene.add(bakeStall(market));
   // A mulched floor under the stalls, between the street and the houses.
-  const mulch = new THREE.MeshStandardMaterial({ color: 0x6b4f35, roughness: 1 });
-  for (const side of [-1, 1]) { const m = shadowed(new THREE.Mesh(new THREE.PlaneGeometry(7, len), mulch), false, true); m.rotation.x = -Math.PI / 2; m.position.set(side * 8.6, 0.015, mid); scene.add(m); }
+  // The pavers carry on under the stalls to the shopfronts (no dirt strips).
+  const sidePavers = new THREE.MeshStandardMaterial({ map: paverTexture(7 / 2.2, len / 2.2), roughness: 0.9 });
+  for (const side of [-1, 1]) { const m = shadowed(new THREE.Mesh(new THREE.PlaneGeometry(7, len), sidePavers), false, true); m.rotation.x = -Math.PI / 2; m.position.set(side * 8.6, 0.015, mid); scene.add(m); }
+  // Out front of the stalls: rainbow chalkboard signs, clothes racks, rocks.
+  const BOARDS = [['Local art', 'Wall hangings', 'Tie-dye'], ['Henna', 'Tattoos', 'Braids'], ['Fresh juice', 'Smoothies', '$5'], ['Crystals', 'Healing', 'Gems'],
+                  ['Hand made', 'Jewellery'], ['Hats', 'Leather', 'Bags'], ['Organic', 'Coffee', 'Open'], ['Portraits', 'While U wait']];
+  const front = new THREE.Group();
+  let fb = 0;
+  for (const side of [-1, 1]) for (let z = STREET.z0 + 5; z < TRAIL_Z - 6; z += 9 + rnd() * 6) {
+    const x = side * (STREET.half + 0.7);
+    if (rnd() < 0.55) { const b = chalkboard(BOARDS[fb++ % BOARDS.length], fb); b.position.set(x, 0, z); b.rotation.y = side > 0 ? -Math.PI / 2 + 0.4 : Math.PI / 2 - 0.4; front.add(b); }
+    else if (rnd() < 0.6) { const r = clothesRack(fb++); r.position.set(x + side * 0.4, 0, z); r.rotation.y = Math.PI / 2; front.add(r); }
+    else { const r = edgeRocks(rnd); r.position.set(x, 0, z); front.add(r); }
+  }
+  scene.add(bakeStall(front));
   overStreet(scene, STREET.half, STREET.z0, TRAIL_Z - 6);
   // Queenslanders behind the market (Ken: the bungalows looked cheap).
   const fronts = ['#f2e3c4', '#dcebd8', '#f5d6c2', '#e4dcf0', '#f0e9b8', '#cfe3ea'], shutters = ['#2f6b5a', '#8a3b2a', '#2f4f7a', '#6a4a8a'];
@@ -148,21 +162,27 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
 
   // The rainforest: Ken's trees, thick beyond the village.
   const trees = new Trees(scene, { light: q.name === 'low' });
-  const count = q.name === 'high' ? 1100 : q.name === 'medium' ? 720 : 320;
+  // Ken: not a lot of trees, just dense enough to cover everything: fewer, bigger trees.
+  const count = q.name === 'high' ? 420 : q.name === 'medium' ? 300 : 160;
   for (let n = 0, tries = 0; n < count && tries < count * 10; tries++) {
     const x = (rnd() * 2 - 1) * 120, z = STREET.z0 - 40 + rnd() * (len + 120);
     if (Math.abs(x) < 22 && z > STREET.z0 - 6 && z < STREET.z1 + 6) continue;   // the forest closes in right behind the buildings
     const r = rnd();
-    if (r < 0.45) trees.add('umbrella', x, 0, z, 10 + rnd() * 6);
-    else if (r < 0.8) trees.add('eucalyptus', x, 0, z, 16 + rnd() * 12);
-    else trees.add('palm', x, 0, z, 10 + rnd() * 5);
+    if (r < 0.55) trees.add('umbrella', x, 0, z, 16 + rnd() * 8);
+    else if (r < 0.85) trees.add('eucalyptus', x, 0, z, 22 + rnd() * 12);
+    else trees.add('palm', x, 0, z, 12 + rnd() * 5);
     n++;
   }
   // The understorey: smaller trees and palms under the tall ones, thick close to the village.
-  const under = q.name === 'high' ? 500 : q.name === 'medium' ? 320 : 140;
+  const under = q.name === 'high' ? 160 : q.name === 'medium' ? 110 : 60;
   for (let n = 0, tries = 0; n < under && tries < under * 10; tries++) {
     const side = rnd() < 0.5 ? -1 : 1, x = side * (21 + Math.pow(rnd(), 1.6) * 60), z = STREET.z0 - 20 + rnd() * (len + 40);
     trees.add(rnd() < 0.55 ? 'umbrella' : 'palm', x, 0, z, 4 + rnd() * 6); n++;
+  }
+  // Trees right at the lane's edges, leaning over it: the green canopy and dappled shade of Ken's photo.
+  for (const side of [-1, 1]) for (let z = STREET.z0 + 3 + (side > 0 ? 6 : 0); z < TRAIL_Z - 4; z += 12 + rnd() * 4) {
+    if (STALLS.some(([sx, sz]) => Math.sign(sx) === side && Math.abs(sz - z) < 3)) continue;
+    trees.add('umbrella', side * (STREET.half + 3.2), 0, z, 13 + rnd() * 4);
   }
   // A few shade trees right along the street.
   for (let z = 0; z < STREET.z1 - 10; z += 26) for (const side of [-1, 1]) trees.add('umbrella', side * 12, 0, z + side * 9 + 13, 8 + rnd() * 3);

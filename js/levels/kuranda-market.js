@@ -408,3 +408,97 @@ export function plantCluster(rnd, n = 4) {
   }
   return g;
 }
+
+// ---- The lane, like Ken's photo of the real Kuranda markets --------------------------------------
+// Warm brick pavers in a herringbone, worn and sun-dappled.
+export function paverTexture(repeatX, repeatY) {
+  const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
+  g.fillStyle = '#8a7c6c'; g.fillRect(0, 0, 512, 512);                      // the joints
+  const B = 64, H = 32;
+  for (let y = -B; y < 512 + B; y += H) for (let x = -B; x < 512 + B; x += H) {
+    const tone = [[176, 150, 124], [190, 162, 134], [160, 136, 112], [198, 176, 150], [170, 140, 110]][Math.floor(Math.random() * 5)];
+    g.fillStyle = `rgb(${tone})`;
+    const vertical = ((x + y) / H) % 2 === 0;
+    if (vertical) g.fillRect(x + 2, y + 2, H - 4, B - 4); else g.fillRect(x + 2, y + 2, B - 4, H - 4);
+  }
+  for (let i = 0; i < 500; i++) { g.fillStyle = `rgba(60,45,30,${Math.random() * 0.12})`; g.fillRect(Math.random() * 512, Math.random() * 512, 2 + Math.random() * 6, 2 + Math.random() * 6); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeatX, repeatY); t.anisotropy = 8;
+  return t;
+}
+
+// A leafy canopy arching over the lane: big cut-out sprays of leaves high up,
+// that cast dappled shade on the pavers (the shadow keeps the leaf shapes).
+export function leafCanopy(scene, half, z0, z1) {
+  const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
+  g.clearRect(0, 0, 512, 512);
+  for (let i = 0; i < 900; i++) {
+    const x = Math.random() * 512, y = Math.random() * 512, a = Math.random() * Math.PI * 2, l = 10 + Math.random() * 16;
+    if (Math.random() < 0.18) continue;                                          // gaps for the sun to come through
+    g.fillStyle = ['#3f7a35', '#5ea83e', '#2f6a2a', '#78b84a', '#4a8a3a'][Math.floor(Math.random() * 5)];
+    g.save(); g.translate(x, y); g.rotate(a); g.beginPath(); g.ellipse(0, 0, l, l * 0.45, 0, 0, Math.PI * 2); g.fill(); g.restore();
+  }
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  const mat = new THREE.MeshStandardMaterial({ map: tex, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.8 });
+  const group = new THREE.Group();
+  for (let z = z0; z < z1; z += 14) {
+    // Sprays reaching in from each side, tilted, not a flat roof: the sky shows between.
+    for (const side of [-1, 1]) {
+      const spray = new THREE.Mesh(new THREE.PlaneGeometry(half * 1.5, 11, 4, 4), mat);
+      const pos = spray.geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) pos.setZ(i, Math.sin((pos.getX(i) / (half * 1.5) + 0.5) * Math.PI) * 1.2);   // arching
+      spray.geometry.computeVertexNormals();
+      spray.rotation.set(-Math.PI / 2, 0, side * 0.12);
+      spray.position.set(side * half * 0.55, 8.5 + Math.random() * 1.5, z + Math.random() * 6);
+      spray.castShadow = true; spray.receiveShadow = false; spray.userData.noAO = true;
+      group.add(spray);
+    }
+  }
+  scene.add(group);
+  return group;
+}
+
+// A chalkboard A-frame with rainbow chalk writing (like the photo's signs).
+const CHALK = ['#ffe066', '#ff7ab6', '#6ad8ff', '#8dff7a', '#ffb04a', '#d0a0ff', '#ffffff'];
+export function chalkboard(lines, tone = 0) {
+  mats();
+  const c = document.createElement('canvas'); c.width = 256; c.height = 384; const g = c.getContext('2d');
+  g.fillStyle = '#1c2422'; g.fillRect(0, 0, 256, 384);
+  for (let i = 0; i < 300; i++) { g.fillStyle = `rgba(255,255,255,${Math.random() * 0.04})`; g.fillRect(Math.random() * 256, Math.random() * 384, 8, 2); }   // old chalk dust
+  g.textAlign = 'center';
+  const step = 340 / (lines.length + 1);
+  lines.forEach((line, i) => {
+    g.fillStyle = CHALK[(i + tone) % CHALK.length];
+    fitText(g, line, 128, 30 + step * (i + 1), 228, 44, 'bold {size}px "Comic Sans MS", "Segoe Print", cursive');
+  });
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const face = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 });
+  const g3 = new THREE.Group();
+  for (const s of [-1, 1]) {
+    const leg = new THREE.Group(); leg.rotation.x = s * 0.22; g3.add(leg);
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.96, 0.04), M.timberLight); frame.position.set(0, 0.5, s * 0.03); leg.add(frame);
+    const board = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.84), face); board.position.set(0, 0.5, s * 0.055); board.rotation.y = s > 0 ? 0 : Math.PI; leg.add(board);
+  }
+  return g3;
+}
+
+// A rail of T-shirts and tie-dye out front on a timber stand.
+export function clothesRack(tone = 0) {
+  mats();
+  const g = new THREE.Group();
+  for (const x of [-0.8, 0.8]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.5, 6), M.timberLight); p.position.set(x, 0.75, 0); g.add(p); }
+  const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.7, 6), M.metal); rail.rotation.z = Math.PI / 2; rail.position.y = 1.48; g.add(rail);
+  const tees = [0x222222, 0xffffff, 0xd8452f, 0x2a6fb5, 0x2a2a2a, 0xf2c21b, 0x3a8a4a];
+  for (let i = 0; i < 9; i++) {
+    const m = i % 3 === 1 ? M.tie[(i + tone) % 4] : new THREE.MeshStandardMaterial({ color: tees[(i + tone) % tees.length], roughness: 0.9 });
+    const t = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.62, 0.5), m); t.position.set(-0.7 + i * 0.175, 1.13, 0); g.add(t);
+  }
+  return g;
+}
+
+// A few rounded rocks and strappy plants at the edge of the lane.
+export function edgeRocks(rnd) {
+  mats();
+  const g = new THREE.Group(), rock = new THREE.MeshStandardMaterial({ color: 0x8a8278, roughness: 0.95 });
+  for (let i = 0; i < 4; i++) { const r = new THREE.Mesh(new THREE.DodecahedronGeometry(0.22 + rnd() * 0.22, 1), rock); r.position.set((rnd() - 0.5) * 1.6, 0.12, (rnd() - 0.5) * 0.6); r.scale.y = 0.65; r.rotation.y = rnd() * 6; g.add(r); }
+  return g;
+}
