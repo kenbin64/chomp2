@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>html,body{background:#0b1d27}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b6e8c">
+<title>Boomerang · Chomp 3D: Wally's Cairns Adventure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" hidden>
+  <div class="panel score"><b id="score">0</b><span class="mango-count" title="Throws left">&#x1FA83; <span id="throws">6</span></span></div>
+  <div class="panel boom-panel">
+    <div class="boom-row"><span>Power</span><div class="boom-bar"><div class="boom-green"></div><div id="power-fill"></div></div></div>
+    <div class="boom-row"><span>Angle</span><div class="boom-dial"><div id="angle-needle"></div><div class="boom-sweet"></div></div><b id="angle-num">15°</b></div>
+    <p class="boom-keys"><kbd>Left</kbd> <kbd>Right</kbd> aim · <kbd>Up</kbd> <kbd>Down</kbd> angle · hold <kbd>Space</kbd>, let go to throw · <kbd>C</kbd> catch</p>
+  </div>
+  <div id="catch-ring" class="catch-ring" hidden>Catch! <kbd>C</kbd></div>
+  <div id="toasts" aria-live="polite"></div>
+</div>
+
+<section id="tutorial" class="overlay boom-tutorial" hidden>
+  <div class="card">
+    <p class="area">Boomerang lesson <span id="tut-step"></span></p>
+    <h1 id="tut-title"></h1>
+    <div class="tut-picture" id="tut-picture"></div>
+    <p id="tut-text"></p>
+    <div class="end-buttons"><button id="tut-next" class="go" type="button">Next</button><button id="tut-skip" class="link" type="button">Skip the lesson</button></div>
+  </div>
+</section>
+
+<section id="title" class="overlay art-bg">
+  <div class="card">
+    <p class="area">Kuranda adventure</p>
+    <h1>Boomerang</h1>
+    <p>Down at the throwing ground at the edge of the rainforest, a local guide shows Wally how to throw a boomerang so it comes back. Knock over the targets (tins, bottles, a bell, melons and a target board) and catch it on the way back. Six throws.</p>
+    <button id="play" class="go" type="button">Start</button>
+    <p class="fine"><button id="lesson" class="link" type="button">Show me the lesson again</button> · <a href="index.html?map">Back to the map</a></p>
+  </div>
+</section>
+
+<section id="result" class="overlay" hidden>
+  <div class="card">
+    <h1 id="result-title"></h1>
+    <ul class="result-lines" id="result-lines"></ul>
+    <div class="end-buttons"><button id="again" class="go" type="button">Throw again</button><a class="go map-btn" href="index.html?map">Back to the map</a></div>
+  </div>
+</section>
+
+<script type="module" src="js/levels/boomerang.js"></script>
+</body>
+</html>

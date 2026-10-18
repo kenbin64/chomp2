@@ -110,6 +110,7 @@ function render() {
       box.append(el('h2', null, a.name), el('p', 'place', area ? area.name : ''), el('p', 'goal', a.about));
       box.append(el('p', active ? 'place' : 'needs', active ? 'Open!' : a.stars > have ? `★ ${a.stars} needed (${a.stars - have} to go)` : !area || !area.ready ? 'Coming soon' : `Reach ${area.name} to open`));
       if (a.id === 'shop' && active && kuranda) { const b = el('button', 'go', 'Go shopping'); b.type = 'button'; b.onclick = () => go(kuranda); box.append(b); }
+      if (a.id === 'boomerang' && (active || testing)) { const b = el('button', 'go', 'Throw a boomerang'); b.type = 'button'; b.onclick = () => { location.href = 'boomerang.html' + (testing ? '?all' : ''); }; box.append(b); }
     });
   }
   modal.querySelector('.map-bank').textContent = `★ ${have} · Golden Mangoes ${progress.mangoes || 0} · Pearls ${progress.pearls || 0} · Seashells ${progress.shells || 0} · Gold ${progress.coins || 0}`

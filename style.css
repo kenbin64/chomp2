@@ -303,3 +303,32 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .trade-buttons { display: flex; gap: 12px; align-items: center; }
 .trade-buttons .buy { font: inherit; padding: 7px 18px; border-radius: 999px; border: 0; background: #ffd166; color: #102030; cursor: pointer; font-weight: 700; }
 .trade-buttons .buy[disabled] { opacity: 0.5; cursor: default; }
+/* The boomerang throw */
+.boom-panel { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(560px, calc(100% - 32px)); padding: 10px 16px; }
+.boom-row { display: flex; align-items: center; gap: 12px; margin: 4px 0; } .boom-row > span { width: 52px; font-weight: 700; }
+.boom-bar { position: relative; flex: 1; height: 16px; border-radius: 999px; background: rgba(255,255,255,0.15); overflow: hidden; }
+.boom-green { position: absolute; left: 50%; width: 30%; top: 0; bottom: 0; background: rgba(80,220,120,0.45); }
+#power-fill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, #ffd166, #ff8a3d); border-radius: 999px; }
+.boom-dial { position: relative; width: 70px; height: 36px; border-bottom: 2px solid rgba(255,255,255,0.5); }
+#angle-needle { position: absolute; left: 4px; bottom: 0; width: 62px; height: 3px; background: #ffd166; transform-origin: left center; border-radius: 2px; }
+.boom-sweet { position: absolute; left: 4px; bottom: 0; width: 62px; height: 2px; background: rgba(80,220,120,0.7); transform: rotate(-15deg); transform-origin: left center; }
+.boom-keys { font-size: 12px; opacity: 0.8; margin: 6px 0 0; }
+.catch-ring { position: fixed; left: 50%; top: 52%; transform: translate(-50%, -50%); padding: 14px 22px; border: 5px solid #ffd166; border-radius: 50%; color: #ffd166; font-size: 26px; font-weight: 800; animation: ring-pulse 0.5s ease-in-out infinite alternate; text-shadow: 0 2px 6px rgba(0,0,0,0.5); }
+.catch-ring[hidden] { display: none; }
+@keyframes ring-pulse { from { transform: translate(-50%, -50%) scale(0.92); } to { transform: translate(-50%, -50%) scale(1.08); } }
+/* The lesson: drawn in CSS (Ken: CSS graphics, still high quality) */
+.boom-tutorial .card { max-width: 620px; }
+.tut-picture { position: relative; height: 170px; margin: 8px auto 12px; width: 320px; border-radius: 16px; background: radial-gradient(ellipse at 50% 90%, #4c8a3a, #2a5a2a); overflow: hidden; }
+.tut-picture::before, .tut-picture::after { content: ''; position: absolute; }
+.tut-aim::before { left: 66px; bottom: 16px; width: 150px; height: 138px; border: 4px dashed #fff; border-radius: 50%; border-bottom-right-radius: 40% 30%; }   /* the loop: out, round to the left, back */
+.tut-aim::after { left: 196px; bottom: 6px; width: 22px; height: 22px; border-radius: 50%; background: #ff8a3d; box-shadow: 0 0 0 4px rgba(255,255,255,0.4); }
+.tut-power::before { left: 40px; top: 72px; width: 240px; height: 24px; border-radius: 999px; background: linear-gradient(90deg, rgba(255,255,255,0.2) 50%, rgba(80,220,120,0.6) 50% 80%, rgba(255,255,255,0.2) 80%); }
+.tut-power::after { left: 44px; top: 76px; height: 16px; border-radius: 999px; background: linear-gradient(90deg, #ffd166, #ff8a3d); animation: tut-sweep 1.6s ease-in-out infinite alternate; }
+@keyframes tut-sweep { from { width: 10px; } to { width: 230px; } }
+.tut-angle::before { left: 70px; bottom: 30px; width: 180px; height: 3px; background: rgba(255,255,255,0.5); }
+.tut-angle::after { left: 70px; bottom: 30px; width: 170px; height: 5px; background: #ffd166; transform-origin: left center; animation: tut-tilt 2.4s ease-in-out infinite alternate; border-radius: 3px; box-shadow: 0 0 10px #ffd166; }
+@keyframes tut-tilt { 0% { transform: rotate(-3deg); background: #e2574c; } 50% { transform: rotate(-15deg); background: #50dc78; } 100% { transform: rotate(-32deg); background: #e2574c; } }
+.tut-catch::before { left: 120px; top: 45px; width: 80px; height: 80px; border-radius: 50%; border: 5px solid #ffd166; animation: ring-beat 0.6s ease-in-out infinite alternate; }
+.tut-catch::after { left: 30px; top: 70px; width: 30px; height: 10px; background: #a8743f; border-radius: 10px; animation: tut-fly 2s linear infinite; }
+@keyframes ring-beat { from { transform: scale(0.9); } to { transform: scale(1.08); } }
+@keyframes tut-fly { from { transform: translateX(0) rotate(0); } to { transform: translateX(130px) rotate(1440deg); } }
