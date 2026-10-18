@@ -112,6 +112,7 @@ for (const [x, z, kind] of STALLS) {
   clusters.add({ x: Math.sign(x) * (STREET.half + 1.6), z: z + 3, size: 2 + (z % 3 === 0 ? 1 : 0), food: 5, rate: 0.6 });
 }
 clusters.add({ x: STREET.half + 1.6, z: TRAIL_Z - 14, size: 3, food: 7, rate: 0.5 });   // a last group by the trail, to top up
+clusters.useModels(Array.from({ length: 24 }, (_, i) => models.get(`tourist-${i + 1}`)).filter(Boolean));   // Ken's people
 
 // Kenny, for the rescue, with his jar.
 const kennyMesh = new THREE.Group(); scene.add(kennyMesh); kennyMesh.visible = false;

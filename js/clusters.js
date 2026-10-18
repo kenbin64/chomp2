@@ -6,7 +6,7 @@
 
 import * as THREE from 'three';
 import { CLUSTER, clusterStep } from './rules.js';
-import { person } from './tourists.js';
+import { person, wearModel } from './tourists.js';
 import { pickLine } from './bubbles.js';
 
 function ringMesh(inner, outer, color, opacity) {
@@ -38,6 +38,28 @@ export class Clusters {
   constructor(scene, heightAt, bubbles) {
     this.scene = scene; this.heightAt = heightAt; this.bubbles = bubbles;
     this.list = [];
+    this.models = [];
+  }
+
+  // Wear Ken's people models (tourist-1.glb and on) on every group here now
+  // and every group that arrives later. No group has the same character twice
+  // (Ken): each is dealt different people, and while there are fewer people
+  // made than a group's size, the extra members step out of the group.
+  useModels(list) {
+    this.models = list;
+    for (const c of this.list) this.wearGroup(c);
+  }
+  wearGroup(c) {
+    const n = this.models.length;
+    if (!n || c.dressed) return;
+    c.dressed = true;
+    const start = Math.floor(Math.random() * n);
+    c.people.slice(n).forEach(p => c.root.remove(p.g));
+    c.people = c.people.slice(0, n);
+    c.people.forEach((p, i) => {
+      p.skin = wearModel(p, this.models[(start + i) % n]);
+      if (p.skin && p.skin.phone) p.phone = p.skin.phone;
+    });
   }
 
   // Put a group at (x, z). food: how many pieces they brought. rate < 1 throws faster.
@@ -61,6 +83,7 @@ export class Clusters {
     const c = { root, people, outer, inner, sign, food, start: food, rate, state: { nerves: 0, cooldown: 0.8 },
                 mood: 'unaware', fled: false, flee: 0, gone: false, warned: false };
     this.list.push(c);
+    this.wearGroup(c);
     return c;
   }
 
@@ -150,9 +173,22 @@ export class Clusters {
       p.head.rotation.set(headX + Math.sin(p.phase * 1.3) * 0.03, headY, Math.sin(p.phase * 1.5 + i) * 0.05);
       p.g.position.y = (p.baseY ?? (p.baseY = p.g.position.y)) + hop;
       p.legs[0].rotation.x = p.legs[1].rotation.x = 0;
+      if (p.skin) this.act(p, dt, nervous);
       // A camera flash now and then while taking a photo.
       if (p.act === 'photo' && p.phone && Math.random() < dt * 0.6) this.flash(p.phone);
     });
+  }
+
+  // A person wearing a model plays the move for what they are doing.
+  act(p, dt, nervous) {
+    const k = p.skin;
+    p.g.position.y = p.baseY;                                  // the moves carry their own hops
+    if (nervous) k.play('nervous', { alternatives: ['idle'] });
+    else if (p.cheer > 0) k.play('cheer', { alternatives: ['idle'] });
+    else if (p.throwing > 0) k.play('throw', { once: true, fit: 0.45, alternatives: ['idle'] });
+    else k.play({ photo: 'photo', wave: 'wave', point: 'point', chat: 'chat' }[p.act] || 'idle', { alternatives: ['idle'] });
+    if (k.phone) k.phone.visible = !nervous && !(p.cheer > 0) && !(p.throwing > 0) && p.act === 'photo';
+    k.update(dt);
   }
 
   flash(phone) {
@@ -178,6 +214,7 @@ export class Clusters {
       p.g.rotation.y = Math.atan2(c.awayFrom.x, c.awayFrom.z);
       p.legs[0].rotation.x = Math.sin(p.phase) * 0.9; p.legs[1].rotation.x = -Math.sin(p.phase) * 0.9;
       p.arms[0].rotation.x = -2.6; p.arms[1].rotation.x = -2.6;          // hands up, running
+      if (p.skin) { p.skin.play('run', { speed: 1.3, alternatives: ['walk'] }); if (p.skin.phone) p.skin.phone.visible = false; p.skin.update(dt); }
     }
     if (c.flee <= 0) { this.scene.remove(c.root); c.gone = true; }
   }

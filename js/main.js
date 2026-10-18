@@ -150,7 +150,9 @@ pelicans.useModel(models.get('pelican'));
 toads.useModel(models.get('toad'));
 bats.useModel(models.get('flyingfox'));
 jellies.useModel(models.get('jellyfish'));
-tourists.useModels(Array.from({ length: 10 }, (_, i) => models.get(`tourist-${i + 1}`)).filter(Boolean));
+const people = Array.from({ length: 24 }, (_, i) => models.get(`tourist-${i + 1}`)).filter(Boolean);
+tourists.useModels(people);
+clusters.useModels(people);
 food.useModels(models);
 
 // Drop graphics a level if the frame rate stays low.
@@ -186,7 +188,8 @@ const game = {
   by: { bat: 0, pelican: 0, toad: 0, jelly: 0, croc: 0 },      // who took the food, for balancing
 };
 window.chomp = { game, wally, food, quality: () => quality };   // for testing in the browser console
-addEventListener('load', () => { window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
+function whenLoaded(fn) { if (document.readyState === 'complete') setTimeout(fn); else addEventListener('load', fn); }
+whenLoaded(() => { window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
 
 // The camera follows Wally on a leash, the way Ocarina of Time follows Link:
 // run sideways and it swings round behind him, run toward it and it backs off.

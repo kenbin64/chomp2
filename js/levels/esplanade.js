@@ -157,6 +157,7 @@ for (const s of course.shelters) {
 // A last group just before the Lagoon, so he can top up for the finish.
 world.shelter(PATH.finish - 12);
 clusters.add({ x: PATH.half + 3.4, z: PATH.finish - 12, size: 3, food: 7, rate: 0.45 });
+clusters.useModels(Array.from({ length: 24 }, (_, i) => models.get(`tourist-${i + 1}`)).filter(Boolean));   // Ken's people
 
 // Box jellyfish drifting in the sea beside the boardwalk: it is stinger season.
 const jellies = [];

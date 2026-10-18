@@ -107,6 +107,23 @@ of each in the **same image tool and style**, then build the model from it in **
 
 The ten people are the ones listed under section 4 just below (use each description as [DESCRIPTION]).
 
+**How the people are built (2026-10-17, working for the surfer, hiker and elder).** Ken's two cast
+sheets hold 24 people; each one goes through Meshy on its own and lands in Downloads. Either way in works:
+
+- **Rigged in Meshy** (the `..._rigged_All_Animations.glb` download): `tools/blender-import-rigged.py`
+  keeps Meshy's skeleton, skin weights, Walking and Running, and gives the bones our names.
+- **Not rigged**: `tools/blender-bake-lowpoly.py` (12k triangles, 2048, reach 2.5), then
+  `tools/blender-rig-human.py`, which measures each body by itself (crotch, neck, shoulders, hands,
+  legs; T-pose or A-pose; a backpack or hat does not fool it) and builds the same skeleton.
+
+Then `tools/blender-animate-human.py` adds the shared moves (Idle, Walk, Run, Wave, Point, Chat, Photo,
+Throw, Cheer, Nervous, plus a HeldPhone shown only for photos), and gltf-transform makes
+`models/tourist-N.glb` (1024 textures) and `tourist-N-phone.glb` (512), about 0.4 to 0.6 MB each.
+Slots run tourist-1 to tourist-24. No group of visitors ever has the same person twice (Ken): until
+there are as many people as a group's size, the extra members step out.
+
+Made so far: tourist-1 hiker (Meshy rig), tourist-2 young surfer, tourist-3 elder bushman.
+
 ### 4. Tourists: `tourist-1.glb` to `tourist-10.glb`
 Everyday Australians and visitors on a sunny day out, each one a distinct individual. Make about ten that vary in age, build, height, skin tone, hair and clothes. Dress them in ordinary holiday clothes only: no costumes and nothing meant to signal a culture. Show them as warm, friendly, happy people.
 

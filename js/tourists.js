@@ -167,6 +167,19 @@ export function person() {
   return { g, legs, arms, head, phone };
 }
 
+// Put one of Ken's people models on a visitor (tools/blender-animate-human.py
+// moves). The shape-built stand-in is stretched to vary builds, which would
+// distort a model, so a dressed visitor is scaled evenly and varies by height.
+// The phone in their hand shows only while they take a photo.
+export function wearModel(body, gltf) {
+  body.g.scale.setScalar(1);
+  const skin = dress(body.g, gltf, { height: 1.6 + Math.random() * 0.25 });
+  if (!skin) return null;
+  skin.phone = skin.root.getObjectByName('HeldPhone') || null;
+  if (skin.phone) skin.phone.visible = false;
+  return skin;
+}
+
 export class Tourists {
   constructor(scene, count) {
     this.list = [];
@@ -183,7 +196,7 @@ export class Tourists {
   // Wear Ken's tourist models (tourist-1.glb to tourist-10.glb), shared out in turn.
   useModels(list) {
     if (!list.length) return;
-    this.list.forEach((t, i) => { t.skin = dress(t.body.g, list[i % list.length], { height: 1.75 }); });
+    this.list.forEach((t, i) => { t.skin = wearModel(t.body, list[i % list.length]); });
   }
 
   // Ask the nearest free tourist to throw at Wally. Returns true if one agreed.
@@ -237,8 +250,8 @@ export class Tourists {
       t.body.g.position.set(pos.x, pos.y + Math.sin(t.hop * Math.PI * 2) * 0.35 * (t.hop > 0 ? 1 : 0), pos.z);
       this.pose(t);
       if (t.skin) {
-        if (t.state === 'windup' && t.startled) t.skin.play('startled', { once: true, alternatives: ['throw', 'idle'] });
-        else if (t.state === 'windup') t.skin.play('throw', { once: true, alternatives: ['idle'] });
+        if (t.state === 'windup' && t.startled) t.skin.play('nervous', { alternatives: ['startled', 'throw', 'idle'] });
+        else if (t.state === 'windup') t.skin.play('throw', { once: true, fit: WINDUP + FOLLOW, alternatives: ['idle'] });
         else if (t.state === 'walk') t.skin.play('walk', { alternatives: ['idle'] });
         t.skin.update(dt);
       }
