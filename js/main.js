@@ -15,6 +15,8 @@ import { Clusters } from './clusters.js';
 import { LagoonTreasure } from './parktreasure.js';
 import { PARK_TREASURE, TREASURE_REWARD, swimDepth } from './treasure-rules.js';
 import { setGround, parkGround } from './ground.js';
+import { DayNight } from './daynight.js';
+import { StreetLamps } from './lamps.js';
 import { Input } from './input.js';
 import { Bubbles, pickLine, chatty } from './bubbles.js';
 import { Effects, CRUMBS } from './fx.js';
@@ -32,7 +34,7 @@ import { installShop, openShop } from './shopmodal.js';
 import * as sound from './sound.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, difficulty,
          clampToPark, terrainHeight, onDeck, LIVES, REVIVE_ENERGY, inRedZone,
-         positionAt, foodSurface, lagoonDistance, PARK_EDGE, deckHeight, isWater, LAGOON, CLUSTER } from './rules.js';
+         positionAt, foodSurface, lagoonDistance, PARK_EDGE, deckHeight, isWater, LAGOON, CLUSTER, BOARDWALK } from './rules.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -160,6 +162,35 @@ tourists.useModels(cast);
 food.useModels(models);
 const treasure = new LagoonTreasure(scene, models.get('mango'));     // the chest on the lagoon bottom (Ken)
 
+// Day and night (Ken): now and then it gets dark, the moon comes up over the
+// northern sky as it does from Cairns, and the street lamps round the lagoon
+// light the park. Lamps stand on the bank about every 12 m, clear of the
+// boardwalk and the gate.
+const daynight = new DayNight(scene, { sun: world.sun });
+function parkLampSpots() {
+  const spots = [], d = 1.27, steps = 400;
+  let run = 0, px = null, pz = null;
+  for (let i = 0; i < steps; i++) {
+    const a = (i / steps) * Math.PI * 2, x = Math.cos(a) * LAGOON.rx * d, z = Math.sin(a) * LAGOON.rz * d;
+    if (px !== null) run += Math.hypot(x - px, z - pz);
+    px = x; pz = z;
+    if (run < 12) continue;
+    if (onDeck(x, z) || Math.abs(z - GATE.z) < 3 && Math.abs(x - GATE.x) < 4 || isWater(x, z)) continue;
+    run = 0;
+    spots.push({ x, y: Math.max(0, terrainHeight(x, z)), z, rot: -a });
+  }
+  // Along the boardwalk too (Ken): on the rail line, sides taking turns, rising with the deck.
+  const B = BOARDWALK;
+  let side = 1;
+  for (let x = B.x0 + 4; x <= B.x1 - 4; x += 12) {
+    if (Math.abs(x - GATE.x) < 4) continue;
+    spots.push({ x, y: deckHeight(x), z: B.z + side * (B.width / 2 - 0.12), rot: side > 0 ? Math.PI : 0 });
+    side = -side;
+  }
+  return spots;
+}
+const lamps = new StreetLamps(scene, models.get('streetlamp'), parkLampSpots(), { real: quality.name === 'high' ? 8 : quality.name === 'medium' ? 6 : 4 });
+
 // Drop graphics a level if the frame rate stays low.
 const fpsWatch = watchFrameRate(quality, (lower, fps) => {
   quality = lower;
@@ -211,7 +242,7 @@ setGround({
 });
 window.chomp = { game, wally, food, quality: () => quality };   // for testing in the browser console
 function whenLoaded(fn) { if (document.readyState === 'complete') setTimeout(fn); else addEventListener('load', fn); }
-whenLoaded(() => { window.chomp.tourists = tourists; window.chomp.treasure = treasure; window.chomp.crocs = crocs; window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
+whenLoaded(() => { window.chomp.daynight = daynight; window.chomp.lamps = lamps; window.chomp.tourists = tourists; window.chomp.treasure = treasure; window.chomp.crocs = crocs; window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
 
 // The camera follows Wally on a leash, the way Ocarina of Time follows Link:
 // run sideways and it swings round behind him, run toward it and it backs off.
@@ -605,6 +636,7 @@ function playIntro(area) {
 function introStep(dt) {
   input.read();                                        // ignore controls during the fly-over
   game.intro -= dt;
+  clusters.idle(dt);                                   // the visitors are already watching, not frozen
   const p = 1 - Math.max(0, game.intro) / INTRO_SECONDS;
   const ease = p * p * (3 - 2 * p);
   cam.yaw = -1.6 + ease * 1.6;                       // swing round to behind Wally
@@ -791,6 +823,8 @@ function frame() {
   fx.update(dt, t);
   if (!game.running && !game.paused) { cam.yaw += dt * 0.08; }     // slow turn behind the title screen
   followCamera(dt);
+  const night = daynight.update(game.paused ? 0 : dt, camera);
+  lamps.update(dt, night, wally.pos);
   fpsWatch(dt);
   post.render();
   requestAnimationFrame(frame);

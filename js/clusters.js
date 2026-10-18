@@ -206,6 +206,11 @@ export class Clusters {
     });
   }
 
+  // Before play starts (the fly-over): everyone just watching, so nobody stands frozen.
+  idle(dt) {
+    for (const c of this.list) for (const p of c.people) if (p.skin) { p.skin.play('idle'); p.skin.update(dt); }
+  }
+
   // A person wearing a model plays the move for what they are doing.
   act(p, dt, nervous) {
     const k = p.skin;

@@ -34,6 +34,8 @@ import { makeMaze, makeReefMaze, mazePath, cellAt, cellCentre, collide, inMaze, 
          SWIM_Y, SURFACE_Y, SEABED_Y, reefRunScore, REEF_STARS, PEARL_POINTS, CHEST_POINTS,
          LANES, LANE_NAMES, TREASURES, nextDepth, treasureSpots, canCollect } from './reef-rules.js';
 import { buildReef, buildTreasures, MAZE, OUTER, DIVE, BOUNDS } from './reef-scene.js';
+import { DayNight } from '../daynight.js';
+import { StreetLamps } from '../lamps.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -228,6 +230,14 @@ const game = {
   foursWas: false, diveQueued: false, upQueued: false, climb: 0, guideSaid: false,
 };
 window.chomp = { game, wally, reef, maze, outer, camera, scene, treasures, MAZE };
+
+// Day and night, and lamps on the jetty and the cay (Ken, 2026-10-18).
+const daynight = new DayNight(scene, { sun });
+const lamps = new StreetLamps(scene, models.get('streetlamp'), [
+  ...Array.from({ length: Math.floor((JETTY.x1 - JETTY.x0 - 2) / 8) + 1 }, (_, i) => ({ x: JETTY.x0 + 1 + i * 8, y: JETTY.y, z: JETTY.z + (i % 2 ? 1 : -1) * (JETTY.half - 0.12), rot: i % 2 ? Math.PI : 0 })),
+  ...[0.5, 2.6, 4.4].map(a => { const x = ISLAND.x + Math.cos(a) * 8, z = ISLAND.z + Math.sin(a) * 8; return { x, y: Math.max(0, sandHeight(x, z)), z }; }),
+], { real: quality.name === 'high' ? 8 : quality.name === 'medium' ? 6 : 4 });
+Object.assign(window.chomp, { daynight, lamps });
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -599,6 +609,7 @@ function frame() {
   bubbles.update(dt); fx.update(dt, t);
   islandTrees.update(t);                            // the breeze in the palms
   followCamera(dt);
+  { const night = daynight.update(game.paused ? 0 : dt, camera); lamps.update(dt, night, wally.pos); }
   fpsWatch(dt);
   post.render();
   requestAnimationFrame(frame);

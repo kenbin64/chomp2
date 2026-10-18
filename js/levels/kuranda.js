@@ -30,6 +30,8 @@ import { peopleModels } from '../tourists.js';
 import { kennysJar } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
 import { dressOutfit } from '../outfit.js';
+import { DayNight } from '../daynight.js';
+import { StreetLamps } from '../lamps.js';
 import { buildKuranda, STREET, STALLS, SHOP, TRAIL_Z } from './kuranda-scene.js';
 
 const $ = id => document.getElementById(id);
@@ -142,6 +144,13 @@ const game = {
   groupsDone: 0, groupsTotal: clusters.list.length, ready: false, inShop: false, shopAway: true,
 };
 window.chomp = { game, wally, food, scene };
+
+// Day and night, and street lamps along the market street (Ken, 2026-10-18).
+const daynight = new DayNight(scene, { sun: world.sun });
+const lamps = new StreetLamps(scene, models.get('streetlamp'),
+  Array.from({ length: Math.floor((STREET.z1 - 4 - (STREET.z0 + 4)) / 14) + 1 }, (_, i) => ({ x: (i % 2 ? 1 : -1) * (STREET.half - 0.4), y: STREET.ground, z: STREET.z0 + 4 + i * 14, rot: i % 2 ? -Math.PI / 2 : Math.PI / 2 })),
+  { real: quality.name === 'high' ? 8 : quality.name === 'medium' ? 6 : 4 });
+Object.assign(window.chomp, { daynight, lamps });
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -381,6 +390,7 @@ function frame() {
   bubbles.update(dt); fx.update(dt, t);
   world.update(t);
   followCamera(dt);
+  { const night = daynight.update(game.paused ? 0 : dt, camera); lamps.update(dt, night, wally.pos); }
   fpsWatch(dt);
   post.render();
   requestAnimationFrame(frame);

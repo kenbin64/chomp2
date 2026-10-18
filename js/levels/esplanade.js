@@ -30,6 +30,8 @@ import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
 import { jellyModel, dressedJelly } from '../hazards.js';
 import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE, outfitModel } from '../progress.js';
+import { DayNight } from '../daynight.js';
+import { StreetLamps } from '../lamps.js';
 import { PATH, generateCourse, hits, runScore, STARS, MANGO_SET_BONUS } from './esplanade-rules.js';
 import { buildEsplanade, obstacleModel, mangoModel, useMangoModel } from './esplanade-scene.js';
 import { Clusters } from '../clusters.js';
@@ -205,6 +207,13 @@ const game = {
   air: AIR.max, pearls: 0, faint: 0, hint: 0, foursWas: false, climb: 0, upQueued: false, diveQueued: false,
 };
 window.chomp = { game, wally, food };
+
+// Day and night, and street lamps along the promenade (Ken, 2026-10-18).
+const daynight = new DayNight(scene, { sun: world.sun });
+const lamps = new StreetLamps(scene, models.get('streetlamp'),
+  Array.from({ length: Math.floor((PATH.finish - 6) / 16) + 1 }, (_, i) => ({ x: (i % 2 ? 1 : -1) * (PATH.half - 0.3), y: PATH.ground, z: 6 + i * 16, rot: i % 2 ? -Math.PI / 2 : Math.PI / 2 })),
+  { real: quality.name === 'high' ? 8 : quality.name === 'medium' ? 6 : 4 });
+Object.assign(window.chomp, { daynight, lamps });
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -644,6 +653,7 @@ function frame() {
   if (world.trees) world.trees.update(t);          // the breeze in the trees
   world.sea.userData.ripple(t); world.sea.userData.grass.update(t);   // waves, and the breeze in the grass
   followCamera(dt);
+  { const night = daynight.update(game.paused ? 0 : dt, camera); lamps.update(dt, night, wally.pos); }
   fpsWatch(dt);
   post.render();
   requestAnimationFrame(frame);
