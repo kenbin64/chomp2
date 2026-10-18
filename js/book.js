@@ -13,7 +13,8 @@
 // hold Tourist Tokens or an ability level.
 
 import * as THREE from 'three';
-import { readProgress, OUTFITS } from './progress.js';
+import { readProgress, OUTFITS, saveProgress } from './progress.js';
+import { SOUVENIRS } from './trade-rules.js';
 import { STAMPS, LANDS, ABILITIES, MAX_LEVEL, abilityLevel, abilityValue, upgradeAbility, upgradeCost,
          countVisit, tierFor, openStamps, award, StampRun, hiddenReward, applyReward } from './book-rules.js';
 
@@ -23,7 +24,7 @@ let modal = null, onPause = null, land = null, run = null, tab = 'stamps', banne
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function load() { return readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); }
 let known = null;                                   // the abilities, kept to hand (asked for every frame)
-function save(p) { known = p.abilities || {}; try { localStorage.setItem('chomp-progress', JSON.stringify(p)); } catch { /* not saved */ } }
+function save(p) { known = p.abilities || {}; saveProgress(p); }
 
 // ---- What the game asks ----------------------------------------------------------------
 // The value an ability gives now (1 when he does not have it).
@@ -105,6 +106,12 @@ function wallyPage(p, body) {
   }
   const passes = [p.badge && 'Ranger badge', p.pier && 'Pier pass', p.skyrail && 'Skyrail pass', p.boatTicket && 'River-boat ticket'].filter(Boolean);
   body.append(el('h2', null, 'Banked on the trip'), bank, el('p', 'fine', passes.length ? `Passes: ${passes.join(', ')}` : 'No passes yet'));
+  // Souvenirs from the friendly traders, a shelf for each land.
+  const have = p.souvenirs || [], all = Object.values(SOUVENIRS).flat();
+  body.append(el('h2', null, `Souvenirs (${have.length} of ${all.length})`), el('p', 'fine', 'Swapped with friendly traders: some groups trade instead of running off.'));
+  const shelf = el('div', 'book-grid');
+  for (const [id, name] of all) { const got = have.includes(id); const c = el('div', `book-stamp ${got ? 'got' : 'locked'}`); c.append(el('span', 'ink', got ? '★' : '?'), el('b', null, got ? name : 'Not yet'), el('small', null, got ? 'From a trader' : 'Find a trader')); shelf.append(c); }
+  body.append(shelf);
 }
 
 function render() {

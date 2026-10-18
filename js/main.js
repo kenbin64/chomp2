@@ -19,6 +19,7 @@ import { DayNight } from './daynight.js';
 import { StreetLamps } from './lamps.js';
 import { Pickups, mangoMaker } from './pickups.js';
 import { installBook, bookEvent, ability, HiddenFinds } from './book.js';
+import { startTrading, tradeStep } from './trade.js';
 import { Input } from './input.js';
 import { Bubbles, pickLine, chatty } from './bubbles.js';
 import { Effects, CRUMBS } from './fx.js';
@@ -28,7 +29,7 @@ import { loadRealism } from './realism.js';
 import { usePalmCrown } from './palms.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from './quality.js';
 import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
-import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE, outfitModel, findTreasure, bankFinds } from './progress.js';
+import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE, outfitModel, findTreasure, bankFinds, PROGRESS_CHANGED } from './progress.js';
 import { dressOutfit } from './outfit.js';
 import { showLeaderboard } from './leaderboard.js';
 import { installMap, openMap, recordVisit } from './mapmodal.js';
@@ -160,6 +161,10 @@ jellies.useModel(models.get('jellyfish'));
 // One cast for the whole park: no character twice (Ken). Groups first, strollers get the rest.
 const cast = new Cast(peopleModels(models));
 clusters.useModels(cast);
+// Friendly traders (Ken): some groups offer a trade instead of running off.
+clusters.enableTraders(0.25);
+startTrading({ land: 'park', run: () => ({ mangoes: game.mangoes }), setRun: r => { game.mangoes = r.mangoes; drawQuest(); },
+  feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c.people[0].g, text, 2.4), toast: text => toast(text, 'good') });
 tourists.useModels(cast);
 food.useModels(models);
 const treasure = new LagoonTreasure(scene, models.get('mango'));     // the chest on the lagoon bottom (Ken)
@@ -374,7 +379,9 @@ function landingOf(from, v) {
 }
 
 function updateClusters(dt, t) {
-  for (const e of clusters.update(dt, t, wally.pos, (hand) => throwFood(hand, true))) {
+  const clusterEvents = clusters.update(dt, t, wally.pos, (hand) => throwFood(hand, true));
+  tradeStep(clusterEvents, wally.pos);
+  for (const e of clusterEvents) {
     if (e.type === 'throw' && Math.random() < 0.25) bubbles.say(e.thrower.g, pickLine('touristThrow'), 2.3);
     if (e.type === 'nervous' && !game.warnedOnce) { game.warnedOnce = true; toast('Too close! Back off a bit or they will run', 'bad'); }
     if (e.type === 'flee') { game.scared++; toast(e.cluster.food > 0 ? `They ran off with ${e.cluster.food} bits of tucker!` : 'They ran off!', 'bad'); }
@@ -789,6 +796,7 @@ function restart() { location.reload(); }   // simplest clean reset of every cre
 // other areas are their own pages.
 const PAGES = { park: null, esplanade: 'esplanade.html', reef: 'reef.html', kuranda: 'kuranda.html' };
 let progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
+addEventListener(PROGRESS_CHANGED, () => { progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); });   // the book, trades and shops write it too
 const PARK_STARS = [40, 70, 100];               // park score for one, two and three stars
 
 function showMap() {

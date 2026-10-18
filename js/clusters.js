@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { CLUSTER, clusterStep } from './rules.js';
 import { person, wearModel, Cast } from './tourists.js';
+import { pickTraders } from './trade-rules.js';
 import { pickLine } from './bubbles.js';
 
 function ringMesh(inner, outer, color, opacity) {
@@ -109,9 +110,27 @@ export class Clusters {
     const sign = countSprite(); sign.position.y = 2.6; root.add(sign); sign.userData.draw(food);
     const c = { root, people, outer, inner, sign, food, start: food, rate, state: { nerves: 0, cooldown: 0.8 },
                 mood: 'unaware', fled: false, flee: 0, gone: false, warned: false };
+    if (this.traderChance && Math.random() < this.traderChance) c.trader = true;
     this.list.push(c);
     this.wearGroup(c);
     return c;
+  }
+
+  // Some groups are traders this visit (trade-rules.js): a random pick now,
+  // and the same chance for every group that arrives later.
+  enableTraders(chance = 0.25) {
+    this.traderChance = chance;
+    for (const i of pickTraders(this.list.length, Math.random, chance)) this.list[i].trader = true;
+  }
+  // A sign over a trader group once Wally has found them.
+  tradeSign(c) {
+    if (c.tradeSign) { c.tradeSign.visible = true; return; }
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 96;
+    const g = cv.getContext('2d'); g.fillStyle = 'rgba(20,40,60,0.85)'; g.beginPath(); g.roundRect(4, 4, 248, 88, 40); g.fill();
+    g.fillStyle = '#ffd166'; g.font = 'bold 44px "Trebuchet MS", sans-serif'; g.textAlign = 'center'; g.fillText('Trade?', 128, 63);
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthWrite: false }));
+    s.scale.set(2.2, 0.82, 1); s.position.y = 3.5; s.userData.noAO = true;
+    c.root.add(s); c.tradeSign = s;
   }
 
   get active() { return this.list.filter(c => !c.gone); }
@@ -130,8 +149,15 @@ export class Clusters {
       c.inner.material.opacity = 0.55 * show * (c.fled ? 0 : 1);
 
       if (c.fled) { this.runAway(c, dt, wallyPos); continue; }
-      const mood = clusterStep(c.state, dist, dt, c.food);
+      let mood = clusterStep(c.state, dist, dt, c.food);
       if (c.rate !== 1 && mood === 'throw') c.state.cooldown *= c.rate;
+      // Traders (Ken): they never run off. Stepping inside their circle is the
+      // only way to find out who they are, and brings their offer (trade.js).
+      if (c.trader && (mood === 'flee' || mood === 'nervous')) mood = 'watch';
+      if (c.trader && !c.traded) {
+        if (dist < CLUSTER.near + 0.3 && !c.offered) { c.offered = true; this.tradeSign(c); events.push({ type: 'trade', cluster: c }); }
+        else if (dist > CLUSTER.near + 3) c.offered = false;
+      }
       c.mood = mood;
 
       if (mood === 'throw' && c.food > 0) {

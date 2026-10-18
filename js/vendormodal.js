@@ -4,13 +4,13 @@
 // seashells from the reef for gold pieces, and gold buys the river-boat ticket
 // to the Daintree (in the Outfits catalogue, under Gear and tickets).
 
-import { readProgress, sellToVendor, VENDOR_PAYS, BOAT_TICKET_PRICE } from './progress.js';
+import { readProgress, sellToVendor, VENDOR_PAYS, BOAT_TICKET_PRICE, saveProgress } from './progress.js';
 import { bookEvent } from './book.js';
 
 let modal = null, onPause = null, onChange = null;
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function load() { return readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); }
-function save(p) { try { localStorage.setItem('chomp-progress', JSON.stringify(p)); } catch { /* not saved */ } }
+function save(p) { saveProgress(p); }
 
 function build() {
   modal = el('div', 'map-modal vendor-modal'); modal.hidden = true; modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-label', 'The shell and mango trader');

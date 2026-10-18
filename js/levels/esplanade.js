@@ -29,8 +29,9 @@ import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocit
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
 import { jellyModel, dressedJelly } from '../hazards.js';
-import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE, outfitModel, openPier, PIER_PRICE } from '../progress.js';
+import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE, outfitModel, openPier, PIER_PRICE, PROGRESS_CHANGED } from '../progress.js';
 import { installBook, bookEvent, ability, HiddenFinds } from '../book.js';
+import { startTrading, tradeStep } from '../trade.js';
 import { DayNight } from '../daynight.js';
 import { StreetLamps } from '../lamps.js';
 import { PATH, generateCourse, hits, runScore, STARS, MANGO_SET_BONUS, SPUR, onSpur } from './esplanade-rules.js';
@@ -209,6 +210,7 @@ for (const [id, flag] of [['b-dive', 'diveQueued'], ['b-up', 'upQueued']]) {
 input.onMute = () => toast_('Sound ' + (sound.toggleMute() ? 'off' : 'on'), 'info');
 
 let progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
+addEventListener(PROGRESS_CHANGED, () => { progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); });   // the book, trades and shops write it too
 const game = {
   running: false, paused: false, done: false, countdown: 0, time: 0,
   energy: ENERGY_MAX, lives: LIVES, nap: 0, stun: 0, boost: 0, kennyCool: 8, kennyUsed: false,
@@ -232,6 +234,10 @@ const hiddenFinds = new HiddenFinds(scene, [
   { x: -PATH.half - SPUR.length + 1.5, y: G, z: SPUR.z },
 ]);
 window.chomp.hiddenFinds = hiddenFinds;
+// Friendly traders (Ken): some picnic groups offer a trade instead of running off.
+clusters.enableTraders(0.25);
+startTrading({ land: 'esplanade', run: () => ({ mangoes: game.mangoes, pearls: game.pearls }), setRun: r => { game.mangoes = r.mangoes; game.pearls = r.pearls; },
+  feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c.people[0].g, text, 2.4), toast: text => toast_(text, 'good') });
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -509,7 +515,9 @@ function step(dt, t) {
   }
 
   // People at the shelters throw as he comes by, unless he scares them off.
-  if (!game.done) for (const e of clusters.update(dt, t, wally.pos, throwFrom)) {
+  const clusterEvents = game.done ? [] : clusters.update(dt, t, wally.pos, throwFrom);
+  tradeStep(clusterEvents, wally.pos);
+  for (const e of clusterEvents) {
     if (e.type === 'throw' && Math.random() < 0.35) bubbles.say(e.thrower.g, pickLine('touristThrow'), 2.3);
     if (e.type === 'flee') { game.scared++; toast_('Too close! They ran off with their lunch', 'bad'); }
     if ((e.type === 'flee' || e.type === 'empty') && !e.cluster.counted) {

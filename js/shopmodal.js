@@ -6,7 +6,7 @@
 // in-app purchase), wear what you own, and give your croc a name.
 
 import * as THREE from 'three';
-import { readProgress, OUTFITS, buyItem, wearItem, outfitOn, outfitModel, wearing, crocName, setCrocName, EXTRAS, hasExtra, buyExtra } from './progress.js';
+import { readProgress, OUTFITS, buyItem, wearItem, outfitOn, outfitModel, wearing, crocName, setCrocName, EXTRAS, hasExtra, buyExtra, saveProgress } from './progress.js';
 import { loadModels, ModelSkin } from './models.js';
 import { dressOutfit } from './outfit.js';
 import { cleanName } from './leaderboard-rules.js';
@@ -15,7 +15,7 @@ import { bookEvent } from './book.js';
 let modal = null, onPause = null, preview = null, picked = null;
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function load() { return readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); }
-function save(p) { try { localStorage.setItem('chomp-progress', JSON.stringify(p)); } catch { /* not saved */ } }
+function save(p) { saveProgress(p); }
 const hex = c => '#' + c.toString(16).padStart(6, '0');
 
 // The swatch for an outfit card: its colours, or a picture marker for a model outfit.

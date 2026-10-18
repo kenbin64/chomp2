@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node test/rules.test.mjs && node test/quests.test.mjs && node test/progress.test.mjs && node test/esplanade.test.mjs && node test/reef.test.mjs && node test/leaderboard.test.mjs && node test/treasure.test.mjs && node test/sky.test.mjs && node test/book.test.mjs"
+    "test": "node test/rules.test.mjs && node test/quests.test.mjs && node test/progress.test.mjs && node test/esplanade.test.mjs && node test/reef.test.mjs && node test/leaderboard.test.mjs && node test/treasure.test.mjs && node test/sky.test.mjs && node test/book.test.mjs && node test/trade.test.mjs"
   },
   "description": "Chomp 3D: Wally's Cairns Adventure. A 3D browser game: Wally the Cairns Crocodile."
 }

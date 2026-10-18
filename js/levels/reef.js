@@ -29,7 +29,7 @@ import { LIVES } from '../rules.js';
 import { HumanoidPoser } from '../rig.js';
 import { kennysJar, useJarModel } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
-import { readProgress, completeArea, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE, outfitModel } from '../progress.js';
+import { readProgress, completeArea, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE, outfitModel, PROGRESS_CHANGED } from '../progress.js';
 import { makeMaze, makeReefMaze, mazePath, cellAt, cellCentre, collide, inMaze, airStep, AIR,
          SWIM_Y, SURFACE_Y, SEABED_Y, reefRunScore, REEF_STARS, PEARL_POINTS, CHEST_POINTS,
          LANES, LANE_NAMES, TREASURES, nextDepth, treasureSpots, canCollect } from './reef-rules.js';
@@ -222,6 +222,7 @@ const caveLight = new THREE.PointLight(0x9feeff, 0, 16, 1.6); scene.add(caveLigh
 
 // ---- State --------------------------------------------------------------------------
 let progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
+addEventListener(PROGRESS_CHANGED, () => { progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); });   // the book, trades and shops write it too
 const banked = params.has('pearls') ? Number(params.get('pearls')) : (progress.pearls || 0);
 const game = {
   running: false, paused: false, done: false, time: 0,

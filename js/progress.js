@@ -5,10 +5,20 @@
 
 import { AREAS } from './quests.js';
 
+// Several parts of a page write the save (the book, trades, the trader, the
+// outfit shop) while a level holds its own copy; each writes through
+// saveProgress, which tells the page, so the level can reload its copy and
+// never write back an older one over theirs.
+export const PROGRESS_CHANGED = 'chomp-progress-changed';
+export function saveProgress(p) {
+  try { localStorage.setItem('chomp-progress', JSON.stringify(p)); } catch { /* not saved */ }
+  if (typeof dispatchEvent === 'function') dispatchEvent(new Event(PROGRESS_CHANGED));
+}
+
 export function freshProgress() {
   return { unlocked: ['park'], stars: {}, best: {}, postcards: [], mangoes: 0, pearls: 0, coins: 0, shells: 0, pier: false,
            badge: false, skyrail: false, boatTicket: false, wardrobe: freshWardrobe(), extras: [], crocName: null, treasures: [],
-           stamps: [], tokens: 0, abilities: {}, visits: {} };
+           stamps: [], tokens: 0, abilities: {}, visits: {}, souvenirs: [] };
 }
 
 // Stars from a score: thresholds are [one, two, three].
@@ -269,6 +279,7 @@ export function readProgress(text) {
       tokens: Number.isFinite(p.tokens) ? p.tokens : 0,
       abilities: p.abilities && typeof p.abilities === 'object' ? Object.fromEntries(Object.entries(p.abilities).filter(([k, v]) => ['swisher', 'net', 'snorkel', 'spring'].includes(k) && Number.isFinite(v))) : {},
       visits: p.visits && typeof p.visits === 'object' ? Object.fromEntries(Object.entries(p.visits).filter(([, v]) => Number.isFinite(v))) : {},
+      souvenirs: Array.isArray(p.souvenirs) ? p.souvenirs.filter(id => typeof id === 'string') : [],
     };
   } catch { return freshProgress(); }
 }

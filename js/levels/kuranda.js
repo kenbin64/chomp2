@@ -24,13 +24,14 @@ import { loadRealism } from '../realism.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone } from '../rules.js';
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
-import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, payEntry, WARDROBE, buyItem, wearItem, wearing, buyBoatTicket, BOAT_TICKET_PRICE, outfitModel } from '../progress.js';
+import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, payEntry, WARDROBE, buyItem, wearItem, wearing, buyBoatTicket, BOAT_TICKET_PRICE, outfitModel, PROGRESS_CHANGED } from '../progress.js';
 import { Clusters } from '../clusters.js';
 import { peopleModels } from '../tourists.js';
 import { kennysJar } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
 import { dressOutfit } from '../outfit.js';
 import { installBook, bookEvent, ability, HiddenFinds } from '../book.js';
+import { startTrading, tradeStep } from '../trade.js';
 import { DayNight } from '../daynight.js';
 import { StreetLamps } from '../lamps.js';
 import { buildKuranda, STREET, STALLS, SHOP, VENDOR, TRAIL_Z } from './kuranda-scene.js';
@@ -95,6 +96,7 @@ if (!scene.environment) {
 }
 
 let progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
+addEventListener(PROGRESS_CHANGED, () => { progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); });   // the book, trades and shops write it too
 // The Skyrail fare is paid on arrival, once (the ticket chain, progress.js).
 progress = payEntry(progress, 'kuranda');
 function save() { try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ } }
@@ -181,6 +183,10 @@ Object.assign(window.chomp, { daynight, lamps, streetGold });
 // Hidden finds (Ken): behind the stalls, both sides of the street; three a visit.
 const hiddenFinds = new HiddenFinds(scene, STALLS.map(s => ({ x: s[0] + Math.sign(s[0]) * 2.4, y: STREET.ground, z: s[1] + 1.5 })));
 window.chomp.hiddenFinds = hiddenFinds;
+// Friendly traders (Ken): some shoppers offer a trade instead of running off.
+clusters.enableTraders(0.25);
+startTrading({ land: 'kuranda', run: () => ({}), setRun: () => {},
+  feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c.people[0].g, text, 2.4), toast: text => toast_(text, 'good') });
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -246,7 +252,9 @@ function step(dt, t) {
   if (nearShop && game.shopAway && !game.done) { game.shopAway = false; openShop(); return; }
 
   // Shoppers.
-  if (!game.done) for (const e of clusters.update(dt, t, wally.pos, throwFrom)) {
+  const clusterEvents = game.done ? [] : clusters.update(dt, t, wally.pos, throwFrom);
+  tradeStep(clusterEvents, wally.pos);
+  for (const e of clusterEvents) {
     if (e.type === 'throw' && Math.random() < 0.35) bubbles.say(e.thrower.g, pickLine('touristThrow'), 2.3);
     if (e.type === 'flee') { game.scared++; toast_('Too close! They ran off with their snacks', 'bad'); }
     if ((e.type === 'flee' || e.type === 'empty') && !e.cluster.counted) { e.cluster.counted = true; game.groupsDone++; }

@@ -295,3 +295,11 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .book-stamp-note b { color: #e2574c; } .book-stamp-note small { opacity: 0.8; }
 @keyframes stamp-in { from { transform: rotate(-12deg) scale(1.6); opacity: 0; } to { transform: rotate(-2deg) scale(1); opacity: 1; } }
 .book-card h1 { font-size: clamp(28px, 4.5vw, 44px); line-height: 1.1; margin: 4px 0 8px; }
+/* A trader's offer */
+.trade-panel { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 40; width: min(560px, calc(100% - 32px));
+  background: rgba(16, 32, 48, 0.94); border: 2px solid #ffd166; border-radius: 18px; padding: 12px 18px; color: #fff; box-shadow: 0 8px 26px rgba(0,0,0,0.35); }
+.trade-panel[hidden] { display: none; }
+.trade-title { color: #ffd166; font-size: 18px; } .trade-text { margin: 6px 0 10px; }
+.trade-buttons { display: flex; gap: 12px; align-items: center; }
+.trade-buttons .buy { font: inherit; padding: 7px 18px; border-radius: 999px; border: 0; background: #ffd166; color: #102030; cursor: pointer; font-weight: 700; }
+.trade-buttons .buy[disabled] { opacity: 0.5; cursor: default; }
