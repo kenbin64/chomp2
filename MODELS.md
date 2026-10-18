@@ -170,6 +170,24 @@ Done 2026-10-16 from Ken's Meshy export. The game fits it to 0.42 m tall (bigger
 
 The lagoon, banks, water and sky stay built by the game, so they don't need models.
 
+## The giant clam (Great Barrier Reef, level 3, Ken 2026-10-18)
+
+The clam guards the reef maze, and Wally pays it the Big Golden Mango to open it. It has to open and shut
+in the game, so make it **half open**, with the two shells clearly apart and the hinge showing. It is split
+into its two shells in Blender here. Export **game-ready (about 10k triangles), no rig, for Blender** (GLB).
+
+| File | Prompt |
+|---|---|
+| `clam.glb` | A giant Queensland clam (Tridacna gigas) from the Great Barrier Reef, about 1.2 m across, resting hinge-down on the sandy seabed, half open. A massive heavy shell with four to six deep wavy folds, so the two lips meet in a bold zigzag; cream and off-white shell, slightly weathered. Between the lips a thick fleshy mantle, golden brown to olive green, covered in small glowing iridescent blue-green spots. Stylised 3D animated-feature look, same art style as a modern family animated film, detailed hand-painted textures. No words or logos. |
+
+| `pearl-key.glb` | An ornate old-fashioned key, about 30 cm long, made of gold, with a large lustrous white pearl set in the round handle and small coral-shaped curls on the shaft. Lying flat. Stylised 3D animated-feature look, same art style as a modern family animated film, detailed hand-painted textures. No words or logos. About 3k triangles. |
+| `starfish.glb` | A friendly sea star from the Great Barrier Reef, about 30 cm across, five plump arms, lying flat on its underside, bumpy textured top in warm orange and coral red with small cream spots. Stylised 3D animated-feature look, same art style as a modern family animated film, detailed hand-painted textures. No face. About 3k triangles. |
+
+The starfish's glow when Wally touches it is added in the game, so the model needs no glow of its own.
+
+If the clam is to be a character, add: *"with two big friendly expressive eyes on the mantle and a wide
+smiling mouth along the lips, a little grumpy but kind, like a gatekeeper."*
+
 ## Kuranda and Barron Falls (level 4, Ken 2026-10-17)
 
 For every one: add the style line *"Stylised 3D animated-feature look, same art style as a modern family

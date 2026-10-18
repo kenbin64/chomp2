@@ -11,9 +11,10 @@ Queued after: sidequests, Wally's new moves with Kenny as sidekick, and the desk
 - Wally can even play golf (a round of golf as its own game in this land).
 
 ## Where it is on the map
-- Ken: most of Cairns' golf courses are just north of the city, over the
-  mountain; on the trip map the golf course goes there, north of the city
-  over the range.
+- Ken (corrected 2026-10-18): most of the big golf courses are in the valley
+  below the Tableland, next to Cairns, by the Skyrail's lower station. On the
+  trip map the golf course goes there. It is side games (like Barron Gorge),
+  not a main area; see DESIGN-flow.md.
 
 ## Still to decide when it is built
 - Where it sits in the chain: what the golf course needs from the land before it, and what it gives the next.
