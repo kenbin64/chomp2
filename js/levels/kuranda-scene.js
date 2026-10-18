@@ -8,7 +8,7 @@
 import { fitText } from '../signtext.js';
 import * as THREE from 'three';
 import { addSky, addLights, addRanges } from '../world.js';
-import { marketStall, queenslander, overStreet, setMarketNight, bakeStall } from './kuranda-market.js';
+import { marketStall, queenslander, overStreet, setMarketNight, bakeStall, stockedCanopy, placeModel } from './kuranda-market.js';
 import { shopVariant, WALLS, ROOFS, NAMES } from './kuranda-shops.js';
 import { Trees } from '../trees.js';
 import { Grass } from '../grass.js';
@@ -86,20 +86,24 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
   const SIGNS = { fruit: 'Tropical Fruit', treats: 'Honey & Jams', crafts: 'Rainforest Crafts', clothes: 'Hippie Threads' };
   const face = x => (x > 0 ? -Math.PI / 2 : Math.PI / 2);
   let tone = 0;
-  const market = new THREE.Group();                    // every stall, merged together at the end
-  const stallMeshes = STALLS.map(([x, z, kind]) => {
-    const sign = x === VENDOR.x && z === VENDOR.z ? 'Shells & Mangoes' : SIGNS[kind];
-    const s = marketStall(kind, sign, { roof: tone % 3 === 2 ? 'canvas' : 'iron', tone: tone++ });
-    s.position.set(x, 0, z); s.rotation.y = face(x); market.add(s); return s;
-  });
+  const market = new THREE.Group();                    // built stalls, merged together at the end
+  const canopy = models.get('kuranda-canopy'), artHut = models.get('kuranda-art');
+  // A stall: Ken's canopy stocked with the vendor's things, or a built stall without it.
+  const stall = (kind, sign, t, x, z, side) => {
+    if (canopy) { const c = stockedCanopy(canopy, kind, sign, t); c.position.set(side * 8.4, 0, z); c.rotation.y = face(side); scene.add(c); return c; }
+    const s = marketStall(kind, sign, { roof: t % 3 === 2 ? 'canvas' : 'iron', tone: t }); s.position.set(x, 0, z); s.rotation.y = face(side); market.add(s); return s;
+  };
+  const stallMeshes = STALLS.map(([x, z, kind]) => stall(kind, x === VENDOR.x && z === VENDOR.z ? 'Shells & Mangoes' : SIGNS[kind], tone++, x, z, Math.sign(x)));
   const EXTRA = [['fruit', 'Organic Veggies'], ['crafts', 'Crystals & Gems'], ['clothes', 'Tie-Dye'], ['treats', 'Local Coffee'], ['clothes', 'Leather & Hats'],
                  ['crafts', 'Pottery'], ['fruit', 'Fresh Juice'], ['treats', 'Bush Honey'], ['crafts', 'Hand-made Soap'], ['fruit', 'Dragonfruit']];
   let e = 0;
-  for (const side of [-1, 1]) for (let z = VILLAGE_END; z < TRAIL_Z - 8; z += 6.5) {
-    if (STALLS.some(([sx, sz]) => Math.sign(sx) === side && Math.abs(sz - z) < 5)) continue;
+  // Ken: less dense. A few more stalls in the gaps, well spaced, sides taking turns.
+  let flip = 1;
+  for (let z = VILLAGE_END + 6; z < TRAIL_Z - 10; z += 19.5) {
+    const side = (flip = -flip);
+    if (STALLS.some(([sx, sz]) => Math.abs(sz - z) < 9)) continue;
     const [kind, sign] = EXTRA[e++ % EXTRA.length];
-    const s = marketStall(kind, sign, { roof: e % 3 === 0 ? 'canvas' : 'iron', tone: e, w: 3.4 + rnd() * 0.8 });
-    s.position.set(side * 8.2, 0, z); s.rotation.y = face(side); market.add(s);
+    stall(kind, sign, e, side * 8.2, z, side);
   }
   scene.add(bakeStall(market));
   // A mulched floor under the stalls, between the street and the houses.
@@ -111,26 +115,28 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
   // The village end of the street: a row of shops facing the street, every one
   // Ken's village shop model repainted and renamed (kuranda-shops.js), with the
   // stalls the game needs standing in among them. (Without the model, stalls.)
-  const shopModel = models.get('kuranda-shop');
+  // Ken: the black-trim village shops are replaced by his canopy stocked with
+  // goods, spaced out so the street is not crowded.
+  const shopModel = artHut || models.get('kuranda-shop');
   let n = 0;
-  for (const side of [-1, 1]) for (let z = STREET.z0 + 4; z < VILLAGE_END - 4; z += 10.5) {
-    if (STALLS.some(([sx, sz]) => Math.sign(sx) === side && Math.abs(sz - z) < 6.5)) continue;
-    if (shopModel) {
-      const s = shopVariant(shopModel, { wall: WALLS[n % WALLS.length], roof: ROOFS[(n * 3 + 1) % ROOFS.length], name: NAMES[n % NAMES.length], widen: 0.95 + rnd() * 0.15 });
-      s.position.set(side * 14, 0, z); s.rotation.y = face(side); scene.add(s); n++;
-    } else {
-      const [kind, sign] = EXTRA[e++ % EXTRA.length];
-      const st = bakeStall(marketStall(kind, sign, { tone: e })); st.position.set(side * 8.2, 0, z); st.rotation.y = face(side); scene.add(st);
-    }
+  for (const side of [-1, 1]) for (let z = STREET.z0 + 6 + (side > 0 ? 8 : 0); z < VILLAGE_END - 4; z += 17) {
+    if (STALLS.some(([sx, sz]) => Math.sign(sx) === side && Math.abs(sz - z) < 8)) continue;
+    const [kind, sign] = EXTRA[e++ % EXTRA.length];                 // Ken: the black-trim shops become stocked canopies
+    stall(kind, sign, e, side * 8.2, z, side);
+    n++;
   }
   // Queenslanders further back, both sides.
   const houses = new THREE.Group();
-  for (let z = 6; z < STREET.z1 - 20; z += 22 + rnd() * 8) for (const side of [-1, 1]) {
-    if (z < VILLAGE_END && shopModel) continue;                    // the shops have this stretch
+  for (let z = 6; z < STREET.z1 - 20; z += 32 + rnd() * 8) for (const side of [-1, 1]) {
+    if (artHut) {                                                  // Ken: his colourful art hut replaces the white houses
+      const h = placeModel(artHut, 6.2); h.position.set(side * 18, 0, z + side * 6); h.rotation.y = face(side); scene.add(h);
+      continue;
+    }
     const f = queenslander(10 + rnd() * 4, fronts[Math.floor(rnd() * fronts.length)], shutters[Math.floor(rnd() * shutters.length)]);
     f.position.set(side * 20, 0, z + side * 6); f.rotation.y = face(side); houses.add(f);   // verandas face the street
   }
   scene.add(bakeStall(houses));
+
 
   // The rainforest: Ken's trees, thick beyond the village.
   const trees = new Trees(scene, { light: q.name === 'low' });
@@ -146,6 +152,15 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
   }
   // A few shade trees right along the street.
   for (let z = 0; z < STREET.z1 - 10; z += 26) for (const side of [-1, 1]) trees.add('umbrella', side * 12, 0, z + side * 9 + 13, 8 + rnd() * 3);
+  // Greenery close round the market (Ken: lots of plants around): small palms
+  // and umbrella trees between the stalls and beside the buildings, from the
+  // same tree pictures as the forest so they look as good.
+  for (const side of [-1, 1]) for (let z = STREET.z0 + 4; z < TRAIL_Z - 6; z += 7 + rnd() * 4) {
+    const x = side * (STREET.half + 1.6 + rnd() * 1.4);
+    if (STALLS.some(([sx, sz]) => Math.sign(sx) === side && Math.abs(sz - z) < 2.6)) continue;
+    trees.add(rnd() < 0.6 ? 'palm' : 'umbrella', x, 0, z, 2.6 + rnd() * 2.2);
+  }
+  for (const side of [-1, 1]) for (let z = 4; z < STREET.z1 - 14; z += 10 + rnd() * 6) trees.add(rnd() < 0.5 ? 'palm' : 'umbrella', side * (15.5 + rnd() * 3), 0, z, 4 + rnd() * 4);
   trees.build();
 
   // The Barron Falls trail gate at the end of the street.

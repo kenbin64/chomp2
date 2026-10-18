@@ -64,7 +64,8 @@ function timberTex(tone = 0) {
 // Tie-dye: spirals of bright colour radiating from the middle.
 function tieDyeTex(seed) {
   // Faded, sun-washed tie-dye: a little colour, not a rainbow (Ken: Kuranda was too colourful).
-  const sets = [['#b5654a', '#d9b26a', '#6f8f86', '#8a6a7a'], ['#7a8f5a', '#d7c08a', '#a8644a', '#6a7088'], ['#a0705a', '#7f9a90', '#c9a86a', '#94806a'], ['#8c4f3e', '#b08a6e', '#5f7f86', '#c2a77a']];
+  // Rich, warm colours, like Ken's art hut (Ken: Kuranda is more colourful than other places).
+  const sets = [['#e0583a', '#f2b02e', '#1f9c94', '#b0397a'], ['#2fa36a', '#f2c94c', '#e2703a', '#5a5fb8'], ['#d8466a', '#28a8b0', '#f0a030', '#6aa83a'], ['#c0392b', '#e8a838', '#16808a', '#8e44ad']];
   const cols = sets[seed % sets.length];
   return canvasTex('tie' + seed, 128, 128, (g, w, h) => {
     for (let r = 90; r > 0; r -= 2) for (let a = 0; a < Math.PI * 2; a += 0.06) {
@@ -75,7 +76,7 @@ function tieDyeTex(seed) {
 }
 // Batik and sarong cloth: repeating hand-printed motifs on a coloured ground.
 function batikTex(seed) {
-  const grounds = ['#3f5a6a', '#8a4a32', '#4f6a3e', '#6a4f5a', '#a07a3a', '#3f6a68'];   // indigo, rust, olive, plum, ochre, teal: hand-dyed, faded
+  const grounds = ['#1f6f8a', '#b8432a', '#2f8a4a', '#8a2f6a', '#d08a1a', '#14808a'];   // teal, terracotta, leaf green, magenta, mango, deep teal
   const ground = grounds[seed % grounds.length];
   return canvasTex('batik' + seed, 128, 128, (g, w, h) => {
     g.fillStyle = ground; g.fillRect(0, 0, w, h);
@@ -139,7 +140,7 @@ function mats() {
   const std = (o) => new THREE.MeshStandardMaterial({ roughness: 0.85, ...o });
   M.timber = std({ map: timberTex(0) }); M.timberDark = std({ map: timberTex(1) }); M.timberLight = std({ map: timberTex(2) });
   M.iron = std({ map: ironTex(0.5), roughness: 0.6, metalness: 0.35 }); M.ironRusty = std({ map: ironTex(1.2), roughness: 0.7, metalness: 0.25 });
-  M.canvas = [0xe2d6bc, 0x8a5a44, 0x5f6e58, 0xb8975e].map(c => std({ color: c, side: THREE.DoubleSide }));
+  M.canvas = [0xf0e2c0, 0xc9502e, 0x1f8a84, 0xe8a830].map(c => std({ color: c, side: THREE.DoubleSide }));
   M.cloth = Array.from({ length: 6 }, (_, i) => std({ map: batikTex(i), side: THREE.DoubleSide, roughness: 0.95 }));
   M.tie = Array.from({ length: 4 }, (_, i) => std({ map: tieDyeTex(i), side: THREE.DoubleSide, roughness: 0.95 }));
   M.rope = std({ color: 0xc9a46a }); M.metal = std({ color: 0xb8b8b0, metalness: 0.8, roughness: 0.3 });
@@ -315,7 +316,7 @@ export function overStreet(scene, half, z0, z1) {
   const g = new THREE.Group(), bulbs = [];
   const flagGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-0.16, 0, 0), new THREE.Vector3(0.16, 0, 0), new THREE.Vector3(0, -0.36, 0)]);
   flagGeo.setIndex([0, 1, 2]); flagGeo.computeVertexNormals();
-  const flagMats = ['#b5654a', '#d9b26a', '#7a8f5a', '#5f7f86', '#e2d6bc', '#8a5a44'].map(c => new THREE.MeshStandardMaterial({ color: c, side: THREE.DoubleSide, roughness: 0.9 }));
+  const flagMats = ['#e0583a', '#f2b02e', '#2fa36a', '#1f9c94', '#b0397a', '#f0e2c0'].map(c => new THREE.MeshStandardMaterial({ color: c, side: THREE.DoubleSide, roughness: 0.9 }));
   for (let z = z0 + 8; z < z1; z += 9) {
     const kind = Math.round((z - z0) / 9) % 2;                      // bunting and fairy lights in turn
     for (let i = 0; i <= 24; i++) {
@@ -332,3 +333,78 @@ export function overStreet(scene, half, z0, z1) {
 
 // The fairy lights glow at night (0 day, 1 night).
 export function setMarketNight(n) { if (M.bulb) { M.bulb.emissiveIntensity = 0.2 + 3.2 * n; } }
+
+// ---- Ken's models: the empty canopy (stocked here) and the art hut ----------------------------
+// A copy of a model, `height` metres tall, standing on the ground, centred,
+// facing +z (the caller turns it).
+export function placeModel(gltf, height) {
+  const root = gltf.scene.clone(true);
+  const box = new THREE.Box3().setFromObject(root), size = box.getSize(new THREE.Vector3()), k = height / size.y;
+  root.scale.setScalar(k);
+  root.position.set(-(box.min.x + size.x / 2) * k, -box.min.y * k, -(box.min.z + size.z / 2) * k);
+  root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  const g = new THREE.Group(); g.add(root);
+  g.userData.size = new THREE.Vector3(size.x * k, size.y * k, size.z * k);
+  return g;
+}
+// Ken's empty canopy, stocked with the vendor's things (Ken: "an empty canopy
+// that we can add the vendor stuff"): a trestle table with a cloth piled with
+// goods for its kind, cloths and chimes hanging at the back, a painted sign
+// out front, a potted fern and a hessian mat. Returns the group.
+export function stockedCanopy(gltf, kind, sign, tone = 0, height = 3.6) {
+  mats();
+  const g = placeModel(gltf, height), sz = g.userData.size;
+  const w = Math.min(3.2, sz.x * 0.78), back = -sz.z / 2 + 0.3;
+  const post = [M.timber, M.timberDark, M.timberLight][tone % 3];
+  const stock = new THREE.Group();
+  box(w, 0.06, 1.0, post, 0, 0.92, 0.1, stock);
+  for (const x of [-(w - 0.3) / 2, (w - 0.3) / 2]) for (const z of [-0.3, 0.5]) box(0.06, 0.9, 0.06, post, x, 0.45, z, stock);
+  const cloth = new THREE.Mesh(new THREE.BoxGeometry(w + 0.1, 0.4, 1.06), M.cloth[(tone + 2) % 6]); cloth.position.set(0, 0.76, 0.1); stock.add(cloth);
+  const goodsGroup = new THREE.Group(); goodsGroup.position.set(0, 0, 0.1); stock.add(goodsGroup); goods(kind, goodsGroup, w - 0.2);
+  // Hanging at the back: cloths, a dreamcatcher, chimes.
+  const n = Math.max(2, Math.floor(w / 0.8));
+  for (let i = 0; i < n; i++) {
+    const x = -w / 2 + 0.4 + i * (w - 0.8) / Math.max(1, n - 1);
+    if (kind === 'clothes' || i % 2 === 0) hangingCloth(0.6, 1.0, (i + tone) % 3 ? M.cloth[(i + tone) % 6] : M.tie[(i + tone) % 4], x, 2.0, back, stock);
+    else if (i % 4 === 1) dreamcatcher(x, 2.2, back + 0.05, stock); else windChime(x, 2.5, back + 0.1, stock);
+  }
+  cyl(0.18, 0.13, 0.32, M.pot, w / 2 + 0.25, 0.16, sz.z / 2 + 0.3, stock, 10);
+  for (let k = 0; k < 7; k++) { const fr = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.6), M.leaf); fr.position.set(w / 2 + 0.25, 0.55, sz.z / 2 + 0.3); fr.rotation.set(0.7, k / 7 * Math.PI * 2, 0); stock.add(fr); }
+  const mat = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.3, 1.2), M.hessian); mat.rotation.x = -Math.PI / 2; mat.position.set(0, 0.02, sz.z / 2 + 0.8); stock.add(mat);
+  // The sign, on two posts in front.
+  const palette = [['#3a4a36', '#f0e2bc'], ['#6a3a2a', '#f3e6cc'], ['#3a4652', '#efe4cc'], ['#5a4a38', '#f2e8d0']][tone % 4];
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.6), new THREE.MeshStandardMaterial({ map: signTex(sign, ...palette), roughness: 0.8 }));
+  board.position.set(-w / 2 + 0.6, 1.55, sz.z / 2 + 0.9); stock.add(board);
+  box(0.06, 1.3, 0.06, post, -w / 2 - 0.25, 0.65, sz.z / 2 + 0.88, stock); box(0.06, 1.3, 0.06, post, -w / 2 + 1.45, 0.65, sz.z / 2 + 0.88, stock);
+  g.add(bake(stock));
+  return g;
+}
+
+// ---- Plants (Ken: lots of plants on the verandas and all around) --------------------------------
+// A cluster of potted tropical plants: ferns, palms, bromeliads, gingers with
+// red flowers, a pink bougainvillea. Built from shapes, merged by the caller.
+export function plantCluster(rnd, n = 4) {
+  mats();
+  const leaf = [M.leaf, M.leafLight || (M.leafLight = new THREE.MeshStandardMaterial({ color: 0x5ea83e, side: THREE.DoubleSide, roughness: 0.8 })), M.leafDark || (M.leafDark = new THREE.MeshStandardMaterial({ color: 0x2a5a2a, side: THREE.DoubleSide, roughness: 0.8 }))];
+  const flower = [0xe0303a, 0xff6aa8, 0xf2b02e, 0xd84ad0].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6 }));
+  const pots = [M.pot, new THREE.MeshStandardMaterial({ color: 0x1f8a84, roughness: 0.5 }), new THREE.MeshStandardMaterial({ color: 0xe8a830, roughness: 0.5 })];
+  const g = new THREE.Group();
+  for (let i = 0; i < n; i++) {
+    const x = (rnd() - 0.5) * 1.6, z = (rnd() - 0.5) * 1.0, big = 0.7 + rnd() * 0.8, kind = Math.floor(rnd() * 4);
+    cyl(0.2 * big, 0.14 * big, 0.36 * big, pots[i % 3], x, 0.18 * big, z, g, 10);
+    const top = 0.36 * big;
+    const fronds = kind === 1 ? 6 : 10;
+    for (let k = 0; k < fronds; k++) {
+      const a = k / fronds * Math.PI * 2 + rnd();
+      const len = (kind === 1 ? 1.1 : kind === 2 ? 0.45 : 0.7) * big;
+      const fr = new THREE.Mesh(new THREE.PlaneGeometry(kind === 1 ? 0.22 : 0.14, len), leaf[(k + i) % 3]);
+      fr.position.set(x + Math.cos(a) * len * 0.3, top + len * 0.4, z + Math.sin(a) * len * 0.3);
+      fr.rotation.set(kind === 2 ? 0.25 : 0.6, -a, 0); g.add(fr);
+    }
+    if (kind === 2 || kind === 3) for (let k = 0; k < (kind === 3 ? 5 : 1); k++) {   // a bromeliad heart, or ginger and bougainvillea flowers
+      const f = new THREE.Mesh(new THREE.ConeGeometry(0.07 * big, 0.22 * big, 6), flower[(i + k) % 4]);
+      f.position.set(x + (rnd() - 0.5) * 0.3 * big, top + 0.35 * big + rnd() * 0.3 * big, z + (rnd() - 0.5) * 0.3 * big); g.add(f);
+    }
+  }
+  return g;
+}
