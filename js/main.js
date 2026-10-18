@@ -17,6 +17,7 @@ import { PARK_TREASURE, TREASURE_REWARD, swimDepth } from './treasure-rules.js';
 import { setGround, parkGround } from './ground.js';
 import { DayNight } from './daynight.js';
 import { StreetLamps } from './lamps.js';
+import { Pickups, mangoMaker } from './pickups.js';
 import { Input } from './input.js';
 import { Bubbles, pickLine, chatty } from './bubbles.js';
 import { Effects, CRUMBS } from './fx.js';
@@ -26,7 +27,7 @@ import { loadRealism } from './realism.js';
 import { usePalmCrown } from './palms.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from './quality.js';
 import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
-import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE, outfitModel, findTreasure } from './progress.js';
+import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE, outfitModel, findTreasure, bankFinds } from './progress.js';
 import { dressOutfit } from './outfit.js';
 import { showLeaderboard } from './leaderboard.js';
 import { installMap, openMap, recordVisit } from './mapmodal.js';
@@ -34,7 +35,7 @@ import { installShop, openShop } from './shopmodal.js';
 import * as sound from './sound.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, difficulty,
          clampToPark, terrainHeight, onDeck, LIVES, REVIVE_ENERGY, inRedZone,
-         positionAt, foodSurface, lagoonDistance, PARK_EDGE, deckHeight, isWater, LAGOON, CLUSTER, BOARDWALK } from './rules.js';
+         positionAt, foodSurface, lagoonDistance, PARK_EDGE, deckHeight, isWater, LAGOON, CLUSTER, BOARDWALK, ROCKS } from './rules.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -189,6 +190,22 @@ function parkLampSpots() {
   }
   return spots;
 }
+// Golden Mangoes about the park (Ken: the first land gives the mangoes the
+// second needs). A new spread every visit: on the bank, on top of the
+// boulders, and up above the boardwalk where he has to jump for them.
+function parkMangoSpots() {
+  const spots = [], rnd = Math.random;
+  const rocks = [...ROCKS].sort(() => rnd() - 0.5).slice(0, 2);
+  for (const r of rocks) spots.push({ x: r.x, y: r.top + 1.3, z: r.z });             // up on a boulder: climb or jump for it
+  for (let i = 0; i < 2; i++) { const x = (rnd() * 2 - 1) * 20; spots.push({ x, y: deckHeight(x) + 3, z: BOARDWALK.z }); }   // out of reach unless he jumps
+  while (spots.length < 8) {
+    const a = rnd() * Math.PI * 2, d = 1.12 + rnd() * 0.18, x = Math.cos(a) * LAGOON.rx * d, z = Math.sin(a) * LAGOON.rz * d;
+    if (onDeck(x, z) || isWater(x, z) || spots.some(s => Math.hypot(s.x - x, s.z - z) < 8)) continue;
+    spots.push({ x, y: Math.max(0, terrainHeight(x, z)) + 0.7, z });
+  }
+  return spots;
+}
+const parkMangoes = new Pickups(scene, parkMangoSpots(), mangoMaker(models.get('mango')));
 const lamps = new StreetLamps(scene, models.get('streetlamp'), parkLampSpots(), { real: quality.name === 'high' ? 8 : quality.name === 'medium' ? 6 : 4 });
 
 // Drop graphics a level if the frame rate stays low.
@@ -227,7 +244,7 @@ const game = {
   by: { bat: 0, pelican: 0, toad: 0, jelly: 0, croc: 0 },      // who took the food, for balancing
   // Diving for the lagoon treasure: how deep he is, where he is heading, and the keys.
   depth: PARK_TREASURE.surfaceY, wantDepth: PARK_TREASURE.surfaceY, clear: 0, foursWas: false, ctrlShiftWas: false,
-  diveQueued: false, upQueued: false, biteCool: 0, treasureHint: 0, diveHint: false,
+  diveQueued: false, upQueued: false, biteCool: 0, treasureHint: 0, diveHint: false, mangoes: 0,
   kennyCall: 0, kennyTold: false,       // Ken: under half, Wally can go to Kenny for a scoop
 };
 
@@ -242,7 +259,7 @@ setGround({
 });
 window.chomp = { game, wally, food, quality: () => quality };   // for testing in the browser console
 function whenLoaded(fn) { if (document.readyState === 'complete') setTimeout(fn); else addEventListener('load', fn); }
-whenLoaded(() => { window.chomp.daynight = daynight; window.chomp.lamps = lamps; window.chomp.tourists = tourists; window.chomp.treasure = treasure; window.chomp.crocs = crocs; window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
+whenLoaded(() => { window.chomp.parkMangoes = parkMangoes; window.chomp.daynight = daynight; window.chomp.lamps = lamps; window.chomp.tourists = tourists; window.chomp.treasure = treasure; window.chomp.crocs = crocs; window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
 
 // The camera follows Wally on a leash, the way Ocarina of Time follows Link:
 // run sideways and it swings round behind him, run toward it and it backs off.
@@ -270,6 +287,13 @@ function drawQuest() {
     li.className = g.have >= g.need ? 'done' : '';
     li.innerHTML = `<span></span><span>${Math.min(g.have, g.need)}/${g.need}</span>`;
     li.firstChild.textContent = g.text;
+    $('goals').appendChild(li);
+  }
+  if (parkMangoes) {
+    const li = document.createElement('li');
+    li.className = 'extra' + (parkMangoes.found === parkMangoes.total ? ' done' : '');
+    li.innerHTML = '<span>Golden Mangoes (for the pier)</span><span></span>';
+    li.lastChild.textContent = `${parkMangoes.found}/${parkMangoes.total}`;
     $('goals').appendChild(li);
   }
   if (treasure) {
@@ -504,6 +528,12 @@ function step(dt, t) {
   }
 
   treasureStep(dt, t);
+  for (const m of parkMangoes.update(dt, t, wally.pos)) {
+    game.mangoes++; game.score += 10; sound.play.goal(); fx.burst(m.mesh.position, [0xffc21a, 0xfff1a0], 10);
+    toast(`A Golden Mango! ${parkMangoes.found}/${parkMangoes.total}`, 'good');
+    if (parkMangoes.found === parkMangoes.total) bubbles.say(wally.root, "Every mango in the park! Bonza!", 3.4);
+    drawQuest();
+  }
 
   const k2 = kenny.update(dt, wally.pos, game.energy);
   if (k2 === 'revived') revive();
@@ -714,7 +744,7 @@ function finish(won, why = '') {
   if (won) sound.fanfare();                         // Wally's theme hook: well done, mate
   if (won) {
     const stars = starsFor(game.score, PARK_STARS);
-    progress = completeArea(progress, 'park', { score: game.score, stars });
+    progress = completeArea(progress, 'park', { score: game.score, stars, mangoes: game.mangoes });
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
     $('win-score').textContent = game.score.toLocaleString();
     $('win-stars').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
@@ -724,6 +754,8 @@ function finish(won, why = '') {
     showLeaderboard($('win-board'), 'park', game.score, stars);   // post the score, show the top ten
   } else {
     sound.play.lose();
+    progress = bankFinds(progress, { mangoes: game.mangoes });         // Ken: keep what was found, finished or not
+    try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
     if (why === 'hungry') {
       $('over').querySelector('h1').textContent = 'Still peckish!';
       $('over').querySelector('p').textContent = `Every group is done, but Wally's feed-o-meter isn't full. He needs a full tank (${FULL}%) to head off. Scare fewer people off and beat the thieves to the food.`;
