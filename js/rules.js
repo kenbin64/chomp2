@@ -109,6 +109,11 @@ export function scoreFor(kind, streak, boosted) {
 // Starting velocity that carries food from `from` to `to` in `seconds`,
 // under gravity. Each axis is independent, so this is three one-line answers
 // rather than a search.
+// How far off Wally a throw lands: mostly close, now and then out to `spread`
+// (the square of a random number leans toward small). Ken: food thrown toward
+// him, so it is all reachable, without taking away the challenge.
+export function aimOffset(rnd, spread) { return spread * rnd() * rnd(); }
+
 export function launchVelocity(from, to, seconds) {
   const t = seconds;
   return {
@@ -132,7 +137,7 @@ export function difficulty(seconds) {
   const p = Math.min(1, seconds / 180);
   return {
     throwEvery: 2.6 - 1.6 * p,   // seconds between throws
-    spread: 1.5 + 5 * p,         // how far from Wally the food is aimed
+    spread: 1.0 + 2.2 * p,       // how far from Wally the food is aimed (Ken: within reach, still a stretch later)
     flight: 2.0 - 0.6 * p,       // seconds in the air
     doubleChance: 0.35 * p,      // chance a second tourist throws at once
   };

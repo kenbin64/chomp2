@@ -38,7 +38,7 @@ import { installShop, openShop } from './shopmodal.js';
 import * as sound from './sound.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, difficulty,
          clampToPark, terrainHeight, onDeck, LIVES, REVIVE_ENERGY, inRedZone,
-         positionAt, foodSurface, lagoonDistance, PARK_EDGE, deckHeight, isWater, LAGOON, CLUSTER, BOARDWALK, ROCKS } from './rules.js';
+         positionAt, foodSurface, lagoonDistance, PARK_EDGE, deckHeight, isWater, LAGOON, CLUSTER, BOARDWALK, ROCKS, aimOffset } from './rules.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -360,9 +360,10 @@ function throwFood(hand, aimed) {
   const flight = d.flight * (aimed ? 0.85 : 1);
   const mouth = wally.mouthPosition();
   const spread = aimed ? 1.2 : d.spread;            // people aim at him: their food is limited
-  const a = Math.random() * Math.PI * 2, r = Math.random() * spread;
-  let x = mouth.x + wally.vel.x * flight * 0.5 + Math.cos(a) * r;
-  let z = mouth.z + wally.vel.z * flight * 0.5 + Math.sin(a) * r;
+  const a = Math.random() * Math.PI * 2, r = aimOffset(Math.random, spread);
+  // Aimed where he will be when it comes down (a little short of a full lead, so he still moves for it).
+  let x = mouth.x + wally.vel.x * flight * 0.85 + Math.cos(a) * r;
+  let z = mouth.z + wally.vel.z * flight * 0.85 + Math.sin(a) * r;
   ({ x, z } = clampToPark(x, z));
   let y = mouth.y + (Math.random() < 0.2 ? 1.2 + Math.random() * 1.6 : Math.random() * 0.6 - 0.2);
   if (wally.surface === 'water' && Math.random() < 0.25) y = 2.5 + Math.random() * 1.5;   // one for a croc leap

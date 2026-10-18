@@ -227,5 +227,11 @@ check('at half or more he cannot', !R.canAskKenny(R.FEED_HALF, 0, 1));
 check('not from across the park', !R.canAskKenny(20, 0, R.ASK_RANGE + 1));
 check('not while Kenny is filling the jar again', !R.canAskKenny(20, 5, 1));
 
+// Ken: food thrown toward Wally, all reachable, still a challenge.
+{ let near = 0, far = 0; const rnd = Math.random; for (let i = 0; i < 4000; i++) { const r = R.aimOffset(rnd, 3); if (r < 1) near++; if (r > 3) far++; }
+  check('most throws land close to Wally', near / 4000 > 0.6, near / 4000);
+  check('none land further off than the spread', far === 0); }
+check('even late in a level the spread stays within a few steps', R.difficulty(600).spread <= 3.5);
+
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

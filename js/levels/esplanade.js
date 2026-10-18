@@ -25,7 +25,7 @@ import { installShop, openShop } from '../shopmodal.js';
 import { showLeaderboard } from '../leaderboard.js';
 import { dressOutfit } from '../outfit.js';
 import { loadRealism } from '../realism.js';
-import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone } from '../rules.js';
+import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone, aimOffset } from '../rules.js';
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
 import { jellyModel, dressedJelly } from '../hazards.js';
@@ -397,9 +397,10 @@ function rescueStep(dt, t) {
 // People at a shelter throw as Wally comes past, aiming where he will be.
 function throwFrom(hand) {
   const flight = 1.3 + Math.random() * 0.5;
-  const speed = Math.max(3, Math.hypot(wally.vel.x, wally.vel.z));
-  const tz = wally.pos.z + speed * flight + (Math.random() - 0.5) * 3;
-  const tx = (Math.random() * 2 - 1) * (PATH.half - 1);
+  // Aimed where he will be (Ken: toward Wally, all reachable), mostly close to him.
+  const a = Math.random() * Math.PI * 2, r = aimOffset(Math.random, 2.2);
+  const tz = wally.pos.z + wally.vel.z * flight * 0.85 + Math.sin(a) * r;
+  const tx = Math.max(-PATH.half + 0.8, Math.min(PATH.half - 0.8, wally.pos.x + wally.vel.x * flight * 0.85 + Math.cos(a) * r));
   const ty = G + 2 + (Math.random() < 0.3 ? 1.2 : 0);
   return food.throw(randomKind(), hand, launchVelocity(hand, new THREE.Vector3(tx, ty, tz), flight));
 }

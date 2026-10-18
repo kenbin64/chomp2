@@ -21,7 +21,7 @@ import { installMap, recordVisit } from '../mapmodal.js';
 import { installShop, openShop } from '../shopmodal.js';
 import { showLeaderboard } from '../leaderboard.js';
 import { loadRealism } from '../realism.js';
-import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone } from '../rules.js';
+import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone, aimOffset } from '../rules.js';
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
 import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, payEntry, WARDROBE, buyItem, wearItem, wearing, buyBoatTicket, BOAT_TICKET_PRICE, outfitModel, PROGRESS_CHANGED } from '../progress.js';
@@ -207,8 +207,10 @@ function toast_(text, kind = 'good') {
 // People throw toward where Wally will be.
 function throwFrom(hand) {
   const flight = 1.2 + Math.random() * 0.5;
-  const tx = Math.max(-STREET.half + 0.6, Math.min(STREET.half - 0.6, wally.pos.x + wally.vel.x * flight + (Math.random() - 0.5) * 2.4));
-  const tz = wally.pos.z + wally.vel.z * flight + (Math.random() - 0.5) * 2.4;
+  // Aimed where he will be (Ken: toward Wally, all reachable), mostly close to him.
+  const a = Math.random() * Math.PI * 2, r = aimOffset(Math.random, 2);
+  const tx = Math.max(-STREET.half + 0.6, Math.min(STREET.half - 0.6, wally.pos.x + wally.vel.x * flight * 0.85 + Math.cos(a) * r));
+  const tz = wally.pos.z + wally.vel.z * flight * 0.85 + Math.sin(a) * r;
   const ty = G + 2 + (Math.random() < 0.3 ? 1.2 : 0);
   return food.throw(randomKind(), hand, launchVelocity(hand, new THREE.Vector3(tx, ty, tz), flight));
 }
