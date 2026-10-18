@@ -8,12 +8,14 @@
 import * as THREE from 'three';
 import { addSky, addLights, addRanges } from '../world.js';
 import { marketStall, queenslander, overStreet, setMarketNight, bakeStall } from './kuranda-market.js';
+import { shopVariant, WALLS, ROOFS, NAMES } from './kuranda-shops.js';
 import { Trees } from '../trees.js';
 import { Grass } from '../grass.js';
 import { surfaceMaterial, applySky } from '../realism.js';
 
 export const STREET = { half: 5, z0: -10, z1: 230, ground: 0 };
 export const TRAIL_Z = 222;                        // the gate onto the Barron Falls trail
+export const VILLAGE_END = 64;                     // shopfronts up to here, then the market stalls
 // Market stalls down both sides: [x, z, kind]. The clothes stall is the shop.
 export const STALLS = [
   [8, 18, 'fruit'], [-8, 34, 'crafts'], [8, 52, 'treats'], [-8, 70, 'fruit'],
@@ -48,7 +50,7 @@ function skyrail(scene) {
   return t => gondolas.forEach((g, i) => { g.position.x = x0 + (((i / 9) + t * 0.012) % 1) * (x1 - x0); g.rotation.z = Math.sin(t * 0.8 + i) * 0.03; });
 }
 
-export function buildKuranda(scene, q, realism = null) {
+export function buildKuranda(scene, q, realism = null, models = new Map()) {
   let seed = 31;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   addSky(scene);
@@ -92,7 +94,7 @@ export function buildKuranda(scene, q, realism = null) {
   const EXTRA = [['fruit', 'Organic Veggies'], ['crafts', 'Crystals & Gems'], ['clothes', 'Tie-Dye'], ['treats', 'Local Coffee'], ['clothes', 'Leather & Hats'],
                  ['crafts', 'Pottery'], ['fruit', 'Fresh Juice'], ['treats', 'Bush Honey'], ['crafts', 'Hand-made Soap'], ['fruit', 'Dragonfruit']];
   let e = 0;
-  for (const side of [-1, 1]) for (let z = STREET.z0 + 6; z < TRAIL_Z - 8; z += 6.5) {
+  for (const side of [-1, 1]) for (let z = VILLAGE_END; z < TRAIL_Z - 8; z += 6.5) {
     if (STALLS.some(([sx, sz]) => Math.sign(sx) === side && Math.abs(sz - z) < 5)) continue;
     const [kind, sign] = EXTRA[e++ % EXTRA.length];
     const s = marketStall(kind, sign, { roof: e % 3 === 0 ? 'canvas' : 'iron', tone: e, w: 3.4 + rnd() * 0.8 });
@@ -105,8 +107,25 @@ export function buildKuranda(scene, q, realism = null) {
   overStreet(scene, STREET.half, STREET.z0, TRAIL_Z - 6);
   // Queenslanders behind the market (Ken: the bungalows looked cheap).
   const fronts = ['#f2e3c4', '#dcebd8', '#f5d6c2', '#e4dcf0', '#f0e9b8', '#cfe3ea'], shutters = ['#2f6b5a', '#8a3b2a', '#2f4f7a', '#6a4a8a'];
+  // The village end of the street: a row of shops facing the street, every one
+  // Ken's village shop model repainted and renamed (kuranda-shops.js), with the
+  // stalls the game needs standing in among them. (Without the model, stalls.)
+  const shopModel = models.get('kuranda-shop');
+  let n = 0;
+  for (const side of [-1, 1]) for (let z = STREET.z0 + 4; z < VILLAGE_END - 4; z += 10.5) {
+    if (STALLS.some(([sx, sz]) => Math.sign(sx) === side && Math.abs(sz - z) < 6.5)) continue;
+    if (shopModel) {
+      const s = shopVariant(shopModel, { wall: WALLS[n % WALLS.length], roof: ROOFS[(n * 3 + 1) % ROOFS.length], name: NAMES[n % NAMES.length], widen: 0.95 + rnd() * 0.15 });
+      s.position.set(side * 14, 0, z); s.rotation.y = face(side); scene.add(s); n++;
+    } else {
+      const [kind, sign] = EXTRA[e++ % EXTRA.length];
+      const st = bakeStall(marketStall(kind, sign, { tone: e })); st.position.set(side * 8.2, 0, z); st.rotation.y = face(side); scene.add(st);
+    }
+  }
+  // Queenslanders further back, both sides.
   const houses = new THREE.Group();
   for (let z = 6; z < STREET.z1 - 20; z += 22 + rnd() * 8) for (const side of [-1, 1]) {
+    if (z < VILLAGE_END && shopModel) continue;                    // the shops have this stretch
     const f = queenslander(10 + rnd() * 4, fronts[Math.floor(rnd() * fronts.length)], shutters[Math.floor(rnd() * shutters.length)]);
     f.position.set(side * 20, 0, z + side * 6); f.rotation.y = face(side); houses.add(f);   // verandas face the street
   }

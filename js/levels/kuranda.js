@@ -85,7 +85,7 @@ const fpsWatch = watchFrameRate(quality, lower => {
 const models = await loadModels(undefined, { light: touch || quality.name === 'low' });
 useJarModel(models.get('jar'));
 const realism = params.get('real') === '0' ? null : await loadRealism(renderer, { light: touch || quality.name === 'low' });
-const world = buildKuranda(scene, quality, realism);
+const world = buildKuranda(scene, quality, realism, models);   // Ken's shop model for the street
 const post = createPost(renderer, scene, camera, quality);
 addEventListener('resize', () => post.setSize(innerWidth, innerHeight));
 if (!scene.environment) {
