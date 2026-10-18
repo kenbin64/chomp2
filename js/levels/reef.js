@@ -163,7 +163,7 @@ const seed = Number(params.get('seed')) || 1 + Math.floor(Math.random() * 214748
 const maze = makeMaze(MAZE.cols, MAZE.rows, seed);
 const outer = makeReefMaze(OUTER.cols, OUTER.rows, seed + 4);
 const reef = buildReef(scene, quality, { maze, outer, jellyGltf: models.get('jellyfish'), coralGltf: models.get('coral') });
-// Reef treasures (Ken): starfish, shells and gold coins along both mazes'
+// Reef treasures (Ken): starfish, cowries and conch shells along both mazes'
 // corridors at the three depths, never in a pearl's cell.
 const pearlCellsOf = (m, o) => reef.pearls.map(p => cellAt(m, p.x, p.z, o.ox, o.oz, o.size)).filter(Boolean);
 const treasures = buildTreasures(reef.root, models.get('seashell') || null, [
@@ -225,7 +225,7 @@ const banked = params.has('pearls') ? Number(params.get('pearls')) : (progress.p
 const game = {
   running: false, paused: false, done: false, time: 0,
   lives: LIVES, air: AIR.max, depth: SURFACE_Y, wantDepth: SURFACE_Y,
-  pearls: banked, found: 0, spent: 0, points: 0, mangoes: 0, treasure: 0, treasures: 0, coins: 0,
+  pearls: banked, found: 0, spent: 0, points: 0, mangoes: 0, treasure: 0, treasures: 0, shells: 0,
   chest: false, doorShut: false, inCave: false, faint: 0, stun: 0, hint: 0,
   foursWas: false, diveQueued: false, upQueued: false, climb: 0, guideSaid: false,
 };
@@ -465,8 +465,8 @@ function step(dt, t) {
       const T = TREASURES[tr.kind];
       tr.taken = true; tr.mesh.visible = false;
       game.treasure += T.points; game.treasures++; game.points += T.points;
-      if (tr.kind === 'coin') game.coins++;                         // gold coins pay the Skyrail up to Kuranda
-      sound.play.goal(); fx.burst(tr.mesh.position.clone(), tr.kind === 'coin' ? [0xffd24a, 0xffffff] : tr.kind === 'shell' ? [0xfff0d0, 0xffffff] : [0xff9a5a, 0xffd0a0], 10);
+      if (tr.kind === 'shell' || tr.kind === 'conch') game.shells++;   // seashells: sold to the Kuranda market vendor for gold
+      sound.play.goal(); fx.burst(tr.mesh.position.clone(), tr.kind === 'conch' ? [0xffc8a0, 0xffffff] : tr.kind === 'shell' ? [0xfff0d0, 0xffffff] : [0xff9a5a, 0xffd0a0], 10);
       toast_(`+${T.points} ${T.name}!`, 'good');
     }
   }
@@ -551,7 +551,7 @@ function drawHud() {
   $('job').textContent = game.chest
     ? (game.doorShut ? 'Put a pearl in the giant clam to get out!' : 'Out of the cave and up for air!')
     : game.inCave ? 'Find the pirate chest in the cave' : game.depth > -1.2 ? 'Dive! Follow the guide fish to the coral cave' : 'Follow the guide fish through the coral maze';
-  // Under water, which depth he is at, and the treasures found (shells, starfish, coins).
+  // Under water, which depth he is at, and the treasures found (shells, starfish, conches).
   if (game.depth < -1.2) {
     const i = LANES.reduce((b, y, k) => Math.abs(y - game.depth) < Math.abs(LANES[b] - game.depth) ? k : b, 0);
     $('job').textContent += ` · Depth: ${LANE_NAMES[i]} · Treasures: ${game.treasures}/${treasures.length}`;
@@ -576,17 +576,17 @@ function finish(won, why = '') {
   if (won) sound.fanfare();                         // Wally's theme hook: well done, mate
   {
     // Pearls are a bank across the trip: what was spent at the clam comes off, what was found goes on.
-    // Finished or not, what he found is kept (Ken), gold coins included.
+    // Finished or not, what he found is kept (Ken), seashells included.
     progress = { ...progress, pearls: Math.max(0, (progress.pearls || 0) - game.spent) };
-    if (won) progress = completeArea(progress, 'reef', { score: s.total, stars, mangoes: game.mangoes, pearls: game.found, coins: game.coins });
-    else progress = bankFinds(progress, { mangoes: game.mangoes, pearls: game.found, coins: game.coins });
+    if (won) progress = completeArea(progress, 'reef', { score: s.total, stars, mangoes: game.mangoes, pearls: game.found, shells: game.shells });
+    else progress = bankFinds(progress, { mangoes: game.mangoes, pearls: game.found, shells: game.shells });
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
   }
   $('result-title').textContent = won ? 'Found the pirate treasure!' : why === 'air' ? 'Out of air!' : 'Not this time';
   $('result-why').textContent = won ? '' : 'Kenny can only bring his jar so many times. Swim up for air sooner, and use the bubble vents.';
   $('result-stars').textContent = won ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
   $('result-lines').innerHTML = '';
-  for (const [label, v] of [['Pearls found', `${game.found} (${s.pearls})`], ['Reef treasures', `${game.treasures}/${treasures.length} (${s.treasure})`], ['Gold coins (Skyrail fare)', game.coins], ['Pearl spent on the clam', game.spent], ['Pirate chest', s.chest], ['Air left bonus', s.finishBonus], ['Total', s.total]]) {
+  for (const [label, v] of [['Pearls found', `${game.found} (${s.pearls})`], ['Reef treasures', `${game.treasures}/${treasures.length} (${s.treasure})`], ['Seashells (for the Kuranda markets)', game.shells], ['Pearl spent on the clam', game.spent], ['Pirate chest', s.chest], ['Air left bonus', s.finishBonus], ['Total', s.total]]) {
     const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }
   $('postcard').hidden = !won;

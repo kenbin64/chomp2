@@ -20,6 +20,8 @@ export const STALLS = [
   [8, 170, 'crafts'], [-8, 190, 'treats'],
 ];
 export const SHOP = (() => { const s = STALLS.find(s => s[2] === 'clothes'); return { x: s[0], z: s[1] }; })();
+// The shell and mango trader (Ken, 2026-10-18): the first crafts stall, near the start of the street.
+export const VENDOR = (() => { const s = STALLS.find(s => s[2] === 'crafts'); return { x: s[0], z: s[1] }; })();
 
 function mat(color, extra = {}) { return new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra }); }
 function shadowed(m, cast = true, receive = true) { m.castShadow = cast; m.receiveShadow = receive; return m; }

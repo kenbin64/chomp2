@@ -259,3 +259,11 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .shop-canvas { width: 100%; display: block; }
 .shop-detail h3 { margin: 4px 0; color: #ffd166; } .shop-detail .go { margin: 6px 0; }
 .shop-msg { min-height: 1.4em; }
+/* The shell and mango trader (Kuranda) */
+.vendor-card { width: min(560px, 100%); position: relative; }
+.vendor-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.vendor-what { flex: 1 1 200px; font-weight: 700; } .vendor-rate { opacity: 0.8; font-size: 13px; }
+.vendor-row .buy { font: inherit; font-size: 13px; padding: 5px 14px; border-radius: 999px; border: 0; background: #ffd166; color: #102030; cursor: pointer; }
+.vendor-row .buy[disabled] { opacity: 0.45; cursor: default; }
+.vendor-bank { font-weight: 700; color: #ffd166; margin-top: 10px; }
+.vendor-card h1 { font-size: clamp(26px, 4vw, 36px); line-height: 1.1; margin: 4px 0 6px; }

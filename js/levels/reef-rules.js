@@ -28,12 +28,13 @@ export function nextDepth(depth, dir, canSurface = true) {
 
 // ---- Reef treasures --------------------------------------------------------------
 // Scattered along the maze corridors at the three depths, worth more the deeper
-// they are: starfish near the top, cowrie shells in the middle, gold coins from
-// the pirate wreck down deep.
+// they are: starfish near the top, cowrie shells in the middle, conch shells
+// down deep. The shells are the reef's gift to the next land (Ken's chain): the
+// Kuranda market vendor buys them for gold.
 export const TREASURES = {
   starfish: { lane: 0, points: 2, name: 'Starfish' },
   shell:    { lane: 1, points: 3, name: 'Cowrie shell' },
-  coin:     { lane: 2, points: 5, name: 'Gold coin' },
+  conch:    { lane: 2, points: 5, name: 'Conch shell' },
 };
 // n treasures in different cells of a maze (never the entrance or the chest's
 // cell), each a kind chosen at random; the same seed gives the same layout.
@@ -47,8 +48,8 @@ export function treasureSpots(maze, n, seed = 1, skip = []) {
     cells.push({ c, r });
   }
   for (let i = cells.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [cells[i], cells[j]] = [cells[j], cells[i]]; }
-  // Shells are the most common find (Ken), starfish and gold coins rarer.
-  const pick = () => { const r = rnd(); return r < 0.5 ? 'shell' : r < 0.78 ? 'starfish' : 'coin'; };
+  // Shells are the most common find (Ken), starfish and conches rarer.
+  const pick = () => { const r = rnd(); return r < 0.5 ? 'shell' : r < 0.78 ? 'starfish' : 'conch'; };
   return cells.slice(0, n).map(cell => ({ cell, kind: pick() }));
 }
 // Is Wally close enough to pick one up? Near it across, and at its depth.
@@ -256,7 +257,7 @@ export function cellAt(maze, x, z, ox, oz, size) {
 // ---- The reef level's score ------------------------------------------------------
 // Pearls found and the chest, plus a bonus for finishing with air to spare.
 export const REEF_STARS = [80, 140, 190];   // raised with the treasures (about 100 more points on a full run)
-// treasure: points from the starfish, shells and coins picked up.
+// treasure: points from the starfish and shells picked up.
 export function reefRunScore({ found = 0, chest = false, airLeft = 0, finished = false, treasure = 0 }) {
   const pearls = Math.max(0, found) * PEARL_POINTS, chestPts = chest ? CHEST_POINTS : 0;
   const finishBonus = finished ? 20 + Math.round(Math.max(0, airLeft) / 5) : 0;

@@ -32,7 +32,9 @@ import { jarLabelTexture } from '../textures.js';
 import { dressOutfit } from '../outfit.js';
 import { DayNight } from '../daynight.js';
 import { StreetLamps } from '../lamps.js';
-import { buildKuranda, STREET, STALLS, SHOP, TRAIL_Z } from './kuranda-scene.js';
+import { buildKuranda, STREET, STALLS, SHOP, VENDOR, TRAIL_Z } from './kuranda-scene.js';
+import { installVendor, openVendor } from '../vendormodal.js';
+import { Pickups, goldPiece } from '../pickups.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -141,16 +143,40 @@ const game = {
   running: false, paused: false, done: false, time: 0,
   energy: ENERGY_MAX, lives: LIVES, stun: 0, boost: 0, faint: 0, hungry: 0, hintCool: 0, kennyUsed: false,
   points: 0, foodPoints: 0, caught: 0, streak: 0, scared: 0, mangoes: 0,
-  groupsDone: 0, groupsTotal: clusters.list.length, ready: false, inShop: false, shopAway: true,
+  groupsDone: 0, groupsTotal: clusters.list.length, ready: false, inShop: false, shopAway: true, vendorAway: true, gold: 0,
 };
 window.chomp = { game, wally, food, scene };
+
+// Gold pieces dropped along the street: a new spread each visit, two of them up
+// on stall awnings so he has to jump for them.
+const streetGold = new Pickups(scene, (() => {
+  const spots = [];
+  for (const s of [...STALLS].sort(() => Math.random() - 0.5).slice(0, 2)) spots.push({ x: s[0] * 0.92, y: 3.3, z: s[1] });
+  while (spots.length < 8) {
+    const z = STREET.z0 + 10 + Math.random() * (STREET.z1 - STREET.z0 - 30), x = (Math.random() * 2 - 1) * (STREET.half - 0.8);
+    if (spots.some(p => Math.abs(p.z - z) < 10)) continue;
+    spots.push({ x, y: STREET.ground + 0.6, z });
+  }
+  return spots;
+})(), goldPiece, { size: 1.2 });
+// The trader's sign over the stall.
+{
+  const c = document.createElement('canvas'); c.width = 512; c.height = 160;
+  const g = c.getContext('2d'); g.fillStyle = '#6b3d1e'; g.fillRect(0, 0, 512, 160); g.fillStyle = '#ffe7b0'; g.textAlign = 'center';
+  g.font = 'bold 54px "Trebuchet MS", sans-serif'; g.fillText('Shells & Mangoes', 256, 72);
+  g.font = '34px "Trebuchet MS", sans-serif'; g.fillText('Bought for gold', 256, 125);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.95), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }));
+  sign.position.set(VENDOR.x - Math.sign(VENDOR.x) * 1.6, 3.45, VENDOR.z); sign.rotation.y = VENDOR.x < 0 ? Math.PI / 2 : -Math.PI / 2; scene.add(sign);
+}
+installVendor({ pause: on => { if (game.running) game.paused = on; }, change: p => { progress = p; } });
 
 // Day and night, and street lamps along the market street (Ken, 2026-10-18).
 const daynight = new DayNight(scene, { sun: world.sun });
 const lamps = new StreetLamps(scene, models.get('streetlamp'),
   Array.from({ length: Math.floor((STREET.z1 - 4 - (STREET.z0 + 4)) / 14) + 1 }, (_, i) => ({ x: (i % 2 ? 1 : -1) * (STREET.half - 0.4), y: STREET.ground, z: STREET.z0 + 4 + i * 14, rot: i % 2 ? -Math.PI / 2 : Math.PI / 2 })),
   { real: quality.name === 'high' ? 8 : quality.name === 'medium' ? 6 : 4 });
-Object.assign(window.chomp, { daynight, lamps });
+Object.assign(window.chomp, { daynight, lamps, streetGold });
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -194,6 +220,18 @@ function step(dt, t) {
   }
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
   if (!game.done && game.boost <= 0 && !down) game.energy -= energyDrain(wally.mode, moving, 'kuranda') * dt;
+
+  // The shell and mango trader: walk up to the stall and the trading opens.
+  const nearVendor = Math.hypot(wally.pos.x - Math.sign(VENDOR.x) * STREET.half, wally.pos.z - VENDOR.z) < 3;
+  if (!nearVendor) game.vendorAway = true;
+  if (nearVendor && game.vendorAway && !game.done) { game.vendorAway = false; openVendor(); return; }
+
+  // Gold pieces visitors have dropped along the street (Ken): banked as soon as he has them.
+  for (const g of streetGold.update(dt, t, wally.pos)) {
+    game.gold++; progress = { ...progress, coins: (progress.coins || 0) + 1 }; save();
+    sound.play.goal(); fx.burst(g.mesh.position, [0xffd24a, 0xffffff], 10);
+    toast_(`A gold piece someone dropped! ${streetGold.found}/${streetGold.total}`, 'good');
+  }
 
   // The clothes stall: walk up to it and it opens.
   const nearShop = Math.hypot(wally.pos.x - Math.sign(SHOP.x) * STREET.half, wally.pos.z - SHOP.z) < 3;
@@ -314,6 +352,7 @@ function drawHud() {
   $('score').textContent = game.points.toLocaleString();
   $('mangoes').textContent = progress.mangoes || 0;
   $('coins').textContent = progress.coins || 0;
+  $('shells').textContent = progress.shells || 0;
   $('energy-fill').style.width = `${Math.max(0, game.energy)}%`;
   $('feed').classList.toggle('red', inRedZone(game.energy));
   $('lives').textContent = '●'.repeat(Math.max(0, game.lives)) + '○'.repeat(Math.max(0, LIVES - game.lives));
@@ -344,7 +383,7 @@ function finish(won, why = '') {
   $('result-why').textContent = why === 'hungry' ? `Every group's fed, but Wally needs a full tank (${FULL}%) for the trail.` : '';
   $('result-stars').textContent = won ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
   $('result-lines').innerHTML = '';
-  for (const [label, v] of [['Tucker caught', `${game.caught} (${game.foodPoints})`], ['Finish bonus', finishBonus], ['Total', total]]) {
+  for (const [label, v] of [['Tucker caught', `${game.caught} (${game.foodPoints})`], ['Gold pieces found', game.gold], ['Finish bonus', finishBonus], ['Total', total]]) {
     const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }
   $('postcard').hidden = !won;

@@ -320,11 +320,22 @@ function cowrie() {
   slit.position.y = -0.165;
   g.add(body, spots, slit); return g;
 }
-function coin() {
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.06, 36), new THREE.MeshStandardMaterial({ color: 0xffc83d, metalness: 0.9, roughness: 0.22, emissive: 0x3a2600, emissiveIntensity: 0.7 }));
-  m.rotation.x = Math.PI / 2; return m;
+// A conch: a spiral shell turned on a lathe, with a pink flared lip.
+function conch() {
+  const pts = [];
+  for (let i = 0; i <= 16; i++) { const t = i / 16; pts.push(new THREE.Vector2(0.02 + 0.3 * Math.sin(Math.PI * Math.pow(t, 0.7)) * (1 - 0.35 * t), -0.32 + t * 0.62)); }
+  const shell = new THREE.Mesh(new THREE.LatheGeometry(pts, 24), new THREE.MeshStandardMaterial({ color: 0xf2d2b0, roughness: 0.45 }));
+  const g = new THREE.Group(); g.add(shell);
+  for (let i = 0; i < 5; i++) {                                       // the spiral ridges
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.27 - i * 0.045, 0.025, 6, 20), new THREE.MeshStandardMaterial({ color: 0xd9a77a, roughness: 0.5 }));
+    ring.rotation.x = Math.PI / 2; ring.position.y = -0.12 + i * 0.09; g.add(ring);
+  }
+  const lip = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 10, 0, Math.PI), new THREE.MeshStandardMaterial({ color: 0xf2a0a8, roughness: 0.35, side: THREE.DoubleSide }));
+  lip.position.set(0.12, -0.05, 0); lip.rotation.y = Math.PI / 2; lip.scale.set(1, 1.4, 0.5); g.add(lip);
+  g.rotation.z = 1.2;
+  return g;
 }
-const GLOW = { starfish: 0xff9a5a, shell: 0xfff0d0, coin: 0xffd24a };
+const GLOW = { starfish: 0xff9a5a, shell: 0xfff0d0, conch: 0xffc8a0 };
 // spots: [{ kind, x, z }]. Returns [{ kind, x, y, z, mesh, taken }].
 // Ken's seashell model (models/seashell.glb), when present, for the shells.
 function kensShell(gltf) {
@@ -337,7 +348,7 @@ function kensShell(gltf) {
 export function buildTreasures(root, shellGltf, spots) {
   return spots.map(({ kind, x, z }) => {
     const g = new THREE.Group();
-    const thing = kind === 'starfish' ? starfish() : kind === 'shell' ? (shellGltf ? kensShell(shellGltf) : cowrie()) : coin();
+    const thing = kind === 'starfish' ? starfish() : kind === 'shell' ? (shellGltf ? kensShell(shellGltf) : cowrie()) : conch();
     g.add(glowSprite(GLOW[kind], 1.6), thing);
     const y = LANES[TREASURES[kind].lane];
     g.position.set(x, y, z); root.add(g);

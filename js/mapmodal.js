@@ -112,8 +112,8 @@ function render() {
       if (a.id === 'shop' && active && kuranda) { const b = el('button', 'go', 'Go shopping'); b.type = 'button'; b.onclick = () => go(kuranda); box.append(b); }
     });
   }
-  modal.querySelector('.map-bank').textContent = `★ ${have} · Golden Mangoes ${progress.mangoes || 0} · Pearls ${progress.pearls || 0} · Gold coins ${progress.coins || 0}`
-    + (progress.badge ? ' · Ranger badge ✓' : '') + (progress.skyrail ? ' · Skyrail pass ✓' : '') + (progress.boatTicket ? ' · Boat ticket ✓' : '');
+  modal.querySelector('.map-bank').textContent = `★ ${have} · Golden Mangoes ${progress.mangoes || 0} · Pearls ${progress.pearls || 0} · Seashells ${progress.shells || 0} · Gold ${progress.coins || 0}`
+    + (progress.badge ? ' · Ranger badge ✓' : '') + (progress.pier ? ' · Pier open ✓' : '') + (progress.skyrail ? ' · Skyrail pass ✓' : '') + (progress.boatTicket ? ' · Boat ticket ✓' : '');
   // Start on where the player is, or the next place to go.
   show(AREAS.find(a => a.id === HERE) || AREAS.find(a => mapActive(progress, visited, a.id) && !progress.stars[a.id]) || AREAS[0]);
 }

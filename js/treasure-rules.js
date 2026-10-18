@@ -7,7 +7,7 @@
 // Plain JavaScript, no three.js, so it can be tested (test/treasure.test.mjs).
 
 // The things on the bottom: dropped over the boardwalk rail by visitors.
-// Not gold coins: those are the reef's, and pay the Skyrail fare.
+// Not gold: gold is Kuranda's, from the market trader and dropped pieces.
 export const LOST_THINGS = [
   { id: 'sunnies', name: 'Sunnies' },
   { id: 'ring',    name: 'Gold ring' },
