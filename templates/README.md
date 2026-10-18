@@ -15,3 +15,10 @@ then rigged automatically from the template, so every move works on them without
    binds it to the same skeleton and exports it with all 13 moves.
 
 Hats, sunnies, masks, wigs and the boomerang do not need this: they attach to a bone.
+
+## A Wally made without a tail (2026-10-18)
+Meshy often leaves Wally's tail off. tools/blender-rig-variant.py then grafts the
+template's own tail on (already weighted to the tail bones), lines the new body
+up against the template without its tail, and smooths the copied weights below
+the neck so loose shirts do not tear. So every outfit model gets everything the
+standard Wally has: all 13 moves and a tail that swims and swings.

@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { buildWorld, GATE } from './world.js';
 import { Wally } from './wally.js';
 import { Food, randomKind, useJarModel } from './food.js';
-import { Tourists, peopleModels } from './tourists.js';
+import { Tourists, peopleModels, Cast } from './tourists.js';
 import { Kenny } from './kenny.js';
 import { Crocs } from './crocs.js';
 import { Jellies, FlyingFoxes, Pelicans, CaneToads } from './hazards.js';
@@ -153,9 +153,10 @@ pelicans.useModel(models.get('pelican'));
 toads.useModel(models.get('toad'));
 bats.useModel(models.get('flyingfox'));
 jellies.useModel(models.get('jellyfish'));
-const people = peopleModels(models);
-tourists.useModels(people);
-clusters.useModels(people);
+// One cast for the whole park: no character twice (Ken). Groups first, strollers get the rest.
+const cast = new Cast(peopleModels(models));
+clusters.useModels(cast);
+tourists.useModels(cast);
 food.useModels(models);
 const treasure = new LagoonTreasure(scene, models.get('mango'));     // the chest on the lagoon bottom (Ken)
 
@@ -210,7 +211,7 @@ setGround({
 });
 window.chomp = { game, wally, food, quality: () => quality };   // for testing in the browser console
 function whenLoaded(fn) { if (document.readyState === 'complete') setTimeout(fn); else addEventListener('load', fn); }
-whenLoaded(() => { window.chomp.treasure = treasure; window.chomp.crocs = crocs; window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
+whenLoaded(() => { window.chomp.tourists = tourists; window.chomp.treasure = treasure; window.chomp.crocs = crocs; window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
 
 // The camera follows Wally on a leash, the way Ocarina of Time follows Link:
 // run sideways and it swings round behind him, run toward it and it backs off.

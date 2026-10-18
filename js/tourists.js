@@ -195,6 +195,27 @@ export function peopleModels(models) {
   return list;
 }
 
+// The people in one scene (Ken: the same character is never in a scene twice).
+// Each model can be worn by one visitor at a time. Groups that throw food are
+// dressed first; strollers get whoever is left. When nobody is free, a lender
+// (a stroller, then the biggest group) gives someone up for a group that has
+// nobody; when a group leaves, its people come back.
+export class Cast {
+  constructor(list) {
+    this.free = [...list];
+    for (let i = this.free.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [this.free[i], this.free[j]] = [this.free[j], this.free[i]]; }
+    this.lenders = [];
+  }
+  get size() { return this.free.length; }
+  take() { return this.free.length ? this.free.pop() : null; }
+  // Only for a group that would otherwise have nobody to throw.
+  borrow(except) {
+    for (const lend of this.lenders) { const g = lend(except); if (g) return g; }
+    return null;
+  }
+  give(gltf) { if (gltf && !this.free.includes(gltf)) this.free.unshift(gltf); }
+}
+
 // Put one of Ken's people models on a visitor (tools/blender-animate-human.py
 // moves). The shape-built stand-in is stretched to vary builds, which would
 // distort a model, so a dressed visitor is scaled evenly and varies by height.
@@ -204,6 +225,7 @@ export function wearModel(body, gltf) {
   const [lo, hi] = (gltf.userData && gltf.userData.tall) || ADULT;
   const skin = dress(body.g, gltf, { height: lo + Math.random() * (hi - lo) });
   if (!skin) return null;
+  skin.cast = gltf;                                  // which person this is, to give back to the Cast
   skin.phone = skin.root.getObjectByName('HeldPhone') || null;
   if (skin.phone) skin.phone.visible = false;
   return skin;
@@ -222,10 +244,23 @@ export class Tourists {
     }
   }
 
-  // Wear Ken's tourist models (tourist-1.glb to tourist-10.glb), shared out in turn.
-  useModels(list) {
-    if (!list.length) return;
-    this.list.forEach((t, i) => { t.skin = wearModel(t.body, list[i % list.length]); });
+  // Wear Ken's people from the scene's Cast: only as many strollers as there
+  // are people left over (no one twice in a scene), the rest stay home.
+  useModels(cast) {
+    if (!cast) return;
+    this.scene = this.scene || this.list[0]?.body.g.parent;
+    for (const t of [...this.list]) {
+      const g = cast.take();
+      if (g) t.skin = wearModel(t.body, g);
+      else { t.body.g.removeFromParent(); this.list.splice(this.list.indexOf(t), 1); }
+    }
+    // A group with nobody to throw can borrow a stroller.
+    cast.lenders.push(() => {
+      const t = this.list.find(x => x.state === 'walk' && x.skin);
+      if (!t) return null;
+      t.body.g.removeFromParent(); this.list.splice(this.list.indexOf(t), 1);
+      return t.skin.cast;
+    });
   }
 
   // Ask the nearest free tourist to throw at Wally. Returns true if one agreed.

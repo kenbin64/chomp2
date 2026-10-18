@@ -6,7 +6,7 @@
 
 import * as THREE from 'three';
 import { CLUSTER, clusterStep } from './rules.js';
-import { person, wearModel } from './tourists.js';
+import { person, wearModel, Cast } from './tourists.js';
 import { pickLine } from './bubbles.js';
 
 function ringMesh(inner, outer, color, opacity) {
@@ -41,25 +41,52 @@ export class Clusters {
     this.models = [];
   }
 
-  // Wear Ken's people models (tourist-1.glb and on) on every group here now
-  // and every group that arrives later. No group has the same character twice
-  // (Ken): each is dealt different people, and while there are fewer people
-  // made than a group's size, the extra members step out of the group.
-  useModels(list) {
-    this.models = list;
-    for (const c of this.list) this.wearGroup(c);
-  }
-  wearGroup(c) {
-    const n = this.models.length;
-    if (!n || c.dressed) return;
-    c.dressed = true;
-    const start = Math.floor(Math.random() * n);
-    c.people.slice(n).forEach(p => c.root.remove(p.g));
-    c.people = c.people.slice(0, n);
-    c.people.forEach((p, i) => {
-      p.skin = wearModel(p, this.models[(start + i) % n]);
-      if (p.skin && p.skin.phone) p.phone = p.skin.phone;
+  // Wear Ken's people on every group here now and every group that arrives
+  // later, from the scene's Cast (tourists.js): no character is in the scene
+  // twice (Ken). A list of models makes a Cast of its own.
+  useModels(cast) {
+    this.cast = Array.isArray(cast) ? new Cast(cast) : cast;
+    if (!this.cast || !this.cast.size) { this.cast = null; return; }
+    // Share people out across the groups here now: one each first, then more.
+    const groups = this.list.filter(c => !c.gone);
+    let round = 0, any = true;
+    while (any) {
+      any = false;
+      for (const c of groups) {
+        const p = c.people[round];
+        if (!p || p.skin) continue;
+        const g = this.cast.take();
+        if (g) { this.wearOne(p, g); any = true; }
+      }
+      round++;
+    }
+    for (const c of groups) this.settle(c);
+    // The biggest group can lend someone to a new group that has nobody.
+    this.cast.lenders.push(except => {
+      const big = this.list.filter(c => !c.gone && c !== except && c.people.filter(p => p.skin).length > 1)
+        .sort((a, b) => b.people.length - a.people.length)[0];
+      if (!big) return null;
+      const p = big.people.filter(x => x.skin).pop();
+      big.people.splice(big.people.indexOf(p), 1); p.g.removeFromParent();
+      return p.skin.cast;
     });
+  }
+  wearOne(p, gltf) {
+    p.skin = wearModel(p, gltf);
+    if (p.skin && p.skin.phone) p.phone = p.skin.phone;
+  }
+  // A group arriving now: as many people as are free; at least one, borrowed if need be.
+  wearGroup(c) {
+    if (!this.cast) return;
+    for (const p of c.people) { const g = this.cast.take(); if (g) this.wearOne(p, g); }
+    if (!c.people.some(p => p.skin)) { const g = this.cast.borrow(c); if (g) this.wearOne(c.people[0], g); }
+    this.settle(c);
+  }
+  // Members left without a person of their own step out of the group.
+  settle(c) {
+    if (!c.people.some(p => p.skin)) return;              // no people models at all: keep the stand-ins
+    for (const p of c.people.filter(x => !x.skin)) p.g.removeFromParent();
+    c.people = c.people.filter(x => x.skin);
   }
 
   // Put a group at (x, z). food: how many pieces they brought. rate < 1 throws faster.
@@ -216,6 +243,9 @@ export class Clusters {
       p.arms[0].rotation.x = -2.6; p.arms[1].rotation.x = -2.6;          // hands up, running
       if (p.skin) { p.skin.play('run', { speed: 1.3, alternatives: ['walk'] }); if (p.skin.phone) p.skin.phone.visible = false; p.skin.update(dt); }
     }
-    if (c.flee <= 0) { this.scene.remove(c.root); c.gone = true; }
+    if (c.flee <= 0) {
+      this.scene.remove(c.root); c.gone = true;
+      if (this.cast) for (const p of c.people) if (p.skin) this.cast.give(p.skin.cast);   // free for the next group
+    }
   }
 }
