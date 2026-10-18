@@ -30,7 +30,7 @@ import { loadRealism } from './realism.js';
 import { usePalmCrown } from './palms.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from './quality.js';
 import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
-import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE, outfitModel, findTreasure, bankFinds, PROGRESS_CHANGED } from './progress.js';
+import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, OPEN_ALL, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE, outfitModel, findTreasure, bankFinds, PROGRESS_CHANGED, saveProgress } from './progress.js';
 import { dressOutfit } from './outfit.js';
 import { showLeaderboard } from './leaderboard.js';
 import { installMap, openMap, recordVisit } from './mapmodal.js';
@@ -165,6 +165,7 @@ clusters.useModels(cast);
 // Friendly traders (Ken): some groups offer a trade instead of running off.
 clusters.enableTraders(0.25);
 startTrading({ land: 'park', run: () => ({ mangoes: game.mangoes }), setRun: r => { game.mangoes = r.mangoes; drawQuest(); },
+  bank: () => { saveProgress(bankFinds(readProgress(localStorage.getItem('chomp-progress')), { mangoes: game.mangoes })); game.mangoes = 0; },
   feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c.people[0].g, text, 2.4), toast: text => toast(text, 'good') });
 // A sidequest (Ken): one group has lost something; where it ends up in the park.
 startQuest({ land: 'park', scene, clusters,
@@ -354,18 +355,18 @@ function drawHud() {
 
 // Where to aim: near Wally, a little ahead of him, sometimes high so he has to
 // jump or leap for it. Startled tourists throw straight at him.
-function throwFood(hand, aimed) {
+function throwFood(hand, aimed, gentle = false) {
   const d = difficulty(game.time);
   const frenzy = game.quest.stage === 'challenge';
-  const flight = d.flight * (aimed ? 0.85 : 1);
+  const flight = gentle ? 0.75 : d.flight * (aimed ? 0.85 : 1);     // a handout up close is a short lob
   const mouth = wally.mouthPosition();
-  const spread = aimed ? 1.2 : d.spread;            // people aim at him: their food is limited
+  const spread = gentle ? 0.35 : aimed ? 1.2 : d.spread;            // people aim at him: their food is limited
   const a = Math.random() * Math.PI * 2, r = aimOffset(Math.random, spread);
   // Aimed where he will be when it comes down (a little short of a full lead, so he still moves for it).
   let x = mouth.x + wally.vel.x * flight * 0.85 + Math.cos(a) * r;
   let z = mouth.z + wally.vel.z * flight * 0.85 + Math.sin(a) * r;
   ({ x, z } = clampToPark(x, z));
-  let y = mouth.y + (Math.random() < 0.2 ? 1.2 + Math.random() * 1.6 : Math.random() * 0.6 - 0.2);
+  let y = mouth.y + (gentle ? 0 : Math.random() < 0.2 ? 1.2 + Math.random() * 1.6 : Math.random() * 0.6 - 0.2);
   if (wally.surface === 'water' && Math.random() < 0.25) y = 2.5 + Math.random() * 1.5;   // one for a croc leap
   // Food keeps going past the aim point as it falls, so check where it will
   // really land and pull the aim in until that is inside the park.
@@ -389,7 +390,7 @@ function landingOf(from, v) {
 }
 
 function updateClusters(dt, t) {
-  const clusterEvents = clusters.update(dt, t, wally.pos, (hand) => throwFood(hand, true));
+  const clusterEvents = clusters.update(dt, t, wally.pos, (hand, c, gentle) => throwFood(hand, true, gentle));
   tradeStep(clusterEvents, wally.pos);
   questStep(dt, t, clusterEvents, wally.pos);
   for (const e of clusterEvents) {

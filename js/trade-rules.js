@@ -21,6 +21,15 @@ export const PRICES = {
   kuranda:   [{ what: 'coins', n: 3, name: 'gold pieces' }, { what: 'shells', n: 2, name: 'seashells' }],
 };
 
+// Where each thing the traders take comes from (Ken: a button to go back there,
+// so there is a purpose to going back to other lands).
+export const SOURCE = {
+  mangoes: { land: 'park', page: 'index.html?play', name: 'Croc Park' },
+  pearls:  { land: 'esplanade', page: 'esplanade.html', name: 'the Esplanade' },
+  shells:  { land: 'reef', page: 'reef.html', name: 'the Great Barrier Reef' },
+  coins:   { land: 'kuranda', page: 'kuranda.html', name: 'the Kuranda markets' },
+};
+
 // Which groups are traders this visit: each with chance `chance`, and always at least one.
 export function pickTraders(n, rnd, chance = 0.25) {
   if (n <= 0) return [];

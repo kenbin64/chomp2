@@ -170,10 +170,13 @@ check('it never grows back', shrinks);
   for (let t = 0; t < 3 && got !== 'throw'; t += 0.1) got = R.clusterStep(s2, 10, 0.1, 5);
   check('and throw again after a while', got === 'throw');
   check('with no food left they do nothing', R.clusterStep(fresh(), 10, 0.1, 0) === 'unaware');
-  check('stepping inside the inner ring makes them nervous first', R.clusterStep(fresh(), C.near - 1, 0.1, 5) === 'nervous');
+  check('stepping inside the inner ring, they hand food straight over (Ken)', R.clusterStep(fresh(), C.near - 1, 0.1, 5) === 'hand');
+  { const sh = fresh(); let hands = 0, r = ''; for (let t = 0; t < 10 && r !== 'flee'; t += 0.1) { r = R.clusterStep(sh, C.near - 1, 0.1, 5); if (r === 'hand') hands++; }
+    check('up close they hand over two or three before they bolt', hands >= 2 && hands <= 3, hands); }
+  check('with nothing left to give, up close they are just nervous', R.clusterStep(fresh(), C.near - 1, 0.1, 0) === 'nervous');
   let s3 = fresh(), r3 = null, time = 0;
   while (r3 !== 'flee' && time < 5) { r3 = R.clusterStep(s3, C.near - 1, 0.1, 5); time += 0.1; }
-  check('staying too close makes them bolt, after about a second', r3 === 'flee' && Math.abs(time - C.nerve) < 0.15, time);
+  check('staying too close makes them bolt, after a few seconds', r3 === 'flee' && Math.abs(time - C.nerve) < 0.15, time);
   check('charging right up makes them bolt at once', R.clusterStep(fresh(), C.panic - 0.1, 0.1, 5) === 'flee');
   const s4 = fresh(); for (let i = 0; i < 6; i++) R.clusterStep(s4, C.near - 1, 0.1, 5);
   R.clusterStep(s4, 10, 2, 5);

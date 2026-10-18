@@ -170,7 +170,7 @@ const daynight = new DayNight(scene, { sun: world.sun });
 const lamps = new StreetLamps(scene, models.get('streetlamp'),
   Array.from({ length: Math.floor((STREET.z1 - 4 - (STREET.z0 + 4)) / 14) + 1 }, (_, i) => ({ x: (i % 2 ? 1 : -1) * (STREET.half - 0.4), y: STREET.ground, z: STREET.z0 + 4 + i * 14, rot: i % 2 ? -Math.PI / 2 : Math.PI / 2 })),
   { real: quality.name === 'high' ? 8 : quality.name === 'medium' ? 6 : 4 });
-Object.assign(window.chomp, { daynight, lamps, streetGold });
+Object.assign(window.chomp, { daynight, lamps, streetGold, clusters });
 // Hidden finds (Ken): behind the stalls, both sides of the street; three a visit.
 const hiddenFinds = new HiddenFinds(scene, STALLS.map(s => ({ x: Math.sign(s[0]) * (STREET.half + 0.2), y: STREET.ground, z: s[1] + 2.6 })));   // tucked in the gaps between the stalls
 window.chomp.hiddenFinds = hiddenFinds;
@@ -195,13 +195,13 @@ function toast_(text, kind = 'good') {
 }
 
 // People throw toward where Wally will be.
-function throwFrom(hand) {
-  const flight = 1.2 + Math.random() * 0.5;
+function throwFrom(hand, cluster = null, gentle = false) {
+  const flight = gentle ? 0.8 : 1.2 + Math.random() * 0.5;   // up close: a short handout
   // Aimed where he will be (Ken: toward Wally, all reachable), mostly close to him.
-  const a = Math.random() * Math.PI * 2, r = aimOffset(Math.random, 2);
+  const a = Math.random() * Math.PI * 2, r = aimOffset(Math.random, gentle ? 0.4 : 2);
   const tx = Math.max(-STREET.half + 0.6, Math.min(STREET.half - 0.6, wally.pos.x + wally.vel.x * flight * 0.85 + Math.cos(a) * r));
   const tz = wally.pos.z + wally.vel.z * flight * 0.85 + Math.sin(a) * r;
-  const ty = G + 2 + (Math.random() < 0.3 ? 1.2 : 0);
+  const ty = G + 2 + (!gentle && Math.random() < 0.3 ? 1.2 : 0);
   return food.throw(randomKind(), hand, launchVelocity(hand, new THREE.Vector3(tx, ty, tz), flight));
 }
 

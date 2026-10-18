@@ -284,18 +284,24 @@ export const CLUSTER = {
   far: 18,          // beyond this they have not noticed him
   near: 6,          // inside this they get nervous
   panic: 3.2,       // this close and they bolt at once
-  nerve: 1.1,       // seconds of nervousness before they bolt
+  nerve: 3.6,       // seconds up close before they get too jumpy and bolt
   throwEvery: 1.3,  // seconds between throws while he is in the sweet spot
+  handEvery: 1.5,   // seconds between handouts while he is up close
 };
 
 // One step of a group's mood. state: { nerves, cooldown }. Returns what they do:
-// 'unaware', 'throw', 'wait' (in the sweet spot between throws), 'nervous' or 'flee'.
+// 'unaware', 'throw', 'wait' (in the sweet spot between throws), 'hand' (up close:
+// a gentle handout straight to him), 'nervous' (up close, between handouts) or 'flee'.
+// Ken: up close the food still comes (more accessible), but stay too long and
+// they get jumpy and bolt; charging right up still makes them bolt at once.
 export function clusterStep(state, dist, dt, foodLeft) {
   state.cooldown = Math.max(0, state.cooldown - dt);
   if (dist <= CLUSTER.panic) { state.nerves = CLUSTER.nerve; return 'flee'; }
   if (dist <= CLUSTER.near) {
     state.nerves += dt;
-    return state.nerves >= CLUSTER.nerve ? 'flee' : 'nervous';
+    if (state.nerves >= CLUSTER.nerve) return 'flee';
+    if (foodLeft > 0 && state.cooldown <= 0) { state.cooldown = CLUSTER.handEvery; return 'hand'; }
+    return 'nervous';
   }
   state.nerves = Math.max(0, state.nerves - dt * 0.5);       // they calm down again, slowly
   if (dist > CLUSTER.far || foodLeft <= 0) return 'unaware';

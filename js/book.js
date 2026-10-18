@@ -72,7 +72,8 @@ function build() {
   for (const [id, label] of [['stamps', 'Stamps'], ['items', 'Things found'], ['wally', "Wally's page"]]) {
     const b = el('button', 'book-tab', label); b.type = 'button'; b.dataset.tab = id; b.onclick = () => { tab = id; render(); }; tabs.append(b);
   }
-  card.append(close, el('h1', null, "Wally's Tourist Book"), tabs, el('div', 'book-body'));
+  const back = el('button', 'go book-back', land ? 'Back to the game' : 'Close the book'); back.type = 'button'; back.onclick = closeBook;   // Ken: a clear way back, not just the X
+  card.append(close, el('h1', null, "Wally's Tourist Book"), tabs, el('div', 'book-body'), back);
   modal.append(card);
   modal.addEventListener('click', e => { if (e.target === modal) closeBook(); });
   document.body.append(modal);

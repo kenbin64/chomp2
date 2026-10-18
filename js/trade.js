@@ -9,7 +9,7 @@
 //   then each frame: tradeStep(events from clusters.update, Wally's position)
 
 import { readProgress, saveProgress } from './progress.js';
-import { makeOffer, giftText, pay, canPay, receive } from './trade-rules.js';
+import { makeOffer, giftText, pay, canPay, receive, SOURCE } from './trade-rules.js';
 import { bookEvent, bookFound } from './book.js';
 import { CLUSTER } from './rules.js';
 
@@ -36,6 +36,16 @@ function show(c) {
   const yes = el('button', 'buy', able ? 'Trade (T)' : `Need ${o.price.n} ${o.price.name}`); yes.type = 'button'; yes.disabled = !able; yes.onclick = accept;
   const no = el('button', 'link', 'No thanks'); no.type = 'button'; no.onclick = () => { panel.hidden = true; c.declined = true; open = null; };
   bs.append(yes, no);
+  // Not enough? A button to the land where it comes from (or a tip, if it is this one).
+  const src = SOURCE[o.price.what];
+  if (!able && src) {
+    if (src.land === cfg.land) bs.append(el('small', 'trade-tip', `You can find ${o.price.name} right here.`));
+    else {
+      const go = el('button', 'go trade-go', `Get ${o.price.name} at ${src.name}`); go.type = 'button';
+      go.onclick = () => { if (cfg.bank) cfg.bank(); location.href = src.page; };   // what he picked up here is banked first
+      bs.append(go);
+    }
+  }
   panel.hidden = false;
 }
 
