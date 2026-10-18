@@ -10,6 +10,7 @@ import { readProgress, OUTFITS, buyItem, wearItem, outfitOn, outfitModel, wearin
 import { loadModels, ModelSkin } from './models.js';
 import { dressOutfit } from './outfit.js';
 import { cleanName } from './leaderboard-rules.js';
+import { bookEvent } from './book.js';
 
 let modal = null, onPause = null, preview = null, picked = null;
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -96,7 +97,7 @@ function render() {
     else if (!x.ready) card.append(el('span', 'st', 'Coming soon'));
     else {
       const b = el('button', 'buy', `🥭 ${x.price}`); b.type = 'button'; b.disabled = (progress.mangoes || 0) < x.price;
-      b.onclick = () => { const r = buyExtra(load(), x.id); if (r.ok) { save(r.progress); modal.querySelector('.shop-msg').textContent = `${x.name}: got it!`; render(); } };
+      b.onclick = () => { const r = buyExtra(load(), x.id); if (r.ok) { save(r.progress); if (x.id === 'ticket-cruise') bookEvent('ticket'); modal.querySelector('.shop-msg').textContent = `${x.name}: got it!`; render(); } };
       card.append(b);
     }
     xl.append(card);
@@ -115,7 +116,7 @@ function render() {
   } else {
     const b = el('button', 'go', `Buy for 🥭 ${o.price}`); b.type = 'button';
     b.disabled = (progress.mangoes || 0) < o.price;
-    b.onclick = () => { const r = buyItem(load(), o.id); if (r.ok) { save(wearItem(r.progress, o.id)); after(); } };
+    b.onclick = () => { const r = buyItem(load(), o.id); if (r.ok) { save(wearItem(r.progress, o.id)); bookEvent('outfit'); after(); } };
     d.append(b);
     if (b.disabled) d.append(el('p', 'fine', 'Not enough Golden Mangoes yet: collect them on the Esplanade.'));
   }

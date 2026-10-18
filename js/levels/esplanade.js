@@ -30,6 +30,7 @@ import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
 import { jellyModel, dressedJelly } from '../hazards.js';
 import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE, outfitModel, openPier, PIER_PRICE } from '../progress.js';
+import { installBook, bookEvent, ability, HiddenFinds } from '../book.js';
 import { DayNight } from '../daynight.js';
 import { StreetLamps } from '../lamps.js';
 import { PATH, generateCourse, hits, runScore, STARS, MANGO_SET_BONUS, SPUR, onSpur } from './esplanade-rules.js';
@@ -225,6 +226,12 @@ const lamps = new StreetLamps(scene, models.get('streetlamp'),
    ...[12, 24, 33].map((d, i) => ({ x: -PATH.half - d, y: PATH.ground, z: SPUR.z + (i % 2 ? 1 : -1) * (SPUR.half - 0.15) }))],
   { real: quality.name === 'high' ? 8 : quality.name === 'medium' ? 6 : 4 });
 Object.assign(window.chomp, { daynight, lamps });
+// Hidden finds (Ken): in the grass on the city side and out on the pier; three a visit.
+const hiddenFinds = new HiddenFinds(scene, [
+  ...Array.from({ length: 12 }, (_, i) => ({ x: PATH.half + 2 + (i % 3) * 1.8, y: G, z: 20 + i * 36 })),
+  { x: -PATH.half - SPUR.length + 1.5, y: G, z: SPUR.z },
+]);
+window.chomp.hiddenFinds = hiddenFinds;
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -308,7 +315,7 @@ function pierGate(dt) {
   if (r.ok) {
     progress = r.progress;
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
-    toast_(`The pier is open! (${PIER_PRICE} Golden Mangoes from Croc Park)`, 'good'); sound.play.powerup();
+    toast_(`The pier is open! (${PIER_PRICE} Golden Mangoes from Croc Park)`, 'good'); sound.play.powerup(); bookEvent('pier');
     bubbles.say(wally.root, 'Ripper! Pearls out on the pier!', 3.4);
     pier.lay();
   } else toast_(`The pier opens for ${PIER_PRICE} Golden Mangoes from Croc Park (you have ${progress.mangoes || 0})`, 'info');
@@ -449,7 +456,7 @@ function step(dt, t) {
     }
   }
   // Air: it runs down under the water and fills again at the top.
-  if (!game.done && game.faint <= 0) game.air = airStep(game.air, seaDive.depth < -1.0 ? 'under' : 'surface', dt);
+  if (!game.done && game.faint <= 0) game.air = airStep(game.air, seaDive.depth < -1.0 ? 'under' : 'surface', seaDive.depth < -1.0 ? dt / ability('snorkel') : dt);   // the Snorkel: longer under
   if (game.faint > 0) rescueStep(dt, t);
   else if (game.air <= 0 && !game.done) { seaDive.under = false; if (!outOfAir()) return; }
   looksUnder(camera.position.y < -0.2);
@@ -492,7 +499,7 @@ function step(dt, t) {
     if (m.taken) continue;
     m.mesh.rotation.y += dt * 3; m.mesh.position.y = m.y + Math.sin(t * 3 + m.z) * 0.08;
     if (Math.abs(m.z - wally.pos.z) < 1.4 && Math.abs(m.x - wally.pos.x) < 1.1 && Math.abs(m.y - (wally.pos.y + 1.2)) < 1.4) {
-      m.taken = true; scene.remove(m.mesh); game.mangoes++; game.points += 1; sound.play.goal();
+      m.taken = true; scene.remove(m.mesh); game.mangoes++; game.points += 1; sound.play.goal(); bookEvent('mango');
       fx.burst(m.mesh.position, [0xffb51f, 0xffe066], 8);
       if (game.mangoes === mangoes.length) {                      // the full set: Ken's bonus, one star's worth
         game.points += MANGO_SET_BONUS; fx.burst(wally.pos, [0xffb51f, 0xffe066, 0xffffff], 30);
@@ -511,12 +518,14 @@ function step(dt, t) {
     }
   }
   pierGate(dt);
+  wally.jumpBoost = ability('spring');
+  for (const f of hiddenFinds.update(dt, t, wally.pos)) { toast_(f.text, 'good'); sound.play.powerup(); }
   for (const p of landPearls) {
     if (p.taken) continue;
     p.mesh.userData.pearl.position.y = 0.16 + Math.sin(t * 3 + p.z) * 0.05;
     if (Math.abs(p.z - wally.pos.z) < 1.4 && Math.abs(p.x - wally.pos.x) < 1.4 && wally.pos.y > G - 0.5) {
       p.taken = true; scene.remove(p.mesh); game.pearls++; game.points += 5; sound.play.goal();
-      fx.burst(p.mesh.position, [0xffffff, 0xffd6f0], 10); toast_(`A pearl! ${game.pearls} now`, 'good');
+      fx.burst(p.mesh.position, [0xffffff, 0xffd6f0], 10); toast_(`A pearl! ${game.pearls} now`, 'good'); bookEvent('pearl');
     }
   }
   // Ken's rule: every group fed out, then a full tank, then on to the Lagoon.
@@ -536,10 +545,11 @@ function step(dt, t) {
   for (const it of [...food.items]) {
     const p = it.mesh.position;
     const d = it.landed && !wally.airborne ? Math.hypot(p.x - mouth.x, p.z - mouth.z) + (mouth.y - p.y > 3.2 ? 99 : 0) : p.distanceTo(mouth);
-    if (d < 1.4 * (game.boost > 0 ? 1.4 : 1)) {
+    if (d < 1.4 * (game.boost > 0 ? 1.4 : 1) * ability('net')) {                  // the Big Net reaches further
       clusters.cheer(it.cluster);
       fx.burst(p, CRUMBS[it.kind] || [0xffffff]); food.take(it, 'eaten'); wally.chomp(); sound.play.chomp(); fx.shake(0.1, 0.1);
       game.streak++; game.caught++;
+      if (daynight.night > 0.6) bookEvent('nightCatch');
       const how = it.landed ? 'ground' : (wally.airborne ? 'leap' : 'air');
       const pts = catchPoints(how, game.streak, game.boost > 0); game.foodPoints += pts; game.points += pts;
       game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[it.kind].energy);
@@ -598,7 +608,7 @@ function step(dt, t) {
 }
 
 function stumble(o) {
-  o.hit = true; game.stumbles++; game.streak = 0;
+  o.hit = true; game.stumbles++; game.streak = 0; bookEvent('bump');
   game.energy -= 8; game.stun = 0.7;
   fx.shake(0.35, 0.25); sound.play.land();
   wally.vel.multiplyScalar(0.3);
@@ -676,6 +686,7 @@ function finish(won, why = '') {
   const s = runScore({ food: game.foodPoints, mangoes: game.mangoes, mangoSet: game.mangoes === mangoes.length, energyLeft: game.energy, stumbles: game.stumbles, finished: won, pearls: game.pearls });
   const stars = won ? starsFor(s.total, STARS) : 0;
   if (won) sound.fanfare();                         // Wally's theme hook: well done, mate
+  if (won) bookEvent('finish');
   if (won) progress = completeArea(progress, 'esplanade', { score: s.total, stars, mangoes: game.mangoes, pearls: game.pearls });
   else progress = bankFinds(progress, { mangoes: game.mangoes, pearls: game.pearls });   // Ken: keep what was found, finished or not
   try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
@@ -745,6 +756,7 @@ if (params.has('play') || bot) start();
 // The map, from anywhere (mapmodal.js): the Map button or Tab. Play pauses while it is open.
 installMap({ pause: on => { if (game.running) game.paused = on; } });
 installShop({ pause: on => { if (game.running) game.paused = on; } });
+installBook({ here: 'esplanade', pause: on => { if (game.running) game.paused = on; } });
 window.chompStartHere = () => { if (!game.running) start(); };
 window.chompDress = () => {
   const p = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());

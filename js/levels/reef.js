@@ -34,6 +34,7 @@ import { makeMaze, makeReefMaze, mazePath, cellAt, cellCentre, collide, inMaze, 
          SWIM_Y, SURFACE_Y, SEABED_Y, reefRunScore, REEF_STARS, PEARL_POINTS, CHEST_POINTS,
          LANES, LANE_NAMES, TREASURES, nextDepth, treasureSpots, canCollect } from './reef-rules.js';
 import { buildReef, buildTreasures, MAZE, OUTER, DIVE, BOUNDS } from './reef-scene.js';
+import { installBook, bookEvent, ability, HiddenFinds } from '../book.js';
 import { DayNight } from '../daynight.js';
 import { StreetLamps } from '../lamps.js';
 
@@ -238,6 +239,12 @@ const lamps = new StreetLamps(scene, models.get('streetlamp'), [
   ...[0.5, 2.6, 4.4].map(a => { const x = ISLAND.x + Math.cos(a) * 8, z = ISLAND.z + Math.sin(a) * 8; return { x, y: Math.max(0, sandHeight(x, z)), z }; }),
 ], { real: quality.name === 'high' ? 8 : quality.name === 'medium' ? 6 : 4 });
 Object.assign(window.chomp, { daynight, lamps });
+// Hidden finds (Ken): about the sand cay and at the end of the jetty; three a visit.
+const hiddenFinds = new HiddenFinds(scene, [
+  ...Array.from({ length: 7 }, (_, i) => { const a = i / 7 * Math.PI * 2, x = ISLAND.x + Math.cos(a) * 9, z = ISLAND.z + Math.sin(a) * 9; return { x, y: Math.max(0, sandHeight(x, z)), z }; }),
+  { x: JETTY.x0 + 0.6, y: JETTY.y, z: JETTY.z },
+]);
+window.chomp.hiddenFinds = hiddenFinds;
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -351,7 +358,7 @@ function outOfAir() {
   if (game.inCave) wally.pos.set(reef.mouth.x + 4, game.depth, reef.mouth.z);
   game.wantDepth = SURFACE_Y; game.faint = 3.2; wally.setNapping(true);
   kennyFloat.visible = vegemite.visible = true;
-  toast_(`Out of air! ${game.lives} left. Here comes Kenny`, 'bad');
+  toast_(`Out of air! ${game.lives} left. Here comes Kenny`, 'bad'); bookEvent('outOfAir');
   bubbles.say(kennyMesh, "Hang on, Wally! Here's me jar!", 2.6);
   return true;
 }
@@ -443,16 +450,18 @@ function step(dt, t) {
 
   // Air: at the top it fills, in a vent it fills, anywhere else under water it runs down.
   const inVent = !atTop && reef.vents.some(v => Math.hypot(wally.pos.x - v.x, wally.pos.z - v.z) < v.r);
-  if (!game.done && game.faint <= 0) game.air = airStep(game.air, game.depth > -1.0 ? 'surface' : inVent ? 'vent' : 'under', dt);
+  if (!game.done && game.faint <= 0) { const mode = game.depth > -1.0 ? 'surface' : inVent ? 'vent' : 'under'; game.air = airStep(game.air, mode, mode === 'under' ? dt / ability('snorkel') : dt); }   // the Snorkel: longer under
   if (inVent && game.air < AIR.max - 1 && game.hint <= 0) { toast_('Bubbles! Air filling up', 'good'); game.hint = 4; }
 
   // Pearls.
+  wally.jumpBoost = ability('spring');
+  for (const f of hiddenFinds.update(dt, t, wally.pos)) { toast_(f.text, 'good'); sound.play.powerup(); }
   for (const p of reef.pearls) {
     if (p.taken || atTop) continue;
     if (Math.hypot(wally.pos.x - p.x, wally.pos.z - p.z) < 1.6) {
       p.taken = true; p.mesh.userData.pearl.visible = false; game.pearls++; game.found++; game.points += PEARL_POINTS;
       sound.play.goal(); fx.burst(p.mesh.position.clone().setY(SWIM_Y), [0xffffff, 0xffd6f0], 10);
-      toast_(`A pearl! ${game.pearls} now`, 'good');
+      toast_(`A pearl! ${game.pearls} now`, 'good'); bookEvent('pearl');
     }
   }
   // Reef treasures: picked up by swimming through one at its depth.
@@ -465,7 +474,8 @@ function step(dt, t) {
       const T = TREASURES[tr.kind];
       tr.taken = true; tr.mesh.visible = false;
       game.treasure += T.points; game.treasures++; game.points += T.points;
-      if (tr.kind === 'shell' || tr.kind === 'conch') game.shells++;   // seashells: sold to the Kuranda market vendor for gold
+      if (tr.kind === 'shell' || tr.kind === 'conch') { game.shells++; bookEvent('shell'); }   // seashells: sold to the Kuranda market vendor for gold
+      if (tr.kind === 'conch') bookEvent('conch');
       sound.play.goal(); fx.burst(tr.mesh.position.clone(), tr.kind === 'conch' ? [0xffc8a0, 0xffffff] : tr.kind === 'shell' ? [0xfff0d0, 0xffffff] : [0xff9a5a, 0xffd0a0], 10);
       toast_(`+${T.points} ${T.name}!`, 'good');
     }
@@ -475,7 +485,7 @@ function step(dt, t) {
     j.cool = Math.max(0, j.cool - dt);
     if (j.cool > 0 || atTop) continue;
     if (Math.hypot(wally.pos.x - j.m.position.x, wally.pos.z - j.m.position.z) < 1.5 && Math.abs(game.depth - j.m.position.y) < 1.1) {   // only at its own depth: change depth to slip past
-      j.cool = 2; game.air = Math.max(0, game.air - AIR.sting); game.stun = 0.6;
+      j.cool = 2; game.air = Math.max(0, game.air - AIR.sting); game.stun = 0.6; bookEvent('hurt');
       wally.knock(j.m.position.x, j.m.position.z); fx.shake(0.4, 0.3); sound.play.sting();
       toast_('Box jelly! Lost some air', 'bad');
     }
@@ -483,7 +493,7 @@ function step(dt, t) {
   // The chest: open it, take the Golden Mango, and the clam behind him shuts.
   const ch = reef.chest;
   if (!game.chest && game.inCave && Math.hypot(wally.pos.x - ch.x, wally.pos.z - ch.z) < 2.2) {
-    game.chest = true; ch.opened = true; ch.mango.visible = true;
+    game.chest = true; ch.opened = true; ch.mango.visible = true; bookEvent('chest');
     game.mangoes++; game.points += CHEST_POINTS; wally.cheer = 1.2;
     sound.play.powerup(); fx.burst(new THREE.Vector3(ch.x, SEABED_Y + 1.5, ch.z), [0xffd700, 0xffb51f, 0xffffff], 24);
     bubbles.say(wally.root, 'Pirate treasure! Crikey!', 3.4);
@@ -492,7 +502,7 @@ function step(dt, t) {
   // The giant clam: a pearl in it opens the way out.
   if (game.doorShut && Math.hypot(wally.pos.x - reef.mouth.x, wally.pos.z - reef.mouth.z) < 3.2) {
     if (game.pearls > 0) {
-      game.pearls--; game.spent++; game.doorShut = false; sound.play.goal();
+      game.pearls--; game.spent++; game.doorShut = false; sound.play.goal(); bookEvent('clam');
       toast_('In goes a pearl... the clam opens!', 'good'); bubbles.say(wally.root, 'Worth every pearl!', 3.2);
     } else if (game.hint <= 0) { toast_('No pearls left! Search the cave for one', 'bad'); game.hint = 4; }
   }
@@ -578,6 +588,7 @@ function finish(won, why = '') {
     // Pearls are a bank across the trip: what was spent at the clam comes off, what was found goes on.
     // Finished or not, what he found is kept (Ken), seashells included.
     progress = { ...progress, pearls: Math.max(0, (progress.pearls || 0) - game.spent) };
+    if (won) bookEvent('finish');
     if (won) progress = completeArea(progress, 'reef', { score: s.total, stars, mangoes: game.mangoes, pearls: game.found, shells: game.shells });
     else progress = bankFinds(progress, { mangoes: game.mangoes, pearls: game.found, shells: game.shells });
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
@@ -620,6 +631,7 @@ if (params.has('play')) start();
 // The map, from anywhere (mapmodal.js): the Map button or Tab. Play pauses while it is open.
 installMap({ pause: on => { if (game.running) game.paused = on; } });
 installShop({ pause: on => { if (game.running) game.paused = on; } });
+installBook({ here: 'reef', pause: on => { if (game.running) game.paused = on; } });
 window.chompStartHere = () => { if (!game.running) start(); };
 window.chompDress = () => {
   const p = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());

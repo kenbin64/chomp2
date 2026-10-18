@@ -5,6 +5,7 @@
 // to the Daintree (in the Outfits catalogue, under Gear and tickets).
 
 import { readProgress, sellToVendor, VENDOR_PAYS, BOAT_TICKET_PRICE } from './progress.js';
+import { bookEvent } from './book.js';
 
 let modal = null, onPause = null, onChange = null;
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -34,7 +35,7 @@ function render(message = '') {
       const b = el('button', 'buy', label); b.type = 'button'; b.disabled = have < 1;
       b.onclick = () => {
         const r = sellToVendor(load(), { [kind]: n });
-        save(r.progress); if (onChange) onChange(r.progress);
+        save(r.progress); if (onChange) onChange(r.progress); if (r.gold > 0) bookEvent('sell');
         render(`Sold for ${r.gold} gold. Pleasure doing business, mate!`);
       };
       row.append(b);

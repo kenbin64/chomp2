@@ -7,7 +7,8 @@ import { AREAS } from './quests.js';
 
 export function freshProgress() {
   return { unlocked: ['park'], stars: {}, best: {}, postcards: [], mangoes: 0, pearls: 0, coins: 0, shells: 0, pier: false,
-           badge: false, skyrail: false, boatTicket: false, wardrobe: freshWardrobe(), extras: [], crocName: null, treasures: [] };
+           badge: false, skyrail: false, boatTicket: false, wardrobe: freshWardrobe(), extras: [], crocName: null, treasures: [],
+           stamps: [], tokens: 0, abilities: {}, visits: {} };
 }
 
 // Stars from a score: thresholds are [one, two, three].
@@ -263,6 +264,11 @@ export function readProgress(text) {
       extras: Array.isArray(p.extras) ? p.extras.filter(id => EXTRAS.some(e => e.id === id)) : [],
       crocName: typeof p.crocName === 'string' && p.crocName.length >= 2 && p.crocName.length <= 16 ? p.crocName : null,
       treasures: Array.isArray(p.treasures) ? p.treasures.filter(id => typeof id === 'string') : [],
+      // Wally's Tourist Book (book-rules.js): stamps, tokens, abilities and visits.
+      stamps: Array.isArray(p.stamps) ? p.stamps.filter(id => typeof id === 'string') : [],
+      tokens: Number.isFinite(p.tokens) ? p.tokens : 0,
+      abilities: p.abilities && typeof p.abilities === 'object' ? Object.fromEntries(Object.entries(p.abilities).filter(([k, v]) => ['swisher', 'net', 'snorkel', 'spring'].includes(k) && Number.isFinite(v))) : {},
+      visits: p.visits && typeof p.visits === 'object' ? Object.fromEntries(Object.entries(p.visits).filter(([, v]) => Number.isFinite(v))) : {},
     };
   } catch { return freshProgress(); }
 }

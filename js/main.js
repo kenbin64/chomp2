@@ -18,6 +18,7 @@ import { setGround, parkGround } from './ground.js';
 import { DayNight } from './daynight.js';
 import { StreetLamps } from './lamps.js';
 import { Pickups, mangoMaker } from './pickups.js';
+import { installBook, bookEvent, ability, HiddenFinds } from './book.js';
 import { Input } from './input.js';
 import { Bubbles, pickLine, chatty } from './bubbles.js';
 import { Effects, CRUMBS } from './fx.js';
@@ -205,7 +206,13 @@ function parkMangoSpots() {
   }
   return spots;
 }
-const parkMangoes = new Pickups(scene, parkMangoSpots(), mangoMaker(models.get('mango')));
+const parkMangoes = new Pickups(scene, parkMangoSpots(), mangoMaker(models.get('mango')), { scale: () => ability('swisher') });
+// Hidden finds (Ken): tucked by the fence, behind boulders and under the palms;
+// three of these places each visit, unseen till Wally is close.
+const hidden = new HiddenFinds(scene, [
+  ...Array.from({ length: 10 }, (_, i) => { const a = i / 10 * Math.PI * 2 + 0.3, x = Math.cos(a) * LAGOON.rx * 1.33, z = Math.sin(a) * LAGOON.rz * 1.33; return { x, y: Math.max(0, terrainHeight(x, z)), z }; }),
+  ...ROCKS.map(r => { const x = r.x + r.r + 0.6, z = r.z; return { x, y: Math.max(0, terrainHeight(x, z)), z }; }),
+].filter(s => !onDeck(s.x, s.z) && !isWater(s.x, s.z)));
 const lamps = new StreetLamps(scene, models.get('streetlamp'), parkLampSpots(), { real: quality.name === 'high' ? 8 : quality.name === 'medium' ? 6 : 4 });
 
 // Drop graphics a level if the frame rate stays low.
@@ -259,7 +266,7 @@ setGround({
 });
 window.chomp = { game, wally, food, quality: () => quality };   // for testing in the browser console
 function whenLoaded(fn) { if (document.readyState === 'complete') setTimeout(fn); else addEventListener('load', fn); }
-whenLoaded(() => { window.chomp.parkMangoes = parkMangoes; window.chomp.daynight = daynight; window.chomp.lamps = lamps; window.chomp.tourists = tourists; window.chomp.treasure = treasure; window.chomp.crocs = crocs; window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
+whenLoaded(() => { window.chomp.hidden = hidden; window.chomp.parkMangoes = parkMangoes; window.chomp.daynight = daynight; window.chomp.lamps = lamps; window.chomp.tourists = tourists; window.chomp.treasure = treasure; window.chomp.crocs = crocs; window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
 
 // The camera follows Wally on a leash, the way Ocarina of Time follows Link:
 // run sideways and it swings round behind him, run toward it and it backs off.
@@ -407,6 +414,8 @@ function caught(item) {
   wally.chomp(how);
   sound.play.chomp();
   game.streak++; game.catches++;
+  if (daynight.night > 0.6) bookEvent('nightCatch');
+  if (game.streak === 8) bookEvent('streak8');
   const pts = catchPoints(how, game.streak, game.boost > 0);
   game.score += pts;
   game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[item.kind].energy);
@@ -427,7 +436,7 @@ function lost(item, text) {
 
 function checkCatches() {
   const mouth = wally.mouthPosition();
-  const reach = 1.25 * (game.boost > 0 ? 1.5 : 1);
+  const reach = 1.25 * (game.boost > 0 ? 1.5 : 1) * ability('net');   // the Big Net reaches further
   let closest = Infinity;
   for (const it of [...food.items]) {
     const p = it.mesh.position;
@@ -519,7 +528,7 @@ function step(dt, t) {
 
   const sting = jellies.update(dt, t, wally.pos, wally.surface === 'water', wally.pos.y);
   if (sting && game.stingCool <= 0) {
-    game.stingCool = 1.5; game.energy -= 15; game.streak = 0;
+    game.stingCool = 1.5; game.energy -= 15; game.streak = 0; bookEvent('hurt');
     game.wantDepth = PARK_TREASURE.surfaceY;                     // stung under water: back up he goes
     wally.knock(sting.pos.x, sting.pos.z);
     fx.shake(0.45, 0.3);
@@ -528,7 +537,10 @@ function step(dt, t) {
   }
 
   treasureStep(dt, t);
+  wally.jumpBoost = ability('spring');
+  for (const f of hidden.update(dt, t, wally.pos)) { toast(f.text, 'good'); sound.play.powerup(); }
   for (const m of parkMangoes.update(dt, t, wally.pos)) {
+    bookEvent('mango');
     game.mangoes++; game.score += 10; sound.play.goal(); fx.burst(m.mesh.position, [0xffc21a, 0xfff1a0], 10);
     toast(`A Golden Mango! ${parkMangoes.found}/${parkMangoes.total}`, 'good');
     if (parkMangoes.found === parkMangoes.total) bubbles.say(wally.root, "Every mango in the park! Bonza!", 3.4);
@@ -548,6 +560,7 @@ function step(dt, t) {
   }
   if (k2 === 'dropped') { toast('Kenny is holding out his jar. Get to him!', 'info'); bubbles.say(kenny.mesh, pickLine('kennyJar'), 1.9); }
   if (k2 === 'eaten') {
+    bookEvent('jar');
     const close = inRedZone(game.energy);
     game.energy = ENERGY_MAX; game.boost = 12;
     sound.play.powerup(); toast(close ? 'Just in time! Full tank!' : 'Full tank!', 'good');
@@ -593,7 +606,7 @@ function treasureStep(dt, t) {
   game.biteCool = Math.max(0, game.biteCool - dt);
   const biter = crocs.bites(wally);
   if (biter && game.biteCool <= 0) {
-    game.biteCool = 2; biter.lunge = 0.5;
+    game.biteCool = 2; biter.lunge = 0.5; bookEvent('hurt');
     game.energy -= 15; game.streak = 0; game.wantDepth = PARK_TREASURE.surfaceY;
     wally.knock(biter.pos.x, biter.pos.z); fx.shake(0.5, 0.3);
     sound.play.sting(); toast(`${biter.name} snapped at you! Up you go`, 'bad');
@@ -607,6 +620,7 @@ function treasureStep(dt, t) {
       if (!left) bubbles.say(wally.root, "Crikey, that's everything! Now for that chest!", 3.6);
       drawQuest();
     } else if (e.type === 'open') {
+      bookEvent('chest');
       const r = findTreasure(progress, 'park', TREASURE_REWARD);
       progress = r.progress;
       try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
@@ -743,6 +757,7 @@ function finish(won, why = '') {
   $('hud').hidden = true; $('touch').hidden = true;
   if (won) sound.fanfare();                         // Wally's theme hook: well done, mate
   if (won) {
+    bookEvent('finish');
     const stars = starsFor(game.score, PARK_STARS);
     progress = completeArea(progress, 'park', { score: game.score, stars, mangoes: game.mangoes });
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
@@ -868,6 +883,7 @@ else if (params.has('map')) showMap();
 // The map, from anywhere (mapmodal.js): the Map button or Tab. Play pauses while it is open.
 installMap({ pause: on => { if (game.running) game.paused = on; } });
 installShop({ pause: on => { if (game.running) game.paused = on; } });
+installBook({ here: 'park', pause: on => { if (game.running) game.paused = on; } });
 window.chompStartHere = () => { if (!game.running) { $('title').hidden = true; $('win').hidden = true; $('over').hidden = true; start(); } };
 window.chompDress = () => {
   const p = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());

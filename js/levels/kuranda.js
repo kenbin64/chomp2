@@ -30,6 +30,7 @@ import { peopleModels } from '../tourists.js';
 import { kennysJar } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
 import { dressOutfit } from '../outfit.js';
+import { installBook, bookEvent, ability, HiddenFinds } from '../book.js';
 import { DayNight } from '../daynight.js';
 import { StreetLamps } from '../lamps.js';
 import { buildKuranda, STREET, STALLS, SHOP, VENDOR, TRAIL_Z } from './kuranda-scene.js';
@@ -158,7 +159,7 @@ const streetGold = new Pickups(scene, (() => {
     spots.push({ x, y: STREET.ground + 0.6, z });
   }
   return spots;
-})(), goldPiece, { size: 1.2 });
+})(), goldPiece, { size: 1.2, scale: () => ability('swisher') });
 // The trader's sign over the stall.
 {
   const c = document.createElement('canvas'); c.width = 512; c.height = 160;
@@ -177,6 +178,9 @@ const lamps = new StreetLamps(scene, models.get('streetlamp'),
   Array.from({ length: Math.floor((STREET.z1 - 4 - (STREET.z0 + 4)) / 14) + 1 }, (_, i) => ({ x: (i % 2 ? 1 : -1) * (STREET.half - 0.4), y: STREET.ground, z: STREET.z0 + 4 + i * 14, rot: i % 2 ? -Math.PI / 2 : Math.PI / 2 })),
   { real: quality.name === 'high' ? 8 : quality.name === 'medium' ? 6 : 4 });
 Object.assign(window.chomp, { daynight, lamps, streetGold });
+// Hidden finds (Ken): behind the stalls, both sides of the street; three a visit.
+const hiddenFinds = new HiddenFinds(scene, STALLS.map(s => ({ x: s[0] + Math.sign(s[0]) * 2.4, y: STREET.ground, z: s[1] + 1.5 })));
+window.chomp.hiddenFinds = hiddenFinds;
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -228,10 +232,13 @@ function step(dt, t) {
 
   // Gold pieces visitors have dropped along the street (Ken): banked as soon as he has them.
   for (const g of streetGold.update(dt, t, wally.pos)) {
-    game.gold++; progress = { ...progress, coins: (progress.coins || 0) + 1 }; save();
+    game.gold++; progress = { ...progress, coins: (progress.coins || 0) + 1 }; save(); bookEvent('gold');
     sound.play.goal(); fx.burst(g.mesh.position, [0xffd24a, 0xffffff], 10);
     toast_(`A gold piece someone dropped! ${streetGold.found}/${streetGold.total}`, 'good');
   }
+
+  wally.jumpBoost = ability('spring');
+  for (const f of hiddenFinds.update(dt, t, wally.pos)) { toast_(f.text, 'good'); sound.play.powerup(); }
 
   // The clothes stall: walk up to it and it opens.
   const nearShop = Math.hypot(wally.pos.x - Math.sign(SHOP.x) * STREET.half, wally.pos.z - SHOP.z) < 3;
@@ -259,11 +266,12 @@ function step(dt, t) {
   for (const it of [...food.items]) {
     const p = it.mesh.position;
     const d = it.landed && !wally.airborne ? Math.hypot(p.x - mouth.x, p.z - mouth.z) + (mouth.y - p.y > 3.2 ? 99 : 0) : p.distanceTo(mouth);
-    if (d < 1.4 * (game.boost > 0 ? 1.4 : 1)) {
+    if (d < 1.4 * (game.boost > 0 ? 1.4 : 1) * ability('net')) {                  // the Big Net reaches further
       clusters.cheer(it.cluster);
       const how = it.landed ? 'ground' : (wally.airborne ? 'leap' : 'air');
       fx.burst(p, CRUMBS[it.kind] || [0xffffff]); food.take(it, 'eaten'); wally.chomp(how); sound.play.chomp(); fx.shake(0.1, 0.1);
       game.streak++; game.caught++;
+      if (daynight.night > 0.6) bookEvent('nightCatch');
       const pts = catchPoints(how, game.streak, game.boost > 0); game.foodPoints += pts; game.points += pts;
       game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[it.kind].energy);
       toast_(`+${pts} ${how === 'leap' ? 'Jumping catch!' : how === 'air' ? 'In the air!' : it.name}`);
@@ -377,7 +385,7 @@ function finish(won, why = '') {
   const finishBonus = won ? 20 + Math.round(Math.max(0, game.energy) / 10) : 0;
   const total = game.foodPoints + finishBonus;
   const stars = won ? starsFor(total, STARS) : 0;
-  if (won) { sound.fanfare(); progress = completeArea(progress, 'kuranda', { score: total, stars }); }
+  if (won) { bookEvent('finish'); sound.fanfare(); progress = completeArea(progress, 'kuranda', { score: total, stars }); }
   save();
   $('result-title').textContent = won ? 'Off to Barron Falls!' : why === 'hungry' ? 'Still peckish!' : 'Out of puff';
   $('result-why').textContent = why === 'hungry' ? `Every group's fed, but Wally needs a full tank (${FULL}%) for the trail.` : '';
@@ -440,4 +448,5 @@ if (params.has('play') || bot) start();
 // The map, from anywhere (mapmodal.js): the Map button or Tab. Play pauses while it is open.
 installMap({ pause: on => { if (game.running) game.paused = on; } });
 installShop({ pause: on => { if (game.running) game.paused = on; } });
+installBook({ here: 'kuranda', pause: on => { if (game.running) game.paused = on; } });
 window.chompStartHere = () => { if (!game.running) start(); };

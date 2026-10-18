@@ -29,7 +29,8 @@ export function goldPiece() {
 export class Pickups {
   // spots: [{ x, y, z }] (y: where it floats). make(): a fresh mesh for one.
   // reach: how close Wally's middle must come (metres across, and up and down).
-  constructor(scene, spots, make, { size = 1, reach = 1.3, glint = 1.2 } = {}) {
+  // scale(): a multiplier on the reach (the Tail Swisher ability).
+  constructor(scene, spots, make, { size = 1, reach = 1.3, glint = 1.2, scale = () => 1 } = {}) {
     this.list = spots.map((s, i) => {
       const mesh = make(); mesh.scale.multiplyScalar(size); mesh.position.set(s.x, s.y, s.z);
       mesh.traverse(o => { if (o.isMesh) o.castShadow = true; });
@@ -38,7 +39,7 @@ export class Pickups {
       scene.add(mesh, shine);
       return { ...s, mesh, shine, taken: false, phase: i * 1.7 };
     });
-    this.reach = reach;
+    this.reach = reach; this.scale = scale;
   }
 
   get found() { return this.list.filter(p => p.taken).length; }
@@ -59,7 +60,7 @@ export class Pickups {
       p.shine.material.opacity = 0.45 + 0.4 * Math.sin(t * 3 + p.phase);
       // His body spans from his feet to about 2 m up: touching it anywhere counts.
       const dy = p.y - pos.y;
-      if (Math.hypot(pos.x - p.x, pos.z - p.z) < this.reach && dy > -0.8 && dy < 2.4) { p.taken = true; got.push(p); }
+      if (Math.hypot(pos.x - p.x, pos.z - p.z) < this.reach * this.scale() && dy > -0.8 && dy < 2.4) { p.taken = true; got.push(p); }
     }
     return got;
   }
