@@ -16,6 +16,9 @@ import { useGear, ABILITIES, equip, unequip, gearStock, fullUses, buyGear, GEAR_
 
 const NET_REACH = 4.5, SWISH_REACH = 4.2;
 let cfg = null, badge = null, swishUntil = 0, snorkelUntil = 0, vitaminUntil = 0, modal = null, prop = null, propFor = null;
+// A net swing in progress (Ken: he swings round, the net gets bigger and scoops up the food near him).
+let swing = null;
+const SWING_TIME = 0.6;
 const load = () => readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
 
 // For the rest of the game: is the tail sweeping right now, is the snorkel in?
@@ -62,14 +65,11 @@ export function useItem() {
   const id = p.equipped, a = ABILITIES.find(x => x.id === id);
   if (id === 'net') {
     if (!cfg.food) { cfg.toast('Nothing to catch here', 'info'); return; }
-    const me = cfg.wally.pos, mouth = cfg.mouth();
-    let n = 0;
-    for (const it of [...cfg.food.items]) {
-      if (it.taken || it.claimed) continue;
-      if (it.mesh.position.distanceTo(new THREE.Vector3(me.x, me.y + 1, me.z)) < NET_REACH) { it.mesh.position.copy(mouth); n++; }   // into the net, and so to his mouth
-    }
+    if (swing) return;                                              // one swing at a time
+    // He spins right round with the net held out, growing as it swings; half way
+    // round, everything near him goes into it (and so to his mouth).
+    swing = { t0: performance.now(), facing: cfg.wally.facing || 0, caught: false };
     sweep(0x9fe8ff, NET_REACH);
-    cfg.toast(n ? `Swoosh! The net got ${n}` : 'Swoosh! Nothing in range that time', n ? 'good' : 'info');
   } else if (id === 'swisher') {
     swishUntil = performance.now() + 700; sweep(0x8fdc6a, SWISH_REACH);
     cfg.toast('Tail swish!', 'good');
@@ -181,6 +181,7 @@ function bone(pattern) {
   return found;
 }
 function showProp() {
+  if (swing) return;                                                // keep the net till the swing is over
   const p = load();
   if (p.equipped === propFor) return;
   if (prop) { cfg.scene.remove(prop); prop = null; }
@@ -190,9 +191,44 @@ function showProp() {
 }
 // Each frame the prop follows its bone (or a spot on Wally when the model has no bones).
 const _v = new THREE.Vector3(), _q = new THREE.Quaternion();
+// The net swing, each frame: Wally turns right round, the net swells and swings
+// out at arm's length, and half way the food near him is scooped in.
+function swingStep() {
+  if (!swing) return false;
+  const w = cfg.wally, u = Math.min(1, (performance.now() - swing.t0) / 1000 / SWING_TIME);
+  const ease = u * u * (3 - 2 * u);
+  w.facing = swing.facing + ease * Math.PI * 2;
+  if (!swing.caught && u >= 0.5) {
+    swing.caught = true;
+    const me = w.pos, mouth = cfg.mouth(), centre = new THREE.Vector3(me.x, me.y + 1, me.z);
+    let n = 0;
+    for (const it of [...cfg.food.items]) {
+      if (it.taken || it.claimed) continue;
+      if (it.mesh.position.distanceTo(centre) < NET_REACH) { it.mesh.position.copy(mouth); n++; }
+    }
+    cfg.toast(n ? `Swoosh! The net scooped up ${n}` : 'Swoosh! Nothing in range that time', n ? 'good' : 'info');
+  }
+  if (prop && propFor === 'net') {
+    const grow = 1 + 0.9 * Math.sin(Math.PI * u);                  // the net gets bigger as it swings
+    const out = 0.6 + 1.4 * Math.sin(Math.PI * u), f = w.facing;
+    prop.scale.setScalar(grow);
+    prop.position.set(me(w).x + Math.sin(f + 1.2) * out, w.pos.y + 0.3, me(w).z + Math.cos(f + 1.2) * out);
+    prop.rotation.set(0, f, -1.1 * Math.sin(Math.PI * u));          // swung out flat at arm's length
+  }
+  if (u >= 1) {
+    w.facing = swing.facing; swing = null;
+    if (prop) prop.scale.setScalar(1);
+    showProp();                                                     // a worn-out net goes once the swing is done
+    return false;
+  }
+  return true;
+}
+function me(w) { return w.pos; }
+
 function follow() {
   requestAnimationFrame(follow);
-  if (!prop || !cfg) return;
+  if (!cfg) return;
+  if (swingStep() || !prop) return;
   const w = cfg.wally, id = propFor;
   const b = id === 'net' ? bone(/right.*hand/i) : id === 'snorkel' ? bone(/^head$/i) : id === 'swisher' ? bone(/tail4/i) : bone(/hips/i);
   if (id === 'vitamins' && b) { b.getWorldPosition(_v); const f = w.facing || 0; prop.position.set(_v.x + Math.cos(f) * 0.45, _v.y, _v.z - Math.sin(f) * 0.45); prop.rotation.set(0, f, 0); return; }
