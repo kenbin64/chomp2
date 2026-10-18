@@ -167,13 +167,38 @@ export function person() {
   return { g, legs, arms, head, phone };
 }
 
+// Ken's people (models/tourist-N.glb, made from his cast sheets) and how tall
+// each one stands in the game, in metres: a range, so no two look cloned in
+// size. Anyone not listed is sized as an adult.
+const ADULT = [1.6, 1.85];
+export const CAST = [
+  { file: 'tourist-1', who: 'hiker',                 tall: [1.75, 1.88] },
+  { file: 'tourist-2', who: 'young surfer',          tall: [1.72, 1.85] },
+  { file: 'tourist-3', who: 'elder bushman',         tall: [1.65, 1.78] },
+  { file: 'tourist-4', who: 'Torres Strait auntie',  tall: [1.55, 1.68] },
+  { file: 'tourist-5', who: 'tropical beach kid',    tall: [1.05, 1.25] },
+];
+// The people models that loaded, each carrying its height range.
+export function peopleModels(models) {
+  const list = [];
+  for (let i = 1; i <= 24; i++) {
+    const file = `tourist-${i}`, gltf = models.get(file);
+    if (!gltf) continue;
+    gltf.userData = gltf.userData || {};
+    gltf.userData.tall = (CAST.find(c => c.file === file) || {}).tall || ADULT;
+    list.push(gltf);
+  }
+  return list;
+}
+
 // Put one of Ken's people models on a visitor (tools/blender-animate-human.py
 // moves). The shape-built stand-in is stretched to vary builds, which would
 // distort a model, so a dressed visitor is scaled evenly and varies by height.
 // The phone in their hand shows only while they take a photo.
 export function wearModel(body, gltf) {
   body.g.scale.setScalar(1);
-  const skin = dress(body.g, gltf, { height: 1.6 + Math.random() * 0.25 });
+  const [lo, hi] = (gltf.userData && gltf.userData.tall) || ADULT;
+  const skin = dress(body.g, gltf, { height: lo + Math.random() * (hi - lo) });
   if (!skin) return null;
   skin.phone = skin.root.getObjectByName('HeldPhone') || null;
   if (skin.phone) skin.phone.visible = false;

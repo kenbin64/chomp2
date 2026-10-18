@@ -33,6 +33,7 @@ import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, wearing, WA
 import { PATH, generateCourse, hits, runScore, STARS, MANGO_SET_BONUS } from './esplanade-rules.js';
 import { buildEsplanade, obstacleModel, mangoModel, useMangoModel } from './esplanade-scene.js';
 import { Clusters } from '../clusters.js';
+import { peopleModels } from '../tourists.js';
 import { airStep, AIR } from './reef-rules.js';
 import { clamWithPearl } from './reef-scene.js';
 import { kennysJar } from '../food.js';
@@ -157,7 +158,7 @@ for (const s of course.shelters) {
 // A last group just before the Lagoon, so he can top up for the finish.
 world.shelter(PATH.finish - 12);
 clusters.add({ x: PATH.half + 3.4, z: PATH.finish - 12, size: 3, food: 7, rate: 0.45 });
-clusters.useModels(Array.from({ length: 24 }, (_, i) => models.get(`tourist-${i + 1}`)).filter(Boolean));   // Ken's people
+clusters.useModels(peopleModels(models));   // Ken's people
 
 // Box jellyfish drifting in the sea beside the boardwalk: it is stinger season.
 const jellies = [];
