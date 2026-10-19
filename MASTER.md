@@ -346,15 +346,18 @@ people to like him; he ends knowing who he is.
    goes into the Daintree River as a wild croc. This carries the game's safety message: wild crocs do not
    need our food.
 4. **The celebration (a cinematic, Ken 2026-10-19):** everyone cheers and celebrates, the cast from the whole trip on the bank.
-5. **The last message (Proposed):** Crocwise. "Wally's wild now. If you see a croc in the Daintree, give it
-   room. That might be him."
+5. **Kenny's farewell and the last line (a cinematic, Ken 2026-10-19):** both go home. Wally carries Kenny
+   on his back across the river to the gum trees on the far bank (koalas live in eucalyptus woodland, not
+   the rainforest). Kenny holds out the Vegemite jar one last time; Wally gently pushes it back, he does not
+   need reviving now. Kenny climbs into a eucalyptus, Wally slides into the river. The final shot: Kenny in
+   his gum tree, a pair of croc eyes surfacing below, and Kenny says the last line: "If you see a croc in
+   the Daintree, give it room. That might be Wally."
 - **It uses everything still in his stash (Decided):** all that was collected and not spent on other
   requirements goes into the finale (Proposed: mangoes for a feast, pearls as gifts, shells as necklaces,
   gold for the party boat), and every leftover adds to the trip score. **Decided (Ken, 2026-10-19):** it
   uses what is left, but if there is not enough, Wally goes back for more (under the going-back rules).
 - **Dropped (Ken, 2026-10-19):** the run back to Croc Park, and with it the finale bungee and the
   Kuranda train home.
-- **Open:** Kenny's farewell (a koala cannot follow Wally into the river).
 
 **What is here (notes so far):** tourists on river boats, swimming, swinging on vines, jumping rock to
 rock, running the beach, mangroves.
