@@ -122,10 +122,10 @@ Throw, Cheer, Nervous, plus a HeldPhone shown only for photos), and gltf-transfo
 Slots run tourist-1 to tourist-24. No group of visitors ever has the same person twice (Ken): until
 there are as many people as a group's size, the extra members step out.
 
-Made so far: tourist-1 hiker (Meshy rig), tourist-2 young surfer, tourist-3 elder bushman, tourist-4 Torres Strait auntie (long dress: folds a little at the hem; fine at crowd distance), tourist-5 tropical beach kid, tourist-6 islander girl, tourist-7 Japanese tourist, tourist-8 hippie woman, tourist-9 female tourist, tourist-10 Kuranda resident. Each person's height range is in CAST in js/tourists.js: add a line there for every new person (children especially).
+Made so far: tourist-1 hiker (Meshy rig), tourist-2 young surfer, tourist-3 elder bushman, tourist-4 Torres Strait auntie (long dress: folds a little at the hem; fine at crowd distance), tourist-5 tropical beach kid, tourist-6 islander girl, tourist-7 Japanese tourist, tourist-8 hippie woman, tourist-9 female tourist, tourist-10 Kuranda resident, tourist-11 young Aboriginal woman (dress print to be reviewed; see MASTER.md), tourist-12 American tourist (man), tourist-13 American tourist (woman). Each person's height range is in CAST in js/tourists.js: add a line there for every new person (children especially).
 
 ### 4. Tourists: `tourist-1.glb` to `tourist-10.glb`
-Everyday Australians and visitors on a sunny day out, each one a distinct individual. Make about ten that vary in age, build, height, skin tone, hair and clothes. Dress them in ordinary holiday clothes only: no costumes and nothing meant to signal a culture. Show them as warm, friendly, happy people.
+Everyday Australians and visitors on a sunny day out, each one a distinct individual. Make about ten that vary in age, build, height, skin tone, hair and clothes. Dress them in ordinary holiday clothes, no costumes. Show them as warm, friendly, happy people. (Updated 2026-10-18: culture is shown truly, not hidden, with community review; avoid stereotypes and AI imitations of traditional art. See MASTER.md, Release.)
 
 1. > A cheerful Aboriginal Australian woman in her thirties with curly dark hair tied back, a teal t-shirt, khaki shorts, sneakers, a sun visor and a small camera.
 2. > A tall Torres Strait Islander man in his forties with short dark hair and a neat beard, a bright patterned short-sleeved shirt, navy shorts and sunglasses pushed up on his head.

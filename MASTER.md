@@ -213,6 +213,8 @@ treasures (starfish, cowries, conch), bubble vents, box jellyfish.
 - **Decided (Ken, 2026-10-18):** paid the Big Golden Mango, the giant clam gives Wally **a pearl key**, and
   the pearl key opens the pirate chest at the end of the maze. (A small model, Open: built in code or Meshy.)
   The clam does not block the maze: without the key the chest cannot be opened, so blocking is not needed.
+  **Where (Ken, 2026-10-18):** the giant clam sits in one of the maze's dead ends, holding the pearl key;
+  then Wally has to find the chest and open it with the key. Model: Ken's Meshy giant clam (2026-10-18).
 - **Decided (Ken, 2026-10-18):** Wally can go back to the reef to collect pearls in the maze (for the
   Kuranda markets), under the return-visit rules. **Pearls' home is the reef only** (Decided), so there is
   one source, and it gets harder on every return. **Built:** pearls sit in the cave maze's dead ends
@@ -351,6 +353,21 @@ Then Mossman and the Daintree, once their point and goal are decided.
   cruise) and it promotes tourism, shopping in Kuranda included. Prepare: a croc-safety ("Be Crocwise")
   message, since the hero is a croc people feed; respectful portrayals (the boomerang taught by a Djabugay
   guide); a clean demo link and a one-page summary.
+- **Cultural review (Ken, 2026-10-18):** Ken will run the characters past a friend in Cairns who is a Torres
+  Strait Islander. If Cairns is interested, they are told they can change any character, add characters,
+  and make sure cultural sensitivities are observed. tourist-4 (Torres Strait auntie) is right as she is:
+  a true representation of people like those Ken knows, not a likeness of any real person (2026-10-18). Characters to review first: tourist-11 (young Aboriginal woman; her dress print looks like Aboriginal art), and the
+  Djabugay guide who teaches the boomerang (ask the Djabugay community how they wish to be shown).
+- **No real people's likenesses (Ken, 2026-10-18):** Ken checks that Meshy is not giving him faces of
+  actual people. Prompts never name a real person; a reverse image search of a character's picture (Google
+  Lens, TinEye) is a quick check.
+- **The people's style (Ken, 2026-10-18):** every person has a cartoon, animated-feature look, which keeps
+  them clear of real likenesses; but they are respectful, never comical. Stylised, not caricatured.
+- **Show culture, don't hide it (Ken, 2026-10-18):** people should not be made so generic that their culture
+  disappears. The aim is culture shown truly and specifically, with the community's say, rather than
+  removed to be safe. What to avoid is stereotypes and AI-made imitations of traditional art; what to seek
+  is real detail, for example a print licensed from an Indigenous designer and credited. This replaces the
+  older MODELS.md wording "nothing meant to signal a culture".
 - **Clean:** sky and surface pictures are CC0 (Poly Haven, ambientCG); three.js is MIT.
 
 ## Open decisions, in order
