@@ -188,6 +188,15 @@ The starfish's glow when Wally touches it is added in the game, so the model nee
 If the clam is to be a character, add: *"with two big friendly expressive eyes on the mantle and a wide
 smiling mouth along the lips, a little grumpy but kind, like a gatekeeper."*
 
+## The Barron Gorge from the air (the Skyrail ride, Ken 2026-10-19)
+
+For the Skyrail's crossing of the gorge: a stretch of landscape seen from above, the falls at one end.
+Export **game-ready, no rig, for Blender** (GLB); it is baked down here.
+
+| File | Prompt |
+|---|---|
+| `barron-gorge.glb` | An aerial landscape block of the Barron Gorge in Far North Queensland: a deep, winding river gorge cut into a plateau, sheer grey granite cliffs with vertical joints, dense tropical rainforest canopy right to both rims, a wide stepped waterfall pouring into the head of the gorge at one end, white water and river boulders on the gorge floor, mist rising from the base of the falls. Seen from above at an angle, as from a cable car. Stylised 3D animated-feature look, same art style as a modern family animated film, detailed hand-painted textures. No buildings, no words. |
+
 ## Kuranda and Barron Falls (level 4, Ken 2026-10-17)
 
 For every one: add the style line *"Stylised 3D animated-feature look, same art style as a modern family
