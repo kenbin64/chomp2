@@ -320,12 +320,28 @@ listed as star-opened activities today (`ACTIVITIES` in `js/progress.js`). **Ope
 
 **Where:** the Daintree, the far north of the trip, rainforest down to the water. **Not built.**
 
-**The point:** the end of the trip. **Open:** what it means for Wally's story.
+**The point (Decided, Ken 2026-10-19):** the end of Wally's story. He set out loving food and wanting
+people to like him; he ends knowing who he is.
+
+**The finale (Decided, Ken 2026-10-19):**
+1. **The challenge:** a storm on the river, a cruise boat in trouble; Wally swings on the vines and uses
+   everything he has learned to rescue the boat. Nobody is harmed.
+2. **The turn:** the passengers, people who threw food to keep him away all game, cheer him.
+3. **The choice:** Wally is not taken back to a zoo or the sanctuary. He realises he is happy to be a
+   crocodile and goes into the Daintree River as a wild croc.
+4. **The celebration:** everyone cheers and celebrates, the cast from the whole trip on the bank.
+5. **The last message (Proposed):** Crocwise. "Wally's wild now. If you see a croc in the Daintree, give it
+   room. That might be him."
+- **It uses everything still in his stash (Decided):** all that was collected and not spent on other
+  requirements goes into the finale (Proposed: mangoes for a feast, pearls as gifts, shells as necklaces,
+  gold for the party boat), and every leftover adds to the trip score. **Open:** a hard minimum, or use
+  whatever is left.
+- **Open:** Kenny's farewell (a koala cannot follow Wally into the river).
 
 **What is here (notes so far):** tourists on river boats, swimming, swinging on vines, jumping rock to
 rock, running the beach, mangroves.
 
-**The goal to get out:** the end of the game. **Open:** what the final challenge is.
+**The goal to get out:** the end of the game: the boat rescue, then Wally's choice.
 
 **Needs:** the vine skill from Mossman (n-1, Proposed) and the river-boat ticket from Kuranda (n-2).
 
