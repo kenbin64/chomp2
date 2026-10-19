@@ -325,13 +325,15 @@ people to like him; he ends knowing who he is.
 
 **The finale (Decided, Ken 2026-10-19):**
 1. **The challenge:** a storm on the river; a cruise boat runs aground and is stuck. Nobody is harmed.
-   Wally swings on the vines through the rainforest to reach the crocs, shares his stash with them
-   (everything collected and not spent; not enough: go back for more), and all the crocs, his old rivals
-   from Croc Park among them, push the boat back to shore. (Crocs sharing with crocs: the game's
+   Wally swings on the vines through the rainforest and runs back home to Croc Park to fetch the crocs,
+   bringing what he has learned on the trip, which is what persuades them to come; he shares his stash
+   with them (everything collected and not spent; not enough: go back for more), and all the crocs, his old
+   rivals from Croc Park, push the boat back to shore. (Ken, 2026-10-19. Not circular: he chooses to go
+   back, for others; the story ends forward.) **Open:** the run home playable, or a cinematic. (Crocs sharing with crocs: the game's
    never-feed-a-crocodile message is about people.)
 2. **The turn:** the passengers, people who threw food to keep him away all game, cheer him.
-3. **The choice:** Wally is not taken back to a zoo or the sanctuary. He realises he is happy to be a
-   crocodile and goes into the Daintree River as a wild croc.
+3. **The choice:** with the boat saved, Wally decides not to go back to Croc Park. He realises he is happy
+   to be a crocodile and goes into the Daintree River as a wild croc.
 4. **The celebration:** everyone cheers and celebrates, the cast from the whole trip on the bank.
 5. **The last message (Proposed):** Crocwise. "Wally's wild now. If you see a croc in the Daintree, give it
    room. That might be him."
