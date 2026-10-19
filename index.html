@@ -66,6 +66,11 @@
     </div>
     <p class="credit">Directed by Ken Bingham &middot; AI-assisted with VS Code and Claude &middot; <a href="about.html#made">How it was made</a> &middot; <button id="credits" class="link" type="button">Credits</button> &middot; <a href="about.html">About</a></p>
   </div>
+  <!-- Ken's promo trailer, playing muted on the opening screen; click for the full trailer with sound. -->
+  <button id="trailer-peek" class="trailer-peek" type="button" aria-label="Watch the trailer">
+    <video src="assets/title/trailer.mp4" muted loop playsinline preload="metadata"></video>
+    <span>&#9654; Watch the trailer</span>
+  </button>
   <div class="trailer-box" id="trailer-box" hidden>
     <video id="trailer-video" src="assets/title/trailer.mp4" controls playsinline preload="none"></video>
     <button id="trailer-close" class="go" type="button">Close</button>

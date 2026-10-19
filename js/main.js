@@ -827,8 +827,15 @@ $('how').onclick = () => { $('how-card').hidden = false; };
 $('how-close').onclick = () => { $('how-card').hidden = true; };
 $('credits').onclick = () => { $('credits-card').hidden = false; };
 // Ken's promo trailer (the brand name on the jar covered with a V: tools/cover-label-keys.py).
-$('trailer').onclick = () => { $('trailer-box').hidden = false; const v = $('trailer-video'); v.muted = false; v.volume = 1; v.currentTime = 0; v.play().catch(() => {}); };
-$('trailer-close').onclick = () => { const v = $('trailer-video'); v.pause(); $('trailer-box').hidden = true; };
+// It plays muted in a small window on the opening screen (not on phones, or when
+// the player's device asks for reduced motion); clicking it, or Trailer, plays
+// the whole thing with sound.
+const peek = $('trailer-peek'), peekVideo = peek.querySelector('video');
+const stillOnly = matchMedia('(prefers-reduced-motion: reduce)').matches || touch;
+if (!stillOnly) peekVideo.play().catch(() => {});
+function openTrailer() { peekVideo.pause(); $('trailer-box').hidden = false; const v = $('trailer-video'); v.muted = false; v.volume = 1; v.currentTime = 0; v.play().catch(() => {}); }
+$('trailer').onclick = openTrailer; peek.onclick = openTrailer;
+$('trailer-close').onclick = () => { const v = $('trailer-video'); v.pause(); $('trailer-box').hidden = true; if (!stillOnly) peekVideo.play().catch(() => {}); };
 $('credits-close').onclick = () => { $('credits-card').hidden = true; };
 $('play').onclick = () => { sound.start(); sound.startMusic('theme'); sound.moodMusic('theme'); showMap(); };
 $('to-map').onclick = () => location.href = 'index.html?map';
