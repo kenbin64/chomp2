@@ -337,6 +337,22 @@ Then Mossman and the Daintree, once their point and goal are decided.
 
 **Models to make:** `clam.glb` (prompt in MODELS.md); the gate key (Open: built in code or a Meshy prop).
 
+## Release (notes, 2026-10-18)
+
+- **Platforms, in order (Proposed):** itch.io and web game portals from the current code (the portals need
+  the model reduction: small, fast-loading files); then Steam and Epic as a desktop build (Electron or
+  Tauri) from the same code; consoles only if the game takes off, which needs a port to a game engine.
+- **Meshy models:** Ken is on a paid Meshy plan (2026-10-18), which covers commercial use of models made
+  while on it. Check that no model in the game was made before the plan started.
+- **Names to check before selling:** "Skyrail" (a real company's cableway, used as the ride's name) and the
+  V jar (yellow label, red band). Real place names (Cairns, Kuranda, Mossman) are fine.
+- **Showing it to Cairns (Ken, 2026-10-18):** the trip is a real itinerary (a croc park, the Esplanade,
+  Green Island and the reef, the Skyrail, the Kuranda markets, Barron Falls, Mossman Gorge, a Daintree river
+  cruise) and it promotes tourism, shopping in Kuranda included. Prepare: a croc-safety ("Be Crocwise")
+  message, since the hero is a croc people feed; respectful portrayals (the boomerang taught by a Djabugay
+  guide); a clean demo link and a one-page summary.
+- **Clean:** sky and surface pictures are CC0 (Poly Haven, ambientCG); three.js is MIT.
+
 ## Open decisions, in order
 
 0. The reward: a trip board, area boards, or both.
