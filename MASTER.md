@@ -351,7 +351,7 @@ people to like him; he ends knowing who he is.
    the rainforest). Kenny holds out the Vegemite jar one last time; Wally gently pushes it back, he does not
    need reviving now. Kenny climbs into a eucalyptus, Wally slides into the river. The final shot: Kenny in
    his gum tree, a pair of croc eyes surfacing below, and Kenny says the last line: "If you see a croc in
-   the Daintree, give it room. That might be Wally."
+   the Daintree, give it room. It might be Wally."
 - **It uses everything still in his stash (Decided):** all that was collected and not spent on other
   requirements goes into the finale (Proposed: mangoes for a feast, pearls as gifts, shells as necklaces,
   gold for the party boat), and every leftover adds to the trip score. **Decided (Ken, 2026-10-19):** it
