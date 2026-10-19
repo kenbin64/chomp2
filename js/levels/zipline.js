@@ -53,6 +53,8 @@ const daynight = new DayNight(scene, { sun });
 
 // ---- The gorge: cliffs, river, rainforest, the falls --------------------------------------
 const LONGEST = 340;
+const FALLS_Z = 30;                                   // the head wall at the foot of the falls, behind the start platform (the line runs toward -z)
+const RIM = 82;                                       // the cliff tops
 const rock = surfaceMaterial(realism, 'rock', 30, 8) || new THREE.MeshStandardMaterial({ color: 0x6a5e52, roughness: 0.95 });
 const rockMoss = rock.clone(); rockMoss.vertexColors = true;
 for (const side of [-1, 1]) {
@@ -77,8 +79,32 @@ for (const side of [-1, 1]) {
   wall.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
   wall.position.set(side * 34, 40, -LONGEST / 2 + 50); scene.add(wall);
 }
-const river = new THREE.Mesh(new THREE.PlaneGeometry(80, LONGEST + 300), new THREE.MeshStandardMaterial({ color: 0x3f5f4a, roughness: 0.2, metalness: 0.1 })   /* the Barron: deep green-brown */);
-river.rotation.x = -Math.PI / 2; river.position.set(0, 0, -LONGEST / 2); scene.add(river);
+// ---- The river (Ken: his falls model is the reference) -------------------------------------
+// Below the falls the Barron runs brown-green in the wet, churned white wherever
+// it breaks over rock. The water moves: streaks and ripples (the photographic
+// layer's water normals) slide downstream every frame (flowRiver).
+const RIVER_Z = -LONGEST / 2 + 50, RIVER_LEN = LONGEST + 300;          // the same stretch as the walls, upstream past the falls
+const flowTex = (() => { const c = document.createElement('canvas'); c.width = 128; c.height = 512; const g = c.getContext('2d');
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, 128, 512);
+  for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(70,62,44,${0.05 + Math.random() * 0.18})`; g.fillRect(Math.random() * 128, Math.random() * 512, 1 + Math.random() * 2, 8 + Math.random() * 40); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 24); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const waterNormals = new THREE.TextureLoader().load('assets/water/waternormals.jpg');
+waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping; waterNormals.repeat.set(6, 60);
+{
+  const geo = new THREE.PlaneGeometry(80, RIVER_LEN, 16, 120), p = geo.attributes.position, col = [];
+  const white = new THREE.Color(0xe6e1d4), brown = new THREE.Color(0x4a4532), c = new THREE.Color();
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), z = RIVER_Z - p.getY(i);                     // the plane lies flat: its y runs down the gorge
+    const below = Math.min(1, Math.max(0, (FALLS_Z - 30 - z) / 60));   // 0 just below the falls, 1 well downstream
+    const rapids = 0.25 * Math.max(0, Math.sin(z * 0.05 + Math.sin(x * 0.2) * 1.5));   // lighter bands where it runs fast
+    c.copy(white).lerp(brown, Math.min(1, below * (1 - rapids)));
+    col.push(c.r, c.g, c.b);
+  }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  const river = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, map: flowTex, normalMap: waterNormals, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 0.3, metalness: 0, envMapIntensity: 0.5 }));
+  river.rotation.x = -Math.PI / 2; river.position.set(0, 0, RIVER_Z); river.receiveShadow = true; scene.add(river);
+}
+function flowRiver(dt) { flowTex.offset.y -= dt * 0.6; waterNormals.offset.y -= dt * 0.3; }
 const trees = new Trees(scene, { light: quality.name === 'low' });
 for (let i = 0; i < 220; i++) { const side = i % 2 ? 1 : -1, x = side * (38 + Math.random() * 60), z = 160 - Math.random() * (LONGEST + 260); trees.add(['umbrella', 'eucalyptus', 'umbrella', 'palm'][i % 4], x, 80 + Math.random() * 6, z, 12 + Math.random() * 10); }
 // Trees and palms growing out of the cliff faces on ledges, all the way down,
@@ -90,20 +116,67 @@ for (let i = 0; i < 520; i++) {
 }
 for (let i = 0; i < 160; i++) { const side = i % 2 ? 1 : -1; trees.add(['umbrella', 'eucalyptus', 'umbrella'][i % 3], side * (34 + Math.random() * 8), 80, 160 - Math.random() * (LONGEST + 260), 14 + Math.random() * 10); }
 trees.build();
-// Boulders in the river and along its banks, white water round them.
+// Boulders in the river and along its banks, like the model's: chunky granite with
+// the edges worn round, moss on top, darker where they are wet. Four shapes, so no
+// two look alike. Each one in the stream has a soft collar of white water and a
+// white streak trailing downstream. All drawn in a few batches (instanced).
 {
-  const stone = new THREE.MeshStandardMaterial({ color: 0x7a7266, roughness: 0.9 });
-  const foam = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, roughness: 0.4, depthWrite: false });
-  const geo = new THREE.DodecahedronGeometry(1, 1);
-  const n = 90, rocks = new THREE.InstancedMesh(geo, stone, n), m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
-  for (let i = 0; i < n; i++) {
-    const bank = Math.random() < 0.55, x = bank ? (Math.random() < 0.5 ? -1 : 1) * (24 + Math.random() * 9) : (Math.random() - 0.5) * 40, z = 40 - Math.random() * (LONGEST + 100);
-    const r = 1 + Math.random() * 3.5;
-    q.setFromEuler(e.set(Math.random(), Math.random() * 6, Math.random()));
-    m.compose(new THREE.Vector3(x, r * 0.35, z), q, new THREE.Vector3(r, r * 0.7, r * 1.2)); rocks.setMatrixAt(i, m);
-    if (!bank) { const f = new THREE.Mesh(new THREE.RingGeometry(r * 0.9, r * 1.6, 20), foam); f.rotation.x = -Math.PI / 2; f.position.set(x, 0.06, z); scene.add(f); }
+  function boulderGeometry(seed) {
+    const g = new THREE.IcosahedronGeometry(1, 2), p = g.attributes.position, v = new THREE.Vector3();
+    for (let i = 0; i < p.count; i++) {
+      v.fromBufferAttribute(p, i);
+      v.multiplyScalar(1 + 0.22 * Math.sin(v.x * 3.1 + seed) * Math.cos(v.y * 2.7 + seed * 1.7) + 0.12 * Math.sin(v.z * 5.3 + seed * 2.3));
+      v.y *= 0.62; if (v.y < -0.15) v.y = -0.15 + (v.y + 0.15) * 0.3;   // a flatter underside, sitting in the water
+      p.setXYZ(i, v.x, v.y, v.z);
+    }
+    g.computeVertexNormals();
+    const n = g.attributes.normal, col = [];
+    for (let i = 0; i < p.count; i++) {
+      const up = n.getY(i), y = p.getY(i);
+      if (up > 0.55) col.push(0.62, 0.78, 0.48);                         // moss on top
+      else if (y < 0) col.push(0.55, 0.55, 0.55);                       // wet and dark at the waterline
+      else col.push(1, 1, 1);
+    }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    return g;
   }
-  rocks.castShadow = true; rocks.receiveShadow = true; scene.add(rocks);
+  const stone = rock.clone(); stone.vertexColors = true; stone.color = new THREE.Color(0x9a958c);
+  // How see-through the foam is, drawn in greys (three.js reads an alpha map's
+  // brightness): white where the foam is thick, black where there is none.
+  const fade = (radial) => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+    g.fillStyle = '#000'; g.fillRect(0, 0, 128, 128);
+    if (radial) { const r = g.createRadialGradient(64, 64, 10, 64, 64, 64); r.addColorStop(0, '#fff'); r.addColorStop(0.5, '#aaa'); r.addColorStop(1, '#000'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); }
+    else for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) {   // bright at the rock end (the picture's bottom row: upstream), fading down the streak and to its sides
+      const along = y / 128, across = Math.max(0, 1 - Math.abs(x - 64) / 64), v = Math.round(255 * along * along * across);
+      g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(x, y, 1, 1); }
+    return new THREE.CanvasTexture(c); };
+  const foamMat = (radial) => new THREE.MeshStandardMaterial({ color: 0xf4f1ea, map: flowTex, alphaMap: fade(radial), transparent: true, depthWrite: false, roughness: 0.5 });
+  const flat = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+  const KINDS = 4, PER = 40;
+  const meshes = Array.from({ length: KINDS }, (_, k) => new THREE.InstancedMesh(boulderGeometry(k * 2.7 + 1), stone, PER));
+  const collars = new THREE.InstancedMesh(flat, foamMat(true), KINDS * PER), streaks = new THREE.InstancedMesh(flat, foamMat(false), KINDS * PER);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), up = new THREE.Vector3(0, 1, 0);
+  let foam = 0;
+  meshes.forEach((mesh, k) => {
+    for (let i = 0; i < PER; i++) {
+      const bank = Math.random() < 0.4;
+      const z = FALLS_Z - 8 - (LONGEST + 60) * Math.pow(Math.random(), 1.7);   // more rocks (rapids) near the falls
+      const x = bank ? (Math.random() < 0.5 ? -1 : 1) * (25 + Math.random() * 8) : (Math.random() - 0.5) * 48;
+      const near = z > FALLS_Z - 80 ? 1.4 : 1;
+      const r = (bank ? 2 + Math.random() * 4 : 1 + Math.random() * 3.5) * near;
+      q.setFromEuler(e.set((Math.random() - 0.5) * 0.3, Math.random() * Math.PI * 2, (Math.random() - 0.5) * 0.3));
+      mesh.setMatrixAt(i, m.compose(new THREE.Vector3(x, r * 0.32, z), q, new THREE.Vector3(r, r, r * (1 + Math.random() * 0.4))));
+      if (!bank) {
+        q.setFromAxisAngle(up, 0);
+        collars.setMatrixAt(foam, m.compose(new THREE.Vector3(x, 0.07, z), q, new THREE.Vector3(r * 2.8, 1, r * 2.8)));
+        streaks.setMatrixAt(foam, m.compose(new THREE.Vector3(x, 0.06, z - r * 3), q, new THREE.Vector3(r * 1.6, 1, r * 6)));   // trailing downstream (-z)
+        foam++;
+      }
+    }
+    mesh.castShadow = true; mesh.receiveShadow = true; scene.add(mesh);
+  });
+  collars.count = streaks.count = foam;
+  for (const f of [collars, streaks]) { f.userData.noAO = true; scene.add(f); }
 }
 // The cliff tops: rainforest floor.
 for (const side of [-1, 1]) { const top = new THREE.Mesh(new THREE.PlaneGeometry(200, LONGEST + 300), new THREE.MeshStandardMaterial({ color: 0x2f5a2a, roughness: 1 })); top.rotation.x = -Math.PI / 2; top.position.set(side * 134, 82, -LONGEST / 2 + 50); scene.add(top); }
@@ -113,8 +186,6 @@ for (const side of [-1, 1]) { const top = new THREE.Mesh(new THREE.PlaneGeometry
 // behind the start; the river pours over it in three tiers onto rock ledges, a
 // thin second fall drops down a cleft on the right, and white water and mist
 // rise from the base. Wet-season water is cream and tan, not white.
-const FALLS_Z = 30;                                   // the head wall at the foot of the falls, behind the start platform (the line runs toward -z)
-const RIM = 82;                                       // the cliff tops
 const fallTex = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 256; const g = c.getContext('2d');
   for (let x = 0; x < 64; x++) for (let y = 0; y < 256; y += 2) {
     const v = Math.random(), r = 214 + v * 38, gr = 200 + v * 40, b = 168 + v * 50;          // churned, sediment-coloured water
@@ -218,8 +289,14 @@ function driftMist(dt) {
 let line = null, lay = null, cable = null, things = [], branches = [], lights = [];
 const lineGroup = new THREE.Group(); scene.add(lineGroup);
 const wood = new THREE.MeshStandardMaterial({ color: 0x7a5536, roughness: 0.85 }), steel = new THREE.MeshStandardMaterial({ color: 0x8a8f95, metalness: 0.8, roughness: 0.3 });
+// A token: a thin card with the word on both faces (a box, so the back reads the
+// right way round as it spins, which a two-sided flat card does not).
 function tokenMesh() { const c = document.createElement('canvas'); c.width = 128; c.height = 80; const g = c.getContext('2d'); g.fillStyle = '#ffd166'; g.fillRect(0, 0, 128, 80); g.fillStyle = '#102030'; g.font = 'bold 34px sans-serif'; g.textAlign = 'center'; g.fillText('TOKEN', 64, 52);
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.44), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(c), side: THREE.DoubleSide, emissive: 0x332200 })); return m; }
+  const face = new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(c), emissive: 0x332200 }), edge = new THREE.MeshStandardMaterial({ color: 0xffd166 });
+  return new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.44, 0.03), [edge, edge, edge, edge, face, face]); }
+// The soft glow behind each thing on the line (a sprite needs a soft round picture, or it shows as a square).
+const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), r = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
 function crateMesh() { const m = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.45, 0.45), new THREE.MeshStandardMaterial({ color: 0x9a6b3c })); return m; }
 const makeMango = mangoMaker(models.get('mango'));
 function at(s, side = 0, height = 0) { return new THREE.Vector3(side, cableY(line, s) - HANG + height, -s * line.length); }
@@ -238,7 +315,7 @@ function buildLine(id) {
   for (const it of lay.items) {
     const mesh = it.kind === 'mango' ? makeMango() : it.kind === 'gold' ? goldPiece() : it.kind === 'token' ? tokenMesh() : crateMesh();
     const p = at(it.s, it.side, it.height); mesh.position.copy(p); mesh.scale.multiplyScalar(2); lineGroup.add(mesh);
-    const glint = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xfff2b0, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending })); glint.scale.setScalar(1.1); glint.position.copy(p); glint.userData.noAO = true; lineGroup.add(glint); mesh.userData.glint = glint;
+    const glint = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xfff2b0, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending })); glint.scale.setScalar(1.1); glint.position.copy(p); glint.userData.noAO = true; lineGroup.add(glint); mesh.userData.glint = glint;
     const string = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, cableY(line, it.s) - p.y, 4), new THREE.MeshBasicMaterial({ color: 0xffffff }));
     string.position.set(p.x * 0.5, (cableY(line, it.s) + p.y) / 2, p.z); string.rotation.z = Math.atan2(p.x, cableY(line, it.s) - p.y); lineGroup.add(string);
     things.push({ ...it, mesh, got: false });
@@ -393,6 +470,7 @@ function frame() {
   place(t);
   if (wally.skin) wally.skin.update(dt);
   fallTex.offset.y -= dt * 0.9;
+  flowRiver(dt);
   driftMist(dt);
   daynight.update(dt, camera);
   sun.position.set(camera.position.x - 60, 120, camera.position.z - 40); sun.target.position.copy(camera.position);
