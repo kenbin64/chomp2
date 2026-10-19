@@ -3,29 +3,44 @@
 // files to load. The browser only allows sound after the player has tapped or
 // clicked, so start() is called from the Play button.
 
-import { music } from './music.js';
+// Music and sound effects each have their own on/off (settings.js), set from the
+// speaker button on screen at all times, the M key, or any pause screen.
 
-let ctx = null, master = null, muted = false;
+import { music } from './music.js';
+import { settings, SETTINGS_CHANGED } from './settings.js';
+import { installSoundButton, toggleAllSound } from './audio-ui.js';
+
+// sfx and musicBus: the two volumes, each 0 when that kind of sound is off.
+let ctx = null, sfx = null, musicBus = null;
+const SFX_LEVEL = 0.5;
+
+function applySettings() {
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  sfx.gain.setTargetAtTime(settings.sfx ? SFX_LEVEL : 0, t, 0.05);
+  musicBus.gain.setTargetAtTime(settings.music ? 1 : 0, t, 0.05);
+}
+addEventListener(SETTINGS_CHANGED, applySettings);
+installSoundButton();
 
 export function start() {
   if (ctx) return;
   try {
     ctx = new (window.AudioContext || window.webkitAudioContext)();
-    master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination);
+    sfx = ctx.createGain(); sfx.connect(ctx.destination);
+    musicBus = ctx.createGain(); musicBus.connect(ctx.destination);
+    sfx.gain.value = settings.sfx ? SFX_LEVEL : 0; musicBus.gain.value = settings.music ? 1 : 0;
   } catch { ctx = null; }
 }
 
-// Background music (music.js), through the same volume and mute as the effects.
-export function startMusic(mood) { if (ctx) music.start(ctx, master, mood); }
+// Background music (music.js), through its own on/off.
+export function startMusic(mood) { if (ctx) music.start(ctx, musicBus, mood); }
 export function underwaterMusic(on) { music.setUnderwater(on); }
 export function moodMusic(mood) { music.setMood(mood); }
 export function fanfare() { music.fanfare(); }
 
-export function toggleMute() {
-  muted = !muted;
-  if (master) master.gain.value = muted ? 0 : 0.5;
-  return muted;
-}
+// All sound off, or back on (the M key). Returns true when now silent.
+export function toggleMute() { return toggleAllSound(); }
 
 function tone(freq, endFreq, seconds, type = 'sine', volume = 0.4, delay = 0) {
   if (!ctx) return;
@@ -36,7 +51,7 @@ function tone(freq, endFreq, seconds, type = 'sine', volume = 0.4, delay = 0) {
   o.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), t + seconds);
   g.gain.setValueAtTime(volume, t);
   g.gain.exponentialRampToValueAtTime(0.001, t + seconds);
-  o.connect(g); g.connect(master);
+  o.connect(g); g.connect(sfx);
   o.start(t); o.stop(t + seconds + 0.02);
 }
 
@@ -49,7 +64,7 @@ function noise(seconds, filterFreq, volume = 0.4, type = 'lowpass') {
   const src = ctx.createBufferSource(); src.buffer = buf;
   const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = filterFreq;
   const g = ctx.createGain(); g.gain.value = volume;
-  src.connect(f); f.connect(g); g.connect(master);
+  src.connect(f); f.connect(g); g.connect(sfx);
   src.start();
 }
 
