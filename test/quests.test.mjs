@@ -78,7 +78,7 @@ check('the reef is third (Ken, 2026-10-16)', AREAS[2].id === 'reef' && AREAS[2].
 check('after the Esplanade comes the reef', nextArea('esplanade').id === 'reef');
 check('after the park comes the Esplanade', nextArea('park').id === 'esplanade');
 check('Kuranda is fourth, after the reef (Ken, 2026-10-17)', AREAS[3].id === 'kuranda' && nextArea('reef').id === 'kuranda');
-check('nothing after Mossman Gorge', nextArea('mossman') === null);
+check('Mossman Gorge, then the Daintree, the last (Ken, 2026-10-18)', nextArea('mossman').id === 'daintree' && nextArea('daintree') === null);
 check('unknown area has no next', nextArea('nowhere') === null);
 
 // Visits and the map

@@ -186,6 +186,11 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .trailer-peek span { position: absolute; left: 0; right: 0; bottom: 0; padding: 6px 10px; background: linear-gradient(transparent, rgba(0, 0, 0, 0.75)); color: #ffd166; font: 800 15px var(--font); text-align: left; }
 .trailer-peek:hover { border-color: #ffd166; transform: scale(1.02); }
 @media (max-width: 760px), (max-height: 500px) { .trailer-peek { display: none; } }
+/* A padlock on map places not open yet (mapmodal.js); the dot it replaces is hidden. */
+.pin-lock path { fill: none; stroke: #5b4630; stroke-width: 3; stroke-linecap: round; } .pin-lock rect { fill: #5b4630; } .pin-lock circle { fill: #d9d2c0; }
+.pin.locked .dot { display: none; }
+/* "On to the next area" on end screens, when it is open. */
+.end-buttons .next-stop { background: linear-gradient(#a8f08f, #5fc24a); box-shadow: 0 6px 0 #3c8a2c; color: #102030; }
 /* Ken's promo trailer, over the opener. */
 .trailer-box { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 12px; padding: 16px; background: rgba(4, 14, 20, 0.88); }
 .trailer-box video { width: min(960px, 100%); max-height: calc(100% - 90px); border-radius: 14px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); background: #000; }

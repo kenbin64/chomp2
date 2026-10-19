@@ -266,10 +266,6 @@ export function buyExtra(progress, id) {
 export function crocName(progress) { return (progress && progress.crocName) || 'Wally'; }
 export function setCrocName(progress, name) { return { ...progress, crocName: name || null }; }
 
-// For now (Ken, 2026-10-16): every area that is built is open on the trip map,
-// so any level can be played straight away. Turn this off (or add ?locked to
-// the address) for the real game, where each area opens when the last is done.
-export const OPEN_ALL = true;
 
 export function isOpen(progress, id) {
   return progress.unlocked.includes(id) && !!AREAS.find(a => a.id === id && a.ready);

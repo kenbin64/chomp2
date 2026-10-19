@@ -58,6 +58,14 @@ sign "Please DON'T feed the croc." in `js/textures.js`).
   return-visit challenge) before it counts, and leaving an area partway ends that attempt, so it starts
   fresh when he comes back.
 - **Open:** one trip board, the area boards, or both.
+- **Decided (Ken, 2026-10-19): leaderboards are available to anyone with a connection.** Today the board
+  is kept by the local server (`serve.mjs`, `scores.json`), so only people on Ken's machine share it. Going
+  online needs a small hosted service using the same rules (`js/leaderboard-rules.js`). Note: it holds
+  players' chosen names and scores, an exception to the server-holds-nothing rule, as KensGames' online
+  play already is.
+- **Decided (Ken, 2026-10-19):** a failed attempt is not a revisit: trying again is at the same level;
+  only a completed return is one level harder. Failure is never punished twice (`failAttempt` in
+  `js/trip-rules.js`, tested).
 
 ---
 
@@ -69,8 +77,12 @@ on the map; locked areas cannot be entered.
 - **Decided (Ken, 2026-10-18):** the next area stays locked until Wally completes all the challenges of
   the area he is in and gets that area's main item. Today `completeArea` opens the next area on finishing
   the area's goal alone (`js/progress.js`). **Open:** what "all the challenges" covers (see below).
-- **Note for release:** `OPEN_ALL = true` in `js/progress.js` opens every built area for testing (Ken,
-  2026-10-16; `?locked` in the address plays with the real locks). It must be turned off for the real game.
+- **Corrected 2026-10-19:** an earlier note here said `OPEN_ALL = true` opened every area; nothing read it,
+  and it is removed. The map has always locked by real progress; `?all` in the address opens everything,
+  for testing only.
+- **Built (2026-10-19):** a padlock on the map pin of every place not open yet, and on locked adventure
+  markers; on an area's end screen, once it is done and the next is open, "On to <next area>" goes straight
+  there (`addNextStop` in `js/mapmodal.js`, for every level).
 
 ## The rules of the trip (Decided)
 

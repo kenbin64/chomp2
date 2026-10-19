@@ -24,6 +24,28 @@ export function recordVisit(id) {
   if (!v.includes(id)) { v.push(id); try { localStorage.setItem('chomp-visited', JSON.stringify(v)); } catch { /* not kept */ } }
 }
 
+// A padlock, drawn on the pin of every place that is not open yet.
+const LOCK = '<g class="pin-lock" transform="translate(0,-37)"><path d="M-6,-3 v-5 a6,6 0 0 1 12,0 v5" /><rect x="-9" y="-3" width="18" height="14" rx="3"/><circle cy="3" r="2.2"/></g>';
+
+// On an area's end screen, once the area is done and the next one is open:
+// "On to <next area>", straight there. Added to every end screen here, so no
+// level repeats it; it updates whenever an end screen is shown.
+export function addNextStop() {
+  const here = HERE; if (!here) return;
+  const refresh = buttons => {
+    buttons.querySelector('.next-stop')?.remove();
+    const progress = progressNow(), i = AREAS.findIndex(a => a.id === here), next = AREAS[i + 1];
+    const done = (progress.stars[here] || 0) > 0 || progress.postcards.includes(here);
+    if (!done || !next || !next.ready || !PAGES[next.id] || !mapActive(progress, visitedNow(), next.id)) return;
+    const a = el('a', 'go next-stop', `On to ${next.name} \u203a`); a.href = PAGES[next.id] + (testing ? (PAGES[next.id].includes('?') ? '&all' : '?all') : '');
+    buttons.prepend(a);
+  };
+  for (const buttons of document.querySelectorAll('.end-buttons')) {
+    const overlay = buttons.closest('.overlay'); if (!overlay) continue;
+    new MutationObserver(() => { if (!overlay.hidden) refresh(buttons); }).observe(overlay, { attributes: true, attributeFilter: ['hidden'] });
+  }
+}
+
 // Can the player go to this area from the map?
 export function mapActive(progress, visited, id) {
   const a = AREAS.find(x => x.id === id);
@@ -77,7 +99,7 @@ function render() {
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     g.setAttribute('class', `pin ${active ? 'open' : a.ready ? 'locked' : 'soon'}${a.id === HERE ? ' here' : ''}`); g.dataset.id = a.id;
     g.setAttribute('transform', `translate(${x.toFixed(0)},${y.toFixed(0)})`); g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button');
-    g.innerHTML = `<circle r="24" class="halo"/><path d="M0,-6 C-14,-26 -22,-6 0,18 C22,-6 14,-26 0,-6 Z" class="drop" transform="translate(0,-26) scale(1.5)"/><circle r="7" cy="-35" class="dot"/>
+    g.innerHTML = `<circle r="24" class="halo"/><path d="M0,-6 C-14,-26 -22,-6 0,18 C22,-6 14,-26 0,-6 Z" class="drop" transform="translate(0,-26) scale(1.5)"/><circle r="7" cy="-35" class="dot"/>${!active && a.ready ? LOCK : ''}
       <text x="${dx}" y="${44 + dy}" class="pin-label"></text><text x="${dx}" y="${66 + dy}" class="pin-stars"></text>`;
     g.querySelector('.pin-label').textContent = a.name + (a.id === HERE ? ' (here)' : '');
     g.querySelector('.pin-stars').textContent = !a.ready ? 'coming soon' : active ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '🔒';
@@ -93,7 +115,7 @@ function render() {
     const { x, y } = markerXY(id);
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     g.setAttribute('class', `mark ${active ? 'open' : 'locked'}`); g.setAttribute('transform', `translate(${x.toFixed(0)},${y.toFixed(0)})`); g.setAttribute('tabindex', '0');
-    g.innerHTML = `<circle r="17" class="mark-bg"/><text y="7" class="mark-icon"></text><text y="34" class="mark-label"></text>`;
+    g.innerHTML = `<circle r="17" class="mark-bg"/><text y="7" class="mark-icon"></text><text y="34" class="mark-label"></text>${active ? '' : `<g transform="translate(12,-12) scale(0.8)">${LOCK.replace('translate(0,-37)', 'translate(0,0)')}</g>`}`;
     g.querySelector('.mark-icon').textContent = icon; g.querySelector('.mark-label').textContent = label;
     g.addEventListener('click', onPick); marks.appendChild(g);
   };
@@ -137,6 +159,7 @@ export function closeMap() {
 // Put the Map button on the page. pause(on): the page's own pause, used while the map is open.
 export function installMap({ pause = null } = {}) {
   onPause = pause;
+  addNextStop();
   const b = el('button', 'map-button', '🗺 Map'); b.type = 'button'; b.title = 'The map (Tab)';
   b.onclick = () => (modal && !modal.hidden ? closeMap() : openMap());
   document.body.append(b);
