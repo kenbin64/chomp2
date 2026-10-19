@@ -386,6 +386,51 @@ function step(dt) {
   $('z-brake-hint').hidden = !((1 - st.s) * line.length < BRAKE_ZONE && !game.crawl && st.s < 1);
 }
 
+// ---- The cinematic intro (Ken, 2026-10-19) -----------------------------------------------
+// The falls from high above, a sweep in past them, a turn down the gorge, and down
+// behind Wally on the launch platform, with captions naming the place and the ride.
+// Plays by itself on the first visit; "Watch the intro" replays it; any key, click
+// or tap skips it. The camera follows two smooth curves (where it is, where it
+// looks) through the shots below, `at` seconds apart.
+const SHOTS = [
+  { at: 0,  pos: [0, 108, -150],  look: [0, 38, FALLS_Z + 40], caption: 'Barron Falls' },   // high above the middle of the gorge
+  { at: 4,  pos: [-10, 62, -45],  look: [0, 34, FALLS_Z + 50], caption: 'Kuranda, Far North Queensland' },
+  { at: 7,  pos: [8, 56, -2],     look: [0, 40, FALLS_Z + 30] },
+  { at: 9.5, pos: [4, 52, -22],   look: [0, 26, -220],         caption: 'The Barron Gorge, Djabugay country' },
+  { at: 12, pos: null,            look: null,                  caption: 'Ride the Gorge: the zip line' },   // behind Wally, filled in when it plays
+  { at: 14, pos: null,            look: null },
+];
+const cine = { active: false, t: 0, pos: null, look: null, caption: '' };
+function playIntro() {
+  if (!line) return;
+  const behind = [2.6, cableY(line, 0) - 1.2, 7.5], ahead = [0, cableY(line, 0.1) - HANG - 1, -0.1 * line.length];
+  const pts = SHOTS.map(s => new THREE.Vector3(...(s.pos || behind))), looks = SHOTS.map(s => new THREE.Vector3(...(s.look || ahead)));
+  Object.assign(cine, { active: true, t: 0, pos: new THREE.CatmullRomCurve3(pts), look: new THREE.CatmullRomCurve3(looks), caption: '' });
+  $('title').hidden = true;
+  try { localStorage.setItem('chomp-zipline-intro', '1'); } catch { /* not remembered */ }
+}
+function endIntro() {
+  if (!cine.active) return;
+  cine.active = false; $('cine-caption').hidden = true;
+  if (!game.running) $('title').hidden = false;
+}
+function stepIntro(dt) {
+  if (!cine.active) return;
+  cine.t += dt;
+  const end = SHOTS[SHOTS.length - 1].at;
+  if (cine.t >= end) { endIntro(); return; }
+  // Where along the curves: shots are evenly spaced points on them, reached at their times.
+  let k = 0; while (k < SHOTS.length - 2 && cine.t > SHOTS[k + 1].at) k++;
+  const f = (cine.t - SHOTS[k].at) / (SHOTS[k + 1].at - SHOTS[k].at), ease = f * f * (3 - 2 * f);
+  const u = (k + ease) / (SHOTS.length - 1);
+  camera.position.copy(cine.pos.getPoint(u)); camLook.copy(cine.look.getPoint(u)); camera.lookAt(camLook);
+  // The caption of the latest shot that has one, faded out near the next.
+  let cap = ''; for (const s of SHOTS) if (s.at <= cine.t && s.caption) cap = s.caption;
+  const el = $('cine-caption');
+  if (cap !== cine.caption) { cine.caption = cap; el.textContent = cap; el.hidden = !cap; el.classList.add('fade'); requestAnimationFrame(() => el.classList.remove('fade')); }
+}
+for (const ev of ['keydown', 'pointerdown']) addEventListener(ev, () => { if (cine.active) endIntro(); });
+
 const camLook = new THREE.Vector3(0, 30, FALLS_Z + 40);   // where the camera is looking, eased so it swings rather than snaps
 function place(t) {
   const st = game.state || { s: 0 };
@@ -407,6 +452,7 @@ function place(t) {
   camera.position.lerp(want, onTitle ? 0.05 : 0.15);
   camLook.lerp(look, onTitle ? 0.05 : 0.2);
   camera.lookAt(camLook);
+  if (cine.active) stepIntro(0);                     // the intro, when playing, has the camera
   for (const th of things) if (!th.got) th.mesh.rotation.y += 0.03;
   for (const b of lights) b.material.color.setHSL(0.11, 1, 0.6 + 0.15 * Math.sin(t * 4 + b.position.z));
 }
@@ -455,12 +501,14 @@ function drawTitle() {
 }
 $('ride').onclick = start; $('again').onclick = () => { $('result').hidden = true; $('title').hidden = false; drawTitle(); };
 $('z-buy').onclick = () => openShop();
+$('z-intro').onclick = e => { e.stopPropagation(); playIntro(); };
 if (!activityOpen(progress, 'zipline') && !params.has('all')) {
   $('title').querySelector('p:not(.area)').textContent = 'The zip line opens with more stars. Earn stars across the trip and come back!';
   $('ride').hidden = true;
 }
 installMap({ pause: () => {} }); installShop({ pause: () => {} }); installBook({ pause: () => {} });
 buildLine('practice'); drawTitle();
+if (!params.has('play') && (() => { try { return !localStorage.getItem('chomp-zipline-intro'); } catch { return true; } })()) playIntro();   // the first visit
 
 // ---- Loop -----------------------------------------------------------------------------------
 let last = performance.now(), t = 0;
@@ -468,6 +516,7 @@ function frame() {
   const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
   if (game.running) { step(dt); drawHud(); }
   place(t);
+  if (cine.active) stepIntro(dt);
   if (wally.skin) wally.skin.update(dt);
   fallTex.offset.y -= dt * 0.9;
   flowRiver(dt);

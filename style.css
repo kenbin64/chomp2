@@ -159,6 +159,9 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .overlay.live-view { background: linear-gradient(to right, rgba(8, 30, 44, 0.7), rgba(8, 30, 44, 0.15) 55%, rgba(8, 30, 44, 0)); place-items: center start; }
 .overlay.live-view .card { width: min(440px, 100%); }
 @media (max-width: 700px) { .overlay.live-view { place-items: end center; background: linear-gradient(rgba(8, 30, 44, 0), rgba(8, 30, 44, 0.75) 55%); } }
+/* The cinematic intro's captions (the zip line: Barron Falls, then down the gorge). */
+.cine-caption { position: fixed; left: 50%; bottom: 12%; transform: translateX(-50%); padding: 10px 22px; border-radius: 14px; background: rgba(8, 30, 44, 0.55); color: #fff; font-size: clamp(20px, 4vw, 34px); font-weight: 700; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); white-space: nowrap; transition: opacity 0.6s; pointer-events: none; z-index: 5; }
+.cine-caption.fade { opacity: 0; }
 /* Ken's promo trailer, over the opener. */
 .trailer-box { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 12px; padding: 16px; background: rgba(4, 14, 20, 0.88); }
 .trailer-box video { width: min(960px, 100%); max-height: calc(100% - 90px); border-radius: 14px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); background: #000; }
