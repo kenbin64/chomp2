@@ -335,7 +335,8 @@ people to like him; he ends knowing who he is.
    **Decided (Ken, 2026-10-19):** the stash is his hiding place in the Daintree (crocs hide things), filled
    with the mangoes he kept over the trip; if it is short, he goes back to an earlier area for more. **The
    heart of the ending (Ken):** he gives up his beloved mangoes to save the people who fed him all this
-   time. Then the crocs push the boat back to shore. **Everything up
+   time, and for himself: for the good of the people, and so he can be what he is, a wild croc that does
+   not live on people food. (Real crocodiles are carnivores; the mangoes are make-believe.) Then the crocs push the boat back to shore. **Everything up
    to the rescue is playable** (Ken, 2026-10-19, rule 12): the race through the rainforest against the
    storm to his stash and on to the crocs, convincing the crocs, leading them to the boat, and the push (Proposed: played, it is something
    to do). Cinema only where nothing can be played: the passengers' cheer, Wally's choice, the
