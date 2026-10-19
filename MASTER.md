@@ -328,17 +328,14 @@ people to like him; he ends knowing who he is.
 
 **The finale (Decided, Ken 2026-10-19):**
 1. **The challenge:** a storm on the river; a cruise boat runs aground and is stuck. Nobody is harmed.
-   Wally swings on the vines through the rainforest and runs back home to Croc Park to fetch the crocs,
-   bringing what he has learned on the trip, which is what persuades them to come; he shares his stash
-   with them (everything collected and not spent; not enough: go back for more), and all the crocs, his old
-   rivals from Croc Park, push the boat back to shore. (Ken, 2026-10-19. Not circular: he chooses to go
-   back, for others; the story ends forward.) **Decided (Ken, 2026-10-19):** the run back to the park is
-   a playable race against time to save the boat (swinging the vines, through the rainforest); Wally
-   bringing his new wisdom to the crocs is a cinematic. **Everything up to the rescue is playable** (Ken,
-   2026-10-19), by rule 12: the race, sharing the stash with the crocs, leading them to the boat, and the
-   push itself (Proposed: the push is playable, it is something to do). Cinema only where nothing can be
-   played: the wisdom told to the crocs, the passengers' cheer, Wally's choice, the celebration. (Crocs sharing with crocs: the game's
-   never-feed-a-crocodile message is about people.)
+   Wally swings on the vines through the rainforest to reach the wild Daintree crocs and convinces them to
+   help with something he brings (Ken, 2026-10-19: no going back to Croc Park; the Daintree crocs do the
+   rescue). **Open:** what the something is (Proposed: mangoes from his stash, the thing he loved most,
+   now shared, which is what he has learned). Then the crocs push the boat back to shore. **Everything up
+   to the rescue is playable** (Ken, 2026-10-19, rule 12): the race through the rainforest against the
+   storm, convincing the crocs, leading them to the boat, and the push (Proposed: played, it is something
+   to do). Cinema only where nothing can be played: the passengers' cheer, Wally's choice, the
+   celebration. (Crocs sharing with crocs: the game's never-feed-a-crocodile message is about people.)
 2. **The turn (a cinematic):** the passengers, people who threw food to keep him away all game, cheer him.
 3. **The choice (a cinematic, Ken 2026-10-19):** with the boat saved, Wally decides not to go back to Croc Park. He realises he is happy
    to be a crocodile and goes into the Daintree River as a wild croc.
@@ -349,16 +346,9 @@ people to like him; he ends knowing who he is.
   requirements goes into the finale (Proposed: mangoes for a feast, pearls as gifts, shells as necklaces,
   gold for the party boat), and every leftover adds to the trip score. **Decided (Ken, 2026-10-19):** it
   uses what is left, but if there is not enough, Wally goes back for more (under the going-back rules).
+- **Dropped (Ken, 2026-10-19):** the run back to Croc Park, and with it the finale bungee and the
+  Kuranda train home.
 - **Open:** Kenny's farewell (a koala cannot follow Wally into the river).
-- **The way home (Ken's idea, 2026-10-19):** the race back runs through Kuranda. Wally does the bungee
-  again and must grab, at the bottom, a ticket for the Kuranda train (the Scenic Railway) down to Cairns
-  and Croc Park. He brings a bunch of mangoes with him to convince the crocs to help push the boat.
-  - It fits the rules: the bungee is a return visit, so it is played one level harder (rule 7) and is
-    earned, not handed over (rule 6). The train down mirrors the Skyrail up. The mangoes come from his
-    stash; not enough, he goes back for more.
-  - **Open:** the train ride, played (by rule 12, if there is something to do) or a cinematic.
-  - **Open:** how the crocs get from Croc Park to the boat in the Daintree, and is that played.
-  - **Open:** the mangoes as well as what he has learned, or the mangoes as the way he shows it.
 
 **What is here (notes so far):** tourists on river boats, swimming, swinging on vines, jumping rock to
 rock, running the beach, mangroves.
