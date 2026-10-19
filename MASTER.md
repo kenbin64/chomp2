@@ -341,8 +341,10 @@ people to like him; he ends knowing who he is.
    to do). Cinema only where nothing can be played: the passengers' cheer, Wally's choice, the
    celebration. (Crocs sharing with crocs: the game's never-feed-a-crocodile message is about people.)
 2. **The turn (a cinematic):** the passengers, people who threw food to keep him away all game, cheer him.
-3. **The choice (a cinematic, Ken 2026-10-19):** with the boat saved, Wally decides not to go back to Croc Park. He realises he is happy
-   to be a crocodile and goes into the Daintree River as a wild croc.
+3. **The choice (a cinematic, Ken 2026-10-19):** with the boat saved, Wally decides not to go back to Croc Park. He realises he cannot go
+   back to being a croc that eats people food (Ken, 2026-10-19); he belongs with his own kind, and he
+   goes into the Daintree River as a wild croc. This carries the game's safety message: wild crocs do not
+   need our food.
 4. **The celebration (a cinematic, Ken 2026-10-19):** everyone cheers and celebrates, the cast from the whole trip on the bank.
 5. **The last message (Proposed):** Crocwise. "Wally's wild now. If you see a croc in the Daintree, give it
    room. That might be him."
