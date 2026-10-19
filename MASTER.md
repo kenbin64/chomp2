@@ -119,6 +119,9 @@ on the map; locked areas cannot be entered.
    are bonuses.
 11. **The area test.** A main area needs people and food, the two things Wally wants. The cane fields
     failed this and were dropped, along with the croc catchers.
+12. **Played if playable, cinema if not** (Ken, 2026-10-19). Anything the player can do, the player does.
+    A cinematic is only for what cannot be played: words, feelings, choices made by the story, the
+    celebration.
 
 **Difficulty** (Decided in principle): easy, intermediate and hard. Area and difficulty are separate
 choices, so they multiply: `meter drain = area ramp x difficulty`, for every life meter (energy and air).
@@ -331,9 +334,10 @@ people to like him; he ends knowing who he is.
    rivals from Croc Park, push the boat back to shore. (Ken, 2026-10-19. Not circular: he chooses to go
    back, for others; the story ends forward.) **Decided (Ken, 2026-10-19):** the run back to the park is
    a playable race against time to save the boat (swinging the vines, through the rainforest); Wally
-   bringing his new wisdom to the crocs is a cinematic. **Everything up to the rescue is playable; the
-   rescue itself (the crocs pushing the boat ashore) and all that follows is cinematic, the final payoff**
-   (Ken, 2026-10-19). (Crocs sharing with crocs: the game's
+   bringing his new wisdom to the crocs is a cinematic. **Everything up to the rescue is playable** (Ken,
+   2026-10-19), by rule 12: the race, sharing the stash with the crocs, leading them to the boat, and the
+   push itself (Proposed: the push is playable, it is something to do). Cinema only where nothing can be
+   played: the wisdom told to the crocs, the passengers' cheer, Wally's choice, the celebration. (Crocs sharing with crocs: the game's
    never-feed-a-crocodile message is about people.)
 2. **The turn (a cinematic):** the passengers, people who threw food to keep him away all game, cheer him.
 3. **The choice (a cinematic, Ken 2026-10-19):** with the boat saved, Wally decides not to go back to Croc Park. He realises he is happy
