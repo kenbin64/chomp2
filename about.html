@@ -33,6 +33,9 @@
   th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); vertical-align: top; }
   th { color: var(--gold); font-weight: 800; }
   .credit { font-size: 15px; color: var(--soft); text-align: center; margin-top: 28px; }
+  .banner { background: rgba(255, 209, 102, 0.12); border: 2px solid var(--gold); border-radius: 16px; padding: 12px 16px; margin: 14px 0 6px; font-size: 18px; }
+  .talk li { margin: 8px 0; }
+  .who { color: var(--gold); font-weight: 800; }
   @media (max-width: 640px) { .pair { grid-template-columns: 1fr; } section { padding: 16px 16px; } }
 </style>
 </head>
@@ -40,6 +43,7 @@
 <main>
   <a class="back" href="index.html">‹ Back to the game</a>
   <h1>For the Love of Cairns</h1>
+  <p class="banner"><strong>An AI-assisted project, not an AI project.</strong> Chomp 3D was programmed in VS Code with Claude, Anthropic's AI, and modelled with Meshy. AI-assisted work is not typing a prompt and letting the AI do the rest: this game was not made from a few simple prompts but from Ken Bingham's extensive instruction, from start to finish. <a href="#made">How it was made</a></p>
   <p class="lede">Chomp 3D: Wally's Cairns Adventure is a love letter to Cairns and Tropical North Queensland: its reef, its rainforest, its towns and its people, seen through the eyes of one very excitable, very hungry crocodile.</p>
 
   <section>
@@ -82,15 +86,26 @@
     <p>Box jellyfish and other marine stingers are dangerous too. In stinger season, swim at patrolled beaches inside the stinger nets, wear a stinger suit, and follow the lifeguards' advice.</p>
   </section>
 
-  <section>
+  <section id="made">
     <h2>Made by a person, with AI</h2>
-    <p>Artificial intelligence did a great deal of the work on this game: it wrote and tested most of the code, generated the 3D models from descriptions, and processed every one of them for the game. This game is also a showcase of why a person has to be in charge of that work.</p>
+    <p>AI did a great deal of the work on this game. Claude, in VS Code, wrote and tested most of the code and prepared every model for the game. Meshy turned Ken's descriptions and pictures into 3D models: Wally, Kenny, the people, the trees, the falls, the giant clam. Both are remarkable tools, and both did what they were told.</p>
+    <p>That is the point. The idea, the story, the places, the rules, the look and every decision came from Ken's instruction. The AI's own contributions were suggestions in brainstorming and collaboration, which Ken chose to keep or throw away, and the technical work of carrying his decisions out: together reaching things neither could have done alone. AI-assisted programming is not "the AI does all the work"; it is a person directing, at every step.</p>
     <p>Ask an AI to "make a game about Cairns" and you will not get this. What makes it this game came from a person:</p>
     <ul>
       <li><strong>The idea and the story.</strong> Wally, the "don't feed the croc" joke, and the rule the game is built on go back to Ken's game from 2014.</li>
       <li><strong>The places.</strong> Which places, in what order, what each one is for, and what Wally carries from one to the next.</li>
-      <li><strong>The look.</strong> Every model began as Ken's description or picture. Ken chose the angle down the gorge and supplied his own photos of the falls in the wet and the dry.</li>
+      <li><strong>The look.</strong> Every model began as Ken's detailed instructions to Meshy: what it is, its size, its pose, its colours, its style. Ken chose the angle down the gorge and supplied his own photos of the falls in the wet and the dry.</li>
       <li><strong>The judgement.</strong> Whether it is fun, whether it is true to the place, whether it is respectful, and when to throw an idea away.</li>
+    </ul>
+    <h3>From the conversation</h3>
+    <p>The game was made in a running conversation: Ken instructing, the AI building, proposing and asking, and Ken deciding. A few moments from it, in Ken's words:</p>
+    <ul class="talk">
+      <li><span class="who">Ken</span> imagined Wally escaping through the cane fields, chased by croc catchers who would send him home. Talking it through, he changed his mind: "Let's drop the croc catchers altogether. I don't want a circular game." Then: "Let's not do the cane fields. I just don't think there is a real story there."</li>
+      <li><span class="who">Ken</span> on going back to earlier places: "You can go back to any earlier thing, but only to collect what you need, not be sent back as a punishment." And: "When you go back you must have a challenge, not just go back to easily collect. The items are a reward for fulfilling the challenge."</li>
+      <li><span class="who">The AI asked</span> what opens the reef. <span class="who">Ken:</span> "The giant clam gives you a pearl key that opens the chest at the end of the maze."</li>
+      <li><span class="who">The AI built</span> the waterfall on the side wall of the gorge. <span class="who">Ken</span> sent his own photos of the falls in the wet and the dry, and: "Our angle will be along the gorge looking down it, not a side view."</li>
+      <li><span class="who">The AI suggested</span> plainer clothes for one character, to be safe. <span class="who">Ken:</span> "I do not want to be so culturally sensitive that people are depicted so generically that their culture is hidden." On the Torres Strait auntie: "She depicts people I know. But not exactly: it's not them, just a representation."</li>
+      <li><span class="who">On the rules of the game, Ken:</span> "To keep and retain things, points, items, you must complete the area." And on why: "Crocs like to hide things, so anything in another area he had hidden already."</li>
     </ul>
     <p>A few things the AI got wrong in a single weekend, each caught by a person:</p>
     <ul>
@@ -98,9 +113,9 @@
       <li>It reported the new waterfall was on screen when the title screen was covering it. Ken kept saying he was still seeing the old version, and he was right.</li>
       <li>An AI tool gave one character a dress printed with an imitation of Aboriginal art. Deciding how culture should be shown is a job for people, and for the communities themselves.</li>
       <li>AI-made models came out with millions of triangles, garbled lettering on signs, and two clam shells fused into one lump. Each had to be checked and fixed before it could go in the game.</li>
-      <li>It suggested ideas that sounded fine and were not. A level in the cane fields had no story, and croc catchers who sent Wally home would have made the game go round in circles. Ken dropped both.</li>
+      <li>It drew the river's foam as hard white squares, then put the bright end of each streak on the wrong side, before getting it right. Nothing it made was taken on trust: each piece was looked at before it went in.</li>
     </ul>
-    <p>Human direction and AI speed together are why it came together so fast: the 3D game was put together over one weekend in October 2026. The ideas are the author's; the AI built, processed and tested, and a person decided.</p>
+    <p>Human direction and AI speed together are why it came together so fast: the 3D game was put together over one weekend in October 2026. The ideas are Ken's; the AI tools built, modelled, processed and tested what he instructed, and he decided.</p>
   </section>
 
   <section>
@@ -136,6 +151,12 @@
   <section>
     <h2>Acknowledgement of Country</h2>
     <p>Chomp 3D is set in Far North Queensland. We acknowledge the Traditional Owners of the lands and waters it celebrates, including the Gimuy Walubara Yidinji and Yirrganydji peoples of Cairns, the Djabugay people of Kuranda and the Barron Gorge, and the Eastern Kuku Yalanji people of the Daintree and Mossman Gorge, and pay our respects to Elders past and present. Aboriginal and Torres Strait Islander people are welcome to tell us how they would like to be shown in the game, and to change or add characters.</p>
+  </section>
+
+  <section>
+    <h2>Feedback and copyright notices</h2>
+    <p>Feedback, ideas and corrections are welcome, especially from people who live in the places shown. If you believe something in this game uses your work without permission, send a copyright (DMCA) notice and it will be looked at promptly and removed if it should be.</p>
+    <p>Email: <a href="mailto:ken.bingham64@gmail.com?subject=Chomp%203D">ken.bingham64@gmail.com</a></p>
   </section>
 
   <p class="credit">Chomp 3D: Wally's Cairns Adventure. Created by Ken Bingham, 2014 and 2026.</p>
