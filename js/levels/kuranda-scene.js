@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { addSky, addLights, addRanges } from '../world.js';
 import { marketStall, queenslander, overStreet, setMarketNight, bakeStall, stockedCanopy, placeModel, paverTexture, leafCanopy, chalkboard, clothesRack, edgeRocks } from './kuranda-market.js';
 import { shopVariant, WALLS, ROOFS, NAMES } from './kuranda-shops.js';
-import { forestTiles, bandCells } from '../forest-tiles.js';
+import { bandCells } from '../forest-tiles.js';
 import { Trees } from '../trees.js';
 import { Grass } from '../grass.js';
 import { surfaceMaterial, applySky } from '../realism.js';
@@ -164,14 +164,16 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
   // The rainforest: Ken's trees, thick beyond the village.
   const trees = new Trees(scene, { light: q.name === 'low' });
   // Ken: not a lot of trees, just dense enough to cover everything: fewer, bigger trees.
-  // Ken's rainforest tile, in a grid round the village: the thick canopy close by
-  // (the tree pictures carry on further out, where they are cheaper).
-  const tile = models.get('rainforest-tile');
-  if (tile) forestTiles(scene, tile, bandCells(24, q.name === 'low' ? 44 : 58, STREET.z0 - 30, STREET.z1 + 30, 14), 14);
-  const count = tile ? (q.name === 'high' ? 260 : q.name === 'medium' ? 180 : 100) : (q.name === 'high' ? 420 : q.name === 'medium' ? 300 : 160);
+  // Ken's rainforest tile, two rows deep either side of the village: the thick
+  // canopy close by. Drawn as impostor cards like the other trees (the Meshy
+  // model is 1.25 million triangles; each card is 2), and the tree pictures
+  // carry on further out.
+  const TILE = 14, TILE_INNER = 24, TILE_OUTER = TILE_INNER + 2 * TILE * 0.9 + 1;   // two rows (bandCells steps 0.9 of a tile)
+  for (const c of bandCells(TILE_INNER, TILE_OUTER, STREET.z0 - 30, STREET.z1 + 30, TILE)) trees.add('rainforest', c.x, 0, c.z, 11 + rnd() * 3);
+  const count = q.name === 'high' ? 260 : q.name === 'medium' ? 180 : 100;
   for (let n = 0, tries = 0; n < count && tries < count * 10; tries++) {
     const x = (rnd() * 2 - 1) * 120, z = STREET.z0 - 40 + rnd() * (len + 120);
-    if (Math.abs(x) < (tile ? 58 : 22) && z > STREET.z0 - 6 && z < STREET.z1 + 6) continue;   // the forest closes in right behind the buildings (the tiles do the near part)
+    if (Math.abs(x) < TILE_OUTER && z > STREET.z0 - 6 && z < STREET.z1 + 6) continue;   // the forest closes in right behind the buildings (the tiles do the near part)
     const r = rnd();
     if (r < 0.55) trees.add('umbrella', x, 0, z, 16 + rnd() * 8);
     else if (r < 0.85) trees.add('eucalyptus', x, 0, z, 22 + rnd() * 12);

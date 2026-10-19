@@ -24,6 +24,7 @@ const KINDS = {
   eucalyptus: { frames: 8, cols: 4, rows: 2, size: 1.98494, height: 1.90860, base: 0.01923 },
   palm:       { frames: 8, cols: 4, rows: 2, size: 1.97984, height: 1.90369, base: 0.01923 },
   umbrella:   { frames: 8, cols: 4, rows: 2, size: 1.97950, height: 1.90337, base: 0.01923 },
+  rainforest: { frames: 8, cols: 4, rows: 2, size: 1.97241, height: 1.89498, base: 0.01963 },   // Ken's Kuranda rainforest tile
 };
 
 const loader = new THREE.TextureLoader();
