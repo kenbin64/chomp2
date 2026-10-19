@@ -197,6 +197,21 @@ Export **game-ready, no rig, for Blender** (GLB); it is baked down here.
 |---|---|
 | `barron-gorge.glb` | An aerial landscape block of the Barron Gorge in Far North Queensland: a deep, winding river gorge cut into a plateau, sheer grey granite cliffs with vertical joints, dense tropical rainforest canopy right to both rims, a wide stepped waterfall pouring into the head of the gorge at one end, white water and river boulders on the gorge floor, mist rising from the base of the falls. Seen from above at an angle, as from a cable car. Stylised 3D animated-feature look, same art style as a modern family animated film, detailed hand-painted textures. No buildings, no words. |
 
+## The river cruise boat (the Daintree finale, Ken 2026-10-19)
+
+The boat that runs aground in the storm and is pushed ashore by the crocs. Its passengers are **the same
+people who threw food all game** (tourist-1 to tourist-13 and any added later), standing at the rails, so
+the boat must be **open-sided** with room to see them. They already have the moves the finale needs:
+Nervous in the storm, Point and Wave at Wally, Cheer at the rescue. So the only new model is the boat.
+One solid piece (it tilts and is pushed as a whole), **no rig**. Export **game-ready (about 15k
+triangles), for Blender** (GLB); it is baked down here, with a phone copy.
+
+| File | Prompt |
+|---|---|
+| `river-boat.glb` | A small open-sided river cruise boat for wildlife spotting on a tropical rainforest river in Far North Queensland, about 10 m long and 3.5 m wide: a flat-bottomed white hull with a green stripe, a flat open deck with low wooden bench seats along both sides and a waist-high rail, a light flat canopy roof on thin white posts, the sides completely open so people on board can be seen, a small outboard motor at the stern. Empty, no people. Stylised 3D animated-feature look, same art style as a modern family animated film, detailed hand-painted textures. No words, no logos, no names. |
+
+No words or names on it, so it is not any real operator's boat.
+
 ## Kuranda and Barron Falls (level 4, Ken 2026-10-17)
 
 For every one: add the style line *"Stylised 3D animated-feature look, same art style as a modern family
