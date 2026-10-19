@@ -169,5 +169,10 @@ check('a trip with a made-up difficulty is refused', T.readTrip({ difficulty: 'n
   check('a brand-new save carries over as an empty trip', T.tripFromProgress({}).completed.length === 0);
 }
 
+check('tripFor: a save with its own trip keeps it', (() => { const t = T.freshTrip('hard'); return T.tripFor({ trip: t }) === t; })());
+check('tripFor: an old save is carried over', T.isCompleted(T.tripFor({ postcards: ['park'] }), 'park'));
+check('tripFor: a new player gets a fresh trip', T.tripFor({}).completed.length === 0 && T.tripFor({}).difficulty === 'intermediate');
+check('forcing a locked area is for testing only: it works but changes no rules', (() => { const t = T.freshTrip(); const a = T.startAttempt(t, 'reef', { force: true }); return a.area === 'reef' && !T.canEnter(t, 'reef').ok; })());
+
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

@@ -74,6 +74,14 @@ export function tripFromProgress(progress) {
   return trip;
 }
 
+// The trip for a saved progress: its own, or one carried over from before the
+// rules, or a fresh one (intermediate) for a player who has not chosen yet.
+export function tripFor(progress) {
+  if (progress.trip) return progress.trip;
+  const played = (progress.postcards || []).length || Object.keys(progress.stars || {}).length;
+  return played ? tripFromProgress(progress) : freshTrip('intermediate');
+}
+
 export const areaIndex = area => ORDER.indexOf(area);
 export const previousArea = area => ORDER[areaIndex(area) - 1] || null;
 export const nextArea = area => ORDER[areaIndex(area) + 1] || null;
@@ -105,10 +113,11 @@ export function drainFactor(trip, area, level = attemptLevel(trip, area).level) 
   return DRAIN[level];
 }
 
-// A go at an area. Throws if the rules say Wally may not go in.
-export function startAttempt(trip, area) {
+// A go at an area. Throws if the rules say Wally may not go in, unless forced
+// (testing only: the ?all address that opens every area).
+export function startAttempt(trip, area, { force = false } = {}) {
   const entry = canEnter(trip, area);
-  if (!entry.ok) throw new Error(`cannot enter ${area}: ${entry.why}${entry.needs ? ' ' + entry.needs : ''}`);
+  if (!entry.ok && !force) throw new Error(`cannot enter ${area}: ${entry.why}${entry.needs ? ' ' + entry.needs : ''}`);
   const { visit, level, extras } = attemptLevel(trip, area);
   return { area, visit, level, extras, lives: LIVES, points: 0, pending: {}, spent: {}, over: false };
 }

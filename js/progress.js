@@ -88,10 +88,10 @@ export function payEntry(progress) { return progress; }
 
 // The Esplanade pier: opened once, with Golden Mangoes banked from earlier
 // (Ken: the second land needs what the first gave).
-export function openPier(progress) {
+export function openPier(progress, price = PIER_PRICE) {
   if (progress.pier) return { progress, ok: false, why: 'open' };
-  if ((progress.mangoes || 0) < PIER_PRICE) return { progress, ok: false, why: 'mangoes' };
-  return { ok: true, progress: { ...progress, mangoes: progress.mangoes - PIER_PRICE, pier: true } };
+  if ((progress.mangoes || 0) < price) return { progress, ok: false, why: 'mangoes' };
+  return { ok: true, progress: { ...progress, mangoes: progress.mangoes - price, pier: true } };
 }
 
 // The Kuranda market vendor buys Golden Mangoes and seashells for gold pieces.

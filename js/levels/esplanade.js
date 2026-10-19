@@ -11,6 +11,8 @@
 import { fitText } from '../signtext.js';
 import { installGear, snorkelling, drainFactor } from '../gear.js';
 import { showTip } from '../tips.js';
+import * as Trip from '../trip-rules.js';
+import { chestModel } from '../chest.js';
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
 import { Food, randomKind, kennysToast, useJarModel, useToastModel } from '../food.js';
@@ -32,7 +34,7 @@ import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocit
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
 import { jellyModel, dressedJelly } from '../hazards.js';
-import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE, outfitModel, openPier, PIER_PRICE, PROGRESS_CHANGED, saveProgress } from '../progress.js';
+import { completeArea, readProgress, starsFor, POSTCARDS, wearing, WARDROBE, outfitModel, openPier, PROGRESS_CHANGED, saveProgress } from '../progress.js';
 import { installBook, bookEvent, ability, HiddenFinds, openBook } from '../book.js';
 import { startTrading, tradeStep } from '../trade.js';
 import { startQuest, questStep } from '../sidequest.js';
@@ -214,6 +216,17 @@ for (const [id, flag] of [['b-dive', 'diveQueued'], ['b-up', 'upQueued']]) {
 input.onMute = () => toast_('Sound ' + (sound.toggleMute() ? 'off' : 'on'), 'info');
 
 let progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
+// The trip's rules (trip-rules.js): the gate key from Croc Park to come in the
+// first time (?all opens it, for testing); this go's level sets the mango target,
+// the pier price and the meter speed.
+if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progress); }
+const entry = Trip.canEnter(progress.trip, 'esplanade'), testingAll = params.has('all');
+let attempt = Trip.startAttempt(progress.trip, 'esplanade', { force: true });
+const PARK_MANGOES = 8;                              // what Croc Park holds (the pier price is a share of it)
+// This go's level: the mango target for the chest (a share of this course's
+// mangoes, rounded up) and the pier price (the same share of Croc Park's eight).
+const mangoTarget = Trip.target(mangoes.length, attempt.level);
+const pierPrice = Trip.target(PARK_MANGOES, attempt.level);
 addEventListener(PROGRESS_CHANGED, () => { progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); });   // the book, trades and shops write it too
 const game = {
   running: false, paused: false, done: false, countdown: 0, time: 0,
@@ -241,7 +254,7 @@ window.chomp.hiddenFinds = hiddenFinds;
 // Friendly traders (Ken): some picnic groups offer a trade instead of running off.
 clusters.enableTraders(0.25);
 startTrading({ land: 'esplanade', run: () => ({ mangoes: game.mangoes, pearls: game.pearls }), setRun: r => { game.mangoes = r.mangoes; game.pearls = r.pearls; },
-  bank: () => { saveProgress(bankFinds(readProgress(localStorage.getItem('chomp-progress')), { mangoes: game.mangoes, pearls: game.pearls })); game.mangoes = game.pearls = 0; },
+  // Nothing is saved mid-run (trip-rules.js): leaving partway ends the attempt.
   feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c.people[0].g, text, 2.4), toast: text => toast_(text, 'good') });
 // A sidequest (Ken): one picnic group has lost something along the waterfront.
 startQuest({ land: 'esplanade', scene, clusters,
@@ -273,7 +286,7 @@ function dropPearl(cluster) {
 
 // ---- The pier (Ken, 2026-10-18) ----------------------------------------------------
 // A timber jetty out over the sea from the middle of the timber section. Its
-// gate opens once, for PIER_PRICE Golden Mangoes banked from Croc Park (the
+// gate opens once, for pierPrice Golden Mangoes banked from Croc Park (the
 // second land needs what the first gave); pearls lie out along it.
 const pier = (() => {
   const g = new THREE.Group(); scene.add(g);
@@ -298,7 +311,7 @@ const pier = (() => {
   const c = document.createElement('canvas'); c.width = 512; c.height = 256;
   const cx = c.getContext('2d'); cx.fillStyle = '#2f5d50'; cx.fillRect(0, 0, 512, 256); cx.fillStyle = '#fff4d6'; cx.textAlign = 'center';
   fitText(cx, 'The Pier', 256, 95, 460, 64, 'bold {size}px "Trebuchet MS", sans-serif');
-  fitText(cx, `Open: ${PIER_PRICE} Golden Mangoes`, 256, 170, 470, 40, '{size}px "Trebuchet MS", sans-serif');
+  fitText(cx, `Open: ${pierPrice} Golden Mangoes`, 256, 170, 470, 40, '{size}px "Trebuchet MS", sans-serif');
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.1), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 }));
   sign.position.set(x0 + 0.2, G + 2.0, SPUR.z + SPUR.half + 0.4); sign.rotation.y = Math.PI / 2; g.add(sign);
@@ -328,16 +341,16 @@ function pierGate(dt) {
   pier.update(dt);
   pierHint -= dt;
   const atGate = wally.pos.x < -PATH.half + 1.4 && Math.abs(wally.pos.z - SPUR.z) < 2.2 && wally.pos.y > G - 0.4;
-  if (!atGate || progress.pier || pierHint > 0) return;
+  if (!atGate || progress.pier || game.pierOpen || pierHint > 0) return;
   pierHint = 4;
-  const r = openPier(progress);
-  if (r.ok) {
-    progress = r.progress;
-    try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
-    toast_(`The pier is open! (${PIER_PRICE} Golden Mangoes from Croc Park)`, 'good'); sound.play.powerup(); bookEvent('pier');
+  // Opened on this attempt, like a trade: paid with Croc Park's mangoes only if
+  // the Esplanade is completed; a failed attempt closes it again, mangoes kept.
+  if ((progress.mangoes || 0) >= pierPrice) {
+    game.pierOpen = true;
+    toast_(`The pier is open! (${pierPrice} Golden Mangoes from Croc Park)`, 'good'); sound.play.powerup(); bookEvent('pier');
     bubbles.say(wally.root, 'Ripper! Pearls out on the pier!', 3.4);
     pier.lay();
-  } else toast_(`The pier opens for ${PIER_PRICE} Golden Mangoes from Croc Park (you have ${progress.mangoes || 0})`, 'info');
+  } else toast_(`The pier opens for ${pierPrice} Golden Mangoes from Croc Park (you have ${progress.mangoes || 0})`, 'info');
 }
 
 // Crawling out of the sea onto the boardwalk: from where he was to the deck's edge.
@@ -412,7 +425,36 @@ function throwFrom(hand, cluster = null, gentle = false) {
 // ---- One frame --------------------------------------------------------------------
 const bot = params.has('bot') ? makeBot() : null;
 game.groupsTotal = clusters.list.length;
-poolOpen = () => game.ready;
+poolOpen = () => game.ready && game.hasBigMango;
+
+// This go's meter speed (trip-rules.js).
+game.tripDrain = Trip.drainFactor(progress.trip, 'esplanade', attempt.level);
+game.hasBigMango = Trip.have(progress.trip, 'big-golden-mango');     // on a return visit he has it already
+
+// The chest by the Lagoon (Ken, 2026-10-18): it holds the Big Golden Mango, the
+// Esplanade's main item, and opens when Wally has the target of Golden Mangoes.
+const bigChest = (() => {
+  const prize = mangoModel(); prize.scale.multiplyScalar(2.4);
+  const c = chestModel(prize);
+  c.group.position.set(2.4, G, POOL_Z - 5); c.group.rotation.y = -Math.PI / 2; c.group.scale.setScalar(1.3);
+  scene.add(c.group);
+  return { ...c, open: game.hasBigMango ? 1 : 0, hint: 0 };
+})();
+function bigMangoChest(dt) {
+  const c = bigChest;
+  if (!game.hasBigMango && Math.hypot(wally.pos.x - c.group.position.x, wally.pos.z - c.group.position.z) < 2.6) {
+    if (game.mangoes >= mangoTarget) {
+      attempt = Trip.gain(attempt, 'big-golden-mango'); game.hasBigMango = true;    // kept when the Esplanade is completed
+      game.points += 150; sound.play.powerup(); fx.burst(c.group.position, [0xffb51f, 0xffe066, 0xffffff], 34);
+      toast_('The Big Golden Mango! The reef will need it', 'good'); bubbles.say(wally.root, 'Crikey, look at the size of it!', 3.4);
+    } else if ((c.hint -= dt) <= 0) {
+      c.hint = 5; toast_(`The chest opens for ${mangoTarget} Golden Mangoes: you have ${game.mangoes}`, 'info');
+    }
+  }
+  if (game.hasBigMango && c.open < 1) c.open = Math.min(1, c.open + dt * 1.5);
+  c.lid.rotation.x = -c.open * 1.9; c.glow.intensity = c.open * 6; c.mango.visible = c.open > 0;
+  if (c.mango.visible) { c.mango.rotation.y += dt * 2; c.mango.position.y = 1.2 + c.open * 0.6; }
+}
 
 // The follow camera, as in the park: on a leash behind him, C swings it round.
 const cam = { yaw: 0, pitch: 0.35, dist: 11, manual: 0, recenter: false, side: 'behind', still: 0 };
@@ -480,7 +522,7 @@ function step(dt, t) {
   looksUnder(camera.position.y < -0.2);
   if (seaCeiling.visible) { seaCeiling.position.x = camera.position.x; seaCeiling.position.z = camera.position.z; }
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (!game.done && game.boost <= 0 && !napping) game.energy -= energyDrain(wally.mode, moving, 'esplanade') * drainFactor() * dt;   // vitamins (gear.js) halve it
+  if (!game.done && game.boost <= 0 && !napping) game.energy -= energyDrain(wally.mode, moving, 'esplanade') * drainFactor() * game.tripDrain * dt;   // vitamins (gear.js) halve it
 
   // Obstacles
   for (const o of obstacles) {
@@ -617,8 +659,11 @@ function step(dt, t) {
     bubbles.say(kennyMesh, "Hang on, Wally! Comin'!", 2.6);
   }
 
-  // The Lagoon: the way on, once the job is done.
-  if (!game.done && game.ready && wally.pos.z >= POOL_Z + 2) {
+  bigMangoChest(dt);
+  // The Lagoon: the way on, once the job is done and the Big Golden Mango found.
+  if (!game.done && game.ready && !game.hasBigMango && wally.pos.z > POOL_Z - 1 && game.hintCool <= 0) {
+    game.hintCool = 6; toast_(`The chest by the Lagoon first: it opens for ${mangoTarget} Golden Mangoes (you have ${game.mangoes})`, 'info');
+  } else if (!game.done && game.ready && game.hasBigMango && wally.pos.z >= POOL_Z + 2) {
     game.done = true; wally.cheer = 1.2; bubbles.say(wally.root, 'Last one in is a rotten egg!', 3.4);
     setTimeout(() => finish(true), 2200);
   } else if (!game.ready && wally.pos.z > POOL_Z - 1 && game.hintCool <= 0) {
@@ -676,7 +721,7 @@ function followCamera(dt) {
 // ---- Screens -------------------------------------------------------------------------
 function drawHud() {
   $('score').textContent = game.points.toLocaleString();
-  $('mangoes').textContent = `${game.mangoes}/${mangoes.length}`;
+  $('mangoes').textContent = game.hasBigMango ? `${game.mangoes} \u2713` : `${game.mangoes}/${mangoTarget}`;
   const diving = seaDive.depth < -1.0 || game.air < AIR.max - 0.5;
   $('pearls').textContent = game.pearls;
   $('feed').classList.toggle('air', diving);
@@ -687,11 +732,13 @@ function drawHud() {
   $('lives').textContent = '●'.repeat(Math.max(0, game.lives)) + '○'.repeat(Math.max(0, LIVES - game.lives));
   $('veg').hidden = game.boost <= 0;
   $('track-wally').style.left = `${Math.min(100, Math.max(0, wally.pos.z / PATH.finish * 100))}%`;
-  $('job').textContent = game.ready ? 'Head for the Lagoon!' : game.groupsDone >= game.groupsTotal ? 'Now fill the feed-o-meter' : `Groups fed out ${game.groupsDone}/${game.groupsTotal}`;
+  $('job').textContent = game.ready ? (game.hasBigMango ? 'Head for the Lagoon!' : `Golden Mangoes for the chest: ${game.mangoes}/${mangoTarget}`) : game.groupsDone >= game.groupsTotal ? 'Now fill the feed-o-meter' : `Groups fed out ${game.groupsDone}/${game.groupsTotal}`;
 }
 
 function start() {
+  if (!entry.ok && !testingAll) { toast_('The Esplanade opens with the gate key from Croc Park', 'bad'); return; }
   recordVisit('esplanade');
+  showTip('big-mango', `Collect Golden Mangoes along the walk. The chest at the Lagoon opens for ${mangoTarget} of them, and holds the Big Golden Mango the reef will need.`);
   sound.start(); sound.startMusic('esplanade');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true;
@@ -708,8 +755,13 @@ function finish(won, why = '') {
   const stars = won ? starsFor(s.total, STARS) : 0;
   if (won) sound.fanfare();                         // Wally's theme hook: well done, mate
   if (won) bookEvent('finish');
-  if (won) progress = completeArea(progress, 'esplanade', { score: s.total, stars, mangoes: game.mangoes, pearls: game.pearls });
-  else progress = bankFinds(progress, { mangoes: game.mangoes, pearls: game.pearls });   // Ken: keep what was found, finished or not
+  if (won) {
+    let a = Trip.gain(Trip.gain(attempt, 'golden-mango', game.mangoes), 'pearl', game.pearls);
+    const done = Trip.completeAttempt(progress.trip, a, { objectiveMet: true });
+    if (done.ok) progress.trip = done.trip;
+    if (game.pierOpen && !progress.pier) progress = openPier(progress, pierPrice).progress;   // the pier is paid for now
+    progress = completeArea(progress, 'esplanade', { score: s.total, stars, mangoes: game.mangoes, pearls: game.pearls });
+  } else progress.trip = Trip.failAttempt(progress.trip, attempt).trip;   // nothing from this attempt is kept (trip-rules.js)
   try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
   $('result-title').textContent = won ? 'Made it to the Lagoon!' : why === 'hungry' ? 'Still peckish!' : why === 'air' ? 'Out of air!' : 'Out of puff';
   $('result-why').textContent = why === 'hungry' ? `Wally made it, but his feed-o-meter isn't full. He needs a full tank (${FULL}%) to head on.` : '';
