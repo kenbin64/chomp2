@@ -36,6 +36,9 @@
   .banner { background: rgba(255, 209, 102, 0.12); border: 2px solid var(--gold); border-radius: 16px; padding: 12px 16px; margin: 14px 0 6px; font-size: 18px; }
   .talk li { margin: 8px 0; }
   .who { color: var(--gold); font-weight: 800; }
+  .philosophy { margin: 10px 0 14px; padding: 12px 18px; border-left: 5px solid var(--gold); background: rgba(255, 209, 102, 0.1); border-radius: 0 14px 14px 0; font-size: 21px; line-height: 1.45; color: #fff; }
+  .philosophy cite { display: block; margin-top: 6px; font-size: 16px; font-style: normal; color: var(--gold); }
+  .split th:first-child, .split td:first-child { width: 52%; }
   @media (max-width: 640px) { .pair { grid-template-columns: 1fr; } section { padding: 16px 16px; } }
 </style>
 </head>
@@ -87,27 +90,39 @@
   </section>
 
   <section id="made">
-    <h2>Made by a person, with AI: human-centric AI assist</h2>
-    <p>AI did a great deal of the work on this game. Claude, in VS Code, wrote and tested most of the code and prepared every model for the game. Meshy turned Ken's descriptions and pictures into 3D models: Wally, Kenny, the people, the trees, the falls, the giant clam. Copilot helped Ken find things out: different technologies, technical and industry standards, and common gaming tropes and practices. All are remarkable tools, and all did what they were asked.</p>
-    <p>That is the point. The idea, the story, the places, the rules, the look and every decision came from Ken's instruction. The AI's own contributions were suggestions in brainstorming and collaboration, which Ken chose to keep or throw away, and the technical work of carrying his decisions out: together reaching things neither could have done alone. AI-assisted programming is not "the AI does all the work"; it is a person directing, at every step. That is what human-centric AI assist means here: the person at the centre, the AI in support.</p>
-    <p>Ask an AI to "make a game about Cairns" and you will not get this. What makes it this game came from a person:</p>
-    <ul>
-      <li><strong>The idea and the story.</strong> Wally, the "don't feed the croc" joke, and the rule the game is built on go back to Ken's game from 2014.</li>
-      <li><strong>The places.</strong> Which places, in what order, what each one is for, and what Wally carries from one to the next.</li>
-      <li><strong>The look.</strong> Every model began as Ken's detailed instructions to Meshy: what it is, its size, its pose, its colours, its style. Ken chose the angle down the gorge and supplied his own photos of the falls in the wet and the dry.</li>
-      <li><strong>The judgement.</strong> Whether it is fun, whether it is true to the place, whether it is respectful, and when to throw an idea away.</li>
-    </ul>
+    <h2>How it was made: human-centric AI assist</h2>
+    <blockquote class="philosophy">"AI is support, not the driver. AI is not the decision-maker. The human is the conductor, the director and the conceiver of the ideas."<cite>Ken Bingham</cite></blockquote>
+    <p>This game is Ken's ideas and Ken's work. AI wrote the code, under his direction. It could not have been made by AI alone, or look the way it does, without detailed prompts, instructions and follow-ups at every step, from the first idea to the last fix.</p>
+
+    <h3>Who did what</h3>
+    <table class="split">
+      <tr><th>Ken Bingham</th><th>The AI tools</th></tr>
+      <tr><td><strong>Conceived it.</strong> Wally and the "don't feed the croc" idea go back to Ken's own game, Chomp, in 2014.</td>
+          <td><strong>Claude</strong> (Anthropic), in VS Code, wrote and tested the code to Ken's instructions.</td></tr>
+      <tr><td><strong>Designed it.</strong> The story, the places and their order, every rule, the quests, the chests and keys, the reward, the difficulty.</td>
+          <td>Offered options when asked and raised technical problems. Ken decided what, if anything, to keep.</td></tr>
+      <tr><td><strong>Directed the look.</strong> Every 3D model came from Ken's instructions to Meshy, drawing on his knowledge of 3D modelling: pose, proportion, detail, and how a model has to be built to move in a game. He set the camera angles and the art direction.</td>
+          <td><strong>Meshy</strong> generated the models from those instructions. Claude prepared them for the game: reduced, rigged and animated.</td></tr>
+      <tr><td><strong>Knows the place.</strong> Ken has known the Cairns region since 1984. He read up on it as it is today, with AI help to bring his picture up to date, and chose what to show.</td>
+          <td><strong>Copilot</strong> helped Ken research technologies, technical and industry standards, common gaming practices, and the region today.</td></tr>
+      <tr><td><strong>Judged everything.</strong> Whether it is fun, true to the place and respectful; what stays and what goes.</td>
+          <td>Checked its own work by testing and measuring, and reported what it found, mistakes included.</td></tr>
+    </table>
+
     <h3>From the conversation</h3>
-    <p>The game was made in a running conversation: Ken instructing, the AI building, proposing and asking, and Ken deciding. A few moments from it, in Ken's words:</p>
+    <p>The game was made in a running conversation: Ken instructing and deciding, the AI building, asking and proposing. A few moments from it, in Ken's words:</p>
     <ul class="talk">
+      <li><span class="who">Ken, at the start:</span> "This is not vibe programming, where I say make me this. This is me being involved every step of the way."</li>
       <li><span class="who">Ken</span> imagined Wally escaping through the cane fields, chased by croc catchers who would send him home. Talking it through, he changed his mind: "Let's drop the croc catchers altogether. I don't want a circular game." Then: "Let's not do the cane fields. I just don't think there is a real story there."</li>
       <li><span class="who">Ken</span> on going back to earlier places: "You can go back to any earlier thing, but only to collect what you need, not be sent back as a punishment." And: "When you go back you must have a challenge, not just go back to easily collect. The items are a reward for fulfilling the challenge."</li>
       <li><span class="who">The AI asked</span> what opens the reef. <span class="who">Ken:</span> "The giant clam gives you a pearl key that opens the chest at the end of the maze."</li>
-      <li><span class="who">The AI built</span> the waterfall on the side wall of the gorge. <span class="who">Ken</span> sent his own photos of the falls in the wet and the dry, and: "Our angle will be along the gorge looking down it, not a side view."</li>
+      <li><span class="who">The AI built</span> the waterfall on the side wall of the gorge. <span class="who">Ken</span> sent reference photos of the falls in the wet and the dry, and: "Our angle will be along the gorge looking down it, not a side view."</li>
+      <li><span class="who">Ken</span> on helping new players: "Make sure the game is intuitive. If instructions need to be presented the first time something is encountered, that is fine, with the ability to toggle that on and off." That became the game's first-time tips.</li>
       <li><span class="who">The AI suggested</span> plainer clothes for one character, to be safe. <span class="who">Ken:</span> "I do not want to be so culturally sensitive that people are depicted so generically that their culture is hidden." On the Torres Strait auntie: "She depicts people I know. But not exactly: it's not them, just a representation."</li>
       <li><span class="who">On the rules of the game, Ken:</span> "To keep and retain things, points, items, you must complete the area." And on why: "Crocs like to hide things, so anything in another area he had hidden already."</li>
     </ul>
-    <p>A few things the AI got wrong in a single weekend, each caught by a person:</p>
+
+    <h3>What the AI got wrong, caught by a person</h3>
     <ul>
       <li>It built the Kuranda rainforest from the wrong model, a single banana plant with a similar file name, until Ken said: wrong trees.</li>
       <li>It reported the new waterfall was on screen when the title screen was covering it. Ken kept saying he was still seeing the old version, and he was right.</li>
@@ -115,7 +130,7 @@
       <li>AI-made models came out with millions of triangles, garbled lettering on signs, and two clam shells fused into one lump. Each had to be checked and fixed before it could go in the game.</li>
       <li>It drew the river's foam as hard white squares, then put the bright end of each streak on the wrong side, before getting it right. Nothing it made was taken on trust: each piece was looked at before it went in.</li>
     </ul>
-    <p>Human direction and AI speed together are why it came together so fast: the 3D game was put together over one weekend in October 2026. The ideas are Ken's; the AI tools built, modelled, processed and tested what he instructed, and he decided.</p>
+    <p>Human direction and AI speed together are why it came together so fast: the 3D game was put together over one weekend in October 2026. The ideas are Ken's, and so is the work: the AI tools built, modelled, processed and tested what he directed, and he decided.</p>
   </section>
 
   <section>
