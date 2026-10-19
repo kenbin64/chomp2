@@ -40,7 +40,7 @@ function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.asp
 addEventListener('resize', resize); resize();
 
 const light = touch || quality.name === 'low';
-const models = await loadModels(['wally', 'wally-explorer', 'kenny', 'barron-falls'], { light });
+const models = await loadModels(['wally', 'wally-explorer', 'kenny'], { light });
 const realism = params.get('real') === '0' ? null : await loadRealism(renderer, { light });
 let skyDome = null;
 if (realism && realism.sky) { scene.background = realism.sky.background; scene.environment = realism.sky.environment; scene.environmentIntensity = 0.6; }
@@ -53,9 +53,14 @@ addEventListener('resize', () => post.setSize(innerWidth, innerHeight));
 // ---- The land -----------------------------------------------------------------------------
 const L = 1700;                                    // valley station (x = 0) to Kuranda (x = L)
 const TOP = 330;                                   // the plateau above the plain
-const GORGE = { x: 1390, w: 52, d: 175, head: -300 };   // the Barron Gorge crosses the line; the falls at its head (z = head)
+const GORGE = { x: 1390, w: 95, d: 150, head: -300 };   // the Barron Gorge crosses the line; the falls at its head (z = head). Wide enough for the land's grid to draw its walls cleanly.
 const smooth = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
 const coastAt = z => -380 + Math.sin(z * 0.004) * 60 + Math.sin(z * 0.011) * 18;
+// How deep the gorge is cut at a point (0 outside it): for its colour.
+function gorgeCut(x, z) {
+  const along = smooth(GORGE.head - 6, GORGE.head + 420, z);
+  return GORGE.d * Math.exp(-Math.pow((x - GORGE.x - Math.sin(z * 0.006) * 28) / GORGE.w, 2)) * along;
+}
 function height(x, z) {
   if (x < coastAt(z)) return -6;                                   // the sea
   const up = smooth(120, 1250, x);                                 // the range, rising to the plateau
@@ -85,7 +90,9 @@ function height(x, z) {
     else if (x < 140) {                                                             // the coastal plain: cane fields, patchy, not a grid
       const v = Math.sin(x * 0.031 + Math.sin(z * 0.017) * 2) + Math.sin(z * 0.023 + x * 0.007) * 0.8;
       c.set(0x8fb257).lerp(new THREE.Color(v > 0.6 ? 0xb9c46a : v < -0.6 ? 0x6f9a44 : 0x8fb257), 0.8);
-    } else if (steep) c.set(0x8a8174).lerp(new THREE.Color(0x5a5248), Math.max(0, Math.sin(y * 0.15)) * 0.6);   // rock in bands: the gorge walls, cliffs
+    } else if (gorgeCut(x, z) > GORGE.d * 0.82) c.set(0x6a6450);                   // the gorge floor: river stones
+    else if (gorgeCut(x, z) > 18) c.set(0x6e675b).lerp(new THREE.Color(0x423d35), Math.max(0, Math.sin(y * 0.12)) * 0.7);   // the gorge walls: granite in bands
+    else if (steep) c.set(0x8a8174).lerp(new THREE.Color(0x5a5248), Math.max(0, Math.sin(y * 0.15)) * 0.6);   // rock in bands: the gorge walls, cliffs
     else c.copy(canopy[Math.floor((Math.sin(x * 0.07) + Math.sin(z * 0.09) + 2) * 0.75) % 3]);
     col.push(c.r, c.g, c.b);
   }
@@ -95,8 +102,18 @@ function height(x, z) {
   // The Coral Sea behind the valley station, and the river in the bottom of the gorge.
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(20000, 20000), new THREE.MeshStandardMaterial({ color: 0x1f7f99, roughness: 0.12, metalness: 0.15 }));
   sea.rotation.x = -Math.PI / 2; sea.position.set(-10000 + coastAt(0) + 40, 0, 0); scene.add(sea);
-  const river = new THREE.Mesh(new THREE.PlaneGeometry(40, 1500), new THREE.MeshStandardMaterial({ color: 0x6e6548, roughness: 0.3 }));
-  river.rotation.x = -Math.PI / 2; river.position.set(GORGE.x, TOP - GORGE.d + 4, GORGE.head + 760); scene.add(river);
+  // The river down the gorge floor: churned white below the falls, browner further down.
+  {
+    const rows = 120, z0 = GORGE.head + 120, z1 = GORGE.head + 1400, pts = [], col = [], idx = [];
+    for (let i = 0; i <= rows; i++) {
+      const z = z0 + (z1 - z0) * i / rows, cx = GORGE.x + Math.sin(z * 0.006) * 28, w = 9 + i * 0.05;
+      for (const s of [-1, 1]) { const x = cx + s * w; pts.push(x, height(cx, z) + 1.2, z); }
+      const k = Math.min(1, i / 40); const c = new THREE.Color(0xf2efe6).lerp(new THREE.Color(0x7a6f52), k); col.push(c.r, c.g, c.b, c.r, c.g, c.b);
+      if (i < rows) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
+    scene.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, side: THREE.DoubleSide })));
+  }
   // Green Island, a low green cay out in the sea.
   const cay = new THREE.Mesh(new THREE.SphereGeometry(60, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x3f7a3a, roughness: 1 }));
   cay.scale.set(1, 0.12, 0.7); cay.position.set(-1600, 0, -300); scene.add(cay);
@@ -152,16 +169,23 @@ const trees = new Trees(scene, { light });
   trees.build();
 }
 
-// ---- Ken's falls at the head of the gorge -------------------------------------------------
+// ---- The falls at the head of the gorge, as seen from the air -----------------------------
+// From the gondola, hundreds of metres off, the falls read as a white cascade with
+// a plume of mist rising from it; Ken's falls model is for close up (the zip line).
 {
-  const g = models.get('barron-falls');
-  if (g) {
-    const m = g.scene.clone(true); m.rotation.y = Math.PI;              // the water runs down the gorge (+z)
-    m.updateMatrixWorld(true); let b = new THREE.Box3().setFromObject(m);
-    m.scale.setScalar(GORGE.w * 2.3 / (b.max.x - b.min.x)); m.updateMatrixWorld(true); b = new THREE.Box3().setFromObject(m);
-    m.position.set(GORGE.x - (b.min.x + b.max.x) / 2, height(GORGE.x, GORGE.head) + 2 - b.max.y, GORGE.head - b.min.z);   // its top at the lip, pouring down the gorge
-    m.traverse(o => { if (o.isMesh) o.receiveShadow = true; });
-    scene.add(m);
+  const lip = height(GORGE.x, GORGE.head), foot = height(GORGE.x, GORGE.head + 260);
+  const c = document.createElement('canvas'); c.width = 64; c.height = 256; const g = c.getContext('2d');
+  for (let x = 0; x < 64; x++) for (let y = 0; y < 256; y += 2) { const v = 210 + Math.random() * 45; g.fillStyle = `rgba(${v},${v - 4},${v - 14},${0.55 + Math.random() * 0.45})`; g.fillRect(x, y, 1, 2 + Math.random() * 10); }
+  const tex = new THREE.CanvasTexture(c); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(4, 2);
+  const cascade = new THREE.Mesh(new THREE.PlaneGeometry(70, lip - foot + 20, 10, 10), new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.4, depthWrite: false, side: THREE.DoubleSide, emissive: 0x333028 }));
+  cascade.position.set(GORGE.x, (lip + foot) / 2, GORGE.head + 120); cascade.rotation.x = -0.9; scene.add(cascade);
+  window.__fallsTex = tex;
+  const mc = document.createElement('canvas'); mc.width = mc.height = 128; const mg = mc.getContext('2d'), r = mg.createRadialGradient(64, 64, 4, 64, 64, 64);
+  r.addColorStop(0, 'rgba(255,255,255,0.85)'); r.addColorStop(1, 'rgba(255,255,255,0)'); mg.fillStyle = r; mg.fillRect(0, 0, 128, 128);
+  const mt = new THREE.CanvasTexture(mc);
+  for (let k = 0; k < 14; k++) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: mt, color: 0xe8ece8, transparent: true, opacity: 0.16, depthWrite: false }));
+    s.position.set(GORGE.x + (Math.random() - 0.5) * 50, foot + 8 + k * 6, GORGE.head + 200 + (Math.random() - 0.5) * 40); s.scale.setScalar(40 + k * 4); scene.add(s);
   }
 }
 
@@ -245,7 +269,7 @@ function placeOn(g, u, z, t) {
 // The gondola's place along the line over time, easing out of the station and into the top.
 const DURATION = 64, LEAVE = 4, ARRIVE = 58;
 const rideU = t => { const k = Math.min(1, Math.max(0, (t - LEAVE) / (ARRIVE - LEAVE))); return k * k * (3 - 2 * k); };
-const FALLS_LOOK = new THREE.Vector3(GORGE.x, TOP - GORGE.d * 0.5, GORGE.head + 60);
+const FALLS_LOOK = new THREE.Vector3(GORGE.x, TOP - 80, GORGE.head + 150);
 // The shots, each a camera position and a point to look at, from the gondola's
 // place (gp), its way forward (fw) and the time. Captions name the place.
 const SHOTS = [
@@ -253,7 +277,7 @@ const SHOTS = [
   { at: 9,  caption: 'Over the rainforest canopy', cam: (gp, fw) => ({ pos: gp.clone().addScaledVector(fw, -30).add(new THREE.Vector3(0, 6, 22)), look: gp.clone().addScaledVector(fw, 40).add(new THREE.Vector3(0, -6, 0)) }) },
   { at: 21, caption: 'Looking back to the Coral Sea', cam: (gp) => ({ pos: gp.clone().add(new THREE.Vector3(1.6, -HANG + 0.4, 6)), look: new THREE.Vector3(-900, 0, 60) }) },
   { at: 31, caption: '', cam: (gp, fw) => ({ pos: gp.clone().add(new THREE.Vector3(-40, 50, 170)), look: gp.clone().addScaledVector(fw, 60) }) },
-  { at: 43, caption: 'The Barron Gorge', cam: (gp) => ({ pos: gp.clone().add(new THREE.Vector3(-8, -HANG + 1, 20)), look: FALLS_LOOK }) },
+  { at: 43, caption: 'The Barron Gorge', cam: () => ({ pos: new THREE.Vector3(GORGE.x + 170, TOP + 140, 300), look: new THREE.Vector3(GORGE.x - 20, TOP - 90, GORGE.head + 160) }) },   // high and wide, up the gorge to the falls; the gondola crosses small against it
   { at: 53, caption: 'Kuranda', cam: () => ({ pos: new THREE.Vector3(STATIONS.top.x + 80, STATIONS.top.y + 22, 52), look: new THREE.Vector3(STATIONS.top.x - 60, STATIONS.top.y - 2, 0) }) },
 ];
 const BLEND = 2.2;                                 // seconds to swing from one shot to the next
@@ -301,6 +325,7 @@ function frame() {
   for (const o of others) { o.s = (o.s + dt * 0.006 * o.dir + 1) % 1; placeOn(o.g, o.s, o.dir > 0 ? 6 : -6, now / 1000 + o.s * 9); }
   if (!playing && !$('title').hidden) { t = Math.min(t + dt * 0.4, 3); }              // behind the title: the station, the gondola waiting
   trees.update(now / 1000);
+  if (window.__fallsTex) window.__fallsTex.offset.y -= dt * 0.8;           // the falls pour
   if (skyDome) skyDome.position.copy(camera.position);
   sun.position.copy(gp).add(new THREE.Vector3(260, 150, -200)); sun.target.position.copy(gp);   // late afternoon, low over the range
   sun.shadow.camera.left = -90; sun.shadow.camera.right = 90; sun.shadow.camera.top = 90; sun.shadow.camera.bottom = -90; sun.shadow.camera.far = 700; sun.shadow.camera.updateProjectionMatrix();

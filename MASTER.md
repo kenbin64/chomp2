@@ -324,8 +324,11 @@ listed as star-opened activities today (`ACTIVITIES` in `js/progress.js`). **Ope
 people to like him; he ends knowing who he is.
 
 **The finale (Decided, Ken 2026-10-19):**
-1. **The challenge:** a storm on the river, a cruise boat in trouble; Wally swings on the vines and uses
-   everything he has learned to rescue the boat. Nobody is harmed.
+1. **The challenge:** a storm on the river; a cruise boat runs aground and is stuck. Nobody is harmed.
+   Wally swings on the vines through the rainforest to reach the crocs, shares his stash with them
+   (everything collected and not spent; not enough: go back for more), and all the crocs, his old rivals
+   from Croc Park among them, push the boat back to shore. (Crocs sharing with crocs: the game's
+   never-feed-a-crocodile message is about people.)
 2. **The turn:** the passengers, people who threw food to keep him away all game, cheer him.
 3. **The choice:** Wally is not taken back to a zoo or the sanctuary. He realises he is happy to be a
    crocodile and goes into the Daintree River as a wild croc.
