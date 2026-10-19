@@ -350,6 +350,15 @@ people to like him; he ends knowing who he is.
   gold for the party boat), and every leftover adds to the trip score. **Decided (Ken, 2026-10-19):** it
   uses what is left, but if there is not enough, Wally goes back for more (under the going-back rules).
 - **Open:** Kenny's farewell (a koala cannot follow Wally into the river).
+- **The way home (Ken's idea, 2026-10-19):** the race back runs through Kuranda. Wally does the bungee
+  again and must grab, at the bottom, a ticket for the Kuranda train (the Scenic Railway) down to Cairns
+  and Croc Park. He brings a bunch of mangoes with him to convince the crocs to help push the boat.
+  - It fits the rules: the bungee is a return visit, so it is played one level harder (rule 7) and is
+    earned, not handed over (rule 6). The train down mirrors the Skyrail up. The mangoes come from his
+    stash; not enough, he goes back for more.
+  - **Open:** the train ride, played (by rule 12, if there is something to do) or a cinematic.
+  - **Open:** how the crocs get from Croc Park to the boat in the Daintree, and is that played.
+  - **Open:** the mangoes as well as what he has learned, or the mangoes as the way he shows it.
 
 **What is here (notes so far):** tourists on river boats, swimming, swinging on vines, jumping rock to
 rock, running the beach, mangroves.
