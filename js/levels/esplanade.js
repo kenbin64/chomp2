@@ -10,6 +10,7 @@
 
 import { fitText } from '../signtext.js';
 import { installGear, snorkelling, drainFactor } from '../gear.js';
+import { showTip } from '../tips.js';
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
 import { Food, randomKind, kennysToast, useJarModel, useToastModel } from '../food.js';
@@ -448,7 +449,7 @@ function step(dt, t) {
   $('b-dive').disabled = seaDive.under; $('b-up').disabled = !seaDive.under;
   if (!inTheSea && wally.surface !== 'water') seaDive.under = false;
   sound.underwaterMusic(seaDive.under);              // the music goes soft and muffled under water
-  if (inTheSea && !game.seaTip) { game.seaTip = true; toast_('Shift (Fours) to dive under. Swim to the boardwalk edge to climb out', 'info'); }
+  if (inTheSea && !game.seaTip) { game.seaTip = true; if (!showTip('sea', 'In the sea, Shift (or Dive) goes under and Space (or Up) comes back up. Swim to the boardwalk edge and push toward it to climb out.')) toast_('Shift to dive under, Space to come up. Swim to the boardwalk edge to climb out', 'info'); }
   const wantSea = seaDive.under ? SEA_SWIM : SEA_TOP;
   seaDive.depth += Math.sign(wantSea - seaDive.depth) * Math.min(Math.abs(wantSea - seaDive.depth), 4 * dt);
   const control = napping || game.done || game.faint > 0 ? { forward: 0, right: 0, jump: false, fours: false }
@@ -530,6 +531,7 @@ function step(dt, t) {
   tradeStep(clusterEvents, wally.pos);
   questStep(dt, t, clusterEvents, wally.pos);
   for (const e of clusterEvents) {
+    if (e.type === 'throw') showTip('sweet-spot', 'Visitors throw food when Wally is close, but not too close. Catch it before it lands: in the air is worth the most.');
     if (e.type === 'throw' && Math.random() < 0.35) bubbles.say(e.thrower.g, pickLine('touristThrow'), 2.3);
     if (e.type === 'flee') { game.scared++; toast_('Too close! They ran off with their lunch', 'bad'); }
     if ((e.type === 'flee' || e.type === 'empty') && !e.cluster.counted) {

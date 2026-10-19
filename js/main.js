@@ -4,6 +4,7 @@
 // was caught, missed or stolen, and keeps the quest and the screen up to date.
 
 import { installGear, snorkelling, drainFactor } from './gear.js';
+import { showTip } from './tips.js';
 import * as THREE from 'three';
 import { buildWorld, GATE } from './world.js';
 import { Wally } from './wally.js';
@@ -395,8 +396,9 @@ function updateClusters(dt, t) {
   tradeStep(clusterEvents, wally.pos);
   questStep(dt, t, clusterEvents, wally.pos);
   for (const e of clusterEvents) {
+    if (e.type === 'throw') showTip('sweet-spot', 'Visitors throw food when Wally is close, but not too close. Catch it before it lands: in the air is worth the most.');
     if (e.type === 'throw' && Math.random() < 0.25) bubbles.say(e.thrower.g, pickLine('touristThrow'), 2.3);
-    if (e.type === 'nervous' && !game.warnedOnce) { game.warnedOnce = true; toast('Too close! Back off a bit or they will run', 'bad'); }
+    if (e.type === 'nervous' && !game.warnedOnce) { game.warnedOnce = true; if (!showTip('too-close', 'Too close! The visitors are getting nervous. Back off a little, or they run off with their food.')) toast('Too close! Back off a bit or they will run', 'bad'); }
     if (e.type === 'flee') { game.scared++; toast(e.cluster.food > 0 ? `They ran off with ${e.cluster.food} bits of tucker!` : 'They ran off!', 'bad'); }
     if (e.type === 'empty') toast('That lot are all out of food', 'info');
     if ((e.type === 'flee' || e.type === 'empty') && !e.cluster.counted) {
@@ -522,17 +524,17 @@ function step(dt, t) {
   for (const it of dissolved) { game.misses++; lost(it, 'Too late, it dissolved!'); }
   const eagerness = 0.1;                         // how keen the flying foxes are
   for (const it of bats.update(dt, t, food, eagerness, wally.pos)) {
-    food.take(it, 'carried'); game.stolen++; game.by.bat++; sound.play.stolen();
+    food.take(it, 'carried'); game.stolen++; game.by.bat++; sound.play.stolen(); thiefTip();
     lost(it, `A flying fox nicked the ${it.name}!`);
     if (Math.random() < 0.5) bubbles.say(wally.root, pickLine('wallyStolen'), 3.6);
     if (game.streak === 0) toast('Flying fox!', 'bad');
   }
   for (const it of pelicans.update(dt, food, wally.pos)) {
-    food.take(it, 'eaten'); game.stolen++; game.by.pelican++; sound.play.stolen();
+    food.take(it, 'eaten'); game.stolen++; game.by.pelican++; sound.play.stolen(); thiefTip();
     toast(`A pelican scooped the ${it.name}!`, 'bad'); game.streak = 0;
   }
   for (const it of toads.update(dt, food)) {
-    food.take(it, 'eaten'); game.stolen++; game.by.toad++; sound.play.stolen();
+    food.take(it, 'eaten'); game.stolen++; game.by.toad++; sound.play.stolen(); thiefTip();
     lost(it, `A cane toad swallowed the ${it.name}!`);
   }
   for (const it of jellies.grab(food)) {
@@ -574,7 +576,7 @@ function step(dt, t) {
   game.kennyCall -= dt;
   if (kenny.ready(game.energy) && game.nap <= 0 && game.kennyCall <= 0) {
     game.kennyCall = 20;
-    if (!game.kennyTold) { game.kennyTold = true; toast('Under half? Find Kenny for a scoop from his jar', 'info'); }
+    if (!game.kennyTold) { game.kennyTold = true; if (!showTip('kenny', 'Running low? Find Kenny the Koala: a scoop from his jar fills Wally back up.')) toast('Under half? Find Kenny for a scoop from his jar', 'info'); }
     bubbles.say(kenny.mesh, 'Over here, Wally! Got your jar!', 1.9);
   }
   if (k2 === 'dropped') { toast('Kenny is holding out his jar. Get to him!', 'info'); bubbles.say(kenny.mesh, pickLine('kennyJar'), 1.9); }
@@ -598,6 +600,9 @@ function step(dt, t) {
 // In the water Shift dives to the bottom and Space comes up (as in every level),
 // or the Dive and Up buttons (B and A on a controller). No croc leap from down there. While he is under,
 // the water clears so the player can see him, and the camera looks down more.
+// The first time a thief gets to the food first.
+function thiefTip() { showTip('thieves', 'Pelicans, flying foxes and cane toads steal the food. Get to it before they do!'); }
+
 function diveStep(dt, k) {
   const T = PARK_TREASURE, inWater = wally.surface === 'water';
   const foursPressed = k.fours && !game.foursWas; game.foursWas = k.fours;
@@ -607,7 +612,7 @@ function diveStep(dt, k) {
   if (inWater && game.nap <= 0) {
     if (dive) game.wantDepth = T.diveY;
     if (up) game.wantDepth = T.surfaceY;
-    if (!game.diveHint && game.time > 3) { game.diveHint = true; toast('Shift dives, Space comes up', 'info'); }
+    if (!game.diveHint && game.time > 3) { game.diveHint = true; if (!showTip('dive', 'In the water, Shift (or Dive) goes under and Space (or Up) comes back up. Wally can hold his breath for a while.')) toast('Shift dives, Space comes up', 'info'); }
   }
   if (!inWater || game.nap > 0) game.wantDepth = T.surfaceY;
   game.depth += Math.sign(game.wantDepth - game.depth) * Math.min(Math.abs(game.wantDepth - game.depth), 2.5 * dt);

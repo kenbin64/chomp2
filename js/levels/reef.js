@@ -32,6 +32,7 @@ import { HumanoidPoser } from '../rig.js';
 import { kennysJar, useJarModel } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
 import { readProgress, completeArea, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE, outfitModel, PROGRESS_CHANGED } from '../progress.js';
+import { showTip } from '../tips.js';
 import { makeMaze, makeReefMaze, mazePath, cellAt, cellCentre, collide, inMaze, airStep, AIR,
          SWIM_Y, SURFACE_Y, SEABED_Y, reefRunScore, REEF_STARS, PEARL_POINTS, CHEST_POINTS,
          LANES, LANE_NAMES, TREASURES, nextDepth, treasureSpots, canCollect } from './reef-rules.js';
@@ -396,6 +397,7 @@ function step(dt, t) {
   // Dive with Shift, come up with Space (as in every level), or the on-screen
   // buttons. Not up from inside the cave: rock overhead.
   const foursPressed = k.fours && !game.foursWas; game.foursWas = k.fours;
+  if (inWater) showTip('reef-dive', 'Shift (or Dive) takes Wally one level deeper, Space (or Up) one level up. Watch the air meter: bubble vents fill it again.');
   const dive = foursPressed || game.diveQueued;
   const up = (inWater && k.jump) || game.upQueued;                // in the reef's water there is no jumping: Space is up
   game.diveQueued = game.upQueued = false;

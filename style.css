@@ -170,6 +170,14 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .settings input[type=checkbox] { width: 20px; height: 20px; accent-color: #ffd166; }
 /* Links in the opening screen's credit line: the game's gold, like its buttons. */
 .opener-bar .credit a { color: #ffd166; }
+/* First-time tips (tips.js): a card near the top, not in the way, never stopping the game. */
+.tip-card { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); width: min(460px, calc(100% - 32px)); z-index: 20; background: rgba(12, 40, 56, 0.95); border: 2px solid rgba(255, 209, 102, 0.6); border-radius: 16px; padding: 12px 16px; color: #eaf4f2; font-size: 17px; line-height: 1.4; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4); animation: tip-in 0.3s ease-out; }
+.tip-card p { margin: 0 0 8px; }
+.tip-buttons { display: flex; gap: 10px; justify-content: flex-end; align-items: center; }
+.tip-buttons button { font: inherit; font-size: 15px; border-radius: 10px; padding: 6px 14px; cursor: pointer; }
+.tip-ok { background: #ffd166; color: #102030; border: 0; font-weight: 800; }
+.tip-off { background: none; color: #b9d3cf; border: 0; text-decoration: underline; }
+@keyframes tip-in { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
 /* Ken's promo trailer, over the opener. */
 .trailer-box { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 12px; padding: 16px; background: rgba(4, 14, 20, 0.88); }
 .trailer-box video { width: min(960px, 100%); max-height: calc(100% - 90px); border-radius: 14px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); background: #000; }
