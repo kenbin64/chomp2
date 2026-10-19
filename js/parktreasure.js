@@ -12,6 +12,17 @@ import { ModelSkin } from './models.js';
 
 const GOLD = () => new THREE.MeshStandardMaterial({ color: 0xe8b62e, metalness: 0.9, roughness: 0.25 });
 
+// The key to the park gate (Ken, 2026-10-18: the lagoon chest holds it): an
+// old gold key, a ring for a bow, a shaft and two teeth.
+export function gateKey() {
+  const g = new THREE.Group(), gold = GOLD();
+  const bow = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.035, 12, 28), gold); bow.position.y = 0.28; g.add(bow);
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.42, 12), gold); g.add(shaft);
+  for (const [y, w] of [[-0.14, 0.1], [-0.2, 0.07]]) { const t = new THREE.Mesh(new THREE.BoxGeometry(w, 0.04, 0.03), gold); t.position.set(w / 2, y, 0); g.add(t); }
+  g.scale.setScalar(1.6);
+  return g;
+}
+
 // Each lost thing, a little larger than life so it reads from above the water.
 function lostModel(id) {
   const g = new THREE.Group();
@@ -57,10 +68,11 @@ function glint() {
 }
 
 export class LagoonTreasure {
-  // mango: the Golden Mango model (if loaded) that rises out of the chest.
-  constructor(scene, mango = null) {
+  // mango: the Golden Mango model (if loaded) that rises out of the chest;
+  // prize: anything else to rise out of it instead (the gate key, gateKey()).
+  constructor(scene, mango = null, prize = null) {
     this.scene = scene;
-    const prize = mango ? new ModelSkin(mango, { height: 0.5 }).root : new THREE.Mesh(new THREE.SphereGeometry(0.22, 24, 16), GOLD());
+    if (!prize) prize = mango ? new ModelSkin(mango, { height: 0.5 }).root : new THREE.Mesh(new THREE.SphereGeometry(0.22, 24, 16), GOLD());
     this.chest = chestModel(prize);
     this.chest.group.position.set(T.chest.x, terrainHeight(T.chest.x, T.chest.z), T.chest.z);
     this.chest.group.rotation.y = 0.4;

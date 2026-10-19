@@ -4,6 +4,7 @@
 // Pure functions, tested in test/progress.test.mjs; the page saves the result.
 
 import { AREAS } from './quests.js';
+import { readTrip } from './trip-rules.js';
 
 // Several parts of a page write the save (the book, trades, the trader, the
 // outfit shop) while a level holds its own copy; each writes through
@@ -20,7 +21,7 @@ export function freshProgress() {
   return { unlocked: ['park'], stars: {}, best: {}, postcards: [], mangoes: 0, pearls: 0, coins: 0, shells: 0, pier: false,
            badge: false, skyrail: false, boatTicket: false, wardrobe: freshWardrobe(), extras: [], crocName: null, treasures: [],
            stamps: [], tokens: 0, abilities: {}, visits: {}, souvenirs: [], sidequests: 0, discovered: [],
-           gear: {}, equipped: null, uses: 0, partial: {}, tickets: {} };
+           gear: {}, equipped: null, uses: 0, partial: {}, tickets: {}, trip: null };
 }
 
 // Stars from a score: thresholds are [one, two, three].
@@ -306,6 +307,8 @@ export function readProgress(text) {
       uses: Number.isFinite(p.uses) ? p.uses : 0,
       partial: p.partial && typeof p.partial === 'object' ? Object.fromEntries(Object.entries(p.partial).filter(([k, v]) => GEAR_IDS.includes(k) && Number.isFinite(v))) : {},
       tickets: p.tickets && typeof p.tickets === 'object' ? Object.fromEntries(Object.entries(p.tickets).filter(([, v]) => Number.isFinite(v) && v >= 0)) : {},
+      // The trip under the rules of trip-rules.js (difficulty, areas done, main items); null until chosen.
+      trip: readTrip(p.trip),
     };
   } catch { return freshProgress(); }
 }

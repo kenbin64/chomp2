@@ -14,8 +14,10 @@ import { Kenny } from './kenny.js';
 import { Crocs } from './crocs.js';
 import { Jellies, FlyingFoxes, Pelicans, CaneToads } from './hazards.js';
 import { Clusters } from './clusters.js';
-import { LagoonTreasure } from './parktreasure.js';
-import { PARK_TREASURE, TREASURE_REWARD, swimDepth } from './treasure-rules.js';
+import { LagoonTreasure, gateKey } from './parktreasure.js';
+import { PARK_TREASURE, swimDepth } from './treasure-rules.js';
+import * as Trip from './trip-rules.js';
+import { chooseDifficulty } from './difficulty-ui.js';
 import { setGround, parkGround } from './ground.js';
 import { DayNight } from './daynight.js';
 import { StreetLamps } from './lamps.js';
@@ -166,8 +168,8 @@ const cast = new Cast(peopleModels(models));
 clusters.useModels(cast);
 // Friendly traders (Ken): some groups offer a trade instead of running off.
 clusters.enableTraders(0.25);
+// Nothing is saved mid-run (trip-rules.js): leaving partway ends the attempt.
 startTrading({ land: 'park', run: () => ({ mangoes: game.mangoes }), setRun: r => { game.mangoes = r.mangoes; drawQuest(); },
-  bank: () => { saveProgress(bankFinds(readProgress(localStorage.getItem('chomp-progress')), { mangoes: game.mangoes })); game.mangoes = 0; },
   feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c.people[0].g, text, 2.4), toast: text => toast(text, 'good') });
 // A sidequest (Ken): one group has lost something; where it ends up in the park.
 startQuest({ land: 'park', scene, clusters,
@@ -179,7 +181,7 @@ startQuest({ land: 'park', scene, clusters,
   feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c ? c.people[0].g : wally.root, text, c ? 2.4 : 3.4), toast: text => toast(text, 'info') });
 tourists.useModels(cast);
 food.useModels(models);
-const treasure = new LagoonTreasure(scene, models.get('mango'));     // the chest on the lagoon bottom (Ken)
+const treasure = new LagoonTreasure(scene, null, gateKey());     // the chest on the lagoon bottom holds the gate key (Ken)
 
 // Day and night (Ken): now and then it gets dark, the moon comes up over the
 // northern sky as it does from Cairns, and the street lamps round the lagoon
@@ -268,7 +270,7 @@ const game = {
   by: { bat: 0, pelican: 0, toad: 0, jelly: 0, croc: 0 },      // who took the food, for balancing
   // Diving for the lagoon treasure: how deep he is, where he is heading, and the keys.
   depth: PARK_TREASURE.surfaceY, wantDepth: PARK_TREASURE.surfaceY, clear: 0, foursWas: false, ctrlShiftWas: false,
-  diveQueued: false, upQueued: false, biteCool: 0, treasureHint: 0, diveHint: false, mangoes: 0,
+  diveQueued: false, upQueued: false, hasKey: false, tripDrain: 1, biteCool: 0, treasureHint: 0, diveHint: false, mangoes: 0,
   kennyCall: 0, kennyTold: false,       // Ken: under half, Wally can go to Kenny for a scoop
 };
 
@@ -323,8 +325,8 @@ function drawQuest() {
   if (treasure) {
     const li = document.createElement('li');
     li.className = 'extra' + (treasure.opened ? ' done' : '');
-    li.innerHTML = '<span>Lagoon treasure (dive!)</span><span></span>';
-    li.lastChild.textContent = treasure.opened ? 'found' : `${treasure.found}/${treasure.total}`;
+    li.innerHTML = '<span>The gate key (lagoon chest: dive!)</span><span></span>';
+    li.lastChild.textContent = treasure.opened || game.hasKey ? 'found' : `${treasure.found}/${treasure.total}`;
     $('goals').appendChild(li);
   }
   if (q.goalsDone() && q.stage === 'goals') {
@@ -483,7 +485,11 @@ function updateQuest(dt) {
   if (r === 'hungry') { finish(false, 'hungry'); return; }
 
   const atGate = Math.abs(wally.pos.x - GATE.x) < 1.2 && Math.abs(wally.pos.z - GATE.z) < 2 && onDeck(wally.pos.x, wally.pos.z);
-  if (q.gateOpen() && atGate && q.leave()) finish(true);
+  // Out through the gate: the objective met and the key in hand (trip-rules.js).
+  if (q.gateOpen() && atGate) {
+    if (game.hasKey) { if (q.leave()) finish(true); }
+    else if (game.time > (game.keyHintAt || 0)) { game.keyHintAt = game.time + 6; toast("The gate's locked! The key is in the chest on the bottom of the lagoon", 'info'); bubbles.say(wally.root, 'Locked! Where is that key?', 3); }
+  }
 }
 
 // ---- One frame ------------------------------------------------------------------
@@ -513,7 +519,7 @@ function step(dt, t) {
     else if (e === 'splash') { sound.play.splash(); fx.splash(wally.pos, 26); fx.shake(0.2, 0.15); } else if (e === 'land') sound.play.land();
   }
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (game.boost <= 0 && game.nap <= 0) game.energy -= energyDrain(wally.mode, moving, 'park') * drainFactor() * dt;   // vitamins (gear.js) halve it
+  if (game.boost <= 0 && game.nap <= 0) game.energy -= energyDrain(wally.mode, moving, 'park') * drainFactor() * game.tripDrain * dt;   // vitamins (gear.js) halve it; the trip's difficulty sets the speed
   if (game.nap > 0) napping(dt);
 
   tourists.update(dt, wally.pos);                // strollers on the boardwalk: scenery, no food
@@ -646,12 +652,10 @@ function treasureStep(dt, t) {
       drawQuest();
     } else if (e.type === 'open') {
       bookEvent('chest');
-      const r = findTreasure(progress, 'park', TREASURE_REWARD);
-      progress = r.progress;
-      try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
+      attempt = Trip.gain(attempt, 'gate-key'); game.hasKey = true;     // kept when the park is completed
       game.score += 500; sound.play.powerup();
-      toast(`Treasure! +${r.mangoes} Golden Mangoes`, 'good');
-      bubbles.say(wally.root, 'Fair dinkum treasure! Ripper!', 3.6);
+      toast('The gate key! Feed everyone, fill up, then out the gate', 'good');
+      bubbles.say(wally.root, 'The key to the gate! Ripper!', 3.6);
       drawQuest();
     }
   }
@@ -755,7 +759,19 @@ function followCamera(dt) {
 
 // ---- Start, pause, end ------------------------------------------------------------
 
+// The trip (trip-rules.js): made when a new trip starts (the difficulty choice),
+// or carried over from a save made before the rules.
+function ensureTrip(level = 'intermediate') {
+  if (progress.trip) return;
+  progress.trip = progress.postcards.length || Object.keys(progress.stars).length ? Trip.tripFromProgress(progress) : Trip.freshTrip(level);
+  saveProgress(progress);
+}
+
 function start() {
+  ensureTrip();
+  attempt = Trip.startAttempt(progress.trip, 'park');
+  game.hasKey = Trip.have(progress.trip, 'gate-key');               // on a return visit he has it already
+  game.tripDrain = Trip.drainFactor(progress.trip, 'park', attempt.level);
   sound.start(); sound.startMusic('park'); sound.moodMusic('park');
   $('title').hidden = true; $('over').hidden = true; $('win').hidden = true;
   $('hud').hidden = false; $('touch').hidden = !touch;
@@ -784,6 +800,8 @@ function finish(won, why = '') {
   if (won) {
     bookEvent('finish');
     const stars = starsFor(game.score, PARK_STARS);
+    const done = Trip.completeAttempt(progress.trip, Trip.gain(attempt, 'golden-mango', game.mangoes), { objectiveMet: true });
+    if (done.ok) progress.trip = done.trip;
     progress = completeArea(progress, 'park', { score: game.score, stars, mangoes: game.mangoes });
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
     $('win-score').textContent = game.score.toLocaleString();
@@ -794,7 +812,7 @@ function finish(won, why = '') {
     showLeaderboard($('win-board'), 'park', game.score, stars);   // post the score, show the top ten
   } else {
     sound.play.lose();
-    progress = bankFinds(progress, { mangoes: game.mangoes });         // Ken: keep what was found, finished or not
+    progress.trip = Trip.failAttempt(progress.trip, attempt).trip;       // nothing from this attempt is kept (trip-rules.js)
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
     if (why === 'hungry') {
       $('over').querySelector('h1').textContent = 'Still peckish!';
@@ -814,6 +832,7 @@ function restart() { location.reload(); }   // simplest clean reset of every cre
 // other areas are their own pages.
 const PAGES = { park: null, esplanade: 'esplanade.html', reef: 'reef.html', kuranda: 'kuranda.html' };
 let progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
+let attempt = null;                                 // this go at the park (trip-rules.js)
 addEventListener(PROGRESS_CHANGED, () => { progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); });   // the book, trades and shops write it too
 const PARK_STARS = [40, 70, 100];               // park score for one, two and three stars
 
@@ -837,7 +856,11 @@ function openTrailer() { peekVideo.pause(); $('trailer-box').hidden = false; con
 $('trailer').onclick = openTrailer; peek.onclick = openTrailer;
 $('trailer-close').onclick = () => { const v = $('trailer-video'); v.pause(); $('trailer-box').hidden = true; if (!stillOnly) peekVideo.play().catch(() => {}); };
 $('credits-close').onclick = () => { $('credits-card').hidden = true; };
-$('play').onclick = () => { sound.start(); sound.startMusic('theme'); sound.moodMusic('theme'); showMap(); };
+$('play').onclick = async () => {
+  sound.start(); sound.startMusic('theme'); sound.moodMusic('theme');
+  if (!progress.trip && !progress.postcards.length && !Object.keys(progress.stars).length) ensureTrip(await chooseDifficulty());
+  showMap();
+};
 $('to-map').onclick = () => location.href = 'index.html?map';
 $('resume').onclick = () => setPaused(false);
 $('again').onclick = restart; $('again2').onclick = e => { e.preventDefault(); location.href = 'index.html?play'; };
@@ -898,7 +921,7 @@ function frame() {
   last = now;
   t += dt;
   if (game.running && !game.paused) { step(dt, t); drawHud(); }
-  world.update(t, dt, game.quest.gateOpen());
+  world.update(t, dt, game.quest.gateOpen() && game.hasKey);
   bubbles.update(dt);
   fx.update(dt, t);
   if (!game.running && !game.paused) { cam.yaw += dt * 0.08; }     // slow turn behind the title screen

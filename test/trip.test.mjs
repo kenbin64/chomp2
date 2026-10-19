@@ -154,5 +154,20 @@ check('a target is never more than what there is', [1, 3, 8, 13, 60].every(n => 
 }
 check('the rules do not change a trip in place', (() => { const t = T.freshTrip(); const a = T.startAttempt(t, 'park'); T.completeAttempt(t, T.gain(a, 'gate-key'), { objectiveMet: true }); return t.completed.length === 0 && !t.items['gate-key']; })());
 
+// ---- Saved trips ---------------------------------------------------------------------------
+check('no saved trip reads as none', T.readTrip(undefined) === null && T.readTrip({}) === null);
+check('a trip with a made-up difficulty is refused', T.readTrip({ difficulty: 'nightmare' }) === null);
+{
+  const r = T.readTrip({ difficulty: 'easy', completed: ['park', 'narnia'], items: { 'gate-key': 1, bad: -2, junk: 'x' }, visits: { park: 1 }, entered: ['park'] });
+  check('a saved trip keeps real areas and counts only', r.completed.join() === 'park' && r.items['gate-key'] === 1 && !('bad' in r.items) && !('junk' in r.items));
+}
+{
+  const t = T.tripFromProgress({ postcards: ['park', 'esplanade'], stars: { reef: 2 } });
+  check('an old save carries over: finished areas stay finished', ['park', 'esplanade', 'reef'].every(a => T.isCompleted(t, a)));
+  check('...with their main items, so the next area opens', T.canEnter(t, 'kuranda').ok && T.have(t, 'skyrail-pass'));
+  check('...at intermediate', t.difficulty === 'intermediate');
+  check('a brand-new save carries over as an empty trip', T.tripFromProgress({}).completed.length === 0);
+}
+
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

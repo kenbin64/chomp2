@@ -191,6 +191,13 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .pin.locked .dot { display: none; }
 /* "On to the next area" on end screens, when it is open. */
 .end-buttons .next-stop { background: linear-gradient(#a8f08f, #5fc24a); box-shadow: 0 6px 0 #3c8a2c; color: #102030; }
+/* The difficulty choice for a new trip (difficulty-ui.js). */
+.overlay.difficulty { z-index: 60; }
+.difficulty-list { display: grid; gap: 10px; margin-top: 12px; }
+.difficulty-choice { display: grid; gap: 2px; text-align: left; padding: 12px 16px; border-radius: 14px; border: 2px solid rgba(255, 209, 102, 0.4); background: rgba(255, 255, 255, 0.06); color: #eaf4f2; font: inherit; cursor: pointer; }
+.difficulty-choice b { font-size: 20px; color: #ffd166; } .difficulty-choice small { font-size: 14px; opacity: 0.9; }
+.difficulty-choice:hover, .difficulty-choice:focus { border-color: #ffd166; background: rgba(255, 209, 102, 0.15); outline: none; }
+.difficulty-choice.suggested { border-color: rgba(255, 209, 102, 0.8); }
 /* Ken's promo trailer, over the opener. */
 .trailer-box { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 12px; padding: 16px; background: rgba(4, 14, 20, 0.88); }
 .trailer-box video { width: min(960px, 100%); max-height: calc(100% - 90px); border-radius: 14px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); background: #000; }

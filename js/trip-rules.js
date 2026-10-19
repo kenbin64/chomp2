@@ -56,6 +56,24 @@ export function freshTrip(difficulty = 'intermediate') {
   return { difficulty, completed: [], items: {}, visits: {}, entered: [] };
 }
 
+// A saved trip, checked: anything missing or broken comes back as null (no trip yet).
+export function readTrip(t) {
+  if (!t || typeof t !== 'object' || !LEVELS.includes(t.difficulty)) return null;
+  const areas = list => Array.isArray(list) ? list.filter(a => ORDER.includes(a)) : [];
+  const counts = o => o && typeof o === 'object' ? Object.fromEntries(Object.entries(o).filter(([, n]) => Number.isFinite(n) && n > 0)) : {};
+  return { difficulty: t.difficulty, completed: areas(t.completed), items: counts(t.items), visits: counts(t.visits), entered: areas(t.entered) };
+}
+
+// A save from before these rules: the areas already finished (their postcards)
+// count as completed and entered, with their main items, at intermediate, so
+// nobody who has played is locked out of where they have been.
+export function tripFromProgress(progress) {
+  const done = ORDER.filter(a => (progress.postcards || []).includes(a) || ((progress.stars || {})[a] || 0) > 0);
+  const trip = freshTrip('intermediate');
+  for (const a of done) { trip.completed.push(a); trip.entered.push(a); trip.visits[a] = 1; trip.items[CHAIN[a].main] = 1; }
+  return trip;
+}
+
 export const areaIndex = area => ORDER.indexOf(area);
 export const previousArea = area => ORDER[areaIndex(area) - 1] || null;
 export const nextArea = area => ORDER[areaIndex(area) + 1] || null;
