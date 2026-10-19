@@ -154,6 +154,11 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .places dt { text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 800; }
 /* Level start cards sit over Ken's title art, so it is the first thing seen on any page. */
 .overlay.art-bg { background: linear-gradient(rgba(8, 30, 44, 0.45), rgba(8, 30, 44, 0.7)), url(assets/title/opener.webp) center / cover no-repeat; }
+/* A title over the live scene (the zip line: Barron Falls behind it): see-through
+   on the right so the falls show, the card to the left. Phones keep it centred. */
+.overlay.live-view { background: linear-gradient(to right, rgba(8, 30, 44, 0.7), rgba(8, 30, 44, 0.15) 55%, rgba(8, 30, 44, 0)); place-items: center start; }
+.overlay.live-view .card { width: min(440px, 100%); }
+@media (max-width: 700px) { .overlay.live-view { place-items: end center; background: linear-gradient(rgba(8, 30, 44, 0), rgba(8, 30, 44, 0.75) 55%); } }
 /* Ken's promo trailer, over the opener. */
 .trailer-box { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 12px; padding: 16px; background: rgba(4, 14, 20, 0.88); }
 .trailer-box video { width: min(960px, 100%); max-height: calc(100% - 90px); border-radius: 14px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); background: #000; }
