@@ -169,7 +169,9 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
   // model is 1.25 million triangles; each card is 2), and the tree pictures
   // carry on further out.
   const TILE = 14, TILE_INNER = 24, TILE_OUTER = TILE_INNER + 2 * TILE * 0.9 + 1;   // two rows (bandCells steps 0.9 of a tile)
-  for (const c of bandCells(TILE_INNER, TILE_OUTER, STREET.z0 - 30, STREET.z1 + 30, TILE)) trees.add('rainforest', c.x, 0, c.z, 11 + rnd() * 3);
+  // A tile 14 m wide stands about 16 m tall (the fig). It sits on a block of
+  // soil, so each card is sunk 0.7 m to hide the block's brown sides.
+  for (const c of bandCells(TILE_INNER, TILE_OUTER, STREET.z0 - 30, STREET.z1 + 30, TILE)) trees.add('rainforest', c.x, -0.7, c.z, 15 + rnd() * 2);
   const count = q.name === 'high' ? 260 : q.name === 'medium' ? 180 : 100;
   for (let n = 0, tries = 0; n < count && tries < count * 10; tries++) {
     const x = (rnd() * 2 - 1) * 120, z = STREET.z0 - 40 + rnd() * (len + 120);
