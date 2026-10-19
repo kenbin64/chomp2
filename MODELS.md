@@ -210,7 +210,9 @@ triangles), for Blender** (GLB); it is baked down here, with a phone copy.
 |---|---|
 | `river-boat.glb` | A small open-sided river cruise boat for wildlife spotting on a tropical rainforest river in Far North Queensland, about 10 m long and 3.5 m wide: a flat-bottomed white hull with a green stripe, a flat open deck with low wooden bench seats along both sides and a waist-high rail, a light flat canopy roof on thin white posts, the sides completely open so people on board can be seen, a small outboard motor at the stern. Empty, no people. Stylised 3D animated-feature look, same art style as a modern family animated film, detailed hand-painted textures. No words, no logos, no names. |
 
-No words or names on it, so it is not any real operator's boat.
+No words or names on it, so it is not any real operator's boat. **Check every image before 3D (2026-10-19):**
+Meshy's first boat image ignored "no words" and painted a tour company name and a real outboard brand on
+it. Look for lettering, logos and brand names on every generated image, and regenerate if any appear.
 
 ## Kuranda and Barron Falls (level 4, Ken 2026-10-17)
 
