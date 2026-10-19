@@ -332,8 +332,10 @@ people to like him; he ends knowing who he is.
    help with something he brings (Ken, 2026-10-19: no going back to Croc Park; the Daintree crocs do the
    rescue). **Decided (Ken, 2026-10-19):** the mangoes. He has to go back to his stash of mangoes for them,
    then bring them to the crocs: the thing he loved most, now shared, which is what he has learned.
-   **Open:** where the stash is (Proposed: his hiding place, since crocs hide things). Then the crocs push
-   the boat back to shore. **Everything up
+   **Decided (Ken, 2026-10-19):** the stash is his hiding place in the Daintree (crocs hide things), filled
+   with the mangoes he kept over the trip; if it is short, he goes back to an earlier area for more. **The
+   heart of the ending (Ken):** he gives up his beloved mangoes to save the people who fed him all this
+   time. Then the crocs push the boat back to shore. **Everything up
    to the rescue is playable** (Ken, 2026-10-19, rule 12): the race through the rainforest against the
    storm to his stash and on to the crocs, convincing the crocs, leading them to the boat, and the push (Proposed: played, it is something
    to do). Cinema only where nothing can be played: the passengers' cheer, Wally's choice, the
