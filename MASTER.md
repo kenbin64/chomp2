@@ -330,10 +330,12 @@ people to like him; he ends knowing who he is.
 1. **The challenge:** a storm on the river; a cruise boat runs aground and is stuck. Nobody is harmed.
    Wally swings on the vines through the rainforest to reach the wild Daintree crocs and convinces them to
    help with something he brings (Ken, 2026-10-19: no going back to Croc Park; the Daintree crocs do the
-   rescue). **Open:** what the something is (Proposed: mangoes from his stash, the thing he loved most,
-   now shared, which is what he has learned). Then the crocs push the boat back to shore. **Everything up
+   rescue). **Decided (Ken, 2026-10-19):** the mangoes. He has to go back to his stash of mangoes for them,
+   then bring them to the crocs: the thing he loved most, now shared, which is what he has learned.
+   **Open:** where the stash is (Proposed: his hiding place, since crocs hide things). Then the crocs push
+   the boat back to shore. **Everything up
    to the rescue is playable** (Ken, 2026-10-19, rule 12): the race through the rainforest against the
-   storm, convincing the crocs, leading them to the boat, and the push (Proposed: played, it is something
+   storm to his stash and on to the crocs, convincing the crocs, leading them to the boat, and the push (Proposed: played, it is something
    to do). Cinema only where nothing can be played: the passengers' cheer, Wally's choice, the
    celebration. (Crocs sharing with crocs: the game's never-feed-a-crocodile message is about people.)
 2. **The turn (a cinematic):** the passengers, people who threw food to keep him away all game, cheer him.
