@@ -36,6 +36,27 @@ export const TREASURES = {
   shell:    { lane: 1, points: 3, name: 'Cowrie shell' },
   conch:    { lane: 2, points: 5, name: 'Conch shell' },
 };
+// Starfish rest on the seabed (Ken, 2026-10-19: some were too high to touch),
+// as real sea stars do. Wally touches one, never takes it (no animal is
+// harmed); a touch reaches it from the deep lane, just above.
+export const STARFISH_Y = SEABED_Y + 0.15;
+export function canTouchStarfish(wx, wz, depth, sx, sz) {
+  return Math.hypot(wx - sx, wz - sz) < 1.6 && depth - STARFISH_Y < 2.4;
+}
+
+// The giant clam's cell in the coral maze on the open reef (Ken, 2026-10-18): a
+// dead end, not one already holding a pearl, the farthest from the way in, so
+// finding it is part of the maze. Falls back to the farthest cell if there is no
+// free dead end.
+export function clamCell(maze, skip = []) {
+  const taken = new Set(skip.map(p => `${p.c},${p.r}`));
+  const ends = deadEnds(maze).filter(p => !taken.has(`${p.c},${p.r}`));
+  const far = list => list.reduce((b, p) => maze.dist[p.r * maze.cols + p.c] > maze.dist[b.r * maze.cols + b.c] ? p : b, list[0]);
+  if (ends.length) return far(ends);
+  const all = []; for (let r = 0; r < maze.rows; r++) for (let c = 0; c < maze.cols; c++) if (!taken.has(`${c},${r}`)) all.push({ c, r });
+  return far(all);
+}
+
 // n treasures in different cells of a maze (never the entrance or the chest's
 // cell), each a kind chosen at random; the same seed gives the same layout.
 export function treasureSpots(maze, n, seed = 1, skip = []) {

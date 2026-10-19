@@ -4,7 +4,7 @@
 // Pure functions, tested in test/progress.test.mjs; the page saves the result.
 
 import { AREAS } from './quests.js';
-import { readTrip } from './trip-rules.js';
+import { readTrip, canEnter } from './trip-rules.js';
 
 // Several parts of a page write the save (the book, trades, the trader, the
 // outfit shop) while a level holds its own copy; each writes through
@@ -75,8 +75,24 @@ export const BOAT_TICKET_PRICE = 20;                       // gold pieces
 // Kept for older pages: the Skyrail no longer has a fare.
 export const SKYRAIL_FARE = 0;
 
-// What an area still needs before Wally can go in, or null when he can.
+// What each main item is and where it comes from, for the map's "Needs ...".
+const NEED_TEXT = {
+  'gate-key': 'the gate key, from the chest on the bottom of the Croc Park lagoon',
+  'big-golden-mango': 'the Big Golden Mango, from the chest by the Esplanade Lagoon',
+  'skyrail-pass': "the Skyrail pass, from the reef's pirate chest",
+  'gorge-pass': 'the pass from the bottom of the Barron Falls bungee',
+  'boat-ticket': 'the Daintree river-boat ticket',
+};
+
+// What an area still needs before Wally can go in, or null when he can. With a
+// trip (trip-rules.js), the trip's rules decide; a save without one keeps the old checks.
 export function entryNeeds(progress, id) {
+  if (progress.trip) {
+    const e = canEnter(progress.trip, id);
+    if (e.ok) return null;
+    const area = AREAS.find(a => a.id === e.needs);
+    return { what: e.needs || e.why, text: NEED_TEXT[e.needs] || (area ? `${area.name} finished first` : 'the area before it finished') };
+  }
   if (id === 'esplanade' && !progress.badge) return { what: 'badge', text: 'a Croc Park ranger badge: finish Croc Park' };
   if (id === 'reef' && (progress.pearls || 0) < 1) return { what: 'pearls', text: 'a pearl for the giant clam: find pearls on the Esplanade and out on its pier' };
   if (id === 'kuranda' && !progress.skyrail) return { what: 'skyrail', text: 'the Skyrail pass: clear the reef' };

@@ -9,7 +9,7 @@
 
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { SEABED_Y, SWIM_Y, WALL_TOP, LANES, TREASURES, wallBoxes, cellCentre, pearlCells, inMaze, mazePath } from './reef-rules.js';
+import { SEABED_Y, SWIM_Y, WALL_TOP, LANES, TREASURES, wallBoxes, cellCentre, pearlCells, inMaze, mazePath, STARFISH_Y } from './reef-rules.js';
 import { dressedJelly } from '../hazards.js';
 import { mangoModel } from './esplanade-scene.js';
 import { chestModel } from '../chest.js';
@@ -232,7 +232,41 @@ function vent(x, z, inCave) {
   };
 }
 
-// ---- The giant clam at the cave mouth -------------------------------------------------
+// ---- The Skyrail pass, in the pirate chest -------------------------------------------
+function passModel() {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 160; const g = c.getContext('2d');
+  g.fillStyle = '#ffd166'; g.fillRect(0, 0, 256, 160); g.fillStyle = '#1f6f5c'; g.fillRect(0, 0, 256, 44);
+  g.fillStyle = '#ffffff'; g.font = 'bold 30px sans-serif'; g.textAlign = 'center'; g.fillText('SKYRAIL', 128, 33);
+  g.fillStyle = '#102030'; g.font = 'bold 40px sans-serif'; g.fillText('PASS', 128, 100); g.font = '20px sans-serif'; g.fillText('Kuranda', 128, 138);
+  const face = new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(c), emissive: 0x332200, emissiveIntensity: 0.4 }), edge = new THREE.MeshStandardMaterial({ color: 0xffd166 });
+  return new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.02), [edge, edge, edge, edge, face, face]);
+}
+
+// ---- The giant clam, in a dead end of the coral maze ----------------------------------
+// Ken's Meshy model, its two shells apart so the top can open and shut on its
+// hinge (models/clam-top.glb, clam-bottom.glb); the shape built here if they are
+// missing. set(openness): 0 shut, 1 open as modelled.
+export function buildGiantClam(topGltf, bottomGltf, width = 3.4) {
+  if (!topGltf || !bottomGltf) {
+    const c = giantClam(); c.group.scale.setScalar(width / 5.4);
+    return c;
+  }
+  const g = new THREE.Group(), body = new THREE.Group(), hinge = new THREE.Group();
+  const top = topGltf.scene.clone(true), bottom = bottomGltf.scene.clone(true);
+  const tb = new THREE.Box3().setFromObject(top), bb = new THREE.Box3().setFromObject(bottom);
+  // The hinge: where the shells meet at the back (the top shell's far edge in +z).
+  const at = new THREE.Vector3(0, (tb.min.y + bb.max.y) / 2, tb.max.z);
+  hinge.position.copy(at); top.position.sub(at); hinge.add(top);
+  body.add(bottom, hinge);
+  const all = new THREE.Box3().setFromObject(body), s = width / Math.max(all.max.x - all.min.x, all.max.z - all.min.z);
+  body.scale.setScalar(s); body.position.y = -all.min.y * s;
+  body.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  g.add(body);
+  let openness = 1;
+  return { group: g, get openness() { return openness; }, set(o) { openness = o; hinge.rotation.x = -(1 - o) * 0.5; } };
+}
+
+// ---- The giant clam (the shape built in code, when Ken's model is missing) -------------
 function giantClam() {
   const R = 2.7, g = new THREE.Group();
   const big = shellGeometry(R);
@@ -350,9 +384,12 @@ export function buildTreasures(root, shellGltf, spots) {
     const g = new THREE.Group();
     const thing = kind === 'starfish' ? starfish() : kind === 'shell' ? (shellGltf ? kensShell(shellGltf) : cowrie()) : conch();
     g.add(glowSprite(GLOW[kind], 1.6), thing);
-    const y = LANES[TREASURES[kind].lane];
+    // Starfish lie flat on the seabed; shells float at their depths as before.
+    const rests = kind === 'starfish';
+    const y = rests ? STARFISH_Y : LANES[TREASURES[kind].lane];
+    if (rests) thing.rotation.x = -Math.PI / 2;
     g.position.set(x, y, z); root.add(g);
-    return { kind, x, y, z, mesh: g, thing, taken: false, phase: Math.random() * 6 };
+    return { kind, x, y, z, mesh: g, thing, rests, taken: false, touched: false, phase: Math.random() * 6 };
   });
 }
 
@@ -584,17 +621,13 @@ export function buildReef(scene, quality, { maze, outer, jellyGltf = null, coral
   for (const v of vents) root.add(v.group);
 
   // The chest, a fair way in (reef-rules CHEST_DEPTH).
-  const chest = chestModel(mangoModel());
+  const chest = chestModel(passModel());              // the pirate chest holds the Skyrail pass (Ken, 2026-10-18)
   const cp = cellCentre(maze, maze.chest, ox, oz, size);
   chest.group.position.set(cp.x, SEABED_Y, cp.z);
   root.add(chest.group);
 
-  // The giant clam in the cave mouth.
-  const clam = giantClam();
+  // The cave mouth. (The giant clam is in the coral maze now: buildGiantClam.)
   const mouth = { x: ox + caveW, z: oz + (maze.entrance.r + 0.5) * size };
-  clam.group.position.set(mouth.x, SEABED_Y, mouth.z);
-  clam.set(1);
-  root.add(clam.group);
   // An arch of coral over the mouth, so the way in can be seen from afar.
   { const arch = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.7, 10, 24, Math.PI), rock); arch.rotation.y = Math.PI / 2; arch.position.set(mouth.x + 0.4, SEABED_Y, mouth.z); root.add(arch); }
 
@@ -649,7 +682,7 @@ export function buildReef(scene, quality, { maze, outer, jellyGltf = null, coral
   }
 
   return {
-    root, roof, pearls, vents, jellies, clam, mouth, boxes, outerBoxes,
+    root, roof, pearls, vents, jellies, mouth, boxes, outerBoxes,
     chest: { ...chest, x: cp.x, z: cp.z, opened: false, open: 0 },
     update(t, dt) {
       caustics.offset.set(t * 0.02, t * 0.013); surfMap.offset.set(-t * 0.015, t * 0.02);

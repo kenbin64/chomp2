@@ -121,5 +121,21 @@ check('reef stars rise; three are reachable, but only by collecting treasures', 
   check('treasure points add to the score', R.reefRunScore({ found: 2, chest: true, finished: true, airLeft: 50, treasure: 17 }).total === base.total + 17);
 }
 
+// ---- The giant clam's cell and the starfish (Ken, 2026-10-18 and 2026-10-19) --------------
+{
+  const R2 = await import('../js/levels/reef-rules.js');
+  for (const s of [1, 7, 42, 99]) {
+    const m = makeReefMaze(6, 5, s), ends = deadEnds(m), cell = R2.clamCell(m);
+    check(`the clam sits in a dead end (seed ${s})`, ends.some(e => e.c === cell.c && e.r === cell.r));
+    check(`...the farthest dead end from the way in (seed ${s})`, ends.every(e => m.dist[e.r * m.cols + e.c] <= m.dist[cell.r * m.cols + cell.c]));
+    const skip = pearlCells(m, 3), c2 = R2.clamCell(m, skip);
+    check(`...never in a pearl's cell (seed ${s})`, !skip.some(p => p.c === c2.c && p.r === c2.r));
+  }
+  check('starfish rest on the seabed', R2.STARFISH_Y < -11.5 && R2.STARFISH_Y > -12);
+  check('a starfish can be touched from the deep lane', R2.canTouchStarfish(0, 0, -10.6, 0.5, 0));
+  check('...not from the middle lane or the top', !R2.canTouchStarfish(0, 0, -8.6, 0, 0) && !R2.canTouchStarfish(0, 0, -6.6, 0, 0));
+  check('...and not from across a corridor', !R2.canTouchStarfish(0, 0, -10.6, 3, 0));
+}
+
 console.log(`${passed} passed, ${failed} failed`);
 if (failed) process.exitCode = 1;

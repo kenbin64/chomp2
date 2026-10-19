@@ -15,7 +15,7 @@ import { Wally } from '../wally.js';
 import { Input } from '../input.js';
 import { Bubbles } from '../bubbles.js';
 import { Effects } from '../fx.js';
-import { loadModels, dress } from '../models.js';
+import { loadModels, dress, MODEL_FILES } from '../models.js';
 import { usePalmCrown, buildPalm, palmStand } from '../palms.js';
 import { Trees } from '../trees.js';
 import { loadRealism, applySky, surfaceMaterial } from '../realism.js';
@@ -31,12 +31,13 @@ import { LIVES } from '../rules.js';
 import { HumanoidPoser } from '../rig.js';
 import { kennysJar, useJarModel } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
-import { readProgress, completeArea, starsFor, POSTCARDS, bankFinds, wearing, WARDROBE, outfitModel, PROGRESS_CHANGED } from '../progress.js';
+import { readProgress, completeArea, starsFor, POSTCARDS, wearing, WARDROBE, outfitModel, PROGRESS_CHANGED, saveProgress } from '../progress.js';
+import * as Trip from '../trip-rules.js';
 import { showTip } from '../tips.js';
 import { makeMaze, makeReefMaze, mazePath, cellAt, cellCentre, collide, inMaze, airStep, AIR,
          SWIM_Y, SURFACE_Y, SEABED_Y, reefRunScore, REEF_STARS, PEARL_POINTS, CHEST_POINTS,
-         LANES, LANE_NAMES, TREASURES, nextDepth, treasureSpots, canCollect } from './reef-rules.js';
-import { buildReef, buildTreasures, MAZE, OUTER, DIVE, BOUNDS } from './reef-scene.js';
+         LANES, LANE_NAMES, TREASURES, nextDepth, treasureSpots, canCollect, canTouchStarfish, clamCell } from './reef-rules.js';
+import { buildReef, buildTreasures, MAZE, OUTER, DIVE, BOUNDS, buildGiantClam } from './reef-scene.js';
 import { installBook, bookEvent, ability, HiddenFinds, openBook } from '../book.js';
 import { DayNight } from '../daynight.js';
 import { StreetLamps } from '../lamps.js';
@@ -76,7 +77,7 @@ addEventListener('resize', resize); resize();
 const fpsWatch = watchFrameRate(quality, lower => { quality = lower; renderer.setPixelRatio(pixelRatioFor(lower)); resize(); });
 
 const light = touch || quality.name === 'low';
-const models = await loadModels(undefined, { light });
+const models = await loadModels([...MODEL_FILES, 'clam-top', 'clam-bottom', 'pearl-key'], { light });
 useJarModel(models.get('jar'));                    // Ken's jar for Kenny's rescue, when present
 usePalmCrown(models.get('palm-crown'));
 const realism = params.get('real') === '0' ? null : await loadRealism(renderer, { light });
@@ -231,10 +232,33 @@ const game = {
   running: false, paused: false, done: false, time: 0,
   lives: LIVES, air: AIR.max, depth: SURFACE_Y, wantDepth: SURFACE_Y,
   pearls: banked, found: 0, spent: 0, points: 0, mangoes: 0, treasure: 0, treasures: 0, shells: 0,
-  chest: false, doorShut: false, inCave: false, faint: 0, stun: 0, hint: 0,
+  chest: false, inCave: false, faint: 0, stun: 0, hint: 0,
   foursWas: false, diveQueued: false, upQueued: false, climb: 0, guideSaid: false,
 };
-window.chomp = { game, wally, reef, maze, outer, camera, scene, treasures, MAZE };
+
+// The trip's rules (trip-rules.js): the Big Golden Mango to come in the first
+// time (?all opens it, for testing); this dive's level sets how fast air runs out.
+if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progress); }
+const entry = Trip.canEnter(progress.trip, 'reef'), testingAll = params.has('all');
+let attempt = Trip.startAttempt(progress.trip, 'reef', { force: true });
+game.tripDrain = Trip.drainFactor(progress.trip, 'reef', attempt.level);
+game.hasPearlKey = Trip.have(progress.trip, 'pearl-key');           // on a return dive he has it already
+game.keyRise = 9;
+
+// The giant clam (Ken's model) in a dead end of the coral maze on the open reef,
+// shut until it is paid; the pearl key inside rises out when it opens.
+const clam = (() => {
+  const cell = clamCell(outer, pearlCellsOf(outer, OUTER));
+  const at = cellCentre(outer, cell, OUTER.ox, OUTER.oz, OUTER.size);
+  const model = buildGiantClam(models.get('clam-top'), models.get('clam-bottom'));
+  model.group.position.set(at.x, SEABED_Y, at.z); model.set(game.hasPearlKey ? 1 : 0);
+  reef.root.add(model.group);
+  let key = null;
+  const kg = models.get('pearl-key');
+  if (kg) { key = kg.scene.clone(true); const b = new THREE.Box3().setFromObject(key), s = 1.2 / Math.max(b.max.y - b.min.y, b.max.x - b.min.x); key.scale.setScalar(s); key.position.set(at.x, SEABED_Y + 0.8, at.z); key.visible = false; reef.root.add(key); }
+  return { x: at.x, z: at.z, model, key };
+})();
+window.chomp = { game, wally, reef, maze, outer, camera, scene, treasures, MAZE, clam };
 
 // Day and night, and lamps on the jetty and the cay (Ken, 2026-10-18).
 const daynight = new DayNight(scene, { sun });
@@ -257,7 +281,6 @@ function toast_(text, kind = 'good') {
 }
 
 // ---- The ground: jetty, island, and the water above and below the reef -------------
-const doorBox = () => ({ x0: reef.mouth.x - 0.8, x1: reef.mouth.x + 0.8, z0: reef.mouth.z - 2.7, z1: reef.mouth.z + 2.7 });
 setGround({
   stand(x, z, feetY) {
     if (onJetty(x, z) && feetY >= JETTY.y - 0.4) return { y: JETTY.y, surface: 'deck' };
@@ -272,7 +295,7 @@ setGround({
     // The coral maze is walled at every depth (its walls reach almost to the surface);
     // the cave only below its roof.
     let boxes = reef.outerBoxes;
-    if (game.depth < -2.5) boxes = boxes.concat(reef.boxes, game.doorShut ? [doorBox()] : []);
+    if (game.depth < -2.5) boxes = boxes.concat(reef.boxes);
     return collide(x, z, nx, nz, boxes, 0.7);
   },
   foodAt: () => SEABED_Y,
@@ -454,7 +477,7 @@ function step(dt, t) {
 
   // Air: at the top it fills, in a vent it fills, anywhere else under water it runs down.
   const inVent = !atTop && reef.vents.some(v => Math.hypot(wally.pos.x - v.x, wally.pos.z - v.z) < v.r);
-  if (!game.done && game.faint <= 0) { const mode = game.depth > -1.0 ? 'surface' : inVent ? 'vent' : 'under'; game.air = airStep(game.air, mode, mode === 'under' && snorkelling() ? 0 : dt); }   // the Snorkel (gear.js): air stays full
+  if (!game.done && game.faint <= 0) { const mode = game.depth > -1.0 ? 'surface' : inVent ? 'vent' : 'under'; game.air = airStep(game.air, mode, mode === 'under' && snorkelling() ? 0 : mode === 'under' ? dt * game.tripDrain : dt); }   // the trip's difficulty sets how fast air runs out   // the Snorkel (gear.js): air stays full
   if (inVent && game.air < AIR.max - 1 && game.hint <= 0) { toast_('Bubbles! Air filling up', 'good'); game.hint = 4; }
 
   // Pearls.
@@ -471,6 +494,17 @@ function step(dt, t) {
   for (const tr of treasures) {
     if (tr.taken) continue;
     tr.phase += dt;
+    if (tr.rests) {
+      // A starfish (Ken): on the seabed, touched, never taken. A touch makes it glow, once a dive.
+      if (tr.touched) { const k = 1 + Math.sin(tr.phase * 4) * 0.08; tr.thing.scale.setScalar(k); tr.thing.material.emissiveIntensity = 1.6; }
+      if (!tr.touched && !atTop && canTouchStarfish(wally.pos.x, wally.pos.z, game.depth, tr.x, tr.z)) {
+        const T = TREASURES[tr.kind]; tr.touched = true;
+        game.treasure += T.points; game.treasures++; game.points += T.points; bookEvent('starfish');
+        sound.play.goal(); fx.burst(tr.mesh.position.clone(), [0xff9a5a, 0xffd0a0], 10);
+        toast_(`A starfish! It glows where Wally touched it (+${T.points})`, 'good');
+      }
+      continue;
+    }
     tr.thing.rotation.y += dt * 1.6;
     tr.mesh.position.y = tr.y + Math.sin(tr.phase * 2) * 0.12;
     if (!atTop && canCollect(wally.pos.x, wally.pos.z, game.depth, tr.x, tr.z, tr.y)) {
@@ -493,23 +527,32 @@ function step(dt, t) {
       toast_('Box jelly! Lost some air', 'bad');
     }
   }
-  // The chest: open it, take the Golden Mango, and the clam behind him shuts.
+  // The giant clam (Ken): in a dead end of the coral maze. Paid the Big Golden
+  // Mango from the Esplanade, it opens and gives up the pearl key (a trade,
+  // undone if this attempt fails: the mango came from another area).
+  if (!game.hasPearlKey && !atTop && Math.hypot(wally.pos.x - clam.x, wally.pos.z - clam.z) < 3.4) {
+    const t = Trip.trade(progress.trip, attempt, { item: 'big-golden-mango', n: 1 }, { item: 'pearl-key', n: 1 });
+    if (t.ok) {
+      attempt = t.attempt; game.hasPearlKey = true; game.keyRise = 0; bookEvent('clam');
+      sound.play.powerup(); fx.burst(new THREE.Vector3(clam.x, SEABED_Y + 1.5, clam.z), [0xffffff, 0xffd6f0, 0xffd166], 26);
+      toast_('The giant clam takes the Big Golden Mango... and opens. The pearl key!', 'good');
+      bubbles.say(wally.root, 'A key made of pearl! Now for that chest!', 3.4);
+    } else if (game.hint <= 0) { toast_('The giant clam is shut tight. It wants the Big Golden Mango from the Esplanade', 'info'); game.hint = 5; }
+  }
+  clam.model.set(clam.model.openness + ((game.hasPearlKey ? 1 : 0) - clam.model.openness) * Math.min(1, dt * 2));
+  if (clam.key) { clam.key.visible = game.hasPearlKey && game.keyRise < 2.5; if (clam.key.visible) { game.keyRise += dt; clam.key.position.y = SEABED_Y + 0.8 + Math.min(1.6, game.keyRise); clam.key.rotation.y += dt * 2; } }
+  // The pirate chest, at the end of the cave maze: locked until he has the pearl key.
   const ch = reef.chest;
   if (!game.chest && game.inCave && Math.hypot(wally.pos.x - ch.x, wally.pos.z - ch.z) < 2.2) {
-    game.chest = true; ch.opened = true; ch.mango.visible = true; bookEvent('chest');
-    game.mangoes++; game.points += CHEST_POINTS; wally.cheer = 1.2;
-    sound.play.powerup(); fx.burst(new THREE.Vector3(ch.x, SEABED_Y + 1.5, ch.z), [0xffd700, 0xffb51f, 0xffffff], 24);
-    bubbles.say(wally.root, 'Pirate treasure! Crikey!', 3.4);
-    setTimeout(() => { game.doorShut = true; sound.play.land(); fx.shake(0.5, 0.4); toast_('The giant clam snapped shut! Only a pearl will open it', 'bad'); }, 1400);
+    if (game.hasPearlKey) {
+      game.chest = true; ch.opened = true; ch.mango.visible = true; bookEvent('chest');
+      attempt = Trip.gain(attempt, 'skyrail-pass');                    // kept when the reef is completed
+      game.points += CHEST_POINTS; wally.cheer = 1.2;
+      sound.play.powerup(); fx.burst(new THREE.Vector3(ch.x, SEABED_Y + 1.5, ch.z), [0xffd700, 0xffb51f, 0xffffff], 24);
+      toast_('The pearl key fits! The Skyrail pass, the way up to Kuranda', 'good');
+      bubbles.say(wally.root, 'Pirate treasure! Crikey!', 3.4);
+    } else if (game.hint <= 0) { toast_('Locked! The giant clam in the coral maze has the key', 'info'); game.hint = 5; }
   }
-  // The giant clam: a pearl in it opens the way out.
-  if (game.doorShut && Math.hypot(wally.pos.x - reef.mouth.x, wally.pos.z - reef.mouth.z) < 3.2) {
-    if (game.pearls > 0) {
-      game.pearls--; game.spent++; game.doorShut = false; sound.play.goal(); bookEvent('clam');
-      toast_('In goes a pearl... the clam opens!', 'good'); bubbles.say(wally.root, 'Worth every pearl!', 3.2);
-    } else if (game.hint <= 0) { toast_('No pearls left! Search the cave for one', 'bad'); game.hint = 4; }
-  }
-  reef.clam.set(reef.clam.openness + ((game.doorShut ? 0 : 1) - reef.clam.openness) * Math.min(1, dt * 3));
 
   // Out with the treasure and up for air: that is the level.
   if (game.chest && !game.done && game.depth > -1.0 && !inMaze(maze, wally.pos.x, wally.pos.z, MAZE.ox, MAZE.oz, MAZE.size, 1)) {
@@ -561,9 +604,9 @@ function drawHud() {
   $('energy-fill').style.width = `${Math.max(0, game.air / AIR.max * 100)}%`;
   $('feed').classList.toggle('red', game.air < 25);
   $('lives').textContent = '●'.repeat(Math.max(0, game.lives)) + '○'.repeat(Math.max(0, LIVES - game.lives));
-  $('job').textContent = game.chest
-    ? (game.doorShut ? 'Put a pearl in the giant clam to get out!' : 'Out of the cave and up for air!')
-    : game.inCave ? 'Find the pirate chest in the cave' : game.depth > -1.2 ? 'Dive! Follow the guide fish to the coral cave' : 'Follow the guide fish through the coral maze';
+  $('job').textContent = game.chest ? 'Out of the cave and up for air!'
+    : !game.hasPearlKey ? (game.depth > -1.2 ? 'Dive! Find the giant clam in the coral maze' : 'Find the giant clam in a dead end of the coral maze')
+    : game.inCave ? 'Find the pirate chest in the cave' : 'Follow the guide fish to the coral cave';
   // Under water, which depth he is at, and the treasures found (shells, starfish, conches).
   if (game.depth < -1.2) {
     const i = LANES.reduce((b, y, k) => Math.abs(y - game.depth) < Math.abs(LANES[b] - game.depth) ? k : b, 0);
@@ -572,11 +615,13 @@ function drawHud() {
 }
 
 function start() {
+  if (!entry.ok && !testingAll) { toast_('The reef opens with the Big Golden Mango from the Esplanade', 'bad'); return; }
   recordVisit('reef');
+  showTip('clam', 'A giant clam waits in a dead end of the coral maze. Bring it the Big Golden Mango and it gives up the pearl key; the key opens the pirate chest in the cave.');
   sound.start(); sound.startMusic('reef');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true;
-  bubbles.say(wally.root, game.pearls ? `G'day! I've got ${game.pearls} pearl${game.pearls === 1 ? '' : 's'}. Let's find that cave!` : "G'day! Better find some pearls down there.", 3.6, 3);
+  bubbles.say(wally.root, game.hasPearlKey ? "G'day! I've got the pearl key. Let's find that chest!" : "G'day! Somewhere down there is a giant clam...", 3.6, 3);
 }
 
 function setPaused(p) { if (!game.running) return; game.paused = p; $('paused').hidden = !p; }
@@ -588,19 +633,22 @@ function finish(won, why = '') {
   const stars = won ? starsFor(s.total, REEF_STARS) : 0;
   if (won) sound.fanfare();                         // Wally's theme hook: well done, mate
   {
-    // Pearls are a bank across the trip: what was spent at the clam comes off, what was found goes on.
-    // Finished or not, what he found is kept (Ken), seashells included.
-    progress = { ...progress, pearls: Math.max(0, (progress.pearls || 0) - game.spent) };
-    if (won) bookEvent('finish');
-    if (won) progress = completeArea(progress, 'reef', { score: s.total, stars, mangoes: game.mangoes, pearls: game.found, shells: game.shells });
-    else progress = bankFinds(progress, { mangoes: game.mangoes, pearls: game.found, shells: game.shells });
+    // Keep only on completion (trip-rules.js): pearls and shells found, the pearl
+    // key and the Skyrail pass; the Big Golden Mango is spent. A failed dive keeps
+    // nothing, and the Big Golden Mango (from the Esplanade) is still his.
+    if (won) {
+      bookEvent('finish');
+      const done = Trip.completeAttempt(progress.trip, Trip.gain(Trip.gain(attempt, 'pearl', game.found), 'seashell', game.shells), { objectiveMet: true });
+      if (done.ok) progress.trip = done.trip;
+      progress = completeArea(progress, 'reef', { score: s.total, stars, mangoes: game.mangoes, pearls: game.found, shells: game.shells });
+    } else progress.trip = Trip.failAttempt(progress.trip, attempt).trip;
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
   }
   $('result-title').textContent = won ? 'Found the pirate treasure!' : why === 'air' ? 'Out of air!' : 'Not this time';
   $('result-why').textContent = won ? '' : 'Kenny can only bring his jar so many times. Swim up for air sooner, and use the bubble vents.';
   $('result-stars').textContent = won ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
   $('result-lines').innerHTML = '';
-  for (const [label, v] of [['Pearls found', `${game.found} (${s.pearls})`], ['Reef treasures', `${game.treasures}/${treasures.length} (${s.treasure})`], ['Seashells (for the Kuranda markets)', game.shells], ['Pearl spent on the clam', game.spent], ['Pirate chest', s.chest], ['Air left bonus', s.finishBonus], ['Total', s.total]]) {
+  for (const [label, v] of [['Pearls found', `${game.found} (${s.pearls})`], ['Reef treasures', `${game.treasures}/${treasures.length} (${s.treasure})`], ['Seashells (for the Kuranda markets)', game.shells], ['Pearl key from the giant clam', game.hasPearlKey ? 'yes' : 'no'], ['Pirate chest', s.chest], ['Air left bonus', s.finishBonus], ['Total', s.total]]) {
     const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }
   $('postcard').hidden = !won;
