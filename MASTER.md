@@ -331,9 +331,11 @@ people to like him; he ends knowing who he is.
    rivals from Croc Park, push the boat back to shore. (Ken, 2026-10-19. Not circular: he chooses to go
    back, for others; the story ends forward.) **Decided (Ken, 2026-10-19):** the run back to the park is
    a playable race against time to save the boat (swinging the vines, through the rainforest); Wally
-   bringing his new wisdom to the crocs is a cinematic. (Crocs sharing with crocs: the game's
+   bringing his new wisdom to the crocs is a cinematic. **Everything up to the rescue is playable; the
+   rescue itself (the crocs pushing the boat ashore) and all that follows is cinematic, the final payoff**
+   (Ken, 2026-10-19). (Crocs sharing with crocs: the game's
    never-feed-a-crocodile message is about people.)
-2. **The turn:** the passengers, people who threw food to keep him away all game, cheer him.
+2. **The turn (a cinematic):** the passengers, people who threw food to keep him away all game, cheer him.
 3. **The choice (a cinematic, Ken 2026-10-19):** with the boat saved, Wally decides not to go back to Croc Park. He realises he is happy
    to be a crocodile and goes into the Daintree River as a wild croc.
 4. **The celebration (a cinematic, Ken 2026-10-19):** everyone cheers and celebrates, the cast from the whole trip on the bank.
