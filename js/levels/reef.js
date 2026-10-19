@@ -393,14 +393,13 @@ function step(dt, t) {
   sound.underwaterMusic(!atTop);                    // the music goes soft and muffled under water
   game.inCave = !atTop && inMaze(maze, wally.pos.x, wally.pos.z, MAZE.ox, MAZE.oz, MAZE.size);
 
-  // Dive with Shift, come up with Ctrl+Shift (Ken's keys, or the on-screen
-  // buttons). Not up from inside the cave: rock overhead.
+  // Dive with Shift, come up with Space (as in every level), or the on-screen
+  // buttons. Not up from inside the cave: rock overhead.
   const foursPressed = k.fours && !game.foursWas; game.foursWas = k.fours;
-  const ctrlShift = k.fours && k.ctrl, ctrlShiftPressed = ctrlShift && !game.ctrlShiftWas; game.ctrlShiftWas = ctrlShift;
-  const dive = (foursPressed && !k.ctrl) || game.diveQueued;
-  const up = ctrlShiftPressed || game.upQueued;
+  const dive = foursPressed || game.diveQueued;
+  const up = (inWater && k.jump) || game.upQueued;                // in the reef's water there is no jumping: Space is up
   game.diveQueued = game.upQueued = false;
-  // Three depths under water (Ken): Shift one deeper, Ctrl+Shift one up; from
+  // Three depths under water (Ken): Shift one deeper, Space one up; from
   // the top depth, up is the surface (but not inside the cave: rock overhead).
   if (game.faint <= 0 && !game.done && inWater) {
     if (dive) game.wantDepth = nextDepth(game.wantDepth, 1);

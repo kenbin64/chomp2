@@ -595,19 +595,19 @@ function step(dt, t) {
 }
 
 // ---- The lagoon treasure (Ken, 2026-10-18) -----------------------------------------
-// In the water Shift dives to the bottom and Ctrl+Shift comes up (the reef's keys),
-// or the Dive and Up buttons. No croc leap from down there. While he is under,
+// In the water Shift dives to the bottom and Space comes up (as in every level),
+// or the Dive and Up buttons (B and A on a controller). No croc leap from down there. While he is under,
 // the water clears so the player can see him, and the camera looks down more.
 function diveStep(dt, k) {
   const T = PARK_TREASURE, inWater = wally.surface === 'water';
   const foursPressed = k.fours && !game.foursWas; game.foursWas = k.fours;
-  const ctrlShift = k.fours && k.ctrl, ctrlShiftPressed = ctrlShift && !game.ctrlShiftWas; game.ctrlShiftWas = ctrlShift;
-  const dive = (foursPressed && !k.ctrl) || game.diveQueued, up = ctrlShiftPressed || game.upQueued;
+  const underNow = game.depth < T.surfaceY - 0.3;                   // under, Space comes up; at the top it is still the croc leap
+  const dive = foursPressed || game.diveQueued, up = (underNow && k.jump) || game.upQueued;
   game.diveQueued = game.upQueued = false;
   if (inWater && game.nap <= 0) {
     if (dive) game.wantDepth = T.diveY;
     if (up) game.wantDepth = T.surfaceY;
-    if (!game.diveHint && game.time > 3) { game.diveHint = true; toast('Shift dives, Ctrl+Shift comes up', 'info'); }
+    if (!game.diveHint && game.time > 3) { game.diveHint = true; toast('Shift dives, Space comes up', 'info'); }
   }
   if (!inWater || game.nap > 0) game.wantDepth = T.surfaceY;
   game.depth += Math.sign(game.wantDepth - game.depth) * Math.min(Math.abs(game.wantDepth - game.depth), 2.5 * dt);

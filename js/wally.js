@@ -405,8 +405,14 @@ export class Wally {
     this.vel.lerp(want, Math.min(1, dt * (this.airborne ? 2 : 8)));
     this.moveFlat(dt);
 
-    // Jumping: a hop on land, a full croc leap out of the water.
-    if (input.jump && this.grounded) {
+    // Jumping: a hop on land, a full croc leap out of the water. Forgiving, as
+    // platform games are: a press up to 0.15 s before landing still counts when
+    // he lands (a jump buffer), and he can still jump for 0.12 s after stepping
+    // off an edge ("coyote time").
+    this.jumpBuffer = input.jump ? 0.15 : Math.max(0, (this.jumpBuffer || 0) - dt);
+    this.coyote = this.grounded ? 0.12 : Math.max(0, (this.coyote || 0) - dt);
+    if (this.jumpBuffer > 0 && (this.grounded || this.coyote > 0) && this.vy <= 0) {
+      this.jumpBuffer = 0; this.coyote = 0;
       // Standing still, he puts on a show: a big high jump (the Jump move, with a
       // spin). On the run it is a quick straight leap forward (the Leap move).
       this.standingJump = !inWater && Math.hypot(this.vel.x, this.vel.z) < 1.5;

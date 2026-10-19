@@ -162,6 +162,12 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 /* The cinematic intro's captions (the zip line: Barron Falls, then down the gorge). */
 .cine-caption { position: fixed; left: 50%; bottom: 12%; transform: translateX(-50%); padding: 10px 22px; border-radius: 14px; background: rgba(8, 30, 44, 0.55); color: #fff; font-size: clamp(20px, 4vw, 34px); font-weight: 700; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); white-space: nowrap; transition: opacity 0.6s; pointer-events: none; z-index: 5; }
 .cine-caption.fade { opacity: 0; }
+/* Settings on the pause screen (settings-ui.js): steering and first-time tips. */
+.settings { display: grid; gap: 10px; margin: 14px 0 4px; text-align: left; font-size: 16px; }
+.settings label { display: grid; gap: 4px; }
+.settings label.check { display: flex; align-items: center; gap: 8px; }
+.settings select { font: inherit; font-size: 15px; padding: 6px 8px; border-radius: 10px; border: 2px solid rgba(255, 209, 102, 0.4); background: #0e2a3a; color: #eaf4f2; }
+.settings input[type=checkbox] { width: 20px; height: 20px; accent-color: #ffd166; }
 /* Ken's promo trailer, over the opener. */
 .trailer-box { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 12px; padding: 16px; background: rgba(4, 14, 20, 0.88); }
 .trailer-box video { width: min(960px, 100%); max-height: calc(100% - 90px); border-radius: 14px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); background: #000; }

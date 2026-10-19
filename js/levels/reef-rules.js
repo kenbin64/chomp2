@@ -12,7 +12,7 @@ export const WALL_TOP = -5.6;      // maze walls run from the seabed up to here
 
 // ---- Swimming depths (Ken: things to collect at different depths) --------------
 // Under water Wally swims at one of three depths, all inside the coral (below
-// WALL_TOP, above the seabed): Shift takes him one deeper, Ctrl+Shift one up,
+// WALL_TOP, above the seabed): Shift takes him one deeper, Space one up,
 // and from the top one he surfaces.
 export const LANES = [-6.6, SWIM_Y, -10.6];
 export const LANE_NAMES = ['near the top', 'middle', 'down deep'];

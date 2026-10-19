@@ -60,7 +60,7 @@ const POOL_Z = PATH.finish + 4;
 const inPool = (x, z) => z > POOL_Z + 1 && z < POOL_Z + 31 && Math.abs(x) < 12.5;
 const inSea = (x, z) => x < -PATH.half && !inPool(x, z);
 const POOL_WATER = G - 0.3;
-// Swimming under the sea beside the boardwalk: Shift goes under, Ctrl+Shift comes up.
+// Swimming under the sea beside the boardwalk: Shift goes under, Space comes up.
 // The sea's own ground reads seaDive, so it is declared before the ground.
 const SEA_FLOOR = -5.5, SEA_SWIM = -2.6, SEA_TOP = -0.45;
 const seaDive = { under: false, depth: SEA_TOP };
@@ -206,7 +206,7 @@ let toast = null;
 // ---- Controls and state -------------------------------------------------------
 const input = new Input(canvas, touch ? { stick: $('stick'), knob: $('knob'), jump: $('t-jump'), fours: $('t-fours'), pause: $('t-pause'), cam: $('t-cam') } : null);
 input.onPause = () => setPaused(!game.paused);
-// The on-screen Dive and Up buttons (the same as Shift and Ctrl+Shift under water).
+// The on-screen Dive and Up buttons (the same as Shift and Space under water).
 for (const [id, flag] of [['b-dive', 'diveQueued'], ['b-up', 'upQueued']]) {
   $(id).addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); game[flag] = true; });
 }
@@ -433,14 +433,12 @@ function step(dt, t) {
   game.kennyCool -= dt; game.hungry -= dt;
   const napping = game.nap > 0;
   let pace = speedFactor(game.energy) * (game.stun > 0 ? 0.4 : 1) * (game.boost > 0 ? 1.3 : 1);
-  // In the sea: Shift goes under, Ctrl+Shift comes back up (no croc leap while under).
+  // In the sea: Shift goes under, Space comes back up (no croc leap while under).
   const foursPressed = k.fours && !game.foursWas; game.foursWas = k.fours;
   const inTheSea = wally.surface === 'water' && inSea(wally.pos.x, wally.pos.z);
   if (game.faint <= 0 && !napping && !game.done) {
-    // Shift dives, Ctrl+Shift comes up (Ken's keys, as on the reef); Space and
-    // the on-screen buttons still work too.
-    const ctrlShift = k.fours && k.ctrl, ctrlShiftPressed = ctrlShift && !game.ctrlShiftWas; game.ctrlShiftWas = ctrlShift;
-    const dive = (foursPressed && !k.ctrl) || game.diveQueued, up = ctrlShiftPressed || k.jump || game.upQueued;
+    // Shift dives, Space comes up (as in every level), or the on-screen buttons.
+    const dive = foursPressed || game.diveQueued, up = k.jump || game.upQueued;
     if (inTheSea && dive && !seaDive.under) { seaDive.under = true; bubbles.say(wally.root, 'Down I go!', 2); }
     else if (seaDive.under && up) seaDive.under = false;
   }
@@ -681,7 +679,7 @@ function drawHud() {
   $('pearls').textContent = game.pearls;
   $('feed').classList.toggle('air', diving);
   $('meter-label').textContent = diving ? 'Air' : 'Feed-o-meter';
-  $('red-note').textContent = diving ? 'Low on air! Swim up (Ctrl+Shift) or find a bubble vent' : 'In the red! Look out for Kenny and his jar!';
+  $('red-note').textContent = diving ? 'Low on air! Swim up (Space) or find a bubble vent' : 'In the red! Look out for Kenny and his jar!';
   $('energy-fill').style.width = `${Math.max(0, diving ? game.air / AIR.max * 100 : game.energy)}%`;
   $('feed').classList.toggle('red', diving ? game.air < 25 : inRedZone(game.energy));
   $('lives').textContent = '●'.repeat(Math.max(0, game.lives)) + '○'.repeat(Math.max(0, LIVES - game.lives));
