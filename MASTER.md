@@ -334,8 +334,8 @@ people to like him; he ends knowing who he is.
    room. That might be him."
 - **It uses everything still in his stash (Decided):** all that was collected and not spent on other
   requirements goes into the finale (Proposed: mangoes for a feast, pearls as gifts, shells as necklaces,
-  gold for the party boat), and every leftover adds to the trip score. **Open:** a hard minimum, or use
-  whatever is left.
+  gold for the party boat), and every leftover adds to the trip score. **Decided (Ken, 2026-10-19):** it
+  uses what is left, but if there is not enough, Wally goes back for more (under the going-back rules).
 - **Open:** Kenny's farewell (a koala cannot follow Wally into the river).
 
 **What is here (notes so far):** tourists on river boats, swimming, swinging on vines, jumping rock to

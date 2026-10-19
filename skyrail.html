@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>html,body{background:#0b1d27}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b6e8c">
+<title>Skyrail · Chomp 3D: Wally's Cairns Adventure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="cine-caption" class="cine-caption" hidden></div>
+<section id="title" class="overlay live-view">
+  <div class="card">
+    <p class="area">The way up to Kuranda</p>
+    <h1>Skyrail</h1>
+    <p>With the Skyrail pass from the pirate chest, Wally and Kenny ride a gondola from the valley station near Cairns, up over the rainforest canopy and across the Barron Gorge, to the village of Kuranda.</p>
+    <button id="ride" class="go" type="button">Ride the Skyrail</button>
+    <p class="fine"><a href="kuranda.html" id="skip">Skip to Kuranda</a> &middot; any key or tap skips the ride</p>
+  </div>
+</section>
+<script type="module" src="js/levels/skyrail.js"></script>
+</body>
+</html>
