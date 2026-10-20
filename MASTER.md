@@ -63,6 +63,11 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
      already light), `cane-ground.glb` (the cut ground left after the machete), `cane-piece.glb` (one
      piece of cane to pick up), `machete.glb` (a hooked cane knife, the real Queensland cane cutter's
      shape; 3k triangles), each with a phone copy.
+   - **At dusk (Ken, 2026-10-20):** the only light is the moon and the glow of the fires, but light enough
+     to see the cane, the toads and the bats. (The fireglow also shows where the fire is, so the light and
+     the maze are the same thing.)
+   - The cane tile follows Ken's photo of unburned Queensland cane: tall straight yellow stalks with ringed
+     joints, long narrow leaves pointing up (second Meshy tile, 2026-10-20, replaces the first).
    - **Only near Wally (Ken, 2026-10-20):** full cane clumps only close to Wally; after that the field is
      backdrop images (picture cards, as the rainforest trees already use), so it runs on phones.
 3. **The Esplanade: the sun talisman** (Ken, 2026-10-19): the sunny tropical city, the lagoon, the sun on
