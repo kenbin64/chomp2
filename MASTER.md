@@ -41,8 +41,13 @@ through the trip.)
 1. **Croc Park: the key to the gate.** Wally keeps his health up by eating the food the tourists throw,
    without scaring them away. Too close and they run, and he has to start again. When all the food is gone,
    the gate opens, or he receives the key to unlock it.
-2. to 5. **Open:** Proposed: the main item of each later area, so the chain already built becomes the
-   talismans (the Big Golden Mango, the Skyrail pass, Kuranda's item, Mossman's item).
+2. **The Esplanade: the mango talisman** (Ken, 2026-10-19), exchanged for mangoes: Wally trades the
+   mangoes he collects for it.
+- **Keys are just keys** (Ken, 2026-10-19): a key opens a gate or a chest; it is not a talisman.
+- **Open:** Croc Park's talisman, now that the gate key is just a key (above, it was talisman 1).
+- **Open:** the reef clam took the Big Golden Mango for the pearl key; if the mango talisman goes into the
+  sceptre, what does the clam take instead?
+- **Open:** the talismans of the reef, Kuranda and Mossman.
 
 **The core rule** is the sweet spot: close enough to be fed, not so close that people run. **Built**
 (`clusterStep` in `js/rules.js`: they notice, throw, give handouts up close, get nervous, flee; the park
