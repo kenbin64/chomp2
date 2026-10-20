@@ -330,8 +330,10 @@ people to like him; he ends knowing who he is.
 1. **The river:** the Daintree, a river with crocs in it and rainforest on both banks. The tour boat, full
    of the people who threw food all game, runs aground and is stuck. Nobody is harmed.
 2. **Played (rule 12):** Wally swings on vines through the rainforest and gathers **paw paws** (papaya;
-   mangoes were the Esplanade's). **Open:** what the paw paws are for.
+   mangoes were the Esplanade's). **Decided (Ken, 2026-10-19):** the paw paws are his gift for the King.
 3. **Played:** he reaches a treasure chest (rule 9). Inside is **the King Crocodile's sceptre**.
+   **The sceptre's rule (Ken, 2026-10-19):** it only affects the last one who touched it. That is why the
+   King waits for Wally to fetch it: Wally was the last it touched, so only through Wally can it work.
 4. **Cinematic:** Wally returns the sceptre to the King Crocodile, who grants him a wish. Wally wishes
    that all the crocs in Croc Park could be returned to the wild. The King's condition: first they must
    all help get the riverboat back to the bank.
@@ -354,7 +356,8 @@ people to like him; he ends knowing who he is.
 - **Replaced (Ken, 2026-10-19):** the mango version (Wally's mango stash convincing the Daintree crocs,
   and his realisation that he cannot go back to people food). Also dropped earlier: the run back to Croc
   Park, the finale bungee and the Kuranda train.
-- **Open:** how the sceptre made Wally human-like before the trip, and how it came to be in the chest.
+- **Open:** when Wally touched the sceptre before the trip (what made him human-like), and how it came
+  to be in the chest.
 - **Open:** the King Crocodile: a new character to model (a crown, older, bigger).
 - **Open:** what happens to the stash rule (leftovers into the finale and the trip score).
 - **Note:** Croc Park is the game's own park, not a real one, so freeing its crocs is no comment on any
