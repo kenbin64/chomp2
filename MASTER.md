@@ -37,39 +37,36 @@ shows him finding the sceptre and hearing its instructions, never that it change
 
 **Every quest has two parts (Ken, 2026-10-19):** find the key, then find the chest with the talisman.
 
-**The five talismans (Ken, 2026-10-19):** one per area before the Daintree. **The talismans go into the
-sceptre to give it its power** (Ken): each one he wins is set into it. (So Wally carries the sceptre
-through the trip.)
-1. **Croc Park: the key to the gate.** Wally keeps his health up by eating the food the tourists throw,
-   without scaring them away. Too close and they run, and he has to start again. When all the food is gone,
-   the gate opens, or he receives the key to unlock it.
-2. **The Esplanade: the mango talisman** (Ken, 2026-10-19), exchanged for mangoes: Wally trades the
-   mangoes he collects for it.
-3. **The reef: the pearl talisman** (Ken, 2026-10-19).
-4. **The sugar cane fields: the sugar talisman** (Ken, 2026-10-19; the cane fields come back, now with a
-   story). The cane is thick and it is easy to get lost, so the key is **a machete** (Proposed wording: a
-   cane knife, the Queensland cane cutter's tool), which he **must get before going into the field** (Ken,
-   2026-10-19). **Decided (Ken, 2026-10-19):** he gets the machete when he opens the gate of the croc
-   park, keeping rule 3: each area gives him what he needs in the next. (So the cane fields come straight
-   after Croc Park; **Open:** confirm the new order.) With it he beats down a trail and picks up the pieces of sugar
-   cane he needs to get the sugar talisman.
-   - **The fire is never the danger** (Ken): he cannot go where fire is, and fire can never get to him. The
+**The trip: seven areas, seven talismans (Ken, 2026-10-19: "7 is the charm").** **The talismans go into
+the sceptre to give it its power** (Ken): each one he wins is set into it, so Wally carries the sceptre
+through the trip. Keys are just keys: a key opens a gate or a chest; it is not a talisman.
+
+1. **Croc Park.** Wally keeps his health up by eating the food the tourists throw, without scaring them
+   away. Too close and they run, and he has to start again. When all the food is gone, the gate opens, or
+   he receives the key to unlock it. Opening the gate gives him **the machete** he needs in the cane fields
+   (rule 3: each area gives him what he needs in the next). (Proposed wording: a cane knife, the Queensland
+   cane cutter's tool.)
+2. **The sugar cane fields: the sugar talisman.** The cane is thick and it is easy to get lost, so he must
+   have the machete before going in. With it he beats down a trail and picks up the pieces of sugar cane he
+   needs to get the sugar talisman.
+   - **The fire is never the danger:** he cannot go where fire is, and fire can never get to him. The
      burning parts of the field only keep him to certain places, so the field is a hybrid maze, not a
      traditional one.
    - **The danger is the animals:** cane toads with their poison skin (touching one costs him, never kills;
      true to life, toads poison what bites them), and fruit bats that steal his sugar cane or get in his way.
    - **Open:** how the cane pieces get him the talisman (a number of them, like the mangoes for the mango
      talisman, or the price of opening the chest). Nobody dies (rule 8).
-5. **Kuranda: the flower talisman**, won with the boomerang throw (Ken, 2026-10-19).
-6. **The water talisman**, at the bottom of the zip line (Ken, 2026-10-19).
-7. **The paw paw talisman**, the final one, which he brings to the King (Ken, 2026-10-19). (It replaces the
-   paw paws as a gift.)
-- **Keys are just keys** (Ken, 2026-10-19): a key opens a gate or a chest; it is not a talisman.
-- **Open:** the count. Ken first said five talismans; this list has six after Croc Park (mango, pearl,
-  sugar, flower, water, paw paw), and Croc Park's own is still open.
-- **Open:** Croc Park's talisman, now that the gate key is just a key (above, it was talisman 1).
-- **Open:** where the cane fields sit in the trip (Proposed: Mossman, cane country with its sugar mill),
-  and what that means for Mossman Gorge and the bungee.
+3. **The Esplanade: the mango talisman**, exchanged for the mangoes he collects.
+4. **The reef: the pearl talisman.**
+5. **Kuranda: the flower talisman**, won with the boomerang throw, and **the water talisman**, at the bottom
+   of the zip line.
+6. **Mossman: the opal talisman**, after Kuranda. He bungees down and grabs the opal. (The opal is
+   Australia's national gemstone; Queensland's boulder opal comes from the outback, not Mossman, but a
+   talisman can come from anywhere.)
+7. **The Daintree: the paw paw talisman**, the final one, which he brings to the King.
+
+That is seven talismans: sugar, mango, pearl, flower, water, opal, paw paw. Croc Park gives the machete,
+not a talisman.
 - **Open:** the reef clam took the Big Golden Mango for the pearl key; if the mango talisman goes into the
   sceptre, what does the clam take instead?
 
