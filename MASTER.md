@@ -228,7 +228,8 @@ Side games: the boomerang (Kuranda) and the golf course (in the valley by the Sk
    people will throw him food but not to get so close he scares them away (Ken, 2026-10-20). Proposed
    words: "G'day, Wally! I'm Kenny the Koala. You'll need people food now. People will throw you some, but
    don't get so close you scare them away. If you run out of puff, I'll bring you a spoonful from my jar.
-   But only three times in each place, so look after yourself!" (He says nothing of being sent by the King; that is kept for the end.)
+   But only three times in each place, so look after yourself!" Then the first goal (Ken, 2026-10-20):
+   "First you need to find the key to the park. And stay fed, or you'll run out of puff." (He says nothing of being sent by the King; that is kept for the end.)
 5. Instructions and the backstory, in a modal: the quest, the Croc King and the one wish. Normally people
    would not feed a croc, but now he is part human he needs to eat people food; and the King only sees
    humans eating fast food, so he made an assumption. The people are actually afraid of Wally, so they
