@@ -25,6 +25,13 @@ He loves food and he wants to get to know people, so he leaves on an adventure. 
 hoping he will pay attention to the food and not to them. Some are not afraid, and offer to trade for the
 things he has gathered, most of all at the Kuranda markets.
 
+**How it begins (Ken, 2026-10-19):** Wally starts as a regular croc in Croc Park. The King Crocodile
+put his sceptre at the bottom of the park's lake so that whichever croc touched it would become the one
+(Wally): more like a human, able to go out and, in the end, free the park's crocs. Wally touches it, and
+that is why he walks, wears gear and acts like a person. The sceptre only affects the last one who touched
+it. The ending answers this: Wally returns the sceptre in the Daintree and becomes a regular croc again
+(section 6). **Open:** how the sceptre goes from the lake bottom to the Daintree chest.
+
 **The core rule** is the sweet spot: close enough to be fed, not so close that people run. **Built**
 (`clusterStep` in `js/rules.js`: they notice, throw, give handouts up close, get nervous, flee; the park
 sign "Please DON'T feed the croc." in `js/textures.js`).
@@ -356,8 +363,8 @@ people to like him; he ends knowing who he is.
 - **Replaced (Ken, 2026-10-19):** the mango version (Wally's mango stash convincing the Daintree crocs,
   and his realisation that he cannot go back to people food). Also dropped earlier: the run back to Croc
   Park, the finale bungee and the Kuranda train.
-- **Open:** when Wally touched the sceptre before the trip (what made him human-like), and how it came
-  to be in the chest.
+- **Decided (Ken, 2026-10-19):** Wally touched the sceptre at the bottom of the Croc Park lake, where the
+  King put it (see "How it begins"). **Open:** how it came to be in the Daintree chest.
 - **Open:** the King Crocodile: a new character to model (a crown, older, bigger).
 - **Open:** what happens to the stash rule (leftovers into the finale and the trip score).
 - **Note:** Croc Park is the game's own park, not a real one, so freeing its crocs is no comment on any
