@@ -8,10 +8,11 @@
 //   tips      true      show a short tip the first time something is met
 //   music     true      the background music
 //   sfx       true      the sound effects
+//   perf      false     a small frame-rate and detail readout in the corner
 // Changing a setting tells the page (SETTINGS_CHANGED), so open screens update.
 
 const KEY = 'chomp-settings';
-const DEFAULTS = { controls: 'classic', tips: true, music: true, sfx: true };
+const DEFAULTS = { controls: 'classic', tips: true, music: true, sfx: true, perf: false };
 export const SETTINGS_CHANGED = 'chomp-settings-changed';
 
 function load() {

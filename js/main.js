@@ -1047,6 +1047,7 @@ function frame() {
   followCamera(dt);
   const night = daynight.update(game.paused ? 0 : dt, camera);
   lamps.update(dt, night, wally.pos);
+  fpsWatch.focus(opening.phase === 'intro');      // the spiral is the test (Ken): smooth, or the detail comes down
   fpsWatch(dt);
   post.render();
   requestAnimationFrame(frame);
