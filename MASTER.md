@@ -59,14 +59,16 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
      talisman, or the price of opening the chest). Nobody dies (rule 8).
 3. **The Esplanade: the mango talisman**, exchanged for the mangoes he collects.
 4. **The reef: the pearl talisman.**
-5. **Kuranda: the flower talisman**, won with the boomerang throw, and **the water talisman**, at the bottom
+5. **Kuranda: the air talisman** (Ken, 2026-10-19: it replaces the flower talisman), won with the
+   boomerang throw, and **the water talisman**, at the bottom
    of the zip line.
-6. **Mossman: the opal talisman**, after Kuranda. He bungees down and grabs the opal. (The opal is
+6. **Mossman: the opal talisman** (earth), after Kuranda. He bungees down and grabs the opal. (The opal is
    Australia's national gemstone; Queensland's boulder opal comes from the outback, not Mossman, but a
    talisman can come from anywhere.)
 7. **The Daintree: the paw paw talisman**, the final one, which he brings to the King.
 
-That is seven talismans: fire, mango, pearl, flower, water, opal, paw paw. Croc Park gives the machete,
+That is seven talismans: fire, mango, pearl, air, water, opal, paw paw. The four elements are all there:
+fire (the cane fields), air (the boomerang), water (the zip line) and earth (the opal). Croc Park gives the machete,
 not a talisman.
 - **Open:** the reef clam took the Big Golden Mango for the pearl key; if the mango talisman goes into the
   sceptre, what does the clam take instead?
