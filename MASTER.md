@@ -72,7 +72,9 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
      to see the cane, the toads and the bats. (The fireglow also shows where the fire is, so the light and
      the maze are the same thing.)
    - **The hills and mountains of Cairns in the distance (Ken, 2026-10-20):** the rainforest ranges behind
-     the coast, dark against the dusk sky.
+     the coast, dark against the dusk sky, with **Walsh's Pyramid** among them (Ken, 2026-10-20): the steep
+     cone of a mountain that rises straight out of the cane fields south of Cairns, chosen for the iconic
+     view over strict geography (the park is on the northern beaches).
    - The cane tile follows Ken's photo of unburned Queensland cane: tall straight yellow stalks with ringed
      joints, long narrow leaves pointing up (second Meshy tile, 2026-10-20, replaces the first).
    - **Only near Wally (Ken, 2026-10-20):** full cane clumps only close to Wally; after that the field is
