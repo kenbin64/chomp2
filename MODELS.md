@@ -228,14 +228,13 @@ piece, **no rig**. Export **game-ready (about 10k triangles), for Blender** (GLB
 
 **Made 2026-10-19 (Ken's Meshy):** Ken's sceptre came with its own holders: a gold crocodile head with a
 crown and **six hexagonal settings** (top, two upper, two lower, bottom), so the game uses those instead of
-building its own. Baked to 40k (`sceptre.glb` 455 KB, phone 276 KB). **Open:** the seventh setting
-(Proposed: the crocodile's jaws hold the last, the paw paw talisman).
+building its own. Baked to 40k (`sceptre.glb` 455 KB, phone 276 KB). Six settings, six talismans.
 
 **The talismans (Ken's Meshy):** pendants, each a carved bronze frame round its element. The first is
 `talisman-fire.glb` (a flame in a teardrop frame; baked to 16k, 337 KB, phone 175 KB). For the others,
 use the fire talisman as the reference image so they all share the same frame and only the centre changes:
-air, water, the opal (earth), and any still to be decided (mangoes, pearls and paw paws are trade items,
-not talismans). The pendant is not hexagonal, so it does
+air, water, the opal (earth), the sun and the moon: six in all, one per setting (mangoes, pearls and paw
+paws are trade items, not talismans). The pendant is not hexagonal, so it does
 not fit a setting as it is: **Proposed:** the pendant is what Wally finds in the chest and what the screen
 shows; when it goes into the sceptre, its heart (the element) lights the setting as a glowing hex gem in
 its colour, built in the game.

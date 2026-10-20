@@ -57,22 +57,25 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
      true to life, toads poison what bites them), and fruit bats that steal his sugar cane or get in his way.
    - **Open:** how the cane pieces get him the talisman (traded for it, or the price of opening the
      chest). Nobody dies (rule 8).
-3. **The Esplanade:** **Open:** its talisman.
-4. **The reef:** **Open:** its talisman.
+3. **The Esplanade: the sun talisman** (Ken, 2026-10-19): the sunny tropical city, the lagoon, the sun on
+   Trinity Inlet.
+4. **The reef: the moon talisman** (Ken, 2026-10-19): true to life, the reef's corals spawn together a few
+   nights after a late-spring full moon, the largest spawning on Earth, set off by the moon.
 5. **Kuranda: the air talisman** (Ken, 2026-10-19: it replaces the flower talisman), won with the
    boomerang throw, and **the water talisman**, at the bottom
    of the zip line.
 6. **Mossman: the opal talisman** (earth), after Kuranda. He bungees down and grabs the opal. (The opal is
    Australia's national gemstone; Queensland's boulder opal comes from the outback, not Mossman, but a
    talisman can come from anywhere.)
-7. **The Daintree:** the King. **Open:** whether there is a talisman here.
+7. **The Daintree:** the King. No talisman here: the sceptre arrives full.
 
 **Mangoes, pearls, shells and paw paws are not talismans (Ken, 2026-10-19):** they are things to trade, or
 things required to get items or talismans. (This replaces the mango, pearl and paw paw talismans.)
 
-The talismans so far are the four elements: fire (the cane fields), air (the boomerang), water (the zip
-line) and earth (the opal). Croc Park gives the machete, not a talisman.
-- **Open:** how many talismans in all. Ken's sceptre has six settings; the four elements fill four.
+**Six talismans for the sceptre's six settings (Ken, 2026-10-19):** the four elements, fire (the cane
+fields), air (the boomerang), water (the zip line) and earth (the opal), plus the sun (the Esplanade) and
+the moon (the reef). Croc Park gives the machete, not a talisman. **Proposed:** the sun and moon in the top
+and bottom settings, the four elements on the sides.
 - The reef clam can still take the Big Golden Mango for the pearl key: the mango is a trade item, not a
   talisman.
 
