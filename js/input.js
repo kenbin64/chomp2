@@ -6,14 +6,20 @@
 //   turn             camera turn from dragging this frame (radians); turnKeys -1..1 from Q / E
 //   tilt, zoom       camera tilt from dragging, zoom from the wheel (metres)
 //
-// PC:    WASD or arrows to move, Space jump, Shift all fours,
-//        drag the mouse or Q / E to turn the camera, wheel to zoom, C to swing it behind Wally,
-//        Esc or P to pause. Moving is relative to the camera (the standard), or
-//        classic steering if chosen in the settings (settings.js).
+// PC:    WASD or the arrows steer him (Ken, 2026-10-20): up / W runs the way he faces,
+//        left and right turn him, down turns him round. Space jump, Shift all fours.
+//        The mouse: click the game (or Wally) to take the cursor, and moving the mouse
+//        steers him (side to side turns him, up and down tilts the view). A left click
+//        hands the mouse to the camera; a right click (or another left click) gives it
+//        back to Wally. Esc gives the cursor back; a click on the game takes it again.
+//        The wheel zooms. Space jumps (and swims up), Shift dives under (and runs on
+//        all fours on land). Q / E turn the camera, wheel zooms, C swings it behind
+//        him, P pauses. (Camera-relative moving is a setting, settings.js.)
 // Phone: left thumb anywhere on the left half is a joystick, drag on the right
 //        half turns the camera, buttons for Jump and Fours.
 // Game controller (the standard layout: Xbox, PlayStation, Switch Pro): left stick
-//        or d-pad moves, right stick turns the camera, A jumps (and swims up), B or a
+//        or d-pad steers him the same way (up forward, sides turn, down turns round),
+//        right stick turns the camera, A jumps (and swims up), B or a
 //        trigger runs on all fours (and dives), Y swings the camera behind him, Start pauses.
 
 import { settings } from './settings.js';
@@ -33,13 +39,54 @@ export class Input {
     addEventListener('keyup', e => this.key(e, false));
     addEventListener('blur', () => this.keys.clear());
 
+    // The mouse. Click the game to take the cursor (pointer lock); then moving the
+    // mouse steers Wally, and a left click switches it to turning the camera and back
+    // (Ken, 2026-10-20). Right click or Esc gives the cursor back. Without the cursor
+    // taken, dragging turns the camera.
     let drag = null;
-    canvas.addEventListener('mousedown', e => { drag = { x: e.clientX, y: e.clientY }; });
-    addEventListener('mouseup', () => { drag = null; });
+    this.aim = 0; this.mouseMode = 'wally';
+    // Only while a level is being played: not over a menu, card or the map.
+    this.canLock = () => !document.querySelector('.overlay:not([hidden]), .map-modal:not([hidden])');
+    const locked = () => document.pointerLockElement === canvas;
+    // A small label saying what the mouse is doing: steering Wally, turning the camera,
+    // or free (click the game to take it).
+    const chip = document.createElement('div'); chip.className = 'mouse-chip'; document.body.append(chip);
+    this.showChip = () => {
+      chip.textContent = !locked() ? '' : this.mouseMode === 'wally' ? '🖱 Steering Wally · left click: camera · Esc: cursor' : '🖱 Camera · right click: back to Wally · Esc: cursor';
+      chip.hidden = !locked();
+    };
+    this.showChip();
+    canvas.addEventListener('mousedown', e => {
+      if (locked()) {
+        if (e.button === 0) { this.mouseMode = this.mouseMode === 'wally' ? 'camera' : 'wally'; document.body.classList.toggle('mouse-camera', this.mouseMode === 'camera'); this.showChip(); }
+        return;
+      }
+      if (e.button !== 0) return;
+      drag = { x: e.clientX, y: e.clientY, moved: 0 };
+    });
+    addEventListener('mouseup', e => {
+      // A click (not a drag) on the game takes the cursor, while a level is being played.
+      if (drag && drag.moved < 6 && !locked() && this.canLock && this.canLock()) canvas.requestPointerLock?.();
+      drag = null;
+    });
+    // Right click: the mouse back to steering Wally (Ken, 2026-10-20).
+    canvas.addEventListener('contextmenu', e => { e.preventDefault(); if (locked()) { this.mouseMode = 'wally'; document.body.classList.remove('mouse-camera'); this.showChip(); } });
+    document.addEventListener('pointerlockchange', () => {
+      if (!locked()) this.unlockedAt = performance.now();
+      else { this.mouseMode = 'wally'; document.body.classList.remove('mouse-camera'); }
+      document.body.classList.toggle('mouse-steer', locked());
+      this.showChip();
+    });
     addEventListener('mousemove', e => {
+      if (locked()) {
+        if (this.mouseMode === 'wally') this.aim -= e.movementX * 0.0035;
+        else this.turn -= e.movementX * 0.004;
+        this.tilt += e.movementY * 0.0025; return;
+      }
       if (!drag) return;
+      drag.moved += Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y);
       this.turn -= (e.clientX - drag.x) * 0.005; this.tilt += (e.clientY - drag.y) * 0.004;
-      drag = { x: e.clientX, y: e.clientY };
+      drag.x = e.clientX; drag.y = e.clientY;
     });
     canvas.addEventListener('wheel', e => { this.zoom += Math.sign(e.deltaY) * 1.2; e.preventDefault(); }, { passive: false });
 
@@ -52,7 +99,9 @@ export class Input {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
     const k = e.key.toLowerCase();
     if (down && k === ' ' && !this.keys.has(' ')) this.jumpQueued = true;
-    if (down && (k === 'p' || k === 'escape') && !e.repeat && this.onPause) this.onPause();
+    // Esc first gives back the cursor (the browser does that); only an Esc without it pauses.
+    const justUnlocked = performance.now() - (this.unlockedAt || 0) < 300 || document.pointerLockElement;
+    if (down && (k === 'p' || (k === 'escape' && !justUnlocked)) && !e.repeat && this.onPause) this.onPause();
     if (down && k === 'm' && this.onMute) this.onMute();
     if (down && k === 'c') this.recenterQueued = true;
     if (down) this.keys.add(k); else this.keys.delete(k);
@@ -142,14 +191,23 @@ export class Input {
       // Classic steering (a setting) is for the keyboard only: up runs the way he
       // faces, down turns him round, left and right turn him. Otherwise, and
       // always for the phone stick and a controller, moving is relative to the camera.
-      steer: settings.controls === 'classic' && !this.stick && !padMoving,
+      steer: settings.controls === 'classic' && !this.stick,
+      aim: this.aim,                   // the mouse's turn of Wally this frame (radians), with the cursor taken
       jump: this.jumpQueued,
       fours: k.has('shift') || this.foursToggle || !!(pad && pad.fours),
       ctrl: k.has('control'),          // with Shift: come up from a dive (the reef and the sea)
       turn: this.turn, turnKeys, tilt: this.tilt, zoom: this.zoom, recenter: this.recenterQueued,
     };
     this.recenterQueued = false;
-    this.jumpQueued = false; this.turn = 0; this.tilt = 0; this.zoom = 0;
+    this.jumpQueued = false; this.turn = 0; this.tilt = 0; this.zoom = 0; this.aim = 0;
     return out;
   }
+}
+
+// The camera with steering (the default): it swings round behind Wally as he turns,
+// smoothly, so up is always the way he is going. Each level's camera calls this.
+export function steering() { return settings.controls === 'classic'; }
+export function easeBehind(yaw, facing, dt, rate = 3) {
+  const want = facing + Math.PI, d = Math.atan2(Math.sin(want - yaw), Math.cos(want - yaw));
+  return yaw + d * Math.min(1, dt * rate);
 }

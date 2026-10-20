@@ -396,7 +396,7 @@ export class Wally {
       }
       // Turning eases in over a moment, so a tap nudges him a little and a hold sweeps round.
       this.turnRate = (this.turnRate || 0) + ((-input.right * TURN) - (this.turnRate || 0)) * Math.min(1, dt * 10);
-      this.facing += this.turnRate * dt;
+      this.facing += this.turnRate * dt + (input.aim || 0);       // the keys or stick, and the mouse with the cursor taken
       const going = input.forward !== 0 && Math.abs(this.turnLeft || 0) < 0.3 ? 1 : 0;
       want = new THREE.Vector3(Math.sin(this.facing) * going, 0, Math.cos(this.facing) * going);
     } else {

@@ -10,7 +10,7 @@ import { installGear, snorkelling, drainFactor } from '../gear.js';
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
 import { Food, randomKind, useJarModel } from '../food.js';
-import { Input } from '../input.js';
+import { Input, steering, easeBehind } from '../input.js';
 import { Bubbles, pickLine, chatty } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
 import { loadModels, dress } from '../models.js';
@@ -354,7 +354,9 @@ function followCamera(dt) {
       cam.yaw += d * Math.min(1, dt * 0.8);
     } else if (cam.manual <= 0) {
       const dx = camera.position.x - camTarget.x, dz = camera.position.z - camTarget.z;
-      if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz);
+      // Steering (the default): the camera swings round behind him as he turns.
+      if (steering()) cam.yaw = easeBehind(cam.yaw, wally.facing, dt);
+      else if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz);
     }
   }
   const cp = Math.cos(cam.pitch);

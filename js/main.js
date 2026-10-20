@@ -27,7 +27,7 @@ import { Pickups, mangoMaker } from './pickups.js';
 import { installBook, bookEvent, ability, HiddenFinds, openBook } from './book.js';
 import { startTrading, tradeStep } from './trade.js';
 import { startQuest, questStep } from './sidequest.js';
-import { Input } from './input.js';
+import { Input, steering, easeBehind } from './input.js';
 import { Bubbles, pickLine, chatty } from './bubbles.js';
 import { Effects, CRUMBS } from './fx.js';
 import { loadModels } from './models.js';
@@ -847,7 +847,9 @@ function followCamera(dt) {
     } else if (cam.manual <= 0) {
       // The leash: keep the camera where it was and let Wally pull it round.
       const dx = camera.position.x - cam.target.x, dz = camera.position.z - cam.target.z;
-      if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz);
+      // Steering (the default): the camera swings round behind him as he turns.
+      if (steering()) cam.yaw = easeBehind(cam.yaw, wally.facing, dt);
+      else if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz);
     }
   }
   const cp = Math.cos(cam.pitch);

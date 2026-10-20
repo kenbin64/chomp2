@@ -12,7 +12,7 @@ import { installGear, snorkelling } from '../gear.js';
 import * as THREE from 'three';
 import { Water } from 'three/addons/objects/Water.js';
 import { Wally } from '../wally.js';
-import { Input } from '../input.js';
+import { Input, steering, easeBehind } from '../input.js';
 import { Bubbles } from '../bubbles.js';
 import { Effects } from '../fx.js';
 import { loadModels, dress, MODEL_FILES } from '../models.js';
@@ -580,7 +580,9 @@ function followCamera(dt) {
   cam.manual = Math.max(0, cam.manual - dt);
   if (game.running && cam.manual <= 0) {                // on a leash behind him
     const dx = camera.position.x - camTarget.x, dz = camera.position.z - camTarget.z;
-    if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz);
+    // Steering (the default): the camera swings round behind him as he turns.
+    if (steering()) cam.yaw = easeBehind(cam.yaw, wally.facing, dt);
+    else if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz);
   }
   const under = game.depth < -1.2;
   // In a maze, look down into it from steep and close, staying under the surface.

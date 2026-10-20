@@ -16,7 +16,7 @@ import * as Trip from '../trip-rules.js';
 import { CANE, makeField, cellToWorld, worldToCell, walkable, cuttable, cut, startCell, middle, cutsNeeded } from './cane-rules.js';
 import { buildCane } from './cane-scene.js';
 import { Wally } from '../wally.js';
-import { Input } from '../input.js';
+import { Input, steering, easeBehind } from '../input.js';
 import { Bubbles, pickLine } from '../bubbles.js';
 import { Effects } from '../fx.js';
 import { loadModels, dress } from '../models.js';
@@ -387,7 +387,9 @@ function followCamera(dt) {
       // him along the paths he cuts. (Turning it to his heading instead fights the
       // steering, which is relative to the camera, and sends him in circles.)
       const dx = camera.position.x - camTarget.x, dz = camera.position.z - camTarget.z;
-      if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz);
+      // Steering (the default): the camera swings round behind him as he turns.
+      if (steering()) cam.yaw = easeBehind(cam.yaw, wally.facing, dt);
+      else if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz);
     }
   }
   const cp = Math.cos(cam.pitch);
