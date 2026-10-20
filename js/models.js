@@ -24,6 +24,7 @@ export const MODEL_FILES = [
   'food-fries', 'food-pizza', 'food-taco', 'food-hotdog', 'food-shrimp',
   'food-chicken', 'food-hoagie', 'food-hamburger', 'food-steak',
   'palm-1', 'palm-2', 'palm-crown', 'boat', 'jar', 'mango', 'seashell', 'coral', 'streetlamp', 'kuranda-shop', 'kuranda-canopy', 'kuranda-art',
+  'croc-regular', 'sceptre', 'park-key', 'machete',              // the opening in Croc Park, and the way out
 ];
 
 // Load whichever files exist. Returns a Map of name -> loaded glTF.

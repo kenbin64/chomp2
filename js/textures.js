@@ -54,8 +54,10 @@ export function shirtTexture() {
   return toTexture(c, 1);
 }
 
-// The park sign. "DON'T" has been scratched out, which is the whole game.
-export function signTexture() {
+// The park sign. "DON'T" has been scratched out, which is the whole game: Wally
+// does it himself at the start (Ken's storyboard, 2026-10-20). scratched: false
+// paints the sign as the park put it up, before he gets to it.
+export function signTexture({ scratched = true } = {}) {
   const [c, g] = canvas(2048, 1024);
   g.scale(2, 2);
   // planks
@@ -71,6 +73,7 @@ export function signTexture() {
   g.font = 'bold 96px "Trebuchet MS", sans-serif';
   g.fillText("Please DON'T", 512, 290);
   g.fillText('feed the croc.', 512, 420);
+  if (!scratched) return toTexture(c);
   // the scratch-out: rough red marker strokes over DON'T
   g.strokeStyle = '#d6212b'; g.lineCap = 'round'; g.lineWidth = 16;
   const x0 = 545, x1 = 820, y = 258;

@@ -409,10 +409,13 @@ function addRocks(scene) {
   });
 }
 
+// The sign, and a way to scratch it: returned so the opening can paint it clean
+// first and have Wally scratch out "DON'T" himself.
 function addSign(scene) {
   const g = new THREE.Group();
+  const face = mat(0xffffff, { map: signTexture() });
   const board = shadowed(new THREE.Mesh(new THREE.BoxGeometry(4.2, 2.1, 0.16),
-    [mat(0x6e4b2c), mat(0x6e4b2c), mat(0x6e4b2c), mat(0x6e4b2c), mat(0xffffff, { map: signTexture() }), mat(0x6e4b2c)]));
+    [mat(0x6e4b2c), mat(0x6e4b2c), mat(0x6e4b2c), mat(0x6e4b2c), face, mat(0x6e4b2c)]));
   board.position.y = 2.6;
   const post = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.6, 0.3), mat(0x5c3d22)));
   post.position.y = 1.3;
@@ -420,6 +423,8 @@ function addSign(scene) {
   g.position.set(-11, BANK_Y, 20.5);
   g.rotation.y = 0.45;
   scene.add(g);
+  const clean = signTexture({ scratched: false }), scratched = face.map;
+  return { group: g, setScratched(on) { face.map = on ? scratched : clean; face.needsUpdate = true; } };
 }
 
 // A coconut palm (palms.js), with the scanned bark when it is present. yaw is
@@ -537,7 +542,7 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
   const wave = addWater(scene, q, sun);
   addFence(scene);
   addBoardwalk(scene);
-  addSign(scene);
+  const sign = addSign(scene);
   addPalmsAndRocks(scene, q, models, trees);
   trees.build();
   addRocks(scene);
@@ -551,5 +556,5 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
     gate(dt, gateOpen);
     boats.forEach((b, i) => { b.position.y = 0.6 + Math.sin(t * 0.8 + i) * 0.15; b.rotation.z = Math.sin(t * 0.6 + i) * 0.03; });
   };
-  return { update, sun, sky, photo, waterClear: k => wave.clear && wave.clear(k) };
+  return { update, sun, sky, photo, sign, waterClear: k => wave.clear && wave.clear(k) };
 }

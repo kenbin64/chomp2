@@ -11,8 +11,8 @@ import { AREAS } from './quests.js';
 import { readProgress, isOpen, entryNeeds, ACTIVITIES, totalStars, activityOpen } from './progress.js';
 import { mapSvg, pinXY, markerXY, MARKERS } from './tripmap.js';
 
-const PAGES = { park: 'index.html?play', esplanade: 'esplanade.html', reef: 'reef.html', kuranda: 'kuranda.html' };
-const HERE = { 'index.html': 'park', '': 'park', 'esplanade.html': 'esplanade', 'reef.html': 'reef', 'kuranda.html': 'kuranda' }[location.pathname.split('/').pop()];
+const PAGES = { park: 'index.html?play', cane: 'cane.html', esplanade: 'esplanade.html', reef: 'reef.html', kuranda: 'kuranda.html' };
+const HERE = { 'index.html': 'park', '': 'park', 'cane.html': 'cane', 'esplanade.html': 'esplanade', 'reef.html': 'reef', 'kuranda.html': 'kuranda' }[location.pathname.split('/').pop()];
 const testing = new URLSearchParams(location.search).has('all');
 
 function progressNow() { return readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); }

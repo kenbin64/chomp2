@@ -27,6 +27,7 @@ export const REGIONS = {
 // Where each level's pin goes.
 export const PLACES = {
   park:      { lon: 145.665, lat: 16.71 },
+  cane:      { lon: 145.60,  lat: 16.64, dx: -30, dy: 0 },      // the cane country behind the Northern Beaches
   esplanade: { lon: 145.775, lat: 16.92 },
   reef:      { lon: 145.97,  lat: 16.76 },
   kuranda:   { lon: 145.575, lat: 16.835, dx: -40, dy: 0 },

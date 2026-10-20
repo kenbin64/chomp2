@@ -39,6 +39,7 @@ export function completeArea(progress, id, { score = 0, stars = 0, mangoes = 0, 
   if (id === 'park') p.badge = true;                     // the Croc Park ranger badge: the way onto the Esplanade
   if (id === 'reef') p.skyrail = true;                   // clearing the reef earns the Skyrail pass up to Kuranda
   if (!p.postcards.includes(id)) p.postcards.push(id);
+  if (!p.unlocked.includes(id)) p.unlocked.push(id);      // an area reached stays open
   const i = AREAS.findIndex(a => a.id === id);
   const next = AREAS[i + 1];
   if (next && next.ready && !p.unlocked.includes(next.id)) p.unlocked.push(next.id);
@@ -350,6 +351,7 @@ function readWardrobe(w) {
 // A postcard for each area: a real fact about that part of Far North Queensland.
 export const POSTCARDS = {
   park: 'Saltwater crocodiles are the largest living reptiles. Big males can grow longer than 6 metres.',
+  cane: 'Sugar cane has grown around Cairns since the 1880s. Fields were often burned before harvest, to clear the leaves for the cane cutters.',
   esplanade: 'The mudflats along the Cairns Esplanade are a feeding ground for migratory shorebirds, some of which fly in from as far away as Siberia.',
   daintree: 'The Daintree Rainforest is often called one of the oldest rainforests on Earth.',
   mossman: 'Mossman Gorge sits in the traditional country of the Eastern Kuku Yalanji people.',
