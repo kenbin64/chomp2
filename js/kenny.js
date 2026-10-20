@@ -14,7 +14,7 @@ import { HumanoidPoser } from './rig.js';
 const OFFER_TIME = 1.5;
 const REVIVE_SPEED = 6;          // m/s: running flat out to Wally lying down
 const REVIVE_GAP = 1.3;          // m from Wally where he stops to hand over the jar
-const REVIVE_GIVE_UP = 12;       // s: if he cannot get there (Wally out in the water), hand it over anyway           // seconds his Offer move takes: jar held out, set down, stand up
+const REVIVE_GIVE_UP = 4;        // s: if he cannot get there (Wally out in the water), hand it over anyway (12 s looked like a freeze, Ken 2026-10-20)           // seconds his Offer move takes: jar held out, set down, stand up
 const HELP_COOLDOWN = 12;       // seconds before he will set off again after a delivery
 const WHIM_EVERY = 75;          // he also turns up now and then on his own
 const PICKUP = 1.8;

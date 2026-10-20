@@ -14,7 +14,7 @@ import { shirtTexture } from './textures.js';
 import { dress } from './models.js';
 import { rigWally, WallyMotion, shapeFor, HumanoidPoser } from './rig.js';
 
-const SPEED = { upright: 6.5, fours: 9.5, swim: 5.5 };
+const SPEED = { upright: 5.6, fours: 8.2, swim: 4.8 };   // eased (Ken, 2026-10-20: a little quick going forward)
 const JUMP = { land: 8.5, water: 13, show: 11 };   // show: jumping on the spot, for the big Jump move
 const TURN = 2.8;                // keyboard steering: how fast left and right turn him (radians a second)
 const SPIN = 14;                 // and how fast down spins him round
