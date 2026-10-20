@@ -25,12 +25,22 @@ He loves food and he wants to get to know people, so he leaves on an adventure. 
 hoping he will pay attention to the food and not to them. Some are not afraid, and offer to trade for the
 things he has gathered, most of all at the Kuranda markets.
 
-**How it begins (Ken, 2026-10-19):** Wally starts as a regular croc in Croc Park. The King Crocodile
-put his sceptre at the bottom of the park's lake so that whichever croc touched it would become the one
-(Wally): more like a human, able to go out and, in the end, free the park's crocs. Wally touches it, and
-that is why he walks, wears gear and acts like a person. The sceptre only affects the last one who touched
-it. The ending answers this: Wally returns the sceptre in the Daintree and becomes a regular croc again
-(section 6). **Open:** how the sceptre goes from the lake bottom to the Daintree chest.
+**How it begins (Ken, 2026-10-19):** Wally is a regular croc in Croc Park. At the bottom of the park's
+lake he touches the King Crocodile's sceptre, which the King put there so that whichever croc touched it
+would become the one (Wally). The sceptre instructs him to take it up to the King, who will grant him a
+wish. But first he must collect **five talismans**, which are required to get up there. The sceptre only
+affects the last one who touched it.
+
+**The reveal is kept for the end (Ken, 2026-10-19):** the game does not say why Wally is a personified croc
+until the King tells him at the end (section 6). He finds out when the player finds out. So the opening
+shows him finding the sceptre and hearing its instructions, never that it changed him.
+
+**The five talismans (Ken, 2026-10-19):** one per area before the Daintree.
+1. **Croc Park: the key to the gate.** Wally keeps his health up by eating the food the tourists throw,
+   without scaring them away. Too close and they run, and he has to start again. When all the food is gone,
+   the gate opens, or he receives the key to unlock it.
+2. to 5. **Open:** Proposed: the main item of each later area, so the chain already built becomes the
+   talismans (the Big Golden Mango, the Skyrail pass, Kuranda's item, Mossman's item).
 
 **The core rule** is the sweet spot: close enough to be fed, not so close that people run. **Built**
 (`clusterStep` in `js/rules.js`: they notice, throw, give handouts up close, get nervous, flee; the park
