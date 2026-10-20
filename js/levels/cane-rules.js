@@ -22,7 +22,7 @@ export const CANE = {
   clearing: 1,         // the clearing round the middle: cells each way (3 x 3)
   headland: 2,         // rows of cut ground along the south edge, where he starts
   pieceChance: { easy: 0.6, intermediate: 0.45, hard: 0.35 },   // a cut cell drops a piece of cane
-  pieceEnergy: 14,     // energy from one piece
+  pieceEnergy: 16,     // energy from one piece
   lying: { easy: 16, intermediate: 12, hard: 9 },  // pieces left lying on the ground at the start
 };
 

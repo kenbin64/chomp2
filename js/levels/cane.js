@@ -104,19 +104,61 @@ const machete = (() => {
   const blade = gltf ? gltf.scene.clone(true) : new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.6, 0.02), new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.8 }));
   if (gltf) {
     const box = new THREE.Box3().setFromObject(blade), size = box.getSize(new THREE.Vector3());
-    blade.scale.setScalar(0.8 / Math.max(size.x, size.y, size.z));      // a cane knife is about 60 cm; a little more, to read at dusk
+    blade.scale.setScalar(1.05 / Math.max(size.x, size.y, size.z));     // a cane knife is about 60 cm; bigger here, to read at dusk
     blade.rotation.z = -Math.PI / 4;                                     // the model lies on the diagonal: hook up, handle down
-    blade.position.y = 0.3;                                              // the handle at the holder (his hand)
-    blade.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.emissive = new THREE.Color(0x40301c); } });   // catches the firelight
+    blade.position.y = 0.38;                                             // the handle at the holder (his hand)
+    blade.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.emissive = new THREE.Color(0x6a5030); } });   // catches the firelight
   }
   holder.add(blade);
-  // Held upright at his right hand, so it shows from behind and in front; it
-  // swings forward and down through the cane (see step).
-  wally.root.add(holder);
-  holder.position.set(-0.62, 0.95, 0.15);
-  holder.rotation.x = 0.3;
-  return { holder };
+  // In his right hand: it goes where the hand goes. Its angle is set each frame in
+  // Wally's own terms (pose, below), so it does not depend on how the hand bone
+  // happens to be turned in the rig.
+  const bones = {};
+  if (wally.skin) wally.skin.root.traverse(o => { if (o.isBone) bones[o.name] = o; });
+  const hand = bones.RightHand || null;
+  if (hand) {
+    wally.root.updateMatrixWorld(true);
+    hand.add(holder); holder.scale.setScalar(1 / hand.getWorldScale(new THREE.Vector3()).x);
+  } else { wally.root.add(holder); holder.position.set(-0.62, 0.95, 0.15); }
+  return { holder, hand, arm: bones.RightArm || null, forearm: bones.RightForeArm || null };
 })();
+
+// The chop, after the animation has posed him each frame. swing: 0 at rest, then
+// 0..1 through one chop: the arm comes up and back over the shoulder, then down
+// and forward through the cane. Turns are about Wally's own side-to-side axis,
+// worked out in the world and handed to each bone, so the rig's axes do not matter.
+const _q = new THREE.Quaternion(), _qa = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _side = new THREE.Vector3();
+function turnBone(bone, axis, angle) {
+  if (!bone) return;
+  // If nothing re-posed this bone since our last turn (no clip moves it), start
+  // again from where it was before that turn, so turns never pile up frame on frame.
+  const u = bone.userData;
+  if (u.turned && bone.quaternion.equals(u.turned)) bone.quaternion.copy(u.before);
+  u.before = (u.before || new THREE.Quaternion()).copy(bone.quaternion);
+  if (!angle) { u.turned = null; return; }
+  bone.parent.updateWorldMatrix(true, false);
+  bone.updateWorldMatrix(false, false);
+  _qa.setFromAxisAngle(axis, angle).multiply(bone.getWorldQuaternion(_q));
+  bone.quaternion.copy(bone.parent.getWorldQuaternion(_qp).invert().multiply(_qa));
+  u.turned = (u.turned || new THREE.Quaternion()).copy(bone.quaternion);
+}
+function poseMachete(swing) {
+  const rootQ = wally.root.getWorldQuaternion(new THREE.Quaternion());
+  _side.set(1, 0, 0).applyQuaternion(rootQ);
+  // Up over the shoulder (first half), down through the cane (second half).
+  const up = swing > 0 ? Math.sin(Math.min(1, swing / 0.45) * Math.PI / 2) * (swing < 0.45 ? 1 : 1 - (swing - 0.45) / 0.55) : 0;
+  turnBone(machete.arm, _side, -2.3 * up);                   // the arm raised forward and up
+  turnBone(machete.forearm, _side, -0.6 * up);               // the elbow bent, the knife back over the shoulder
+  // The blade: held tip-up and a little forward at rest; back over the shoulder at
+  // the top of the chop; forward and down at the end of it.
+  // (Negative tips it forward, the same way the arm turns forward.)
+  const bladeTilt = swing > 0 ? (swing < 0.45 ? 2.0 * (swing / 0.45) : 2.0 - 3.6 * ((swing - 0.45) / 0.55)) : 0;   // upright at rest
+  const want = rootQ.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), bladeTilt));
+  if (machete.hand) {
+    machete.hand.updateWorldMatrix(true, false);
+    machete.holder.quaternion.copy(machete.hand.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(want));
+  } else machete.holder.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), bladeTilt);
+}
 const bubbles = new Bubbles(scene, touch ? 3 : 4);
 const fx = new Effects(scene, { items: [] });
 
@@ -202,7 +244,7 @@ const game = {
 };
 game.tripDrain = Trip.drainFactor(progress.trip, 'cane', attempt.level);
 const cutsToMiddle = cutsNeeded(field);
-window.chomp = { game, wally, field: () => field, pieces, scene, camera, machete };
+window.chomp = { game, wally, field: () => field, pieces, scene, camera, machete, poseMachete };
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -211,8 +253,9 @@ function toast_(text, kind = 'good') {
 }
 
 // ---- One frame ------------------------------------------------------------------------------
-// High enough to look down over the cane (3.4 m) into the path he is cutting.
-const cam = { yaw: Math.PI, pitch: 0.82, dist: 10, manual: 0, recenter: false, side: 'behind', still: 0 };
+// Above Wally, looking down over the cane (3.4 m) into the path he is cutting,
+// and following behind him through the field (Ken, 2026-10-20).
+const cam = { yaw: Math.PI, pitch: 1.0, dist: 11, manual: 0, recenter: false, side: 'behind', still: 0 };
 const SWING = 0.32;                                          // seconds for one swing of the machete
 
 function step(dt, t) {
@@ -235,7 +278,7 @@ function step(dt, t) {
   if (game.swing > 0) {
     game.swing -= dt;
     const u = 1 - Math.max(0, game.swing) / SWING;
-    machete.holder.rotation.x = 0.3 + Math.sin(u * Math.PI) * 1.5;   // forward and down through the cane, and back up
+    game.chop = u;                                           // how far through the chop (poseMachete)
     if (game.swing <= 0 && game.swingCell) {
       const { i, j } = game.swingCell, r = cut(field, i, j);
       if (r.cut) {
@@ -249,7 +292,7 @@ function step(dt, t) {
       for (const p of pieces) if (p.i === i && p.j === j) p.rest.y = 0.25;   // pieces in that cell are out in the open now
       game.swingCell = null;
     }
-  } else machete.holder.rotation.x += (0.3 - machete.holder.rotation.x) * Math.min(1, dt * 10);
+  } else game.chop = 0;
 
   // Energy: it runs down, slower on easy (trip-rules.js).
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
@@ -329,6 +372,7 @@ function rescueStep(dt, t) {
 // ---- Camera: on a leash behind him, lower than in the open, to look along the paths --------
 const camTarget = new THREE.Vector3();
 function followCamera(dt) {
+  if (window.chomp.camHold) { window.chomp.camHold(camera); return; }   // testing: a fixed camera
   camTarget.lerp(wally.pos.clone().add(new THREE.Vector3(0, 1.5, 0)), Math.min(1, dt * 6));
   cam.manual = Math.max(0, cam.manual - dt);
   if (game.running) {
@@ -339,6 +383,9 @@ function followCamera(dt) {
       const d = Math.atan2(Math.sin(want - cam.yaw), Math.cos(want - cam.yaw));
       cam.yaw += d * Math.min(1, dt * 6); if (Math.abs(d) < 0.02) cam.recenter = false;
     } else if (cam.manual <= 0) {
+      // On a leash: the camera is towed behind him wherever he walks, so it follows
+      // him along the paths he cuts. (Turning it to his heading instead fights the
+      // steering, which is relative to the camera, and sends him in circles.)
       const dx = camera.position.x - camTarget.x, dz = camera.position.z - camTarget.z;
       if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz);
     }
@@ -416,6 +463,7 @@ function frame() {
   if (game.running && !game.paused) step(dt, t);
   bubbles.update(dt); fx.update(dt, t);
   world.update(t, wally.pos);
+  poseMachete(game.chop || 0);
   followCamera(dt);
   fpsWatch(dt);
   renderer.render(scene, camera);
