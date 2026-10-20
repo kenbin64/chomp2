@@ -1,5 +1,7 @@
 // opening.js
 // How the game begins (Ken's storyboard, 2026-10-20; MASTER.md, Croc Park):
+//   0. intro   A cinematic: a slow circle round Croc Park, the "don't feed" sign, then
+//              the camera settles on one ordinary croc: Wally. A few words, then play.
 //   1. croc    The player is one of the ordinary crocs in Croc Park. Tourists mill
 //              about; the sign says not to feed the crocodiles. The job: find the
 //              sceptre on the bottom of the pond (how to dive is shown).
@@ -29,6 +31,16 @@ const KENNY_LINES = [
   "And stay fed, or you'll run out of puff.",
 ];
 const LINE_SECONDS = 2.7;
+
+// The words over the cinematic (Ken: "something like that, in not so many words").
+const INTRO_CIRCLE = 7, INTRO_SIGN = 3.2, CAPTION_SECONDS = 3;
+const INTRO_LINES = [
+  'This is an ordinary crocodile. The park calls him Wally.',
+  "He's no different from any other croc. Except he is.",
+  'You and Wally are off on an adventure around Cairns.',
+  'To begin, swim the pond and find something magical.',
+  'Let the adventure begin!',
+];
 
 // Where the opening's things are: the sign (world.js), a start in the water out
 // from it, and the sceptre on the bottom between there and the middle (away from
@@ -67,7 +79,7 @@ function places(sign) {
 export function createOpening({ scene, models, wally, kenny, clusters, bubbles, fx, world, sound, toast, underWater }) {
   const where = places(world.sign);
   const flash = document.getElementById('flash'), story = document.getElementById('backstory');
-  let phase = null, time = 0, line = -1, onDone = null, sway = null;
+  let phase = null, time = 0, line = -1, onDone = null, sway = null, snapped = false;
 
   // The ordinary croc he starts as: Ken's regular croc, swimming, in place of Wally's model.
   const croc = new THREE.Group();
@@ -98,7 +110,7 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
   carried.visible = false; carried.rotation.set(0.3, 0, 0.55); carried.position.set(0.1, 1.15, -0.32);
   wally.root.add(carried);
 
-  function skipScene() { if (phase === 'change' || phase === 'sign' || phase === 'kenny') time = 999; }
+  function skipScene() { if (phase === 'intro' || phase === 'change' || phase === 'sign' || phase === 'kenny') time = 999; }
   addEventListener('keydown', e => { if (phase && phase !== 'croc' && phase !== 'story' && e.key !== 'Shift') skipScene(); });
   addEventListener('pointerdown', () => { if (phase && phase !== 'croc' && phase !== 'story') skipScene(); });
 
@@ -108,17 +120,32 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
     carried.visible = !asCroc;
   }
 
+  const caption = document.getElementById('cine-caption');
+  function say(text) {
+    if (!caption) return;
+    if (!text) { caption.classList.add('fade'); return; }
+    caption.textContent = text; caption.hidden = false; caption.classList.remove('fade');
+  }
+
   function enter(p) {
     phase = p; time = 0;
-    if (p === 'croc') {
+    if (p === 'intro') {
       setModel(true);
       wally.pos.copy(where.start); wally.root.position.copy(where.start);
       sceptre.visible = true;
       world.sign.setScratched(false);
       kenny.mesh.visible = false;
-      document.getElementById('quest-title').textContent = 'Find the sceptre at the bottom of the pond';
+      line = -1; snapped = false;
+      clusters.showMarks(false);                               // just people in a park, for now
+      for (const id of ['hud', 'touch']) { const e = document.getElementById(id); if (e) e.hidden = true; }
+    }
+    if (p === 'croc') {
+      say(null);
+      document.getElementById('hud').hidden = false;
+      if (matchMedia('(pointer: coarse)').matches) document.getElementById('touch').hidden = false;
+      document.getElementById('quest-title').textContent = 'Find something magical in the pond';
       document.getElementById('goals').innerHTML = '';
-      if (!showTip('opening-dive', "You're one of the crocs in Croc Park. Find the sceptre at the bottom of the pond: steer with W A S D (or the stick), Shift (or Dive) to go under, Space (or Up) to come back up.")) toast('Find the sceptre at the bottom of the pond. Shift to dive', 'info');
+      if (!showTip('opening-dive', 'Swim the pond and find something magical on the bottom. W A S D (or the stick) to swim; Shift (or Dive) to go under; Space (or Up) to come back up.')) toast('Find something magical in the pond. Shift to dive', 'info');
     }
     if (p === 'change') {
       if (flash) { flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go'); }
@@ -137,6 +164,7 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
 
   function finish() {
     phase = null;
+    clusters.showMarks(true);
     try { localStorage.setItem('chomp-opening-done', '1'); } catch { /* it plays again next time */ }
     if (onDone) onDone();
   }
@@ -146,6 +174,14 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
     time += dt;
     if (sway) sway.setPace(Math.min(1, Math.hypot(wally.vel.x, wally.vel.z) / 4));
     sceptre.userData.glow.intensity = 5 + Math.sin(t * 3) * 2;
+    if (phase === 'intro') {
+      // The circle, the sign, then Wally with the words one at a time.
+      const onCroc = time - INTRO_CIRCLE - INTRO_SIGN;
+      const n = onCroc < 0 ? -1 : Math.floor(onCroc / CAPTION_SECONDS);
+      if (n !== line && n < INTRO_LINES.length) { line = n; say(n >= 0 ? INTRO_LINES[n] : null); }
+      if (time > 900 || n >= INTRO_LINES.length) enter('croc');
+      return false;
+    }
     if (phase === 'croc') {
       if (Math.random() < dt * 2) fx.splash(new THREE.Vector3(sceptre.position.x, -0.4, sceptre.position.z), 2);   // bubbles where it lies
       const near = Math.hypot(wally.pos.x - sceptre.position.x, wally.pos.z - sceptre.position.z) < 1.8;
@@ -204,6 +240,12 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
   function shot() {
     if (phase === 'croc' || !phase) return null;
     const front = world.sign.group.rotation.y;
+    if (phase === 'intro') {
+      const snap = !snapped; snapped = true;                    // straight to the first framing, high over the park
+      if (time < INTRO_CIRCLE) return { target: new THREE.Vector3(0, 0, 0), yaw: -1.2 + time * 0.75, pitch: 0.62, dist: 56, snap };
+      if (time < INTRO_CIRCLE + INTRO_SIGN) return { target: world.sign.group.position.clone().add(new THREE.Vector3(0, 2.4, 0)), yaw: front + 0.15, pitch: 0.12, dist: 6.5 };
+      return { target: wally.pos.clone().add(new THREE.Vector3(0, 0.2, 0)), yaw: wally.facing + 0.75, pitch: 0.3, dist: 5.2 };   // close, at his front quarter
+    }
     if (phase === 'change') return { yaw: front + 0.55, pitch: 0.22, dist: 7 };
     if (phase === 'sign') return { yaw: front + 0.25, pitch: 0.18, dist: 7.5 };
     return { yaw: front + 0.75, pitch: 0.25, dist: 7.5 };     // Kenny and the story
@@ -213,7 +255,7 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
     get active() { return !!phase; },
     get phase() { return phase; },
     get sceptreAt() { return sceptre.position; },              // for testing
-    begin(done) { onDone = done; enter('croc'); },
+    begin(done) { onDone = done; enter('intro'); },
     carry() { carried.visible = true; world.sign.setScratched(true); },   // a return visit: he has it, and the sign is scratched
     step, shot,
   };

@@ -160,7 +160,7 @@ body:not(.touch) .dive-buttons { bottom: 110px; }
 .overlay.live-view .card { width: min(440px, 100%); }
 @media (max-width: 700px) { .overlay.live-view { place-items: end center; background: linear-gradient(rgba(8, 30, 44, 0), rgba(8, 30, 44, 0.75) 55%); } }
 /* The cinematic intro's captions (the zip line: Barron Falls, then down the gorge). */
-.cine-caption { position: fixed; left: 50%; bottom: 12%; transform: translateX(-50%); padding: 10px 22px; border-radius: 14px; background: rgba(8, 30, 44, 0.55); color: #fff; font-size: clamp(20px, 4vw, 34px); font-weight: 700; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); white-space: nowrap; transition: opacity 0.6s; pointer-events: none; z-index: 5; }
+.cine-caption { position: fixed; left: 50%; bottom: 12%; transform: translateX(-50%); padding: 10px 22px; border-radius: 14px; background: rgba(8, 30, 44, 0.55); color: #fff; font-size: clamp(20px, 4vw, 34px); font-weight: 700; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); white-space: normal; max-width: min(90vw, 980px); width: max-content; text-align: center; transition: opacity 0.6s; pointer-events: none; z-index: 5; }
 .cine-caption.fade { opacity: 0; }
 /* Settings on the pause screen (settings-ui.js): steering and first-time tips. */
 .settings { display: grid; gap: 10px; margin: 14px 0 4px; text-align: left; font-size: 16px; }

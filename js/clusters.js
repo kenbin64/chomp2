@@ -92,6 +92,12 @@ export class Clusters {
     return c;
   }
 
+  // The game's marks on each group (the sweet-spot rings and the food count): off
+  // during the opening, when the visitors are just people in the park.
+  showMarks(on) {
+    for (const c of this.list) { c.outer.visible = c.inner.visible = on; if (!c.fled) c.sign.visible = on; }
+  }
+
   // Some groups are traders this visit (trade-rules.js): a random pick now,
   // and the same chance for every group that arrives later.
   enableTraders(chance = 0.25) {

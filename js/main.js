@@ -749,6 +749,7 @@ function openingStep(dt, t) {
   const steering = opening.step(dt, t);
   const still = { forward: 0, right: 0, jump: false, fours: false, turn: 0, turnKeys: 0, tilt: 0, zoom: 0 };
   if (steering) diveStep(dt, k); else { game.wantDepth = PARK_TREASURE.surfaceY; diveStep(dt, still); }
+  if (opening.phase === 'intro') $('dive-buttons').hidden = true;      // not during the cinematic
   const was = wally.pos.clone();
   for (const e of wally.update(dt, steering ? { ...k, jump: false } : still, cam.yaw, 1)) {
     if (e === 'splash') { sound.play.splash(); fx.splash(wally.pos, 20); }
@@ -816,10 +817,12 @@ function introStep(dt) {
 }
 
 function followCamera(dt) {
-  const goal = wally.pos.clone().add(new THREE.Vector3(0, 1.6, 0));
-  cam.target.lerp(goal, Math.min(1, dt * 6));
-  cam.manual = Math.max(0, cam.manual - dt);
   const shot = opening.active && opening.shot();
+  // The opening's cinematic can look at something other than Wally (the park, the sign).
+  const goal = shot && shot.target ? shot.target : wally.pos.clone().add(new THREE.Vector3(0, 1.6, 0));
+  cam.target.lerp(goal, Math.min(1, dt * (shot && shot.target ? 2.5 : 6)));
+  if (shot && shot.snap) { cam.target.copy(goal); cam.yaw = shot.yaw; cam.pitch = shot.pitch; cam.dist = shot.dist; }
+  cam.manual = Math.max(0, cam.manual - dt);
   if (shot) {
     // A scene of the opening: the camera eases to its framing of Wally.
     const d = Math.atan2(Math.sin(shot.yaw - cam.yaw), Math.cos(shot.yaw - cam.yaw)), e = Math.min(1, dt * 2.5);
