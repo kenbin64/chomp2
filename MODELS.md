@@ -236,6 +236,13 @@ use the fire talisman as the reference image so they all share the same frame an
 air, water, the opal (earth), the sun and the moon: six in all, one per setting (mangoes, pearls and paw
 paws are trade items, not talismans).
 
+**All the talismans have the same sides** (Ken, 2026-10-20): one frame for all six, front, edges and
+back alike, so only the centre (the element) differs. Make each from the fire talisman as the reference.
+
+**Every model is checked from all sides before it goes in** (Ken, 2026-10-20): front, side, back and top in
+the game's own renderer (`tools/view-model.html`), looking for colour patches or squares on the sides
+that the front view hides.
+
 **The moon talisman is a full moon, as seen from Australia** (Ken): never a crescent (it has religious
 meaning). From the southern hemisphere the full moon's dark patches appear turned about 180 degrees from
 the northern view most pictures show. Meshy will likely make the northern view; if so, the moon disc is
