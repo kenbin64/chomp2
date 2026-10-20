@@ -60,7 +60,9 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
 3. **The Esplanade: the sun talisman** (Ken, 2026-10-19): the sunny tropical city, the lagoon, the sun on
    Trinity Inlet.
 4. **The reef: the moon talisman** (Ken, 2026-10-19): true to life, the reef's corals spawn together a few
-   nights after a late-spring full moon, the largest spawning on Earth, set off by the moon.
+   nights after a late-spring full moon, the largest spawning on Earth, set off by the moon. **A full moon, as Australia sees it** (Ken, 2026-10-19): not a crescent, which
+   has religious meaning; and turned the way it looks from the southern hemisphere, upside down from the
+   northern view.
 5. **Kuranda: the air talisman** (Ken, 2026-10-19: it replaces the flower talisman), won with the
    boomerang throw, and **the water talisman**, at the bottom
    of the zip line.

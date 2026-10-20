@@ -234,7 +234,12 @@ building its own. Baked to 40k (`sceptre.glb` 455 KB, phone 276 KB). Six setting
 `talisman-fire.glb` (a flame in a teardrop frame; baked to 16k, 337 KB, phone 175 KB). For the others,
 use the fire talisman as the reference image so they all share the same frame and only the centre changes:
 air, water, the opal (earth), the sun and the moon: six in all, one per setting (mangoes, pearls and paw
-paws are trade items, not talismans). The pendant is not hexagonal, so it does
+paws are trade items, not talismans).
+
+**The moon talisman is a full moon, as seen from Australia** (Ken): never a crescent (it has religious
+meaning). From the southern hemisphere the full moon's dark patches appear turned about 180 degrees from
+the northern view most pictures show. Meshy will likely make the northern view; if so, the moon disc is
+turned 180 degrees here, or use a photo of the full moon taken in Australia as the reference. The pendant is not hexagonal, so it does
 not fit a setting as it is: **Proposed:** the pendant is what Wally finds in the chest and what the screen
 shows; when it goes into the sceptre, its heart (the element) lights the setting as a glowing hex gem in
 its colour, built in the game.
