@@ -49,7 +49,9 @@ through the trip.)
 4. **The sugar cane fields: the sugar talisman** (Ken, 2026-10-19; the cane fields come back, now with a
    story). The cane is thick and it is easy to get lost, so the key is **a machete** (Proposed wording: a
    cane knife, the Queensland cane cutter's tool), which he **must get before going into the field** (Ken,
-   2026-10-19). **Open:** where he finds it. With it he beats down a trail and picks up the pieces of sugar
+   2026-10-19). **Decided (Ken, 2026-10-19):** he gets the machete when he opens the gate of the croc
+   park, keeping rule 3: each area gives him what he needs in the next. (So the cane fields come straight
+   after Croc Park; **Open:** confirm the new order.) With it he beats down a trail and picks up the pieces of sugar
    cane he needs to get the sugar talisman.
    - **The fire is never the danger** (Ken): he cannot go where fire is, and fire can never get to him. The
      burning parts of the field only keep him to certain places, so the field is a hybrid maze, not a
