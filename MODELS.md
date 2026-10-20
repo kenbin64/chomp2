@@ -226,7 +226,23 @@ piece, **no rig**. Export **game-ready (about 10k triangles), for Blender** (GLB
 |---|---|
 | `sceptre.glb` | A royal sceptre for a crocodile king, about 1 m long: a straight shaft of dark polished wood wrapped with bands of old gold, a gold grip with a scale pattern like crocodile skin, and at the top a rounded gold head shaped like a stylised crocodile's crown with a smooth plain band around it. No gems, no jewels, no holes, plain gold where jewels would go. Standing upright. Stylised 3D animated-feature look, same art style as a modern family animated film, detailed hand-painted textures. No words or logos. |
 
-**Made 2026-10-19 (Ken's Meshy):** Ken's sceptre came with its own holders: a gold crocodile head with a
+**Second version (Ken, 2026-10-20):** the sceptre is to match the King's garments, reflecting the
+rainforest and the river, and **each of the six settings is made in the style of the talisman that goes
+in it**, so the player can see where each one belongs. The layout is heaven above, earth below:
+
+| | left | centre | right |
+|---|---|---|---|
+| top (heaven) | moon | **sun** (top) | air (Proposed: Ken wrote "earth" here and again at the bottom) |
+| bottom (earth) | water | **earth, the opal** (bottom) | fire |
+
+| File | Prompt |
+|---|---|
+| `sceptre.glb` (v2) | A royal sceptre for the crocodile king of a tropical rainforest river, about 1 m long. The shaft is dark polished rainforest wood carved like a twisting vine, wrapped with green leaves and gold bands, with flowing silver-blue lines like a river running down it, and a grip with a crocodile scale pattern. At the top a gold crocodile head wearing a crown, surrounded by six empty jewel settings, three above the head and three below, each setting shaped and decorated for its own element: at the very top a golden sunburst setting; upper left a silver setting with stars for the moon; upper right a setting of swirling wind ribbons for air; at the very bottom a setting of rough rock and roots for an opal; lower left a setting of silver waves for water; lower right a setting of gold flames for fire. The settings are empty, no gems in them. Standing upright. Stylised 3D animated-feature look, same art style as a modern family animated film, detailed hand-painted textures. No words or logos. |
+
+Meshy may not get six different settings right from words alone. If not: make a picture of it first (text
+to image), clear its background (`tools/clear-background.py`), then image to 3D from that.
+
+**Made 2026-10-19 (Ken's Meshy, first version):** Ken's sceptre came with its own holders: a gold crocodile head with a
 crown and **six hexagonal settings** (top, two upper, two lower, bottom), so the game uses those instead of
 building its own. Baked to 40k (`sceptre.glb` 455 KB, phone 276 KB). Six settings, six talismans.
 
