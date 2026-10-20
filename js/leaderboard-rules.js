@@ -3,10 +3,10 @@
 // 2026-10-17), and tested: which names are allowed, which scores are
 // believable, and how a board is kept. Plain JavaScript, no three.js.
 
-export const LEVELS = ['park', 'esplanade', 'reef', 'kuranda'];
+export const LEVELS = ['park', 'cane', 'esplanade', 'reef', 'kuranda'];
 // The most a run can believably score on each level, with room to spare. A
 // score above this is refused (a cheat or a bug, not a record).
-export const MAX_SCORE = { park: 600, esplanade: 1200, reef: 800, kuranda: 700 };
+export const MAX_SCORE = { park: 600, cane: 2500, esplanade: 1200, reef: 800, kuranda: 700 };
 export const BOARD_SIZE = 10;
 
 // A few words a family game should not show. Checked inside names too, with
