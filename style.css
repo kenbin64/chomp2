@@ -422,3 +422,9 @@ body.touch .gear-use { bottom: 224px; }
 .zip-line-btn { font: inherit; padding: 8px 16px; border-radius: 999px; border: 2px solid rgba(255,209,102,0.5); background: transparent; color: inherit; cursor: pointer; }
 .zip-line-btn.on { background: #ffd166; color: #102030; }
 .zip-tickets { color: #8fd3c7; font-weight: 700; }
+
+/* The opening (opening.js): the flash when the sceptre changes the croc into Wally. */
+.flash { position: fixed; inset: 0; background: radial-gradient(circle at 50% 55%, #fffbe6 0%, #ffe9a0 45%, rgba(255, 233, 160, 0) 100%); opacity: 0; pointer-events: none; z-index: 6; }
+.flash.go { animation: flash-go 1.4s ease-out; }
+@keyframes flash-go { 0% { opacity: 0; } 18% { opacity: 1; } 40% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .flash.go { animation-duration: 0.6s; } }
