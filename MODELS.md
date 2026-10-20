@@ -226,9 +226,18 @@ piece, **no rig**. Export **game-ready (about 10k triangles), for Blender** (GLB
 |---|---|
 | `sceptre.glb` | A royal sceptre for a crocodile king, about 1 m long: a straight shaft of dark polished wood wrapped with bands of old gold, a gold grip with a scale pattern like crocodile skin, and at the top a rounded gold head shaped like a stylised crocodile's crown with a smooth plain band around it. No gems, no jewels, no holes, plain gold where jewels would go. Standing upright. Stylised 3D animated-feature look, same art style as a modern family animated film, detailed hand-painted textures. No words or logos. |
 
-The talismans are small (about 4 cm) and all one shape so they fit the same holder: Proposed, built in the
-game as round glowing gems with each one's colour and look (fire, air, water, the opal's play of colour,
-the mango, the pearl, the paw paw), unless Ken wants them from Meshy.
+**Made 2026-10-19 (Ken's Meshy):** Ken's sceptre came with its own holders: a gold crocodile head with a
+crown and **six hexagonal settings** (top, two upper, two lower, bottom), so the game uses those instead of
+building its own. Baked to 40k (`sceptre.glb` 455 KB, phone 276 KB). **Open:** the seventh setting
+(Proposed: the crocodile's jaws hold the last, the paw paw talisman).
+
+**The talismans (Ken's Meshy):** pendants, each a carved bronze frame round its element. The first is
+`talisman-fire.glb` (a flame in a teardrop frame; baked to 16k, 337 KB, phone 175 KB). For the other six,
+use the fire talisman as the reference image so all seven share the same frame and only the centre changes:
+air, water, the opal (earth), the mango, the pearl, the paw paw. The pendant is not hexagonal, so it does
+not fit a setting as it is: **Proposed:** the pendant is what Wally finds in the chest and what the screen
+shows; when it goes into the sceptre, its heart (the element) lights the setting as a glowing hex gem in
+its colour, built in the game.
 
 ## Kuranda and Barron Falls (level 4, Ken 2026-10-17)
 
