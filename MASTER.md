@@ -66,7 +66,9 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
      already light), `cane-ground.glb` (the cut ground left after the machete), `cane-piece.glb` (one
      piece of cane to pick up), `machete.glb` (a hooked cane knife, the real Queensland cane cutter's
      shape; 3k triangles), each with a phone copy.
-   - **At dusk (Ken, 2026-10-20):** the only light is the moon and the glow of the fires, but light enough
+   - **At dusk (Ken, 2026-10-20):** a bit of sunset still in the sky to help light things up (true to the
+     place: from the coast the sun sets behind the ranges, so the hills stand dark against the glow); the
+     other light is the moon and the glow of the fires, but light enough
      to see the cane, the toads and the bats. (The fireglow also shows where the fire is, so the light and
      the maze are the same thing.)
    - **The hills and mountains of Cairns in the distance (Ken, 2026-10-20):** the rainforest ranges behind
