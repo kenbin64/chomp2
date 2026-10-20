@@ -220,7 +220,8 @@ Side games: the boomerang (Kuranda) and the golf course (in the valley by the Sk
    crocs, and the player controls one of the regular crocs: this will be Wally.
 2. Instructions: find the sceptre at the bottom of the pond, and how to move the croc to the bottom.
 3. He finds the sceptre and magically transforms into Wally, upright, next to the sign. He scratches off
-   the "not" so it reads "feed the croc", and magically the people start throwing food.
+   the "not" so it reads "feed the croc", and magically the people start throwing food. **Wally's first
+   thought bubble (Ken, 2026-10-20):** "Crikey! I'm like a human bloke."
 4. Instructions and the backstory, in a modal: the quest, the Croc King and the one wish. Normally people
    would not feed a croc, but now he is part human he needs to eat people food; and the King only sees
    humans eating fast food, so he made an assumption. The people are actually afraid of Wally, so they
@@ -233,8 +234,10 @@ Side games: the boomerang (Kuranda) and the golf course (in the valley by the Sk
   talismans, the need for people food. Everything else waits for the end: why the King put the sceptre
   in the pond (to free his people), that Kenny was sent by the King, and that Wally may choose to be a
   normal croc again.
-- **Needs:** a regular croc model (`croc.glb`, on all fours, rigged to walk and swim); the rival crocs use
-  a stand-in built from shapes today. The sign today reads "Please DON'T feed the croc." (`js/textures.js`).
+- **The regular croc (Ken's Meshy, 2026-10-20):** one model for the player's croc before the change, the
+  other crocs in the park and the crocs in rivers like the Daintree. Realistic, all four legs splayed (a
+  good pose to rig). Baked to 20k (386 KB, phone 181 KB), kept aside until it is rigged: as `croc.glb` it
+  would replace the moving stand-in crocs with still ones. **Needs:** a rig with walk, swim and idle. The sign today reads "Please DON'T feed the croc." (`js/textures.js`).
 
 **What is here (Built):** groups of visitors round the lagoon who throw food from the boardwalk. Thieves:
 pelicans, flying foxes, cane toads and other crocs. Box jellyfish sting. Kenny brings his jar when Wally
