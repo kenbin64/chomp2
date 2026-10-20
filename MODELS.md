@@ -214,6 +214,22 @@ No words or names on it, so it is not any real operator's boat. **Check every im
 Meshy's first boat image ignored "no words" and painted a tour company name and a real outboard brand on
 it. Look for lettering, logos and brand names on every generated image, and regenerate if any appear.
 
+## The King Crocodile's sceptre (the whole trip, Ken 2026-10-19)
+
+Wally carries it from the bottom of the Croc Park lake to the King in the Daintree, and the seven talismans
+are set into it as he wins them. **The holders for the talismans are built in the game, not by Meshy**:
+seven gold claw settings placed round the head, empty until each talisman is won, so they line up exactly
+and can light up one by one. So the sceptre itself is made **plain, with no gems and no holes**. One solid
+piece, **no rig**. Export **game-ready (about 10k triangles), for Blender** (GLB).
+
+| File | Prompt |
+|---|---|
+| `sceptre.glb` | A royal sceptre for a crocodile king, about 1 m long: a straight shaft of dark polished wood wrapped with bands of old gold, a gold grip with a scale pattern like crocodile skin, and at the top a rounded gold head shaped like a stylised crocodile's crown with a smooth plain band around it. No gems, no jewels, no holes, plain gold where jewels would go. Standing upright. Stylised 3D animated-feature look, same art style as a modern family animated film, detailed hand-painted textures. No words or logos. |
+
+The talismans are small (about 4 cm) and all one shape so they fit the same holder: Proposed, built in the
+game as round glowing gems with each one's colour and look (fire, air, water, the opal's play of colour,
+the mango, the pearl, the paw paw), unless Ken wants them from Meshy.
+
 ## Kuranda and Barron Falls (level 4, Ken 2026-10-17)
 
 For every one: add the style line *"Stylised 3D animated-feature look, same art style as a modern family
