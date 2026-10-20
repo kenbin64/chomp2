@@ -482,6 +482,12 @@ export class Wally {
     const nx = this.pos.x + this.vel.x * dt;
     let nz = this.pos.z + this.vel.z * dt;
     const c = ground.move(this.pos.x, this.pos.z, nx, nz, this.pos.y);
+    // Stopped by a rock he can climb (ground.climb): a hop up onto it, the way he
+    // would scramble up; anything higher, he has to jump for.
+    if (this.grounded && ground.climb && (Math.abs(c.x - nx) > 1e-4 || Math.abs(c.z - nz) > 1e-4)) {
+      const top = ground.climb(nx, nz, this.pos.y);
+      if (top !== null) { this.vy = Math.sqrt(2 * FALL * (top - this.pos.y + 0.45)); this.grounded = false; this.fromWater = false; }
+    }
     this.pos.x = c.x; this.pos.z = c.z;
   }
 

@@ -20,7 +20,7 @@ import * as Trip from './trip-rules.js';
 import { chooseDifficulty } from './difficulty-ui.js';
 import { createOpening, openingDue, resetOpening } from './opening.js';
 import { addSwimSway, tickSwim } from './swim.js';
-import { setGround, parkGround } from './ground.js';
+import { setGround, parkGround, addSolid } from './ground.js';
 import { DayNight } from './daynight.js';
 import { StreetLamps } from './lamps.js';
 import { Pickups, mangoMaker } from './pickups.js';
@@ -248,7 +248,9 @@ const hidden = new HiddenFinds(scene, [
   ...Array.from({ length: 10 }, (_, i) => { const a = i / 10 * Math.PI * 2 + 0.3, x = Math.cos(a) * LAGOON.rx * 1.33, z = Math.sin(a) * LAGOON.rz * 1.33; return { x, y: Math.max(0, terrainHeight(x, z)), z }; }),
   ...ROCKS.map(r => { const x = r.x + r.r + 0.6, z = r.z; return { x, y: Math.max(0, terrainHeight(x, z)), z }; }),
 ].filter(s => !onDeck(s.x, s.z) && !isWater(s.x, s.z)));
-const lamps = new StreetLamps(scene, models.get('streetlamp'), parkLampSpots(), { real: quality.name === 'high' ? 8 : quality.name === 'medium' ? 6 : 4 });
+const lampSpots = parkLampSpots();
+for (const s of lampSpots) if (!onDeck(s.x, s.z)) addSolid(s.x, s.z, 0.2);     // the posts are solid (on the deck they stand at the rail)
+const lamps = new StreetLamps(scene, models.get('streetlamp'), lampSpots, { real: quality.name === 'high' ? 8 : quality.name === 'medium' ? 6 : 4 });
 
 // Drop graphics a level if the frame rate stays low.
 const fpsWatch = watchFrameRate(quality, (lower, fps) => {

@@ -3,6 +3,7 @@
 // the sign, palms, the marina beyond, and flying foxes overhead.
 // Scenery only. Where Wally may go is decided in rules.js.
 
+import { addSolid } from './ground.js';
 import { fitText } from './signtext.js';
 import * as THREE from 'three';
 import { LAGOON, BANK_Y, BOARDWALK, ROCKS, lagoonDistance, terrainHeight, deckHeight, deckOpenAt, PARK_EDGE } from './rules.js';
@@ -469,6 +470,7 @@ function addTreeBelt(trees, q) {
 }
 
 function addPalmsAndRocks(scene, q, models, trees) {
+  addSolid(-11, 20.5, 0.4);                                     // the sign's post
   let seed = 3;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   // Stands of one, two or three palms (palms.js palmStand), so fewer stands than palms.
@@ -537,6 +539,8 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
   // Ken's trees (trees.js): his palms round the park, ghost gums and umbrella
   // trees among them, and a deep belt of all three out toward the ranges.
   const trees = new Trees(scene, { light: q.name === 'low' });
+  // Every tree trunk is solid (ground.js): a palm's is slim, a gum's wider.
+  { const add = trees.add.bind(trees); trees.add = (kind, x, y, z, h) => { addSolid(x, z, kind === 'palm' ? 0.35 : 0.55); return add(kind, x, y, z, h); }; }
   addTreeBelt(trees, q);
   addGround(scene);
   addFarGround(scene);
