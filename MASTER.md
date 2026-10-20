@@ -35,6 +35,8 @@ affects the last one who touched it.
 until the King tells him at the end (section 6). He finds out when the player finds out. So the opening
 shows him finding the sceptre and hearing its instructions, never that it changed him.
 
+**Every quest has two parts (Ken, 2026-10-19):** find the key, then find the chest with the talisman.
+
 **The five talismans (Ken, 2026-10-19):** one per area before the Daintree. **The talismans go into the
 sceptre to give it its power** (Ken): each one he wins is set into it. (So Wally carries the sceptre
 through the trip.)
@@ -45,9 +47,14 @@ through the trip.)
    mangoes he collects for it.
 3. **The reef: the pearl talisman** (Ken, 2026-10-19).
 4. **The sugar cane fields: the sugar talisman** (Ken, 2026-10-19; the cane fields come back, now with a
-   story). Wally escapes the cane field while it is on fire, with fruit bats and cane toads making it
-   difficult. (Burning cane before harvest is a real Far North Queensland sight. Nobody dies, rule 8: the
-   bats and toads flee the fire too.)
+   story). The cane is thick, so the key is **a machete** (Proposed wording: a cane knife, the Queensland
+   cane cutter's tool), found in the middle of the field; with it Wally cuts through to the chest with the
+   sugar talisman, and gets out.
+   - **The fire is never the danger** (Ken): Wally is never burned. The burning parts of the field only
+     keep him to certain places, so the field is a hybrid maze, not a traditional one.
+   - **The danger is the animals:** cane toads with their poison skin (touching one costs him, never kills;
+     true to life, toads poison what bites them), and fruit bats that steal his sugar cane or get in his way.
+   - He collects sugar cane as he goes (the area's food). Nobody dies (rule 8).
 5. **Kuranda: the flower talisman**, won with the boomerang throw (Ken, 2026-10-19).
 6. **The water talisman**, at the bottom of the zip line (Ken, 2026-10-19).
 7. **The paw paw talisman**, the final one, which he brings to the King (Ken, 2026-10-19). (It replaces the
