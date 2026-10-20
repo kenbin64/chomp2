@@ -43,11 +43,23 @@ through the trip.)
    the gate opens, or he receives the key to unlock it.
 2. **The Esplanade: the mango talisman** (Ken, 2026-10-19), exchanged for mangoes: Wally trades the
    mangoes he collects for it.
+3. **The reef: the pearl talisman** (Ken, 2026-10-19).
+4. **The sugar cane fields: the sugar talisman** (Ken, 2026-10-19; the cane fields come back, now with a
+   story). Wally escapes the cane field while it is on fire, with fruit bats and cane toads making it
+   difficult. (Burning cane before harvest is a real Far North Queensland sight. Nobody dies, rule 8: the
+   bats and toads flee the fire too.)
+5. **Kuranda: the flower talisman**, won with the boomerang throw (Ken, 2026-10-19).
+6. **The water talisman**, at the bottom of the zip line (Ken, 2026-10-19).
+7. **The paw paw talisman**, the final one, which he brings to the King (Ken, 2026-10-19). (It replaces the
+   paw paws as a gift.)
 - **Keys are just keys** (Ken, 2026-10-19): a key opens a gate or a chest; it is not a talisman.
+- **Open:** the count. Ken first said five talismans; this list has six after Croc Park (mango, pearl,
+  sugar, flower, water, paw paw), and Croc Park's own is still open.
 - **Open:** Croc Park's talisman, now that the gate key is just a key (above, it was talisman 1).
+- **Open:** where the cane fields sit in the trip (Proposed: Mossman, cane country with its sugar mill),
+  and what that means for Mossman Gorge and the bungee.
 - **Open:** the reef clam took the Big Golden Mango for the pearl key; if the mango talisman goes into the
   sceptre, what does the clam take instead?
-- **Open:** the talismans of the reef, Kuranda and Mossman.
 
 **The core rule** is the sweet spot: close enough to be fed, not so close that people run. **Built**
 (`clusterStep` in `js/rules.js`: they notice, throw, give handouts up close, get nervous, flee; the park
@@ -350,25 +362,22 @@ listed as star-opened activities today (`ACTIVITIES` in `js/progress.js`). **Ope
 **The point (Decided, Ken 2026-10-19):** the end of Wally's story. He set out loving food and wanting
 people to like him; he ends knowing who he is.
 
-**The finale (Decided, Ken 2026-10-19, second version; replaces the mango version):**
+**The finale (Decided, Ken 2026-10-19, third version; replaces the mango and paw paw gift versions):**
 1. **The river:** the Daintree, a river with crocs in it and rainforest on both banks. The tour boat, full
    of the people who threw food all game, runs aground and is stuck. Nobody is harmed.
-2. **Played (rule 12):** Wally swings on vines through the rainforest and gathers **paw paws** (papaya;
-   mangoes were the Esplanade's). **Decided (Ken, 2026-10-19):** the paw paws are his gift for the King.
-3. **Played:** he reaches a treasure chest (rule 9). Inside is **the King Crocodile's sceptre**.
-   **The sceptre's rule (Ken, 2026-10-19):** it only affects the last one who touched it. That is why the
-   King waits for Wally to fetch it: Wally was the last it touched, so only through Wally can it work.
-4. **Cinematic:** Wally returns the sceptre to the King Crocodile, who grants him a wish. Wally wishes
-   that all the crocs in Croc Park could be returned to the wild. The King's condition: first they must
-   all help get the riverboat back to the bank.
-5. **The rescue:** the Croc Park crocs push the boat back to the bank. (**Open:** played or cinematic.
-   Ken earlier: everything up to the rescue is played, the rescue itself is the payoff.) The selfless
-   wish is granted: the boat is saved and every croc from the park is free.
-6. **The truth, a cinematic:** the King tells Wally: "This sceptre made you more like a human, so that
-   you could help free my people and bring them back here. Because you did this, you can, if you wish,
-   join your crocodile brothers and sisters, just like you were before." Wally agrees, and with the
-   sceptre the King turns him back into his regular crocodile form.
-   (This explains the whole game: why Wally walks, wears gear and acts like a person.)
+2. **Played (rule 12):** Wally swings on vines through the rainforest for the **paw paw talisman**, the last
+   one, and brings the sceptre, now full, to the King Crocodile.
+3. **The wish, a cinematic (Ken, 2026-10-19):** the King grants one wish, expecting it to be to free his
+   people. Instead Wally wishes for the humans on the boat to be saved.
+4. **The King's condition:** Wally must use the talismans in the sceptre to bring all the crocs to the
+   Daintree River to rescue the boat. Then the King will also grant the wish to free all the crocs.
+5. **The rescue:** all the crocs come to the river and push the boat back to the bank. (**Open:** played or
+   cinematic. Ken earlier: everything up to the rescue is played, the rescue itself is the payoff.) The
+   boat is saved and every croc from the park is free.
+6. **The truth and the choice, a cinematic:** the King reveals that the sceptre made Wally more like a
+   human. Because of his selflessness, Wally may choose: stay a humanlike croc, or become once again a
+   normal croc. He chooses to be normal, and becomes a Daintree River croc. **Kenny knew the entire time
+   (Ken, 2026-10-19):** the King sent him to help Wally on his journey.
 7. **The passengers cheer, a cinematic:** the people who fed him all game cheer him.
 8. **The celebration, a cinematic:** the cast from the whole trip on the bank.
 9. **Kenny's farewell and the last line (a cinematic, Ken 2026-10-19):** both go home. Wally carries Kenny
@@ -381,7 +390,7 @@ people to like him; he ends knowing who he is.
   and his realisation that he cannot go back to people food). Also dropped earlier: the run back to Croc
   Park, the finale bungee and the Kuranda train.
 - **Decided (Ken, 2026-10-19):** Wally touched the sceptre at the bottom of the Croc Park lake, where the
-  King put it (see "How it begins"). **Open:** how it came to be in the Daintree chest.
+  King put it, and carries it all trip (see "How it begins"); there is no sceptre in a Daintree chest.
 - **Open:** the King Crocodile: a new character to model (a crown, older, bigger).
 - **Open:** what happens to the stash rule (leftovers into the finale and the trip score).
 - **Note:** Croc Park is the game's own park, not a real one, so freeing its crocs is no comment on any
