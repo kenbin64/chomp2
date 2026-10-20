@@ -326,44 +326,44 @@ listed as star-opened activities today (`ACTIVITIES` in `js/progress.js`). **Ope
 **The point (Decided, Ken 2026-10-19):** the end of Wally's story. He set out loving food and wanting
 people to like him; he ends knowing who he is.
 
-**The finale (Decided, Ken 2026-10-19):**
-1. **The challenge:** a storm on the river; a cruise boat runs aground and is stuck. Nobody is harmed.
-   Wally swings on the vines through the rainforest to reach the wild Daintree crocs and convinces them to
-   help with something he brings (Ken, 2026-10-19: no going back to Croc Park; the Daintree crocs do the
-   rescue). **Decided (Ken, 2026-10-19):** the mangoes. He has to go back to his stash of mangoes for them,
-   then bring them to the crocs: the thing he loved most, now shared, which is what he has learned.
-   **Decided (Ken, 2026-10-19):** the stash is his hiding place in the Daintree (crocs hide things), filled
-   with the mangoes he kept over the trip; if it is short, he goes back to an earlier area for more. **The
-   heart of the ending (Ken):** he gives up his beloved mangoes to save the people who fed him all this
-   time, and for himself: for the good of the people, and so he can be what he is, a wild croc that does
-   not live on people food. (Real crocodiles are carnivores; the mangoes are make-believe.) Then the crocs push the boat back to shore. **Everything up
-   to the rescue is playable** (Ken, 2026-10-19, rule 12): the race through the rainforest against the
-   storm to his stash and on to the crocs, convincing the crocs, leading them to the boat, and the push (Proposed: played, it is something
-   to do). Cinema only where nothing can be played: the passengers' cheer, Wally's choice, the
-   celebration. (Crocs sharing with crocs: the game's never-feed-a-crocodile message is about people.)
-2. **The turn (a cinematic):** the passengers, people who threw food to keep him away all game, cheer him.
-3. **The choice (a cinematic, Ken 2026-10-19):** with the boat saved, Wally decides not to go back to Croc Park. He realises he cannot go
-   back to being a croc that eats people food (Ken, 2026-10-19); he belongs with his own kind, and he
-   goes into the Daintree River as a wild croc. This carries the game's safety message: wild crocs do not
-   need our food.
-4. **The celebration (a cinematic, Ken 2026-10-19):** everyone cheers and celebrates, the cast from the whole trip on the bank.
-5. **Kenny's farewell and the last line (a cinematic, Ken 2026-10-19):** both go home. Wally carries Kenny
+**The finale (Decided, Ken 2026-10-19, second version; replaces the mango version):**
+1. **The river:** the Daintree, a river with crocs in it and rainforest on both banks. The tour boat, full
+   of the people who threw food all game, runs aground and is stuck. Nobody is harmed.
+2. **Played (rule 12):** Wally swings on vines through the rainforest and gathers **paw paws** (papaya;
+   mangoes were the Esplanade's). **Open:** what the paw paws are for.
+3. **Played:** he reaches a treasure chest (rule 9). Inside is **the King Crocodile's sceptre**.
+4. **Cinematic:** Wally returns the sceptre to the King Crocodile, who grants him a wish. Wally wishes
+   that all the crocs in Croc Park could be returned to the wild. The King's condition: first they must
+   all help get the riverboat back to the bank.
+5. **The rescue:** the Croc Park crocs push the boat back to the bank. (**Open:** played or cinematic.
+   Ken earlier: everything up to the rescue is played, the rescue itself is the payoff.) The selfless
+   wish is granted: the boat is saved and every croc from the park is free.
+6. **The truth, a cinematic:** the King tells Wally: "This sceptre made you more like a human, so that
+   you could help free my people and bring them back here. Because you did this, you can, if you wish,
+   join your crocodile brothers and sisters, just like you were before." Wally agrees, and with the
+   sceptre the King turns him back into his regular crocodile form.
+   (This explains the whole game: why Wally walks, wears gear and acts like a person.)
+7. **The passengers cheer, a cinematic:** the people who fed him all game cheer him.
+8. **The celebration, a cinematic:** the cast from the whole trip on the bank.
+9. **Kenny's farewell and the last line (a cinematic, Ken 2026-10-19):** both go home. Wally carries Kenny
    on his back across the river to the gum trees on the far bank (koalas live in eucalyptus woodland, not
    the rainforest). Kenny holds out the Vegemite jar one last time; Wally gently pushes it back, he does not
    need reviving now. Kenny climbs into a eucalyptus, Wally slides into the river. The final shot: Kenny in
    his gum tree, a pair of croc eyes surfacing below, and Kenny says the last line: "If you see a croc in
    the Daintree, give it room. It might be Wally."
-- **It uses everything still in his stash (Decided):** all that was collected and not spent on other
-  requirements goes into the finale (Proposed: mangoes for a feast, pearls as gifts, shells as necklaces,
-  gold for the party boat), and every leftover adds to the trip score. **Decided (Ken, 2026-10-19):** it
-  uses what is left, but if there is not enough, Wally goes back for more (under the going-back rules).
-- **Dropped (Ken, 2026-10-19):** the run back to Croc Park, and with it the finale bungee and the
-  Kuranda train home.
+- **Replaced (Ken, 2026-10-19):** the mango version (Wally's mango stash convincing the Daintree crocs,
+  and his realisation that he cannot go back to people food). Also dropped earlier: the run back to Croc
+  Park, the finale bungee and the Kuranda train.
+- **Open:** how the sceptre made Wally human-like before the trip, and how it came to be in the chest.
+- **Open:** the King Crocodile: a new character to model (a crown, older, bigger).
+- **Open:** what happens to the stash rule (leftovers into the finale and the trip score).
+- **Note:** Croc Park is the game's own park, not a real one, so freeing its crocs is no comment on any
+  real wildlife park. Releasing captive crocs is fantasy here, carried by the King's magic.
 
 **What is here (notes so far):** tourists on river boats, swimming, swinging on vines, jumping rock to
 rock, running the beach, mangroves.
 
-**The goal to get out:** the end of the game: the boat rescue, then Wally's choice.
+**The goal to get out:** the end of the game: the sceptre, the wish, the rescue, Wally a croc again.
 
 **Needs:** the vine skill from Mossman (n-1, Proposed) and the river-boat ticket from Kuranda (n-2).
 
