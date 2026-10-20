@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>html,body{background:#14142a}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2a2440">
+<title>The Cane Fields · Chomp 3D: Wally's Cairns Adventure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" hidden>
+  <div class="panel score"><b id="score">0</b><span class="mango-count" title="Sugar cane eaten">&#x1F33E; <span id="cane">0</span></span></div>
+  <div class="panel quest"><h2>The Cane Fields</h2><p id="job" style="margin:0"></p></div>
+  <div class="panel energy" id="feed">
+    <div class="feed-head"><span class="label">Feed-o-meter</span><span id="lives" aria-label="Lives"></span></div>
+    <div class="bar"><div class="red-zone"></div><div id="energy-fill"></div></div>
+    <span class="red-note">In the red! Eat some cane, or Kenny brings his jar</span>
+  </div>
+  <div id="count"></div>
+  <div id="toasts" aria-live="polite"></div>
+</div>
+
+<div id="touch" hidden>
+  <div id="stick"><div id="knob"></div></div>
+  <button id="t-fours" type="button">Duck</button>
+  <button id="t-jump" type="button">Jump</button>
+  <button id="t-pause" type="button" aria-label="Pause">II</button>
+  <button id="t-cam" type="button">Cam</button>
+</div>
+
+<section id="title" class="overlay live-view">
+  <div class="card">
+    <p class="area">Level 2</p>
+    <h1>The Cane Fields</h1>
+    <p>Out of Croc Park at dusk, Wally hides in the sugar cane. The cane is thick, but he has the machete from the park gate: walk into the cane to cut a path. Cutting knocks down pieces of sugar cane, and some lie on the ground already. Eat them to keep your energy up, before the cane toads and fruit bats get them (and mind the toads: poison skin). Where the cane is burning you can't go, but the fire can't reach you. In the middle of the field is the fire talisman.</p>
+    <button id="play" class="go" type="button">Play</button>
+    <div class="keys pc">
+      <span><kbd>W A S D</kbd> or arrows move; walk into cane to cut it</span><span><kbd>Space</kbd> jump</span><span><kbd>Drag</kbd> or <kbd>Q E</kbd> camera, <kbd>C</kbd> front or back</span><span><kbd>P</kbd> pause</span>
+    </div>
+    <div class="keys phone"><span>Left thumb: steer, into the cane to cut it</span></div>
+    <p class="fine"><a href="index.html?map">Back to the map</a></p>
+  </div>
+</section>
+
+<section id="paused" class="overlay" hidden>
+  <div class="card"><h1>Paused</h1><button id="resume" class="go" type="button">Keep going</button>
+  <p class="fine"><a href="index.html?map">Back to the map</a></p></div>
+</section>
+
+<section id="result" class="overlay" hidden>
+  <div class="card">
+    <h1 id="result-title"></h1>
+    <p class="stars" id="result-stars"></p>
+    <p id="result-why"></p>
+    <ul class="result-lines" id="result-lines"></ul>
+    <div class="end-buttons"><button id="again" class="go" type="button">Run it again</button><a class="go map-btn" href="index.html?map">Back to the map</a></div>
+  </div>
+</section>
+
+<script type="module" src="js/levels/cane.js"></script>
+</body>
+</html>

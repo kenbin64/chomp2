@@ -16,6 +16,7 @@
 const MOODS = {
   park:      { bpm: 104, root: 196.0, drums: 1.0, swing: 0.12, bright: 1.0 },    // G: bouncy
   esplanade: { bpm: 96,  root: 220.0, drums: 0.8, swing: 0.16, bright: 0.9 },    // A: breezy
+  cane:      { bpm: 88,  root: 174.6, drums: 0.7, swing: 0.1,  bright: 0.7 },    // F: dusk in the cane, tense but not grim
   // Wally's own theme (title screen and trip map). He is named after a true-blue
   // Cairns bloke Ken knows, who caught crocs that got too close to people and
   // moved them somewhere safer. So: a bush-ballad adventure, a strummed guitar's
