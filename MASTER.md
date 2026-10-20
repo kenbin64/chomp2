@@ -28,7 +28,7 @@ things he has gathered, most of all at the Kuranda markets.
 **How it begins (Ken, 2026-10-19):** Wally is a regular croc in Croc Park. At the bottom of the park's
 lake he touches the King Crocodile's sceptre, which the King put there so that whichever croc touched it
 would become the one (Wally). The sceptre instructs him to take it up to the King, who will grant him a
-wish. But first he must collect **five talismans**, which are required to get up there. The sceptre only
+wish. But first he must collect **seven talismans**, which are required to get up there. The sceptre only
 affects the last one who touched it.
 
 **The reveal is kept for the end (Ken, 2026-10-19):** the game does not say why Wally is a personified croc
