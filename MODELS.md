@@ -232,9 +232,10 @@ building its own. Baked to 40k (`sceptre.glb` 455 KB, phone 276 KB). **Open:** t
 (Proposed: the crocodile's jaws hold the last, the paw paw talisman).
 
 **The talismans (Ken's Meshy):** pendants, each a carved bronze frame round its element. The first is
-`talisman-fire.glb` (a flame in a teardrop frame; baked to 16k, 337 KB, phone 175 KB). For the other six,
-use the fire talisman as the reference image so all seven share the same frame and only the centre changes:
-air, water, the opal (earth), the mango, the pearl, the paw paw. The pendant is not hexagonal, so it does
+`talisman-fire.glb` (a flame in a teardrop frame; baked to 16k, 337 KB, phone 175 KB). For the others,
+use the fire talisman as the reference image so they all share the same frame and only the centre changes:
+air, water, the opal (earth), and any still to be decided (mangoes, pearls and paw paws are trade items,
+not talismans). The pendant is not hexagonal, so it does
 not fit a setting as it is: **Proposed:** the pendant is what Wally finds in the chest and what the screen
 shows; when it goes into the sceptre, its heart (the element) lights the setting as a glowing hex gem in
 its colour, built in the game.
