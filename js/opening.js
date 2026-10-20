@@ -34,7 +34,12 @@ const KENNY_LINES = [
 const LINE_SECONDS = 2.7;
 
 // The words over the cinematic (Ken: "something like that, in not so many words").
-const INTRO_CIRCLE = 7, INTRO_SIGN = 3.2, CAPTION_SECONDS = 3;
+// The cinematic (Ken, 2026-10-20): one smooth pan spiralling down over the park to
+// the sign, the sign held a couple of seconds, then a glide to behind Wally and the
+// player has him. The words run over the start of play.
+const SPIRAL = 10, HOLD = 2.5, GLIDE = 2.2, CAPTION_SECONDS = 3;
+const ease = u => { u = Math.min(1, Math.max(0, u)); return u * u * (3 - 2 * u); };
+const lerp = (a, b, u) => a + (b - a) * u;
 const INTRO_LINES = [
   'This is an ordinary crocodile. The park calls him Wally.',
   "He's no different from any other croc. Except he is.",
@@ -72,7 +77,9 @@ function places(sign) {
       const r = sign.group.rotation.y, fx = Math.sin(r), fz = Math.cos(r), x = s.x + fx * 1.7 + fz * 1.9, z = s.z + fz * 1.7 - fx * 1.9;
       return new THREE.Vector3(x, Math.max(0, terrainHeight(x, z)), z);
     })(),
-    kennyFrom: new THREE.Vector3(s.x + Math.cos(sign.group.rotation.y) * 9, 0, s.z - Math.sin(sign.group.rotation.y) * 9 + 3),
+    // Out in front of the sign, so Wally turns right round from the sign to meet him.
+    kennyFrom: new THREE.Vector3(s.x + Math.sin(sign.group.rotation.y) * 10 + Math.cos(sign.group.rotation.y) * 3, 0,
+                                 s.z + Math.cos(sign.group.rotation.y) * 10 - Math.sin(sign.group.rotation.y) * 3),
   };
 }
 
@@ -80,7 +87,7 @@ function places(sign) {
 export function createOpening({ scene, models, wally, kenny, clusters, bubbles, fx, world, sound, toast, underWater }) {
   const where = places(world.sign);
   const flash = document.getElementById('flash'), story = document.getElementById('backstory');
-  let phase = null, time = 0, line = -1, onDone = null, sway = null, snapped = false;
+  let phase = null, time = 0, line = -1, onDone = null, sway = null, captionAt = -1, turnFrom = null;
 
   // The ordinary croc he starts as: Ken's regular croc, swimming, in place of Wally's model.
   const croc = new THREE.Group();
@@ -111,7 +118,7 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
   carried.visible = false; carried.rotation.set(0.3, 0, 0.55); carried.position.set(0.1, 1.15, -0.32);
   wally.root.add(carried);
 
-  function skipScene() { if (phase === 'intro' || phase === 'change' || phase === 'sign' || phase === 'kenny') time = 999; }
+  function skipScene() { if (phase === 'intro') enter('croc'); else if (phase === 'change' || phase === 'sign' || phase === 'kenny') time = 999; }
   addEventListener('keydown', e => { if (phase && phase !== 'croc' && phase !== 'story' && e.key !== 'Shift') skipScene(); });
   addEventListener('pointerdown', () => { if (phase && phase !== 'croc' && phase !== 'story') skipScene(); });
 
@@ -133,15 +140,16 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
     if (p === 'intro') {
       setModel(true);
       wally.pos.copy(where.start); wally.root.position.copy(where.start);
+      wally.facing = Math.atan2(-where.start.x, -where.start.z); wally.root.rotation.y = wally.facing;   // facing out over the pond
       sceptre.visible = true;
       world.sign.setScratched(false);
       kenny.mesh.visible = false;
-      line = -1; snapped = false;
+      line = -1; captionAt = -1;
       clusters.showMarks(false);                               // just people in a park, for now
       for (const id of ['hud', 'touch']) { const e = document.getElementById(id); if (e) e.hidden = true; }
     }
     if (p === 'croc') {
-      say(null);
+      captionAt = 0; line = -1;
       document.getElementById('hud').hidden = false;
       if (matchMedia('(pointer: coarse)').matches) document.getElementById('touch').hidden = false;
       document.getElementById('quest-title').textContent = 'Find something magical in the pond';
@@ -149,9 +157,11 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
       if (!showTip('opening-dive', 'Swim the pond and find something magical on the bottom. W A S D (or the stick) to swim; Shift (or Dive) to go under; Space (or Up) to come back up.')) toast('Find something magical in the pond. Shift to dive', 'info');
     }
     if (p === 'change') {
+      captionAt = -1; say(null);                               // the words stop if he finds it quickly
       if (flash) { flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go'); }
       sound.play.powerup(); fx.burst(sceptre.position.clone().add(new THREE.Vector3(0, 1, 0)), [0xffd84a, 0xfff6c0, 0x9fe8c0], 50);
     }
+    if (p === 'sign') turnFrom = null;
     if (p === 'sign') bubbles.say(wally.root, 'Hang on. That sign needs fixing.', 3.4, 2.4);
     if (p === 'kenny') { kenny.mesh.visible = true; kenny.pos.copy(where.kennyFrom); line = -1; }
     if (p === 'story') {
@@ -176,14 +186,16 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
     if (sway) sway.setPace(Math.min(1, Math.hypot(wally.vel.x, wally.vel.z) / 4));
     sceptre.userData.glow.intensity = 5 + Math.sin(t * 3) * 2;
     if (phase === 'intro') {
-      // The circle, the sign, then Wally with the words one at a time.
-      const onCroc = time - INTRO_CIRCLE - INTRO_SIGN;
-      const n = onCroc < 0 ? -1 : Math.floor(onCroc / CAPTION_SECONDS);
-      if (n !== line && n < INTRO_LINES.length) { line = n; say(n >= 0 ? INTRO_LINES[n] : null); }
-      if (time > 900 || n >= INTRO_LINES.length) enter('croc');
+      if (time >= SPIRAL + HOLD + GLIDE) enter('croc');
       return false;
     }
     if (phase === 'croc') {
+      // The words, one at a time, while he swims.
+      if (captionAt >= 0) {
+        captionAt += dt;
+        const n = Math.floor(captionAt / CAPTION_SECONDS);
+        if (n !== line) { line = n; say(n < INTRO_LINES.length ? INTRO_LINES[n] : null); if (n >= INTRO_LINES.length) captionAt = -1; }
+      }
       if (Math.random() < dt * 2) fx.splash(new THREE.Vector3(sceptre.position.x, -0.4, sceptre.position.z), 2);   // bubbles where it lies
       const near = Math.hypot(wally.pos.x - sceptre.position.x, wally.pos.z - sceptre.position.z) < 1.8;
       if (near && underWater()) enter('change');
@@ -206,6 +218,13 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
       if (time > 2.6 && time - dt <= 2.6) {
         world.sign.setScratched(true); fx.burst(world.sign.group.position.clone().add(new THREE.Vector3(0, 2.6, 0)), [0xd6212b, 0xffe066], 16);
         bubbles.say(wally.root, "Crikey! I'm like a human bloke.", 3.4, 3.2);   // Ken: after the sign, the Crikey line
+        turnFrom = wally.facing;
+      }
+      // Then he turns round, away from the sign, to where Kenny will come from (Ken).
+      if (time > 3.2 && turnFrom !== null) {
+        const toward = Math.atan2(where.kennyFrom.x - wally.pos.x, where.kennyFrom.z - wally.pos.z);
+        const d = Math.atan2(Math.sin(toward - turnFrom), Math.cos(toward - turnFrom));
+        wally.facing = turnFrom + d * ease((time - 3.2) / 1.0); wally.root.rotation.y = wally.facing;
       }
       if (time > 4.2 && time - dt <= 4.2) {
         const near = clusters.active.slice(0, 2);
@@ -225,6 +244,8 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
       kenny.pos.y = Math.max(0, terrainHeight(kenny.pos.x, kenny.pos.z));
       kenny.mesh.position.copy(kenny.pos);
       kenny.mesh.rotation.y = Math.atan2(wally.pos.x - kenny.pos.x, wally.pos.z - kenny.pos.z);
+      // Wally watches him come and turns to him.
+      wally.facing = Math.atan2(kenny.pos.x - wally.pos.x, kenny.pos.z - wally.pos.z); wally.root.rotation.y = wally.facing;
       if (kenny.skin) { kenny.skin.play(d > 0.3 ? 'walk' : 'wave', { alternatives: ['idle'] }); kenny.skin.update(dt); }
       const talking = d <= 0.3 ? Math.floor((time - 2) / LINE_SECONDS) : -1;
       if (talking > line && talking < KENNY_LINES.length) { line = talking; bubbles.say(kenny.mesh, KENNY_LINES[line], 2.2, LINE_SECONDS); }
@@ -241,10 +262,24 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
     if (phase === 'croc' || !phase) return null;
     const front = world.sign.group.rotation.y;
     if (phase === 'intro') {
-      const snap = !snapped; snapped = true;                    // straight to the first framing, high over the park
-      if (time < INTRO_CIRCLE) return { target: new THREE.Vector3(0, 0, 0), yaw: -1.2 + time * 0.75, pitch: 0.62, dist: 56, snap };
-      if (time < INTRO_CIRCLE + INTRO_SIGN) return { target: world.sign.group.position.clone().add(new THREE.Vector3(0, 2.4, 0)), yaw: front + 0.15, pitch: 0.12, dist: 6.5 };
-      return { target: wally.pos.clone().add(new THREE.Vector3(0, 0.2, 0)), yaw: wally.facing + 0.75, pitch: 0.3, dist: 5.2 };   // close, at his front quarter
+      // Worked out exactly for each moment (exact: the game sets the camera to it,
+      // no chasing), so the motion is one smooth curve.
+      const signAt = world.sign.group.position.clone().add(new THREE.Vector3(0, 2.4, 0));
+      const signShot = { target: signAt, yaw: front + 0.12, pitch: 0.12, dist: 7 };
+      if (time < SPIRAL) {
+        // A spiral: a turn and a quarter round the park, coming down and in to the sign.
+        const u = ease(time / SPIRAL), k = ease(Math.max(0, time / SPIRAL - 0.35) / 0.65);
+        return { exact: true, target: new THREE.Vector3(0, 0, 0).lerp(signAt, k),
+                 yaw: signShot.yaw - Math.PI * 2.5 * (1 - u), pitch: lerp(0.72, signShot.pitch, u), dist: lerp(62, signShot.dist, u) };
+      }
+      if (time < SPIRAL + HOLD) return { exact: true, ...signShot };
+      // The glide from the sign to behind Wally, where play's camera takes over.
+      const u = ease((time - SPIRAL - HOLD) / GLIDE);
+      // High enough that the sign on the bank drops out under the picture.
+      const behind = { target: wally.pos.clone().add(new THREE.Vector3(0, 1.6, 0)), yaw: wally.facing + Math.PI, pitch: 0.66, dist: 10 };
+      const dy = Math.atan2(Math.sin(behind.yaw - signShot.yaw), Math.cos(behind.yaw - signShot.yaw));
+      return { exact: true, target: signAt.clone().lerp(behind.target, u), yaw: signShot.yaw + dy * u,
+               pitch: lerp(signShot.pitch, behind.pitch, u), dist: lerp(signShot.dist, behind.dist, u) };
     }
     if (phase === 'change') return { yaw: front + 0.55, pitch: 0.22, dist: 7 };
     if (phase === 'sign') return { yaw: front + 0.25, pitch: 0.18, dist: 7.5 };

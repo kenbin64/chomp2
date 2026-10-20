@@ -192,7 +192,7 @@ const treasure = new LagoonTreasure(scene, models.get('mango'));
 // How the game begins (opening.js, Ken's storyboard): as an ordinary croc, the sceptre, the change, the sign, Kenny.
 const opening = createOpening({ scene, models, wally, kenny, clusters, bubbles, fx, world, sound, toast: (t, k) => toast(t, k),
   underWater: () => game.depth < PARK_TREASURE.surfaceY - 0.6 });
-whenLoaded(() => { window.chomp.opening = opening; window.chomp.parkKey = parkKey; window.chomp.machete = machete; window.chomp.GATE = GATE; });
+whenLoaded(() => { window.chomp.camera = camera; window.chomp.opening = opening; window.chomp.parkKey = parkKey; window.chomp.machete = machete; window.chomp.GATE = GATE; });
 
 // Day and night (Ken): now and then it gets dark, the moon comes up over the
 // northern sky as it does from Cairns, and the street lamps round the lagoon
@@ -821,9 +821,11 @@ function followCamera(dt) {
   // The opening's cinematic can look at something other than Wally (the park, the sign).
   const goal = shot && shot.target ? shot.target : wally.pos.clone().add(new THREE.Vector3(0, 1.6, 0));
   cam.target.lerp(goal, Math.min(1, dt * (shot && shot.target ? 2.5 : 6)));
-  if (shot && shot.snap) { cam.target.copy(goal); cam.yaw = shot.yaw; cam.pitch = shot.pitch; cam.dist = shot.dist; }
   cam.manual = Math.max(0, cam.manual - dt);
-  if (shot) {
+  if (shot && shot.exact) {
+    // The cinematic: the camera exactly where the shot says, for one smooth curve.
+    cam.target.copy(goal); cam.yaw = shot.yaw; cam.pitch = shot.pitch; cam.dist = shot.dist;
+  } else if (shot) {
     // A scene of the opening: the camera eases to its framing of Wally.
     const d = Math.atan2(Math.sin(shot.yaw - cam.yaw), Math.cos(shot.yaw - cam.yaw)), e = Math.min(1, dt * 2.5);
     cam.yaw += d * e; cam.pitch += (shot.pitch - cam.pitch) * e; cam.dist += (shot.dist - cam.dist) * e;
