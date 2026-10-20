@@ -6,6 +6,7 @@
 import { addSolid } from './ground.js';
 import { fitText } from './signtext.js';
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { LAGOON, BANK_Y, BOARDWALK, ROCKS, lagoonDistance, terrainHeight, deckHeight, deckOpenAt, PARK_EDGE } from './rules.js';
 import { signTexture, skyTexture, plankTexture, horizonTexture } from './textures.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
@@ -257,7 +258,18 @@ function addRealWater(scene, q, sun) {
   water.rotation.x = -Math.PI / 2;
   water.position.set(0, -0.02, -200);
   water.material.uniforms.size.value = 3.2;            // broader, calmer ripples
+  water.userData.noAO = true;                          // not in the shading pass (it would draw the reflection again)
   scene.add(water);
+  // The reflection draws the whole park a second time each frame. Things too fine
+  // to see in a rippled reflection (the grass: half a million blades) are left
+  // out of that drawing only (userData.noReflect).
+  const mirror = water.onBeforeRender.bind(water), skipped = [];
+  water.onBeforeRender = (...args) => {
+    scene.traverse(o => { if (o.userData.noReflect && o.visible) { o.visible = false; skipped.push(o); } });
+    mirror(...args);
+    for (const o of skipped) o.visible = true;
+    skipped.length = 0;
+  };
   const ripple = function ripple(t) { water.material.uniforms.time.value = t * 0.55; };
   // See into the lagoon while Wally is diving: k 0 is the usual mirror-like
   // surface, 1 clear enough to watch him down at the bottom.
@@ -301,6 +313,32 @@ function addWater(scene, q, sun) {
 // ---- Built things -------------------------------------------------------
 
 // A low wooden fence that marks how far Wally can roam.
+// Many small pieces that never move (the fence, the boardwalk's planks, rails,
+// posts and piles: about 400) drawn as a handful of meshes, one per material.
+// The same shapes and textures, but the graphics card is told once instead of
+// four hundred times (and again for the shadows and the shading pass).
+function mergeByMaterial(group, scene) {
+  group.updateMatrixWorld(true);
+  const byMat = new Map();
+  group.traverse(m => {
+    if (!m.isMesh) return;
+    const g = m.geometry.index ? m.geometry.clone() : m.geometry.clone();
+    g.applyMatrix4(m.matrixWorld);
+    for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(k)) g.deleteAttribute(k);
+    const e = byMat.get(m.material) || { list: [], cast: m.castShadow, receive: m.receiveShadow };
+    e.list.push(g.index ? g : g.toNonIndexed()); byMat.set(m.material, e);
+  });
+  for (const [material, e] of byMat) {
+    const indexed = e.list.filter(g => g.index), plain = e.list.filter(g => !g.index);
+    for (const list of [indexed, plain]) {
+      if (!list.length) continue;
+      const merged = new THREE.Mesh(mergeGeometries(list), material);
+      merged.castShadow = e.cast; merged.receiveShadow = e.receive;
+      scene.add(merged);
+    }
+  }
+}
+
 function addFence(scene) {
   const post = new THREE.CylinderGeometry(0.12, 0.14, 1.3, 12);
   const wood = scanned('planks', 0.5, 1.5, { color: 0xa58466 }) || mat(0x7a5532);
@@ -557,8 +595,7 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
     },
   });
   const wave = addWater(scene, q, sun);
-  addFence(scene);
-  addBoardwalk(scene);
+  { const statics = new THREE.Group(); addFence(statics); addBoardwalk(statics); mergeByMaterial(statics, scene); }
   const sign = addSign(scene);
   addPalmsAndRocks(scene, q, models, trees);
   trees.build();
@@ -566,10 +603,10 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
   const gate = addGate(scene);
   const boats = addHarbour(scene, models);
 
-  const update = function update(t, dt, gateOpen) {
+  const update = function update(t, dt, gateOpen, camera = null) {
     wave(t);
     trees.update(t);
-    grass.update(t);
+    grass.update(t, camera);
     gate(dt, gateOpen);
     boats.forEach((b, i) => { b.position.y = 0.6 + Math.sin(t * 0.8 + i) * 0.15; b.rotation.z = Math.sin(t * 0.6 + i) * 0.03; });
   };

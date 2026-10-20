@@ -34,20 +34,24 @@ export class StreetLamps {
   // real: how many real lights to move round the nearest lamps.
   constructor(scene, model, spots, { real = 6 } = {}) {
     this.scene = scene; this.spots = spots;
-    const group = new THREE.Group(); scene.add(group);
-    // The lamps themselves.
-    for (const s of spots) {
-      let lamp;
-      if (model) {
-        lamp = model.scene.clone(true);
-        const box = new THREE.Box3().setFromObject(lamp), h = box.max.y - box.min.y;
-        lamp.scale.setScalar(HEIGHT / h); lamp.position.y = -box.min.y * HEIGHT / h;
-        const holder = new THREE.Group(); holder.add(lamp); lamp = holder;
-      } else lamp = standIn();
-      lamp.position.set(s.x, s.y, s.z); lamp.rotation.y = s.rot || 0;
-      lamp.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-      group.add(lamp);
+    // The lamps themselves, drawn as one batch (instanced): every lamp is the same
+    // model, so each part of it is drawn once for all of them, not once a lamp
+    // (2026-10-20: 25 lamps were 25 draws, and again for the shadows).
+    const proto = model ? model.scene.clone(true) : standIn();
+    if (model) {
+      const box = new THREE.Box3().setFromObject(proto), h = box.max.y - box.min.y;
+      proto.scale.setScalar(HEIGHT / h); proto.position.y = -box.min.y * HEIGHT / h;
     }
+    proto.updateMatrixWorld(true);
+    const place = new THREE.Matrix4(), turn = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1), up = new THREE.Vector3(0, 1, 0);
+    proto.traverse(o => {
+      if (!o.isMesh) return;
+      const part = new THREE.InstancedMesh(o.geometry.clone().applyMatrix4(o.matrixWorld), o.material, spots.length);
+      spots.forEach((s, i) => { place.compose(new THREE.Vector3(s.x, s.y, s.z), turn.setFromAxisAngle(up, s.rot || 0), one); part.setMatrixAt(i, place); });
+      part.instanceMatrix.needsUpdate = true; part.computeBoundingSphere();
+      part.castShadow = true; part.receiveShadow = true;
+      scene.add(part);
+    });
     const n = spots.length, m = new THREE.Matrix4();
     // The globes: glowing at night, over the model's own glass.
     this.globes = new THREE.InstancedMesh(new THREE.SphereGeometry(HEIGHT * GLOBE_R * 1.08, 16, 12), new THREE.MeshBasicMaterial({ color: WARM.clone(), toneMapped: false }), n);

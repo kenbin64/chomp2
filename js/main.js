@@ -1042,7 +1042,7 @@ function frame() {
   t += dt;
   if (game.running && !game.paused) { step(dt, t); if (!opening.active) drawHud(); }
   tickSwim(t);
-  world.update(t, dt, game.quest.gateOpen() && game.hasKey);
+  world.update(t, dt, game.quest.gateOpen() && game.hasKey, camera);
   bubbles.update(dt);
   fx.update(dt, t);
   if (!game.running && !game.paused) { cam.yaw += dt * 0.08; }     // slow turn behind the title screen

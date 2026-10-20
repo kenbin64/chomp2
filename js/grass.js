@@ -6,7 +6,12 @@
 // blocks in view are drawn, and phones get far fewer tufts.
 //
 //   const grass = new Grass(scene, { x0, x1, z0, z1, heightAt, density, tufts });
-//   grass.update(time);       // every frame, for the breeze
+//   grass.update(time, camera); // every frame: the breeze, and how much is drawn
+//
+// Grass thins out with distance from the camera (Ken, 2026-10-20: fewer triangles,
+// the same look): every block is drawn in full close by, and further off only a
+// share of its tufts (they were scattered at random, so any share is an even
+// thinning). Far away a lawn reads as colour, not blades, so it looks the same.
 //
 // density(x, z): 0 (no grass, e.g. sand or water) to 1 (full); also makes the
 // grass longer where it is higher (edges left to grow).
@@ -94,10 +99,23 @@ export class Grass {
       mesh.instanceMatrix.needsUpdate = true;
       mesh.computeBoundingSphere();                       // so blocks out of view are skipped
       mesh.receiveShadow = true;
+      mesh.userData.noAO = true;                          // left out of the shading pass: a million thin blades, no visible shading
+      mesh.userData.noReflect = true;                     // and out of the lagoon's reflection, where blades cannot be seen
+      mesh.userData.full = list.length;
+      mesh.userData.centre = mesh.boundingSphere.center.clone();
       scene.add(mesh); this.meshes.push(mesh);
     }
     this.count = [...blocks.values()].reduce((n, l) => n + l.length, 0);
   }
 
-  update(time) { this.time.value = time; }
+  update(time, camera = null) {
+    this.time.value = time;
+    if (!camera) return;
+    // Full within 28 m of the camera, thinning to a fifth by 90 m.
+    for (const m of this.meshes) {
+      const d = m.userData.centre.distanceTo(camera.position);
+      const share = d < 28 ? 1 : Math.max(0.2, 1 - (d - 28) / 62 * 0.8);
+      m.count = Math.max(1, Math.round(m.userData.full * share));
+    }
+  }
 }
