@@ -231,13 +231,15 @@ crown and **six hexagonal settings** (top, two upper, two lower, bottom), so the
 building its own. Baked to 40k (`sceptre.glb` 455 KB, phone 276 KB). Six settings, six talismans.
 
 **The talismans (Ken's Meshy):** pendants, each a carved bronze frame round its element. The first is
-`talisman-fire.glb` (a flame in a teardrop frame; baked to 16k, 337 KB, phone 175 KB). For the others,
-use the fire talisman as the reference image so they all share the same frame and only the centre changes:
-air, water, the opal (earth), the sun and the moon: six in all, one per setting (mangoes, pearls and paw
+`talisman-fire.glb` (a flame in a teardrop frame; baked to 16k, 337 KB, phone 175 KB). The others: air,
+water, the opal (earth), the sun and the moon: six in all, one per setting, each frame in its own
+element's style (mangoes, pearls and paw
 paws are trade items, not talismans).
 
-**All the talismans have the same sides** (Ken, 2026-10-20): one frame for all six, front, edges and
-back alike, so only the centre (the element) differs. Make each from the fire talisman as the reference.
+**Each talisman's frame depicts its own element** (Ken, 2026-10-20, replacing "all the same sides"): the
+water talisman's silver waves, the fire talisman's flame, and so on, so each reads as its element at a
+glance. Proposed, to keep them a set: about the same size, a pendant with a loop at the top, the same
+hanging shape.
 
 **Clear the background before image to 3D** (Ken found it, 2026-10-20): a reference picture with a solid
 background (white, grey or a gradient) gets that colour painted onto the model's sides and back. Run
