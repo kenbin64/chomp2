@@ -190,6 +190,7 @@ export const CAST = [
   { file: 'tourist-16', who: 'sunburnt bloke',           tall: [1.75, 1.88] },
   { file: 'tourist-17', who: 'lawn bowls man',           tall: [1.68, 1.80] },
   { file: 'tourist-18', who: 'Maori surfer from New Zealand', tall: [1.75, 1.88] },
+  { file: 'tourist-19', who: 'Torres Strait Islander teen', tall: [1.50, 1.66] },
 ];
 // The people models that loaded, each carrying its height range.
 export function peopleModels(models) {
