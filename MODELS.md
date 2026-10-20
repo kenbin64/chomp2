@@ -239,6 +239,11 @@ paws are trade items, not talismans).
 **All the talismans have the same sides** (Ken, 2026-10-20): one frame for all six, front, edges and
 back alike, so only the centre (the element) differs. Make each from the fire talisman as the reference.
 
+**Clear the background before image to 3D** (Ken found it, 2026-10-20): a reference picture with a solid
+background (white, grey or a gradient) gets that colour painted onto the model's sides and back. Run
+`python tools/clear-background.py picture.png` first; it writes `picture-clear.png` with the background
+transparent, and that is the one to give Meshy.
+
 **Every model is checked from all sides before it goes in** (Ken, 2026-10-20): front, side, back and top in
 the game's own renderer (`tools/view-model.html`), looking for colour patches or squares on the sides
 that the front view hides.
