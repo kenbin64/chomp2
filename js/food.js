@@ -129,7 +129,14 @@ export function kennysJar(labelTexture) {
 // Weighted choice: fries, pizza, tacos and hot dogs are common; steak is a treat.
 const KINDS = ['fries', 'fries', 'pizza', 'pizza', 'taco', 'taco', 'hotdog', 'hotdog',
                'shrimp', 'chicken', 'hoagie', 'burger', 'steak'];
-export function randomKind() { return KINDS[Math.floor(Math.random() * KINDS.length)]; }
+// avoid: kinds this person would not carry (Ken, 2026-10-20: nobody throws food their
+// faith or culture forbids; see `avoid` in CAST, js/tourists.js).
+export function randomKind(avoid = null) {
+  const list = avoid && avoid.length ? KINDS.filter(k => !avoid.includes(k)) : KINDS;
+  return list[Math.floor(Math.random() * list.length)];
+}
+// The food for one person to throw: from what they would carry.
+export const kindFor = person => randomKind(person && person.skin && person.skin.cast && person.skin.cast.userData && person.skin.cast.userData.avoid);
 
 // Model file for each kind of food (see MODELS.md).
 const FOOD_FILES = { fries: 'food-fries', pizza: 'food-pizza', taco: 'food-taco', hotdog: 'food-hotdog', shrimp: 'food-shrimp',

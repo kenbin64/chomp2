@@ -198,7 +198,9 @@ export const CAST = [
   { file: 'tourist-24', who: 'Australian boy, nine',     tall: [1.28, 1.40] },
   { file: 'tourist-25', who: 'Thai teenage girl',        tall: [1.50, 1.62] },
   { file: 'tourist-26', who: 'Torres Strait Islander woman', tall: [1.58, 1.70] },
-  { file: 'tourist-27', who: 'Arab Australian woman in a hijab', tall: [1.58, 1.70] },
+  // avoid: food this person would not carry, out of respect for their faith (Ken):
+  // no pork (hot dogs, pepperoni pizza, a ham hoagie).
+  { file: 'tourist-27', who: 'Arab Australian woman in a hijab', tall: [1.58, 1.70], avoid: ['hotdog', 'pizza', 'hoagie'] },
 ];
 // The people models that loaded, each carrying its height range.
 export function peopleModels(models) {
@@ -207,7 +209,9 @@ export function peopleModels(models) {
     const file = `tourist-${i}`, gltf = models.get(file);
     if (!gltf) continue;
     gltf.userData = gltf.userData || {};
-    gltf.userData.tall = (CAST.find(c => c.file === file) || {}).tall || ADULT;
+    const who = CAST.find(c => c.file === file) || {};
+    gltf.userData.tall = who.tall || ADULT;
+    gltf.userData.avoid = who.avoid || null;
     list.push(gltf);
   }
   return list;

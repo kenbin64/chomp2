@@ -9,7 +9,7 @@
 import { installGear, snorkelling, drainFactor } from '../gear.js';
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
-import { Food, randomKind, useJarModel } from '../food.js';
+import { Food, randomKind, kindFor, useJarModel } from '../food.js';
 import { Input, steering, easeBehind } from '../input.js';
 import { Bubbles, pickLine, chatty } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
@@ -196,14 +196,14 @@ function toast_(text, kind = 'good') {
 }
 
 // People throw toward where Wally will be.
-function throwFrom(hand, cluster = null, gentle = false) {
+function throwFrom(hand, cluster = null, gentle = false, thrower = null) {
   const flight = gentle ? 0.8 : 1.2 + Math.random() * 0.5;   // up close: a short handout
   // Aimed where he will be (Ken: toward Wally, all reachable), mostly close to him.
   const a = Math.random() * Math.PI * 2, r = aimOffset(Math.random, gentle ? 0.4 : 2);
   const tx = Math.max(-STREET.half + 0.6, Math.min(STREET.half - 0.6, wally.pos.x + wally.vel.x * flight * 0.85 + Math.cos(a) * r));
   const tz = wally.pos.z + wally.vel.z * flight * 0.85 + Math.sin(a) * r;
   const ty = G + 2 + (!gentle && Math.random() < 0.3 ? 1.2 : 0);
-  return food.throw(randomKind(), hand, launchVelocity(hand, new THREE.Vector3(tx, ty, tz), flight));
+  return food.throw(kindFor(thrower), hand, launchVelocity(hand, new THREE.Vector3(tx, ty, tz), flight));
 }
 
 // ---- The stalls: walking up to the clothes stall opens the outfit catalogue (shopmodal.js) ----

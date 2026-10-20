@@ -15,7 +15,7 @@ import * as Trip from '../trip-rules.js';
 import { chestModel } from '../chest.js';
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
-import { Food, randomKind, kennysToast, useJarModel, useToastModel } from '../food.js';
+import { Food, randomKind, kindFor, kennysToast, useJarModel, useToastModel } from '../food.js';
 import { Input, steering, easeBehind } from '../input.js';
 import { Bubbles, pickLine, chatty } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
@@ -412,14 +412,14 @@ function rescueStep(dt, t) {
 
 // ---- Throwing from the shelters -------------------------------------------------
 // People at a shelter throw as Wally comes past, aiming where he will be.
-function throwFrom(hand, cluster = null, gentle = false) {
+function throwFrom(hand, cluster = null, gentle = false, thrower = null) {
   const flight = gentle ? 0.8 : 1.3 + Math.random() * 0.5;   // up close: a short handout
   // Aimed where he will be (Ken: toward Wally, all reachable), mostly close to him.
   const a = Math.random() * Math.PI * 2, r = aimOffset(Math.random, gentle ? 0.4 : 2.2);
   const tz = wally.pos.z + wally.vel.z * flight * 0.85 + Math.sin(a) * r;
   const tx = Math.max(-PATH.half + 0.8, Math.min(PATH.half - 0.8, wally.pos.x + wally.vel.x * flight * 0.85 + Math.cos(a) * r));
   const ty = G + 2 + (!gentle && Math.random() < 0.3 ? 1.2 : 0);
-  return food.throw(randomKind(), hand, launchVelocity(hand, new THREE.Vector3(tx, ty, tz), flight));
+  return food.throw(kindFor(thrower), hand, launchVelocity(hand, new THREE.Vector3(tx, ty, tz), flight));
 }
 
 // ---- One frame --------------------------------------------------------------------

@@ -181,7 +181,7 @@ export class Clusters {
       if ((mood === 'throw' || mood === 'hand') && c.food > 0) {
         const thrower = c.people[Math.floor(Math.random() * c.people.length)];
         const hand = thrower.g.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 1.9, 0));
-        const item = throwFrom(hand, c, mood === 'hand');            // up close: a gentle handout to his mouth
+        const item = throwFrom(hand, c, mood === 'hand', thrower);   // up close: a gentle handout to his mouth
         if (item) item.cluster = c;
         thrower.throwing = 0.4;
         c.food--; c.sign.userData.draw(c.food);

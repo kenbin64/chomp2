@@ -8,7 +8,7 @@ import { showTip } from './tips.js';
 import * as THREE from 'three';
 import { buildWorld, GATE } from './world.js';
 import { Wally } from './wally.js';
-import { Food, randomKind, useJarModel } from './food.js';
+import { Food, randomKind, kindFor, useJarModel } from './food.js';
 import { Tourists, peopleModels, Cast } from './tourists.js';
 import { Kenny } from './kenny.js';
 import { Crocs } from './crocs.js';
@@ -377,7 +377,7 @@ function drawHud() {
 
 // Where to aim: near Wally, a little ahead of him, sometimes high so he has to
 // jump or leap for it. Startled tourists throw straight at him.
-function throwFood(hand, aimed, gentle = false) {
+function throwFood(hand, aimed, gentle = false, thrower = null) {
   const d = difficulty(game.time);
   const frenzy = game.quest.stage === 'challenge';
   const flight = gentle ? 0.75 : d.flight * (aimed ? 0.85 : 1);     // a handout up close is a short lob
@@ -400,7 +400,7 @@ function throwFood(hand, aimed, gentle = false) {
     const land = landingOf(hand, v);
     if (!land || lagoonDistance(land.x, land.z) <= PARK_EDGE - 0.05) break;
   }
-  return food.throw(randomKind(), hand, v);
+  return food.throw(kindFor(thrower), hand, v);              // only food this person would carry
 }
 
 function landingOf(from, v) {
@@ -412,7 +412,7 @@ function landingOf(from, v) {
 }
 
 function updateClusters(dt, t) {
-  const clusterEvents = clusters.update(dt, t, wally.pos, (hand, c, gentle) => throwFood(hand, true, gentle));
+  const clusterEvents = clusters.update(dt, t, wally.pos, (hand, c, gentle, thrower) => throwFood(hand, true, gentle, thrower));
   tradeStep(clusterEvents, wally.pos);
   questStep(dt, t, clusterEvents, wally.pos);
   for (const e of clusterEvents) {
