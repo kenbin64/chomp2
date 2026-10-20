@@ -214,6 +214,15 @@ No words or names on it, so it is not any real operator's boat. **Check every im
 Meshy's first boat image ignored "no words" and painted a tour company name and a real outboard brand on
 it. Look for lettering, logos and brand names on every generated image, and regenerate if any appear.
 
+## The King Crocodile (the Daintree finale, Ken 2026-10-20)
+
+`king-croc.glb`, Ken's Meshy model: a tall crocodile king dressed in the rainforest and river, a cloak of
+leaves and flowers, vines bound round arms and legs, a green stone pendant, a sash and a fringed skirt, a
+crown with branch antlers. T-pose, no rig yet. 5.4 million triangles from Meshy, baked to 90k with 4096
+textures (`king-croc.glb` 1.18 MB with 2048 textures, phone 768 KB): he is seen close in the cinematics
+and only once, so he gets more than the cast. **Open:** rigging and his moves (stand, speak, raise the
+sceptre, the transformation).
+
 ## The King Crocodile's sceptre (the whole trip, Ken 2026-10-19)
 
 Wally carries it from the bottom of the Croc Park lake to the King in the Daintree, and the seven talismans
@@ -238,6 +247,15 @@ in it**, so the player can see where each one belongs. The layout is heaven abov
 | File | Prompt |
 |---|---|
 | `sceptre.glb` (v2) | A royal sceptre for the crocodile king of a tropical rainforest river, about 1 m long, made from the rainforest and the river, not from gold. The shaft is dark polished rainforest wood carved like a twisting vine, wrapped with living green vines and leaves, with smooth river stones and flowing blue-green inlay like a river running down it, and a grip with a crocodile scale pattern. At the top a crocodile head carved from dark wood and green river stone, wearing a crown of leaves, ferns and vines, surrounded by six empty jewel settings, three above the head and three below, each setting shaped and decorated for its own element: at the very top a sunburst setting of warm amber; upper left a silvery setting with stars for the moon; upper right a setting of swirling wind ribbons for air; at the very bottom a setting of rough rock and roots for an opal; lower left a setting of blue-green waves for water; lower right a setting of red-orange flames for fire. The settings are empty, no gems in them. Standing upright. Stylised 3D animated-feature look, same art style as a modern family animated film, detailed hand-painted textures. No words or logos. |
+
+**Made 2026-10-20 (Ken's Meshy, v2):** a carved green crocodile at the top holding the sun setting in its
+jaws, twisted vine shaft with river stones and moss. Six see-through settings, read from the model: top
+the sunburst (sun); upper left a green ring with four points (air, the four winds); upper right silver
+filigree (moon); lower left green waves (water, teardrop); lower right gold flame-leaf (fire, teardrop);
+bottom a carved stone rectangle (earth). So the moon is upper right and air upper left, the mirror of the
+layout above. The talismans should take their setting's shape: round for sun, air and moon, a teardrop for
+water and fire, a rectangle for the opal. Baked to 50k (`sceptre.glb` 1.12 MB with 2048 textures, phone
+585 KB); it replaces the first version.
 
 Meshy may not get six different settings right from words alone. If not: make a picture of it first (text
 to image), clear its background (`tools/clear-background.py`), then image to 3D from that.
