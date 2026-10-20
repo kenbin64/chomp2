@@ -185,7 +185,11 @@ startQuest({ land: 'park', scene, clusters,
     const x = (Math.random() * 2 - 1) * 30; return { x, y: deckHeight(x) + 0.45, z: BOARDWALK.z + (Math.random() - 0.5) };
   },
   feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c ? c.people[0].g : wally.root, text, c ? 2.4 : 3.4), toast: text => toast(text, 'info') });
-tourists.useModels(cast);
+// Strollers get only people the groups are not wearing; a group arriving later
+// takes a stroller's person if nobody else is free (no one twice in view, Ken).
+tourists.useModels(cast, clusters.worn());
+clusters.othersUsed = () => tourists.worn();
+clusters.borrow = () => tourists.release();
 food.useModels(models);
 // The chest on the lagoon bottom: a bonus of Golden Mangoes. (The key to the gate
 // comes from feeding every group: Ken's storyboard, 2026-10-20.)

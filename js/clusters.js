@@ -34,6 +34,9 @@ function countSprite() {
   return s;
 }
 
+// How far apart two groups must be to share a person: beyond what is seen at once.
+const SEEN = 90;
+
 export class Clusters {
   // heightAt(x, z): the floor height where people stand.
   constructor(scene, heightAt, bubbles) {
@@ -42,10 +45,11 @@ export class Clusters {
     this.models = [];
   }
 
-  // Wear Ken's people on every group here now and every group that arrives
-  // later. Ken: nobody appears twice in the same group, but different groups
-  // (different parts of a level) may share people, so every group is full and
-  // the place never looks deserted. A Cast or a list of models both work.
+  // Wear Ken's people on every group here now and every group that arrives later.
+  // Ken (2026-10-20): no one twice anywhere in view. A group takes only people not
+  // standing in another group within SEEN metres, nor out walking (othersUsed, the
+  // strollers); if nobody is free, a stroller steps in (borrow). A Cast or a list
+  // of models both work.
   useModels(cast) {
     const list = Array.isArray(cast) ? cast : cast && cast.all ? cast.all : [];
     this.models = list;
@@ -56,12 +60,24 @@ export class Clusters {
     p.skin = wearModel(p, gltf);
     if (p.skin && p.skin.phone) p.phone = p.skin.phone;
   }
-  // Each member a different person (shuffled), as many as there are people made.
+  // The people worn by groups still here (within `within` metres of `pos`, if given).
+  worn(pos = null, within = Infinity, except = null) {
+    const out = new Set();
+    for (const c of this.list) {
+      if (c.gone || c === except) continue;
+      if (pos && Math.hypot(c.root.position.x - pos.x, c.root.position.z - pos.z) > within) continue;
+      for (const p of c.people) if (p.skin && p.skin.cast) out.add(p.skin.cast);
+    }
+    return out;
+  }
+  // Each member a different person, and nobody already seen nearby.
   wearGroup(c) {
     if (!this.models || !this.models.length || c.dressed) return;
     c.dressed = true;
-    const pool = [...this.models].sort(() => Math.random() - 0.5);
-    c.people.forEach((p, i) => { if (i < pool.length) this.wearOne(p, pool[i]); });
+    const used = this.worn(c.root.position, SEEN, c);
+    if (this.othersUsed) for (const g of this.othersUsed()) used.add(g);
+    const pool = this.models.filter(g => !used.has(g)).sort(() => Math.random() - 0.5);
+    c.people.forEach((p, i) => { const g = pool[i] || (this.borrow && this.borrow()); if (g) this.wearOne(p, g); });
     for (const p of c.people.filter(x => !x.skin)) p.g.removeFromParent();     // only if a group is bigger than the cast
     c.people = c.people.filter(x => x.skin);
   }
@@ -136,6 +152,16 @@ export class Clusters {
       c.inner.material.opacity = 0.55 * show * (c.fled ? 0 : 1);
 
       if (c.fled) { this.runAway(c, dt, wallyPos); continue; }
+      // Fed out to the last bite: a few seconds later they head off home, which frees
+      // them for the groups still to come (nobody twice in view).
+      if (c.counted && c.food <= 0) {
+        c.leaveIn = (c.leaveIn ?? 6) - dt;
+        if (c.leaveIn <= 0) {
+          c.fled = true; c.flee = 5; c.sign.visible = false;
+          c.awayFrom = new THREE.Vector3(centre.x - wallyPos.x, 0, centre.z - wallyPos.z).normalize();
+          continue;
+        }
+      }
       let mood = clusterStep(c.state, dist, dt, c.food);
       if (c.rate !== 1 && mood === 'throw') c.state.cooldown *= c.rate;
       // Traders (Ken): they never run off. Stepping inside their circle is the

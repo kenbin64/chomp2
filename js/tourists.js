@@ -246,12 +246,26 @@ export class Tourists {
     }
   }
 
-  // Wear Ken's people from the scene's Cast: only as many strollers as there
-  // are people left over (no one twice in a scene), the rest stay home.
-  useModels(cast) {
+  // Wear Ken's people from the scene's Cast: only people nobody else is wearing
+  // (taken: those in the groups), so no one is seen twice; strollers left without a
+  // person stay home (Ken, 2026-10-20).
+  useModels(cast, taken = new Set()) {
     const list = Array.isArray(cast) ? cast : cast && cast.all ? cast.all : [];
     if (!list.length) return;
-    this.list.forEach((t, i) => { t.skin = wearModel(t.body, list[(i + Math.floor(Math.random() * list.length)) % list.length]); });
+    const free = list.filter(g => !taken.has(g)).sort(() => Math.random() - 0.5);
+    this.list.forEach((t, i) => {
+      if (free[i]) t.skin = wearModel(t.body, free[i]); else t.off = true;
+      t.body.g.visible = !t.off;
+    });
+  }
+  // The people out walking now.
+  worn() { return this.list.filter(t => !t.off && t.skin).map(t => t.skin.cast); }
+  // A stroller goes home so their person can join a group that has just arrived.
+  release() {
+    const t = this.list.find(t => !t.off && t.skin && t.state === 'walk');
+    if (!t) return null;
+    t.off = true; t.body.g.visible = false;
+    return t.skin.cast;
   }
 
 
@@ -259,7 +273,7 @@ export class Tourists {
   requestThrow(wallyPos) {
     let best = null, bestD = 36;
     for (const t of this.list) {
-      if (t.state !== 'walk') continue;
+      if (t.off || t.state !== 'walk') continue;
       const d = Math.abs(t.x - wallyPos.x) + Math.random() * 6;
       if (d < bestD) { best = t; bestD = d; }
     }
@@ -272,6 +286,7 @@ export class Tourists {
   update(dt, wallyPos) {
     const releases = [];
     for (const t of this.list) {
+      if (t.off) continue;                           // at home: nobody free to be them
       const y = deckHeight(t.x);
       const pos = new THREE.Vector3(t.x, y, BOARDWALK.z + t.lane);
       const toWally = new THREE.Vector3(wallyPos.x - pos.x, 0, wallyPos.z - pos.z);
