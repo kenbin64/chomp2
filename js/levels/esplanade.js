@@ -716,7 +716,7 @@ function followCamera(dt) {
   camera.lookAt(camTarget);
   const jolt = fx.shakeOffset(dt); if (jolt) camera.position.add(jolt);
   world.ring.position.x = camera.position.x; world.ring.position.z = camera.position.z;   // the horizon stays on the horizon
-  if (world.ranges) { world.ranges.position.x = camera.position.x; world.ranges.position.z = camera.position.z; }
+  if (world.ranges) world.ranges.userData.follow(camera);   // parallax: the near hills slide past the far ones
   world.sun.position.set(wally.pos.x - 60, 70, wally.pos.z - 40); world.sun.target.position.copy(wally.pos);
 }
 

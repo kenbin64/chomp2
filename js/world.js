@@ -94,13 +94,20 @@ function addHorizon(scene, image) {
 // a mottle for the canopy, fading into the haze at the foot.
 // sink: how much they drop on the sea side (1 = down to nothing, 0.5 = half
 // height, as across the water from the Esplanade); turn: turns the whole ring
-// (radians) so the low side faces a level's sea. Returns the group, so a level
-// that is longer than the ring can carry it along with the camera.
+// (radians) so the low side faces a level's sea. Returns the group.
+//
+// Parallax (Ken, 2026-10-20): three layers, near, middle and far, so the hills
+// slide past one another as the camera moves, the near ones most. A level longer
+// than the ring calls group.userData.follow(camera) each frame: each layer is
+// carried along with the camera by its own share (the far one nearly all the way,
+// the near one 70%: never so little that a level 480 m long walks through the
+// near ring), which keeps them on the skyline and keeps the depth.
 export function addRanges(scene, horizon, sunDir, { sink = 1, turn = 0 } = {}) {
   const group = new THREE.Group(); group.rotation.y = turn;
   const layers = [
-    { r: 290, base: 7, rise: 26, colour: 0x2e5a3c, seed: 1.7, haze: 0.2 },
-    { r: 370, base: 18, rise: 40, colour: 0x557487, seed: 4.1, haze: 0.45 },
+    { r: 215, base: 3, rise: 14, colour: 0x24482e, seed: 2.9, haze: 0.08, follow: 0.7 },    // the near foothills
+    { r: 290, base: 7, rise: 26, colour: 0x2e5a3c, seed: 1.7, haze: 0.2, follow: 0.85 },
+    { r: 370, base: 18, rise: 40, colour: 0x557487, seed: 4.1, haze: 0.45, follow: 0.94 },
   ];
   const height = (L, a) => {
     let h = L.base + L.rise * (0.5 + 0.28 * Math.sin(a * 3 + L.seed) + 0.17 * Math.sin(a * 7.3 + L.seed * 2) + 0.05 * Math.sin(a * 19 + L.seed));
@@ -135,9 +142,15 @@ export function addRanges(scene, horizon, sunDir, { sink = 1, turn = 0 } = {}) {
     geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
     geo.setIndex(idx);
     const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, fog: false }));
-    m.renderOrder = -1;
+    m.renderOrder = -1 - layers.indexOf(L);                     // far behind near
+    m.userData.follow = L.follow;
     group.add(m);
   }
+  const local = new THREE.Vector3();
+  group.userData.follow = camera => {
+    local.copy(camera.position); group.worldToLocal(local);
+    for (const m of group.children) m.position.set(local.x * m.userData.follow, 0, local.z * m.userData.follow);
+  };
   scene.add(group);
   return group;
 }

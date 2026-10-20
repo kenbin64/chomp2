@@ -182,6 +182,19 @@ function skyline() {
   const a = Math.PI * 0.62;                                 // to the south-west, against the sunset
   pyramid.position.set(Math.cos(a) * (R - 40), 58, Math.sin(a) * -(R - 40));
   g.add(pyramid);
+  // A nearer line of trees between the cane farms, much closer than the ranges, so
+  // the two slide past each other as Wally moves (parallax, Ken 2026-10-20).
+  {
+    const R2 = 190, seg2 = 240, p2 = [], i2 = [];
+    for (let k = 0; k <= seg2; k++) {
+      const a = k / seg2 * Math.PI * 2;
+      const h = 9 + Math.sin(a * 23) * 2.2 + Math.sin(a * 61 + 1) * 1.6 + Math.max(0, Math.sin(a * 5 + 0.7)) * 5;   // uneven crowns
+      p2.push(Math.cos(a) * R2, -1, Math.sin(a) * R2, Math.cos(a) * R2, h, Math.sin(a) * R2);
+      if (k < seg2) { const b = k * 2; i2.push(b, b + 1, b + 2, b + 1, b + 3, b + 2); }
+    }
+    const geo2 = new THREE.BufferGeometry(); geo2.setAttribute('position', new THREE.Float32BufferAttribute(p2, 3)); geo2.setIndex(i2);
+    g.add(new THREE.Mesh(geo2, new THREE.MeshBasicMaterial({ color: 0x0c0c1a, side: THREE.DoubleSide, fog: false })));
+  }
   return g;
 }
 

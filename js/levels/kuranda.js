@@ -362,7 +362,7 @@ function followCamera(dt) {
   if (camera.position.y < 0.8) camera.position.y = 0.8;
   camera.lookAt(camTarget);
   const jolt = fx.shakeOffset(dt); if (jolt) camera.position.add(jolt);
-  world.ranges.position.x = camera.position.x; world.ranges.position.z = camera.position.z;
+  world.ranges.userData.follow(camera);                    // parallax: the near hills slide past the far ones
   world.sun.position.set(wally.pos.x - 60, 70, wally.pos.z - 40); world.sun.target.position.copy(wally.pos);
 }
 
