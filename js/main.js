@@ -39,7 +39,7 @@ import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './
 import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE, outfitModel, findTreasure, bankFinds, PROGRESS_CHANGED, saveProgress } from './progress.js';
 import { dressOutfit } from './outfit.js';
 import { showLeaderboard } from './leaderboard.js';
-import { installMap, openMap, recordVisit } from './mapmodal.js';
+import { installMap, openMap, recordVisit, markRetry } from './mapmodal.js';
 import { installShop, openShop } from './shopmodal.js';
 import * as sound from './sound.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, difficulty,
@@ -928,6 +928,7 @@ function finish(won, why = '') {
       $('over').querySelector('h1').textContent = 'Still peckish!';
       $('over').querySelector('p').textContent = `Every group is done, but Wally's feed-o-meter isn't full. He needs a full tank (${FULL}%) to head off. Scare fewer people off and beat the thieves to the food.`;
     }
+    markRetry(false, 'Croc Park');
     $('final-score').textContent = game.score.toLocaleString();
     $('best').textContent = `Best: ${best.toLocaleString()}`;
     $('over').hidden = false;

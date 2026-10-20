@@ -23,7 +23,7 @@ import { loadModels, dress } from '../models.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
-import { installMap, recordVisit } from '../mapmodal.js';
+import { installMap, recordVisit, markRetry } from '../mapmodal.js';
 import { showTip } from '../tips.js';
 import { chestModel } from '../chest.js';
 import { kennysJar } from '../food.js';
@@ -437,6 +437,7 @@ function finish(won) {
   saveProgress(progress);
   $('result-title').textContent = won ? 'The fire talisman!' : 'Out of puff';
   $('result-why').textContent = won ? 'One talisman for the sceptre. On to the Esplanade.' : 'Kenny can only bring his jar three times in a place. Try the field again.';
+  markRetry(won, 'the cane fields');
   $('result-stars').textContent = won ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
   $('result-lines').innerHTML = '';
   for (const [label, v] of [['Sugar cane eaten', game.eaten], ['Cane cut', `${game.cuts} (at least ${cutsToMiddle} needed)`], ['Lost to toads and bats', game.lost], ['Total', total]]) {

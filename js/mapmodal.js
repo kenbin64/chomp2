@@ -46,6 +46,54 @@ export function addNextStop() {
   }
 }
 
+// Out of lives (Ken, 2026-10-20): start this area again from its beginning. What was
+// gained here this time is lost; everything from other areas is kept, so the game is
+// never started all over again (trip-rules.js does the keeping). Each level calls this
+// when its end screen comes up; on a win it leaves the button as it was.
+export function markRetry(won, areaName) {
+  const again = document.getElementById('again'); if (!again) return;
+  again.dataset.label = again.dataset.label || again.textContent;
+  const card = again.closest('.card');
+  let note = card && card.querySelector('.retry-note');
+  if (won) { again.textContent = again.dataset.label; if (note) note.hidden = true; return; }
+  again.textContent = `Start ${areaName} again`;
+  if (card && !note) { note = el('p', 'fine retry-note'); again.closest('.end-buttons').before(note); }
+  if (note) { note.hidden = false; note.textContent = `Back to the start of ${areaName}. Anything found here this time is lost; everything from the rest of the trip is kept.`; }
+  // Or the whole game from the very beginning (Ken: give them that choice too),
+  // asked once more first, since it wipes the whole trip.
+  const buttons = again.closest('.end-buttons');
+  if (buttons && !buttons.querySelector('.new-trip')) {
+    const fresh = el('button', 'go ghost new-trip', 'Start the whole game again'); fresh.type = 'button';
+    fresh.onclick = () => askNewTrip();
+    buttons.append(fresh);
+  }
+}
+
+// "Are you sure?" (Ken, 2026-10-20), in the game's own style, before anything is wiped.
+export function askNewTrip() {
+  let box = document.querySelector('.confirm-reset');
+  if (!box) {
+    box = el('div', 'map-modal confirm-reset'); box.setAttribute('role', 'alertdialog'); box.setAttribute('aria-label', 'Reset the game');
+    const card = el('div', 'card');
+    card.append(el('h1', null, 'Reset the game?'),
+                el('p', null, 'Are you sure you want to reset the game? All progress is lost and a new game begins.'));
+    const row = el('div', 'end-buttons');
+    const yes = el('button', 'go danger', 'Yes, start a new game'); yes.type = 'button'; yes.onclick = newTrip;
+    const no = el('button', 'go ghost', 'No, go back'); no.type = 'button'; no.onclick = () => { box.hidden = true; };
+    row.append(no, yes); card.append(row); box.append(card); document.body.append(box);
+    box.addEventListener('keydown', e => { if (e.key === 'Escape') box.hidden = true; });
+  }
+  box.hidden = false; box.querySelector('.ghost').focus();      // No has the focus: Enter never wipes by accident
+}
+
+// A brand-new trip: every save of the trip wiped (settings such as sound and tips
+// are kept), then the opening screen, where Play asks for the difficulty again.
+export function newTrip() {
+  // (Kept: the best score, the leaderboard name, the settings and which tips were seen.)
+  for (const k of ['chomp-progress', 'chomp-visited', 'chomp-opening-done', 'chomp-skyrail-seen', 'chomp-zipline-intro']) { try { localStorage.removeItem(k); } catch { /* nothing kept */ } }
+  location.href = 'index.html';
+}
+
 // Can the player go to this area from the map?
 export function mapActive(progress, visited, id) {
   const a = AREAS.find(x => x.id === id);

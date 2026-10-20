@@ -440,3 +440,8 @@ body.touch .gear-use { bottom: 224px; }
 /* The opening (opening.js): skip a scene on purpose. */
 .skip-scene { position: fixed; right: 18px; bottom: 18px; z-index: 6; padding: 8px 16px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.6); background: rgba(8,30,44,0.7); color: #fff; font: 700 16px var(--font); cursor: pointer; }
 .skip-scene small { opacity: 0.7; font-weight: 600; margin-left: 4px; }
+
+/* "Reset the game?" (mapmodal.js): above everything, and Yes looks like the serious choice it is. */
+.confirm-reset { z-index: 60; }
+.confirm-reset .card { max-width: 460px; text-align: center; }
+.go.danger { background: linear-gradient(#e2574c, #b8352b); color: #fff; }

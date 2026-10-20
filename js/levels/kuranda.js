@@ -18,7 +18,7 @@ import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
-import { installMap, recordVisit } from '../mapmodal.js';
+import { installMap, recordVisit, markRetry } from '../mapmodal.js';
 import { installShop, openShop } from '../shopmodal.js';
 import { showLeaderboard } from '../leaderboard.js';
 import { loadRealism } from '../realism.js';
@@ -400,6 +400,7 @@ function finish(won, why = '') {
   save();
   $('result-title').textContent = won ? 'Off to Barron Falls!' : why === 'hungry' ? 'Still peckish!' : 'Out of puff';
   $('result-why').textContent = why === 'hungry' ? `Every group's fed, but Wally needs a full tank (${FULL}%) for the trail.` : '';
+  markRetry(won, 'Kuranda');
   $('result-stars').textContent = won ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
   $('result-lines').innerHTML = '';
   for (const [label, v] of [['Tucker caught', `${game.caught} (${game.foodPoints})`], ['Gold pieces found', game.gold], ['Finish bonus', finishBonus], ['Total', total]]) {
