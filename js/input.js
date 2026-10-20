@@ -45,8 +45,18 @@ export class Input {
     // taken, dragging turns the camera.
     let drag = null;
     this.aim = 0; this.mouseMode = 'wally';
-    // Only while a level is being played: not over a menu, card or the map.
-    this.canLock = () => !document.querySelector('.overlay:not([hidden]), .map-modal:not([hidden])');
+    // Only while a level is being played: not over a menu, card, tip or the map.
+    const MODALS = '.overlay:not([hidden]), .map-modal:not([hidden]), .tip-card:not([hidden])';
+    this.canLock = () => !document.querySelector(MODALS);
+    // Any card coming up gives the cursor back for ordinary clicking; when the last
+    // card is dismissed, Wally has the mouse again (Ken, 2026-10-20). The click or key
+    // that dismissed it counts as the player's go-ahead the browser asks for.
+    let handBack = false;
+    new MutationObserver(() => {
+      const open = !this.canLock();
+      if (open && document.pointerLockElement === canvas) { handBack = true; document.exitPointerLock(); }
+      else if (!open && handBack) { handBack = false; this.mouseMode = 'wally'; canvas.requestPointerLock?.()?.catch?.(() => {}); }
+    }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] });
     const locked = () => document.pointerLockElement === canvas;
     // A small label saying what the mouse is doing: steering Wally, turning the camera,
     // or free (click the game to take it).
