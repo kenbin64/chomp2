@@ -84,7 +84,10 @@ export class Crocs {
   }
 
   useModel(gltf) {
-    for (const c of this.list) c.skin = dress(c.parts.g, gltf, { length: 4.2 }, -0.3);
+    for (const c of this.list) {
+      c.skin = dress(c.parts.g, gltf, { length: 4.2 }, -0.3);
+      if (c.skin) c.skin.root.traverse(o => { if (o.isSkinnedMesh) o.frustumCulled = false; });   // a moving skin's bounds go stale
+    }
   }
 
   // Returns [{ croc, item }] for food snatched this frame. Pushes Wally out of the way.

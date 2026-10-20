@@ -19,6 +19,7 @@
 import * as THREE from 'three';
 import { isWater, terrainHeight } from './rules.js';
 import { addSwimSway } from './swim.js';
+import { ModelSkin } from './models.js';
 import { showTip } from './tips.js';
 
 const KENNY_LINES = [
@@ -90,13 +91,21 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
   let phase = null, time = 0, line = -1, onDone = null, sway = null, captionAt = -1, turnFrom = null;
 
   // The ordinary croc he starts as: Ken's regular croc, swimming, in place of Wally's model.
+  // Rigged (tools/blender-rig-croc.py), it swims with its Swim move: the legs laid
+  // back along the body and the tail doing the work.
   const croc = new THREE.Group();
+  let crocSkin = null;
   {
     const g = models.get('croc-regular');
-    if (g) {
+    if (g && g.animations.length) {
+      crocSkin = new ModelSkin(g, { length: 3.6 });                       // about 3.6 m, nose to tail
+      crocSkin.root.position.y += 0.2;                                    // low in the water, eyes and back showing
+      crocSkin.root.traverse(o => { if (o.isMesh) o.frustumCulled = false; });   // a moving skin's bounds go stale: always drawn
+      croc.add(crocSkin.root);
+    } else if (g) {
       const m = g.scene.clone(true), box = new THREE.Box3().setFromObject(m), size = box.getSize(new THREE.Vector3());
-      m.scale.setScalar(3.6 / Math.max(size.x, size.z));                // about 3.6 m, nose to tail
-      m.position.y = -box.min.y * m.scale.y + 0.2;                        // low in the water, eyes and back showing
+      m.scale.setScalar(3.6 / Math.max(size.x, size.z));
+      m.position.y = -box.min.y * m.scale.y + 0.2;
       croc.add(m); sway = addSwimSway(m);
     }
   }
@@ -190,6 +199,12 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
   function step(dt, t) {
     time += dt;
     if (sway) sway.setPace(Math.min(1, Math.hypot(wally.vel.x, wally.vel.z) / 4));
+    if (crocSkin && croc.parent) {
+      // Swimming when he moves, faster strokes the faster he goes; drifting, a slow idle.
+      const pace = Math.hypot(wally.vel.x, wally.vel.z);
+      crocSkin.play(pace > 0.4 ? 'swim' : 'idle', { alternatives: ['swim'], speed: pace > 0.4 ? 0.6 + pace / 4 : 1 });
+      crocSkin.update(dt);
+    }
     sceptre.userData.glow.intensity = 5 + Math.sin(t * 3) * 2;
     if (phase === 'intro') {
       if (time >= SPIRAL + HOLD + GLIDE) enter('croc');
@@ -296,6 +311,7 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
     get active() { return !!phase; },
     get phase() { return phase; },
     get sceptreAt() { return sceptre.position; },              // for testing
+    get croc() { return croc; },
     begin(done) { onDone = done; enter('intro'); },
     carry() { carried.visible = true; world.sign.setScratched(true); },   // a return visit: he has it, and the sign is scratched
     step, shot,

@@ -163,7 +163,8 @@ kenny.useModel(models.get('kenny'));
 // The other crocs: Ken's regular croc (the one Wally was), its tail swaying as it swims.
 const regularCroc = models.get('croc') || models.get('croc-regular');
 crocs.useModel(regularCroc);
-if (regularCroc && !models.get('croc')) for (const c of crocs.list) if (c.skin) addSwimSway(c.skin.root);
+// (Rigged now, tools/blender-rig-croc.py: it swims with its own Swim move; the shader sway only without one.)
+if (regularCroc && !models.get('croc') && !regularCroc.animations.length) for (const c of crocs.list) if (c.skin) addSwimSway(c.skin.root);
 pelicans.useModel(models.get('pelican'));
 toads.useModel(models.get('toad'));
 bats.useModel(models.get('flyingfox'));
