@@ -224,9 +224,11 @@ Side games: the boomerang (Kuranda) and the golf course (in the valley by the Sk
    thought bubble (Ken, 2026-10-20):** "Crikey! I'm like a human bloke."
 4. **Kenny arrives (Ken, 2026-10-20):** he introduces himself, tells Wally he needs people food, and that
    if he gets tired Kenny will bring him a spoonful from his jar, but only 3 times per place (the 3 lives
-   per area, rule 8). Proposed words: "G'day! I'm Kenny the Koala. You'll need people food now. If you run
-   out of puff, I'll bring you a spoonful from my jar. But only three times in each place, so look after
-   yourself!" (He says nothing of being sent by the King; that is kept for the end.)
+   per area, rule 8). Kenny calls him **Wally**, so he (and the player) learns his name, and tells him
+   people will throw him food but not to get so close he scares them away (Ken, 2026-10-20). Proposed
+   words: "G'day, Wally! I'm Kenny the Koala. You'll need people food now. People will throw you some, but
+   don't get so close you scare them away. If you run out of puff, I'll bring you a spoonful from my jar.
+   But only three times in each place, so look after yourself!" (He says nothing of being sent by the King; that is kept for the end.)
 5. Instructions and the backstory, in a modal: the quest, the Croc King and the one wish. Normally people
    would not feed a croc, but now he is part human he needs to eat people food; and the King only sees
    humans eating fast food, so he made an assumption. The people are actually afraid of Wally, so they
