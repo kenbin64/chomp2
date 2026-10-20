@@ -48,9 +48,12 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
    cane cutter's tool.)
 2. **The sugar cane fields: the fire talisman** (Ken, 2026-10-19: it replaces the sugar talisman, so the
    elements are represented). **How it plays (Ken, 2026-10-20):**
+   - **Why he is there:** Wally goes to the cane fields to hide.
    - The cane is thick and easy to get lost in, so he needs the machete (from the Croc Park gate) to go in.
    - Each swing of the machete clears a cane clump (a tile), leaving cut ground, so he beats down his own
      path.
+   - Pieces of sugar cane are also left lying on the ground; the toads and bats go after them, so Wally
+     has to get there first. Cutting drops more.
    - Cutting drops pieces of sugar cane. He eats them to keep his energy up, before the cane toads and
      fruit bats take them. Without them he runs out, and it is Kenny and the jar again.
    - Cane toads have poison skin (touching one costs him, never kills; true to life, toads poison what
@@ -66,6 +69,8 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
    - **At dusk (Ken, 2026-10-20):** the only light is the moon and the glow of the fires, but light enough
      to see the cane, the toads and the bats. (The fireglow also shows where the fire is, so the light and
      the maze are the same thing.)
+   - **The hills and mountains of Cairns in the distance (Ken, 2026-10-20):** the rainforest ranges behind
+     the coast, dark against the dusk sky.
    - The cane tile follows Ken's photo of unburned Queensland cane: tall straight yellow stalks with ringed
      joints, long narrow leaves pointing up (second Meshy tile, 2026-10-20, replaces the first).
    - **Only near Wally (Ken, 2026-10-20):** full cane clumps only close to Wally; after that the field is
@@ -255,6 +260,9 @@ Side games: the boomerang (Kuranda) and the golf course (in the valley by the Sk
   talismans, the need for people food. Everything else waits for the end: why the King put the sceptre
   in the pond (to free his people), that Kenny was sent by the King, and that Wally may choose to be a
   normal croc again.
+- **The key (Ken's Meshy, 2026-10-20):** `park-key.glb`, an old brass key on a ring with a leather fob
+  stamped with a croc and "CROC PARK MASTER" (the game's own park). It replaces the key built from shapes
+  (`gateKey()` in `js/parktreasure.js`) when the opening is built.
 - **The regular croc (Ken's Meshy, 2026-10-20):** one model for the player's croc before the change, the
   other crocs in the park and the crocs in rivers like the Daintree. Realistic, all four legs splayed (a
   good pose to rig). Baked to 20k (386 KB, phone 181 KB), kept aside until it is rigged: as `croc.glb` it
