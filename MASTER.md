@@ -31,9 +31,9 @@ would become the one (Wally). The sceptre instructs him to take it up to the Kin
 wish. But first he must collect **the talismans**, which are required to get up there. The sceptre only
 affects the last one who touched it.
 
-**The reveal is kept for the end (Ken, 2026-10-19):** the game does not say why Wally is a personified croc
-until the King tells him at the end (section 6). He finds out when the player finds out. So the opening
-shows him finding the sceptre and hearing its instructions, never that it changed him.
+**The reveal is kept for the end (Ken, 2026-10-19; refined 2026-10-20):** the opening shows the
+transformation and gives just enough back story for the basic quest (see the Croc Park storyboard). The
+rest, the King's true purpose, Kenny's secret and Wally's choice, he finds out when the player finds out.
 
 **Every quest has two parts (Ken, 2026-10-19):** find the key, then find the chest with the talisman.
 
@@ -228,8 +228,11 @@ Side games: the boomerang (Kuranda) and the golf course (in the valley by the Sk
 5. The objective: eat the food to keep the health meter up, without scaring the people. Do that for every
    cluster of people and he gets the key to Croc Park. He opens the lock, the machete appears, and he can
    go to the sugar cane field.
-- **Open:** this shows the transformation and says he is part human at the start, which the earlier
-  decision kept for the end ("he finds out when we find out"). Which holds?
+- **How much is revealed (Ken, 2026-10-20):** the opening is only the back story, just enough for the
+  player to know the basic quest: the transformation, the sceptre, the King and the one wish, the
+  talismans, the need for people food. Everything else waits for the end: why the King put the sceptre
+  in the pond (to free his people), that Kenny was sent by the King, and that Wally may choose to be a
+  normal croc again.
 - **Needs:** a regular croc model (`croc.glb`, on all fours, rigged to walk and swim); the rival crocs use
   a stand-in built from shapes today. The sign today reads "Please DON'T feed the croc." (`js/textures.js`).
 
