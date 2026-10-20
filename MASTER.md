@@ -37,7 +37,8 @@ rest, the King's true purpose, Kenny's secret and Wally's choice, he finds out w
 
 **Every quest has two parts (Ken, 2026-10-19):** find the key, then find the chest with the talisman.
 
-**The trip: seven areas (Ken, 2026-10-19: "7 is the charm").** **The talismans go into
+**The trip: seven areas (Ken, 2026-10-19: "7 is the charm").** Seven is the main limit, on purpose
+(Ken, 2026-10-20), in keeping with his dimensional framing [Framing]: the trip does not grow past seven. **The talismans go into
 the sceptre to give it its power** (Ken): each one he wins is set into it, so Wally carries the sceptre
 through the trip. Keys are just keys: a key opens a gate or a chest; it is not a talisman.
 
