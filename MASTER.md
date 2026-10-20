@@ -76,8 +76,10 @@ things required to get items or talismans. (This replaces the mango, pearl and p
 
 **Six talismans for the sceptre's six settings (Ken, 2026-10-19):** the four elements, fire (the cane
 fields), air (the boomerang), water (the zip line) and earth (the opal), plus the sun (the Esplanade) and
-the moon (the reef). Croc Park gives the machete, not a talisman. **Proposed:** the sun and moon in the top
-and bottom settings, the four elements on the sides.
+the moon (the reef). Croc Park gives the machete, not a talisman. **The settings, heaven above and earth below (Ken,
+2026-10-20):** sun at the top, moon to its left, air to its right (Proposed; see MODELS.md); the earth
+(opal) at the bottom, water to its left, fire to its right. Each setting is made in its talisman's style so
+the player sees where each goes.
 - The reef clam can still take the Big Golden Mango for the pearl key: the mango is a trade item, not a
   talisman.
 
