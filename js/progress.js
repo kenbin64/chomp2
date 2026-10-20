@@ -36,7 +36,7 @@ export function completeArea(progress, id, { score = 0, stars = 0, mangoes = 0, 
                       { mangoes, pearls, coins, shells });
   p.stars[id] = Math.max(p.stars[id] || 0, stars);
   p.best[id] = Math.max(p.best[id] || 0, score);
-  if (id === 'park') p.badge = true;                     // the Croc Park ranger badge: the way onto the Esplanade
+  if (id === 'park') p.badge = true;                     // the Croc Park ranger badge (older saves; the trip rules now use the machete)
   if (id === 'reef') p.skyrail = true;                   // clearing the reef earns the Skyrail pass up to Kuranda
   if (!p.postcards.includes(id)) p.postcards.push(id);
   if (!p.unlocked.includes(id)) p.unlocked.push(id);      // an area reached stays open

@@ -411,7 +411,8 @@ function addGate(scene) {
   const [c, ctx] = (() => { const cv = document.createElement('canvas'); cv.width = 512; cv.height = 96; return [cv, cv.getContext('2d')]; })();
   ctx.fillStyle = '#2f6b3a'; ctx.fillRect(0, 0, 512, 96);
   ctx.fillStyle = '#fff6d8'; ctx.textAlign = 'center';
-  fitText(ctx, 'To the Esplanade', 256, 62, 470, 44, 'bold {size}px "Trebuchet MS", sans-serif');
+  // The next stop on the trip (quests.js AREAS, trip-rules.js ORDER): the cane fields.
+  fitText(ctx, 'To the Cane Fields', 256, 62, 470, 44, 'bold {size}px "Trebuchet MS", sans-serif');
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
   for (const side of [-1, 1]) {
     const board = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 0.68), mat(0xffffff, { map: tex }));
