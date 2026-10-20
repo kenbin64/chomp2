@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Boat check</title>
+<!-- The Daintree river boat with Ken's people standing aboard, to judge how many fit.
+     Open it from the game's own server:
+       http://localhost:8090/tools/boat-check.html?n=13&anim=Cheer&view=side
+     n: how many people (up to the cast loaded); anim: Idle, Wave, Point, Cheer, Nervous;
+     view: side, high or stern. -->
+<style>html,body{margin:0;background:#b9cbd3;font:14px sans-serif} #info{position:fixed;left:8px;top:6px}</style>
+<script type="importmap">{ "imports": { "three": "../js/three.module.js", "three/addons/": "../js/addons/" } }</script>
+</head>
+<body>
+<div id="info"></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { ModelSkin } from '../js/models.js';
+import { CAST } from '../js/tourists.js';
+
+const q = new URLSearchParams(location.search);
+const N = Number(q.get('n') || 13), ANIM = q.get('anim') || 'Idle', VIEW = q.get('view') || 'side';
+const BOAT_LENGTH = Number(q.get("len") || 7.5);   // metres: at 7.5 the benches and rail sit at real heights for the people
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(innerWidth, innerHeight); renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xb9cbd3);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x556655, 1.6));
+const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(6, 12, 8); scene.add(sun);
+const water = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color: 0x4a6b55, roughness: 0.3 }));
+water.rotation.x = -Math.PI / 2; scene.add(water);
+
+const draco = new DRACOLoader().setDecoderPath('../js/addons/libs/draco/');
+const loader = new GLTFLoader().setDRACOLoader(draco);
+const load = f => loader.loadAsync(`../models/${f}.glb`).catch(() => null);
+
+// The boat, scaled to its real length, sitting a little down in the water.
+const boatGltf = await load('river-boat');
+const boat = boatGltf.scene;
+let box = new THREE.Box3().setFromObject(boat);
+const size = box.getSize(new THREE.Vector3());
+boat.scale.setScalar(BOAT_LENGTH / size.x);
+box = new THREE.Box3().setFromObject(boat);
+boat.position.y = -box.min.y - 0.45;
+boat.position.x = -(box.min.x + box.max.x) / 2;
+boat.position.z = -(box.min.z + box.max.z) / 2;
+scene.add(boat); boat.updateMatrixWorld(true);
+box = new THREE.Box3().setFromObject(boat);
+const L = box.max.x - box.min.x, W = box.max.z - box.min.z, H = box.max.y - box.min.y;
+
+// The deck: the height most often hit when casting down over the boat from just under the
+// canopy (a bench or rail is hit now and then, the hull bottom under the deck never).
+const ray = new THREE.Raycaster(), counts = new Map();
+for (let i = 0; i <= 40; i++) for (let j = -3; j <= 3; j++) {
+  const x = box.min.x + L * (0.08 + 0.7 * i / 40), z = W * 0.12 * j;
+  ray.set(new THREE.Vector3(x, box.min.y + H * 0.55, z), new THREE.Vector3(0, -1, 0));
+  const hit = ray.intersectObject(boat, true)[0];
+  if (hit) { const k = Math.round(hit.point.y * 20) / 20; counts.set(k, (counts.get(k) || 0) + 1); }
+}
+const DECK = [...counts].sort((p, q) => q[1] - p[1])[0][0];
+const deckAt = () => DECK;
+
+// Ken's people, standing along both rails, facing outwards, bow to stern.
+const people = (await Promise.all(CAST.map(c => load(c.file).then(g => g && { g, c })))).filter(Boolean);
+const mixers = [];
+const spots = [];
+for (let i = 0; i < N; i++) {
+  const side = i % 2 ? 1 : -1, k = Math.floor(i / 2), rows = Math.ceil(N / 2);
+  const x = box.min.x + L * (0.12 + 0.62 * (rows > 1 ? k / (rows - 1) : 0.5));
+  spots.push({ x, z: side * W * 0.3, face: side });
+}
+spots.forEach((s, i) => {
+  const p = people[i % people.length]; if (!p) return;
+  const tall = (p.c.tall[0] + p.c.tall[1]) / 2;
+  const skin = new ModelSkin(p.g, { height: tall });    // sized exactly as the game sizes them
+  skin.root.position.set(s.x, deckAt(s.x, s.z), s.z);
+  skin.root.rotation.y = s.face > 0 ? 0 : Math.PI;      // look out over the rail
+  scene.add(skin.root);
+  skin.play(ANIM.toLowerCase(), { alternatives: ['idle'] });
+  skin.mixer.setTime(Math.random() * 2);
+  mixers.push(skin.mixer);
+});
+
+const cam = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.1, 500);
+if (VIEW === 'high') cam.position.set(6, 9, 11);
+else if (VIEW === 'stern') cam.position.set(14, 3, 3);
+else cam.position.set(0, 2.5, 16);
+cam.lookAt(0, box.min.y + H * 0.4, 0);
+document.getElementById('info').textContent = `boat ${L.toFixed(1)} x ${W.toFixed(1)} x ${H.toFixed(1)} m, ${spots.length} people (${people.length} in the cast), ${ANIM}, deck at ${DECK.toFixed(2)} m`;
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => { const dt = clock.getDelta(); mixers.forEach(m => m.update(dt)); renderer.render(scene, cam); });
+</script>
+</body>
+</html>
