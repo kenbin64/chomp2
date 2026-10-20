@@ -428,3 +428,15 @@ body.touch .gear-use { bottom: 224px; }
 .flash.go { animation: flash-go 1.4s ease-out; }
 @keyframes flash-go { 0% { opacity: 0; } 18% { opacity: 1; } 40% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .flash.go { animation-duration: 0.6s; } }
+
+/* The book (book.js): the X stays in view while the page scrolls; small news is a note, not the whole book. */
+.book-modal .map-close { position: fixed; top: max(14px, env(safe-area-inset-top)); right: 14px; z-index: 3; width: 48px; height: 48px; font-size: 24px; background: rgba(8, 30, 44, 0.85); border: 2px solid rgba(255, 255, 255, 0.6); }
+.book-note { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); padding: 8px 16px; border-radius: 12px; background: rgba(8, 30, 44, 0.85); color: #fff; font: 700 15px var(--font); z-index: 4; pointer-events: none; transition: opacity 0.5s; }
+.book-note.fade { opacity: 0; }
+.book-button.news { box-shadow: 0 0 0 3px #ffd36a, 0 0 18px #ffd36a; animation: book-news 1.2s ease-in-out infinite alternate; }
+@keyframes book-news { to { box-shadow: 0 0 0 3px #ffd36a, 0 0 4px #ffd36a; } }
+@media (prefers-reduced-motion: reduce) { .book-button.news { animation: none; } }
+
+/* The opening (opening.js): skip a scene on purpose. */
+.skip-scene { position: fixed; right: 18px; bottom: 18px; z-index: 6; padding: 8px 16px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.6); background: rgba(8,30,44,0.7); color: #fff; font: 700 16px var(--font); cursor: pointer; }
+.skip-scene small { opacity: 0.7; font-weight: 600; margin-left: 4px; }

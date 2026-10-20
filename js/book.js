@@ -58,11 +58,28 @@ export function bookFound(id) {
   return true;
 }
 
-// Show what is waiting, one at a time (the next when the book is closed).
+// Show what is waiting (Ken, 2026-10-20: the book coming up for every little thing
+// is jarring). Only a major milestone opens the book by itself: a talisman, a key
+// to the next place, the sceptre. Everything else is a short note by the Book
+// button, which glows until the player opens the book.
+const MAJOR = id => /^talisman-/.test(id) || ['machete', 'park-key', 'pearl-key', 'sceptre'].includes(id);
+let pending = null;
 function showNext() {
   if (!queue.length || (modal && !modal.hidden)) return;
-  focus = queue.shift();
-  openBook(focus.stamp ? 'stamps' : 'items');
+  const next = queue.shift();
+  if (MAJOR(next.item || next.stamp)) { focus = next; openBook(next.stamp ? 'stamps' : 'items'); return; }
+  focus = null; pending = next;
+  const name = next.stamp ? (STAMPS.find(s => s.id === next.stamp) || {}).name : (ITEMS.find(i => i.id === next.item) || {}).name;
+  note(next.stamp ? `Stamp: ${name || 'a new stamp'}` : `New in your book: ${name || 'something new'}`);
+  if (queue.length) setTimeout(showNext, 2600);
+}
+// A note beside the Book button for a few seconds, and the button glows.
+function note(text) {
+  const b = document.querySelector('.book-button'); if (b) b.classList.add('news');
+  let n = document.querySelector('.book-note');
+  if (!n) { n = el('div', 'book-note'); document.body.append(n); }
+  n.textContent = `📖 ${text} (B)`; n.classList.remove('fade'); n.hidden = false;
+  clearTimeout(note.t); note.t = setTimeout(() => n.classList.add('fade'), 2400);
 }
 
 // ---- The book --------------------------------------------------------------------------
@@ -168,6 +185,8 @@ function render() {
 
 export function openBook(which = null) {
   if (!modal) build();
+  if (!focus && pending) { focus = pending; pending = null; which = which || (focus.stamp ? 'stamps' : 'items'); }   // opened after a note: show what it was
+  document.querySelector('.book-button')?.classList.remove('news');
   if (which) tab = which;
   render(); modal.hidden = false;
   if (onPause) onPause(true);

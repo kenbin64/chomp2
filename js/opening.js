@@ -119,8 +119,13 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
   wally.root.add(carried);
 
   function skipScene() { if (phase === 'intro') enter('croc'); else if (phase === 'change' || phase === 'sign' || phase === 'kenny') time = 999; }
-  addEventListener('keydown', e => { if (phase && phase !== 'croc' && phase !== 'story' && e.key !== 'Shift') skipScene(); });
-  addEventListener('pointerdown', () => { if (phase && phase !== 'croc' && phase !== 'story') skipScene(); });
+  // Skipping a scene is on purpose only (Ken, 2026-10-20: the spiral kept being cut
+  // short): Space, Enter or Escape, or the Skip button. A click to bring the window
+  // forward, or a stray key, no longer skips anything.
+  addEventListener('keydown', e => { if (phase && phase !== 'croc' && phase !== 'story' && [' ', 'Enter', 'Escape'].includes(e.key) && !e.repeat) skipScene(); });
+  const skipButton = document.getElementById('skip-scene');
+  if (skipButton) skipButton.onclick = e => { e.stopPropagation(); skipScene(); };
+  const showSkip = on => { if (skipButton) skipButton.hidden = !on; };
 
   function setModel(asCroc) {
     if (wally.skin) wally.skin.root.visible = !asCroc;
@@ -137,6 +142,7 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
 
   function enter(p) {
     phase = p; time = 0;
+    showSkip(p === 'intro' || p === 'change' || p === 'sign' || p === 'kenny');
     if (p === 'intro') {
       setModel(true);
       wally.pos.copy(where.start); wally.root.position.copy(where.start);
@@ -174,7 +180,7 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
   }
 
   function finish() {
-    phase = null;
+    phase = null; showSkip(false);
     clusters.showMarks(true);
     try { localStorage.setItem('chomp-opening-done', '1'); } catch { /* it plays again next time */ }
     if (onDone) onDone();
