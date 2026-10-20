@@ -28,7 +28,7 @@ things he has gathered, most of all at the Kuranda markets.
 **How it begins (Ken, 2026-10-19):** Wally is a regular croc in Croc Park. At the bottom of the park's
 lake he touches the King Crocodile's sceptre, which the King put there so that whichever croc touched it
 would become the one (Wally). The sceptre instructs him to take it up to the King, who will grant him a
-wish. But first he must collect **seven talismans**, which are required to get up there. The sceptre only
+wish. But first he must collect **the talismans**, which are required to get up there. The sceptre only
 affects the last one who touched it.
 
 **The reveal is kept for the end (Ken, 2026-10-19):** the game does not say why Wally is a personified croc
@@ -37,7 +37,7 @@ shows him finding the sceptre and hearing its instructions, never that it change
 
 **Every quest has two parts (Ken, 2026-10-19):** find the key, then find the chest with the talisman.
 
-**The trip: seven areas, seven talismans (Ken, 2026-10-19: "7 is the charm").** **The talismans go into
+**The trip: seven areas (Ken, 2026-10-19: "7 is the charm").** **The talismans go into
 the sceptre to give it its power** (Ken): each one he wins is set into it, so Wally carries the sceptre
 through the trip. Keys are just keys: a key opens a gate or a chest; it is not a talisman.
 
@@ -55,23 +55,26 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
      traditional one.
    - **The danger is the animals:** cane toads with their poison skin (touching one costs him, never kills;
      true to life, toads poison what bites them), and fruit bats that steal his sugar cane or get in his way.
-   - **Open:** how the cane pieces get him the talisman (a number of them, like the mangoes for the mango
-     talisman, or the price of opening the chest). Nobody dies (rule 8).
-3. **The Esplanade: the mango talisman**, exchanged for the mangoes he collects.
-4. **The reef: the pearl talisman.**
+   - **Open:** how the cane pieces get him the talisman (traded for it, or the price of opening the
+     chest). Nobody dies (rule 8).
+3. **The Esplanade:** **Open:** its talisman.
+4. **The reef:** **Open:** its talisman.
 5. **Kuranda: the air talisman** (Ken, 2026-10-19: it replaces the flower talisman), won with the
    boomerang throw, and **the water talisman**, at the bottom
    of the zip line.
 6. **Mossman: the opal talisman** (earth), after Kuranda. He bungees down and grabs the opal. (The opal is
    Australia's national gemstone; Queensland's boulder opal comes from the outback, not Mossman, but a
    talisman can come from anywhere.)
-7. **The Daintree: the paw paw talisman**, the final one, which he brings to the King.
+7. **The Daintree:** the King. **Open:** whether there is a talisman here.
 
-That is seven talismans: fire, mango, pearl, air, water, opal, paw paw. The four elements are all there:
-fire (the cane fields), air (the boomerang), water (the zip line) and earth (the opal). Croc Park gives the machete,
-not a talisman.
-- **Open:** the reef clam took the Big Golden Mango for the pearl key; if the mango talisman goes into the
-  sceptre, what does the clam take instead?
+**Mangoes, pearls, shells and paw paws are not talismans (Ken, 2026-10-19):** they are things to trade, or
+things required to get items or talismans. (This replaces the mango, pearl and paw paw talismans.)
+
+The talismans so far are the four elements: fire (the cane fields), air (the boomerang), water (the zip
+line) and earth (the opal). Croc Park gives the machete, not a talisman.
+- **Open:** how many talismans in all. Ken's sceptre has six settings; the four elements fill four.
+- The reef clam can still take the Big Golden Mango for the pearl key: the mango is a trade item, not a
+  talisman.
 
 **The core rule** is the sweet spot: close enough to be fed, not so close that people run. **Built**
 (`clusterStep` in `js/rules.js`: they notice, throw, give handouts up close, get nervous, flee; the park
@@ -377,8 +380,9 @@ people to like him; he ends knowing who he is.
 **The finale (Decided, Ken 2026-10-19, third version; replaces the mango and paw paw gift versions):**
 1. **The river:** the Daintree, a river with crocs in it and rainforest on both banks. The tour boat, full
    of the people who threw food all game, runs aground and is stuck. Nobody is harmed.
-2. **Played (rule 12):** Wally swings on vines through the rainforest for the **paw paw talisman**, the last
-   one, and brings the sceptre, now full, to the King Crocodile.
+2. **Played (rule 12):** Wally swings on vines through the rainforest and gathers **paw paws**, which he
+   brings with the sceptre, now full, to the King Crocodile (Ken: a gift for the King; paw paws are a
+   trade item, not a talisman).
 3. **The wish, a cinematic (Ken, 2026-10-19):** the King grants one wish, expecting it to be to free his
    people. Instead Wally wishes for the humans on the boat to be saved.
 4. **The King's condition:** Wally must use the talismans in the sceptre to bring all the crocs to the
