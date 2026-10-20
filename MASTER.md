@@ -35,7 +35,9 @@ affects the last one who touched it.
 until the King tells him at the end (section 6). He finds out when the player finds out. So the opening
 shows him finding the sceptre and hearing its instructions, never that it changed him.
 
-**The five talismans (Ken, 2026-10-19):** one per area before the Daintree.
+**The five talismans (Ken, 2026-10-19):** one per area before the Daintree. **The talismans go into the
+sceptre to give it its power** (Ken): each one he wins is set into it. (So Wally carries the sceptre
+through the trip.)
 1. **Croc Park: the key to the gate.** Wally keeps his health up by eating the food the tourists throw,
    without scaring them away. Too close and they run, and he has to start again. When all the food is gone,
    the gate opens, or he receives the key to unlock it.
