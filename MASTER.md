@@ -116,7 +116,7 @@ the player sees where each goes.
 
 **The core rule** is the sweet spot: close enough to be fed, not so close that people run. **Built**
 (`clusterStep` in `js/rules.js`: they notice, throw, give handouts up close, get nervous, flee; the park
-sign "Please DON'T feed the croc." in `js/textures.js`).
+sign "Do NOT feed the crocodile.", NOT scratched out by Wally, in `js/textures.js`).
 
 ---
 
@@ -279,7 +279,7 @@ Side games: the boomerang (Kuranda) and the golf course (in the valley by the Sk
 - **The regular croc (Ken's Meshy, 2026-10-20):** one model for the player's croc before the change, the
   other crocs in the park and the crocs in rivers like the Daintree. Realistic, all four legs splayed (a
   good pose to rig). Baked to 20k (386 KB, phone 181 KB), kept aside until it is rigged: as `croc.glb` it
-  would replace the moving stand-in crocs with still ones. **Needs:** a rig with walk, swim and idle. The sign today reads "Please DON'T feed the croc." (`js/textures.js`).
+  would replace the moving stand-in crocs with still ones. **Needs:** a rig with walk, swim and idle. The sign reads "Do NOT feed the crocodile." until Wally scratches out NOT (Ken, 2026-10-20).
 
 **What is here (Built):** groups of visitors round the lagoon who throw food from the boardwalk. Thieves:
 pelicans, flying foxes, cane toads and other crocs. Box jellyfish sting. Kenny brings his jar when Wally

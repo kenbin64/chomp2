@@ -410,7 +410,7 @@ function addRocks(scene) {
 }
 
 // The sign, and a way to scratch it: returned so the opening can paint it clean
-// first and have Wally scratch out "DON'T" himself.
+// first and have Wally scratch out "NOT" himself.
 function addSign(scene) {
   const g = new THREE.Group();
   const face = mat(0xffffff, { map: signTexture() });

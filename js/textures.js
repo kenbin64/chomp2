@@ -54,7 +54,7 @@ export function shirtTexture() {
   return toTexture(c, 1);
 }
 
-// The park sign. "DON'T" has been scratched out, which is the whole game: Wally
+// The park sign. "NOT" is scratched out, which is the whole game: Wally
 // does it himself at the start (Ken's storyboard, 2026-10-20). scratched: false
 // paints the sign as the park put it up, before he gets to it.
 export function signTexture({ scratched = true } = {}) {
@@ -70,13 +70,18 @@ export function signTexture({ scratched = true } = {}) {
   g.fillStyle = '#fbf3e4';
   g.textAlign = 'center';
   fitText(g, 'Wally the Cairns Crocodile', 512, 110, 960, 82, 'bold {size}px "Trebuchet MS", sans-serif');
-  g.font = 'bold 96px "Trebuchet MS", sans-serif';
-  g.fillText("Please DON'T", 512, 290);
-  g.fillText('feed the croc.', 512, 420);
+  // "Do NOT feed the crocodile." (Ken, 2026-10-20): Wally scratches out NOT, so it
+  // reads "Do feed the crocodile."
+  g.font = 'bold 104px "Trebuchet MS", sans-serif';
+  const doW = g.measureText('Do ').width, notW = g.measureText('NOT').width, start = 512 - (doW + notW) / 2;
+  g.textAlign = 'left';
+  g.fillText('Do ', start, 290); g.fillText('NOT', start + doW, 290);
+  g.textAlign = 'center';
+  fitText(g, 'feed the crocodile.', 512, 420, 960, 96, 'bold {size}px "Trebuchet MS", sans-serif');
   if (!scratched) return toTexture(c);
-  // the scratch-out: rough red marker strokes over DON'T
+  // the scratch-out: rough red marker strokes over NOT
   g.strokeStyle = '#d6212b'; g.lineCap = 'round'; g.lineWidth = 16;
-  const x0 = 545, x1 = 820, y = 258;
+  const x0 = start + doW + 10, x1 = start + doW + notW - 10, y = 258;
   for (let i = 0; i < 4; i++) {
     g.beginPath();
     g.moveTo(x0 - 10, y - 30 + i * 18);

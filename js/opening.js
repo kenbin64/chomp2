@@ -5,9 +5,10 @@
 //   1. croc    The player is one of the ordinary crocs in Croc Park. Tourists mill
 //              about; the sign says not to feed the crocodiles. The job: find the
 //              sceptre on the bottom of the pond (how to dive is shown).
-//   2. change  He touches it and, in a flash, is Wally: upright, beside the sign.
-//              His first thought: "Crikey! I'm like a human bloke."
-//   3. sign    He scratches the "not" off the sign, and the visitors notice.
+//   2. change  He touches it and, in a flash, is Wally (the Wally we all know: a
+//              true-blue Aussie wildlife bloke), upright, beside the sign.
+//   3. sign    He scratches NOT off "Do NOT feed the crocodile", so it reads "Do feed
+//              the crocodile", then: "Crikey! I'm like a human bloke." The visitors notice.
 //   4. kenny   Kenny comes up, calls him Wally (so he learns his name), and tells
 //              him the rules: people food, keep your distance, the jar three times
 //              a place, and the first job, the key to the park.
@@ -151,7 +152,7 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
       if (flash) { flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go'); }
       sound.play.powerup(); fx.burst(sceptre.position.clone().add(new THREE.Vector3(0, 1, 0)), [0xffd84a, 0xfff6c0, 0x9fe8c0], 50);
     }
-    if (p === 'sign') bubbles.say(wally.root, 'Hang on. Let me fix that sign.', 3.4, 2.4);
+    if (p === 'sign') bubbles.say(wally.root, 'Hang on. That sign needs fixing.', 3.4, 2.4);
     if (p === 'kenny') { kenny.mesh.visible = true; kenny.pos.copy(where.kennyFrom); line = -1; }
     if (p === 'story') {
       kenny.state = 'sit'; kenny.timer = 4;
@@ -196,8 +197,7 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
         wally.facing = Math.atan2(world.sign.group.position.x - where.wally.x, world.sign.group.position.z - where.wally.z);
         wally.root.rotation.y = wally.facing; wally.cheer = 1.2;
       }
-      if (time > 1.3 && time - dt <= 1.3) bubbles.say(wally.root, "Crikey! I'm like a human bloke.", 3.4, 3.2);
-      if (time > 4.4) enter('sign');
+      if (time > 2.0) enter('sign');
       return false;
     }
     if (phase === 'sign') {
@@ -205,13 +205,13 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
       if (wally.skin && time > 1.2 && time - dt <= 1.2) wally.skin.overlay('grab', { speed: 0.8 });
       if (time > 2.6 && time - dt <= 2.6) {
         world.sign.setScratched(true); fx.burst(world.sign.group.position.clone().add(new THREE.Vector3(0, 2.6, 0)), [0xd6212b, 0xffe066], 16);
-        bubbles.say(wally.root, "There. 'Please feed the croc.' Much better!", 3.4, 3);
+        bubbles.say(wally.root, "Crikey! I'm like a human bloke.", 3.4, 3.2);   // Ken: after the sign, the Crikey line
       }
-      if (time > 3.6 && time - dt <= 3.6) {
+      if (time > 4.2 && time - dt <= 4.2) {
         const near = clusters.active.slice(0, 2);
-        for (const c of near) if (c.people && c.people[0]) bubbles.say(c.people[0].g, ['Look! It says feed the croc!', 'Quick, throw him something!'][near.indexOf(c)], 2.4, 2.6);
+        for (const c of near) if (c.people && c.people[0]) bubbles.say(c.people[0].g, ['Look! "Do feed the crocodile"!', 'Quick, throw him something!'][near.indexOf(c)], 2.4, 2.6);
       }
-      if (time > 6) enter('kenny');
+      if (time > 7) enter('kenny');
       return false;
     }
     if (phase === 'kenny') {
