@@ -8,10 +8,11 @@
 //
 // PC:    WASD or the arrows steer him (Ken, 2026-10-20): up / W runs the way he faces,
 //        left and right turn him, down turns him round. Space jump, Shift all fours.
-//        The mouse: click the game (or Wally) to take the cursor, and moving the mouse
-//        steers him (side to side turns him, up and down tilts the view). A left click
-//        hands the mouse to the camera; a right click (or another left click) gives it
-//        back to Wally. Esc gives the cursor back; a click on the game takes it again.
+//        The mouse (Ken chose, 2026-10-20): click the game to take the cursor; then
+//        moving the mouse turns Wally (up and down tilts the view), holding the left
+//        button runs him forward, and holding the right button looks around with the
+//        camera (let go and the mouse steers him again). Esc gives the cursor back; a
+//        click on the game takes it again.
 //        The wheel zooms. Space jumps (and swims up), Shift dives under (and runs on
 //        all fours on land). Q / E turn the camera, wheel zooms, C swings it behind
 //        him, P pauses. (Camera-relative moving is a setting, settings.js.)
@@ -40,11 +41,11 @@ export class Input {
     addEventListener('blur', () => this.keys.clear());
 
     // The mouse. Click the game to take the cursor (pointer lock); then moving the
-    // mouse steers Wally, and a left click switches it to turning the camera and back
-    // (Ken, 2026-10-20). Right click or Esc gives the cursor back. Without the cursor
-    // taken, dragging turns the camera.
+    // mouse turns Wally, the left button held runs him forward, and the right button
+    // held hands the mouse to the camera until it is let go. Esc gives the cursor back.
+    // Without the cursor taken, dragging turns the camera.
     let drag = null;
-    this.aim = 0; this.mouseMode = 'wally';
+    this.aim = 0; this.mouseMode = 'wally'; this.mouseRun = false;
     // Only while a level is being played: not over a menu, card, tip or the map.
     const MODALS = '.overlay:not([hidden]), .map-modal:not([hidden]), .tip-card:not([hidden])';
     this.canLock = () => !document.querySelector(MODALS);
@@ -62,28 +63,30 @@ export class Input {
     // or free (click the game to take it).
     const chip = document.createElement('div'); chip.className = 'mouse-chip'; document.body.append(chip);
     this.showChip = () => {
-      chip.textContent = !locked() ? '' : this.mouseMode === 'wally' ? '🖱 Steering Wally · left click: camera · Esc: cursor' : '🖱 Camera · right click: back to Wally · Esc: cursor';
+      chip.textContent = !locked() ? '' : this.mouseMode === 'wally' ? '🖱 Mouse turns Wally · hold left: run · hold right: look around · Esc: cursor' : '🖱 Looking around · let go of the right button to steer';
       chip.hidden = !locked();
     };
     this.showChip();
     canvas.addEventListener('mousedown', e => {
       if (locked()) {
-        if (e.button === 0) { this.mouseMode = this.mouseMode === 'wally' ? 'camera' : 'wally'; document.body.classList.toggle('mouse-camera', this.mouseMode === 'camera'); this.showChip(); }
+        if (e.button === 0) this.mouseRun = true;
+        if (e.button === 2) { this.mouseMode = 'camera'; this.showChip(); }
         return;
       }
       if (e.button !== 0) return;
       drag = { x: e.clientX, y: e.clientY, moved: 0 };
     });
     addEventListener('mouseup', e => {
+      if (e.button === 0) this.mouseRun = false;
+      if (e.button === 2 && this.mouseMode === 'camera') { this.mouseMode = 'wally'; this.showChip(); }
       // A click (not a drag) on the game takes the cursor, while a level is being played.
       if (drag && drag.moved < 6 && !locked() && this.canLock && this.canLock()) canvas.requestPointerLock?.();
       drag = null;
     });
-    // Right click: the mouse back to steering Wally (Ken, 2026-10-20).
-    canvas.addEventListener('contextmenu', e => { e.preventDefault(); if (locked()) { this.mouseMode = 'wally'; document.body.classList.remove('mouse-camera'); this.showChip(); } });
+    canvas.addEventListener('contextmenu', e => e.preventDefault());     // the right button is the camera, not a menu
     document.addEventListener('pointerlockchange', () => {
-      if (!locked()) this.unlockedAt = performance.now();
-      else { this.mouseMode = 'wally'; document.body.classList.remove('mouse-camera'); }
+      if (!locked()) { this.unlockedAt = performance.now(); this.mouseRun = false; }
+      this.mouseMode = 'wally';
       document.body.classList.toggle('mouse-steer', locked());
       this.showChip();
     });
@@ -182,7 +185,7 @@ export class Input {
   // Read and clear this frame's input.
   read() {
     const k = this.keys;
-    let f = (k.has('w') || k.has('arrowup') ? 1 : 0) - (k.has('s') || k.has('arrowdown') ? 1 : 0);
+    let f = (k.has('w') || k.has('arrowup') || this.mouseRun ? 1 : 0) - (k.has('s') || k.has('arrowdown') ? 1 : 0);
     let r = (k.has('d') || k.has('arrowright') ? 1 : 0) - (k.has('a') || k.has('arrowleft') ? 1 : 0);
     // The keys are on or off; eased over about a tenth of a second they act more like a
     // stick: rolling from W to D passes through every angle between (Ken, 2026-10-20).
