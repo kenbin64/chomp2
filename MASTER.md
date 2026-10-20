@@ -215,6 +215,24 @@ Side games: the boomerang (Kuranda) and the golf course (in the valley by the Sk
 
 **The point (Decided):** home. Where Wally learned the sweet spot, so it is where the player learns it.
 
+**The storyboard: how the game opens (Ken, 2026-10-20):**
+1. Croc Park: tourists milling about, the sign says don't feed the crocodiles. Wally is just one of the
+   crocs, and the player controls one of the regular crocs: this will be Wally.
+2. Instructions: find the sceptre at the bottom of the pond, and how to move the croc to the bottom.
+3. He finds the sceptre and magically transforms into Wally, upright, next to the sign. He scratches off
+   the "not" so it reads "feed the croc", and magically the people start throwing food.
+4. Instructions and the backstory, in a modal: the quest, the Croc King and the one wish. Normally people
+   would not feed a croc, but now he is part human he needs to eat people food; and the King only sees
+   humans eating fast food, so he made an assumption. The people are actually afraid of Wally, so they
+   throw their food, and Wally must keep his distance or he will scare them away.
+5. The objective: eat the food to keep the health meter up, without scaring the people. Do that for every
+   cluster of people and he gets the key to Croc Park. He opens the lock, the machete appears, and he can
+   go to the sugar cane field.
+- **Open:** this shows the transformation and says he is part human at the start, which the earlier
+  decision kept for the end ("he finds out when we find out"). Which holds?
+- **Needs:** a regular croc model (`croc.glb`, on all fours, rigged to walk and swim); the rival crocs use
+  a stand-in built from shapes today. The sign today reads "Please DON'T feed the croc." (`js/textures.js`).
+
 **What is here (Built):** groups of visitors round the lagoon who throw food from the boardwalk. Thieves:
 pelicans, flying foxes, cane toads and other crocs. Box jellyfish sting. Kenny brings his jar when Wally
 runs out of puff. Golden Mangoes to find, some up high. The lagoon chest. Sidequests and traders.
