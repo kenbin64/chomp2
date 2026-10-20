@@ -61,7 +61,10 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
    - Nobody dies (rule 8).
    - **Models (Ken's Meshy, 2026-10-20):** `cane-tile.glb` (one clump on a soil base, 6.6k triangles,
      already light), `cane-ground.glb` (the cut ground left after the machete), `cane-piece.glb` (one
-     piece of cane to pick up), each with a phone copy.
+     piece of cane to pick up), `machete.glb` (a hooked cane knife, the real Queensland cane cutter's
+     shape; 3k triangles), each with a phone copy.
+   - **Only near Wally (Ken, 2026-10-20):** full cane clumps only close to Wally; after that the field is
+     backdrop images (picture cards, as the rainforest trees already use), so it runs on phones.
 3. **The Esplanade: the sun talisman** (Ken, 2026-10-19): the sunny tropical city, the lagoon, the sun on
    Trinity Inlet.
 4. **The reef: the moon talisman** (Ken, 2026-10-19): true to life, the reef's corals spawn together a few
