@@ -18,6 +18,11 @@ const SPEED = { upright: 6.5, fours: 9.5, swim: 5.5 };
 const JUMP = { land: 8.5, water: 13, show: 11 };   // show: jumping on the spot, for the big Jump move
 const TURN = 2.8;                // keyboard steering: how fast left and right turn him (radians a second)
 const SPIN = 14;                 // and how fast down spins him round
+// Turning while he moves (Ken, 2026-10-20: smooth, every angle in between): his
+// heading swings round toward where the player points at this rate, so a change of
+// direction is an arc, not a snap. Radians a second: on land, swimming, in the air.
+const ARC = { land: 7.5, swim: 5, air: 2.5 };
+const ACCEL = 14, BRAKE = 18;    // how fast he gets up to speed and stops (metres a second, each second)
 const FALL = 22;                 // Wally's own gravity: snappier than the food's
 const FLOAT_Y = -0.45;           // root height while swimming
 const HIP = 1.1;                 // where a model is pivoted for leaning and swimming
@@ -402,7 +407,8 @@ export class Wally {
       if (want.lengthSq() > 1) want.normalize();
     }
     want.multiplyScalar(SPEED[this.mode] * pace);
-    this.vel.lerp(want, Math.min(1, dt * (this.airborne ? 2 : 8)));
+    if (input.steer) this.vel.lerp(want, Math.min(1, dt * (this.airborne ? 2 : 8)));
+    else this.steerArc(dt, want, inWater);
     this.moveFlat(dt);
 
     // Jumping: a hop on land, a full croc leap out of the water. Forgiving, as
@@ -451,6 +457,25 @@ export class Wally {
     return events;
   }
 
+  // Moving toward `want` (a velocity) the way an animal does: the speed eases up and
+  // down, and the heading turns at a set rate toward the new direction, through every
+  // angle in between. From standing he simply sets off the way he is pointed.
+  steerArc(dt, want, inWater) {
+    const wantSpeed = Math.hypot(want.x, want.z), speed = Math.hypot(this.vel.x, this.vel.z);
+    const newSpeed = speed + Math.sign(wantSpeed - speed) * Math.min(Math.abs(wantSpeed - speed), (wantSpeed > speed ? ACCEL : BRAKE) * dt);
+    if (wantSpeed > 0.05) {
+      const target = Math.atan2(want.x, want.z);
+      if (speed < 0.6 || this.heading === undefined) this.heading = target;   // setting off: straight away
+      else {
+        const rate = this.airborne ? ARC.air : inWater ? ARC.swim : ARC.land;
+        const d = Math.atan2(Math.sin(target - this.heading), Math.cos(target - this.heading));
+        this.heading += Math.sign(d) * Math.min(Math.abs(d), rate * dt);
+      }
+    } else if (speed > 0.05) this.heading = Math.atan2(this.vel.x, this.vel.z);
+    if (this.heading === undefined) return;
+    this.vel.set(Math.sin(this.heading) * newSpeed, 0, Math.cos(this.heading) * newSpeed);
+  }
+
   // Horizontal move. The park edge is a wall everywhere; up on the boardwalk the
   // railings are too, except at a gap or the steps (rules.railClamp).
   moveFlat(dt) {
@@ -465,6 +490,7 @@ export class Wally {
     this.hurt = 0.8;                             // the Hurt move, if the model has one
     const dx = this.pos.x - fromX, dz = this.pos.z - fromZ, d = Math.hypot(dx, dz) || 1;
     this.vel.set(dx / d * 7, 0, dz / d * 7);
+    this.heading = Math.atan2(dx, dz);           // knocked that way: he steers on from there
     if (this.grounded) { this.vy = 5; this.grounded = false; this.fromWater = false; }
   }
 

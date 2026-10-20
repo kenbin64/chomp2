@@ -125,6 +125,13 @@ export class Input {
     const k = this.keys;
     let f = (k.has('w') || k.has('arrowup') ? 1 : 0) - (k.has('s') || k.has('arrowdown') ? 1 : 0);
     let r = (k.has('d') || k.has('arrowright') ? 1 : 0) - (k.has('a') || k.has('arrowleft') ? 1 : 0);
+    // The keys are on or off; eased over about a tenth of a second they act more like a
+    // stick: rolling from W to D passes through every angle between (Ken, 2026-10-20).
+    // Letting go stops at once, so he never drifts.
+    const now = performance.now(), dt = Math.min(0.1, ((now - (this.lastRead || now)) / 1000)); this.lastRead = now;
+    const ease = (v, to) => to === 0 ? 0 : v + (to - v) * Math.min(1, dt * 12);
+    this.kf = ease(this.kf || 0, f); this.kr = ease(this.kr || 0, r);
+    if (f && r || this.kf && this.kr) { f = this.kf; r = this.kr; }
     const pad = this.readPad(), padMoving = !!(pad && (pad.forward || pad.right));
     if (padMoving) { f = pad.forward; r = pad.right; }
     if (this.stick) { f = -this.stick.dy; r = this.stick.dx; }
