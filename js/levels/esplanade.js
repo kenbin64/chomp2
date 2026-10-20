@@ -444,7 +444,9 @@ function bigMangoChest(dt) {
   const c = bigChest;
   if (!game.hasBigMango && Math.hypot(wally.pos.x - c.group.position.x, wally.pos.z - c.group.position.z) < 2.6) {
     if (game.mangoes >= mangoTarget) {
-      attempt = Trip.gain(attempt, 'big-golden-mango'); game.hasBigMango = true;    // kept when the Esplanade is completed
+      // Until the Esplanade's own key and chest are built (Ken, 2026-10-20: key, then the chest with the
+      // talisman), this chest holds the sun talisman as well as the Big Golden Mango (a trade item).
+      attempt = Trip.gain(Trip.gain(attempt, 'big-golden-mango'), 'talisman-sun'); game.hasBigMango = true;    // kept when the Esplanade is completed
       game.points += 150; sound.play.powerup(); fx.burst(c.group.position, [0xffb51f, 0xffe066, 0xffffff], 34);
       toast_('The Big Golden Mango! The reef will need it', 'good'); bubbles.say(wally.root, 'Crikey, look at the size of it!', 3.4);
     } else if ((c.hint -= dt) <= 0) {

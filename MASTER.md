@@ -37,6 +37,14 @@ rest, the King's true purpose, Kenny's secret and Wally's choice, he finds out w
 
 **Every quest has two parts (Ken, 2026-10-19):** find the key, then find the chest with the talisman.
 
+**In the code (Built, 2026-10-20, `js/trip-rules.js`, 98 tests):** the seven areas in order; each area
+completed only with what it opens (Croc Park the machete, the others their talismans; Kuranda both air
+and water, Ken: "both, for consistency"); entry needs what the area before opens, plus the Fibonacci small
+thing from two areas back where decided (Croc Park's golden mangoes for the Esplanade, Ken: "both");
+the King needs all six talismans. Areas not built yet (the cane fields, Mossman, the Daintree) are passed
+over so the game stays playable. Until their own keys and chests are built, the Esplanade's chest also
+holds the sun talisman and the reef's pirate chest the moon talisman.
+
 **The trip: seven areas (Ken, 2026-10-19: "7 is the charm").** Seven is the main limit, on purpose
 (Ken, 2026-10-20), in keeping with his dimensional framing [Framing]: the trip does not grow past seven. **The talismans go into
 the sceptre to give it its power** (Ken): each one he wins is set into it, so Wally carries the sceptre

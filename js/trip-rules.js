@@ -4,19 +4,24 @@
 // no drawing, tested in test/trip.test.mjs. The levels ask this file:
 //
 //   may Wally go in?            canEnter(trip, area)
+//   talismans in the sceptre     sceptre(trip)
 //   start a go at an area        startAttempt(trip, area)
 //   something found or earned    gain(attempt, item, n)
 //   a trade with someone         trade(trip, attempt, give, get)
 //   a life lost                  loseLife(attempt)
-//   the area done                completeAttempt(trip, attempt, { objectiveMet, mainItem })
+//   the area done                completeAttempt(trip, attempt, { objectiveMet })
 //   the attempt failed or left   failAttempt(trip, attempt)
 //   how hard this go is          attemptLevel(trip, area), target(total, level), drainFactor(trip, area)
 //
 // The rules (each one tested):
-//   1. Areas go in order. Each has an objective and a main item in its chest;
-//      the next area opens only when both are done (completeAttempt refuses otherwise).
-//   2. Every area needs the main item of the area before it to enter the first
-//      time; after that it is open, to go back to.
+//   1. Seven areas, in order, and no more (Ken: seven is the limit, on purpose).
+//      Each quest has two parts: find the key, then the chest with the talisman.
+//      An area is completed only with its objective met and what it opens in hand
+//      (completeAttempt refuses otherwise).
+//   2. To enter an area the first time, Wally needs what the area before it
+//      opens (Croc Park: the machete; the cane fields: the fire talisman; and so
+//      on), plus, where Ken has decided it, a smaller thing from two areas back
+//      (Fibonacci: two roots). After that it is open, to go back to.
 //   3. Nothing gained on an attempt is kept until the area is completed: points,
 //      finds, trades, everything. A failed attempt keeps nothing, and trades made
 //      on it are undone; but what was earned in another area can never be taken:
@@ -27,22 +32,36 @@
 //      area is one level harder than the visit before; past hard, one condition
 //      is added per visit. "Collect enough" goals need 50%, 70% or 90% of what
 //      the area holds, rounded up. Easy runs the life meters slow.
+//   6. The six talismans go into the King's sceptre; the Daintree (the King) is
+//      completed only with all six.
 //
 // A trip is a plain object, saved with the rest of the progress:
 //   { difficulty, completed: [areas], items: { item: n }, visits: { area: n }, entered: [areas] }
 
-export const ORDER = ['park', 'esplanade', 'reef', 'kuranda', 'mossman', 'daintree'];
+export const ORDER = ['park', 'cane', 'esplanade', 'reef', 'kuranda', 'mossman', 'daintree'];
 
-// What each area's chest holds (its main item) and what it gives for the areas
-// after it. decided: false marks Ken's open questions, so nothing pretends to be settled.
+// The six talismans, one per setting of the King's sceptre: heaven above (sun,
+// moon, air), earth below (earth, water, fire).
+export const TALISMANS = ['talisman-sun', 'talisman-moon', 'talisman-air', 'talisman-earth', 'talisman-water', 'talisman-fire'];
+
+// Each area: key, found there, opens its chest (the level checks it); opens,
+// what completing the area needs and what the next area needs to come in;
+// small, the smaller thing it gives for the area two after it (Fibonacci).
+// decided: false marks Ken's open questions, so nothing pretends to be settled.
 export const CHAIN = {
-  park:      { main: 'gate-key',         gives: ['golden-mango'],               decided: true },
-  esplanade: { main: 'big-golden-mango', gives: ['golden-mango'],               decided: true },
-  reef:      { main: 'skyrail-pass',     gives: ['pearl', 'seashell'],          decided: true },
-  kuranda:   { main: 'gorge-pass',       gives: ['gold'],                       decided: false },   // Proposed: the Mossman Gorge shuttle pass, from the bungee
-  mossman:   { main: 'boat-ticket',      gives: [],                             decided: false },   // Proposed: the Daintree river-boat ticket
-  daintree:  { main: 'finale',           gives: [],                             decided: false },   // the end of the game
+  park:      { key: 'park-key',  opens: ['machete'],                      small: 'golden-mango', decided: true },
+  cane:      { key: 'machete',   opens: ['talisman-fire'],                small: null,           decided: true },
+  esplanade: { key: null,        opens: ['talisman-sun'],                 small: null,           decided: false },  // its key: open
+  reef:      { key: 'pearl-key', opens: ['talisman-moon'],                small: null,           decided: true },
+  kuranda:   { key: null,        opens: ['talisman-air', 'talisman-water'], small: null,         decided: false },  // the boomerang and the zip line
+  mossman:   { key: null,        opens: ['talisman-earth'],               small: null,           decided: false },  // the opal, from the bungee
+  daintree:  { key: null,        opens: [],                               small: null,           decided: true, needsAll: TALISMANS },  // the King
 };
+
+// Areas not built yet are passed over, so the game stays playable while they are
+// made: the area after one asks the area before it instead. Remove an area from
+// this list the day its level is playable.
+export const NOT_BUILT = ['cane', 'mossman', 'daintree'];
 
 export const LEVELS = ['easy', 'intermediate', 'hard'];
 export const SHARE = { easy: 0.5, intermediate: 0.7, hard: 0.9 };       // of what an area holds, for "collect enough"
@@ -65,12 +84,15 @@ export function readTrip(t) {
 }
 
 // A save from before these rules: the areas already finished (their postcards)
-// count as completed and entered, with their main items, at intermediate, so
+// count as completed and entered, with what they open, at intermediate, so
 // nobody who has played is locked out of where they have been.
 export function tripFromProgress(progress) {
   const done = ORDER.filter(a => (progress.postcards || []).includes(a) || ((progress.stars || {})[a] || 0) > 0);
   const trip = freshTrip('intermediate');
-  for (const a of done) { trip.completed.push(a); trip.entered.push(a); trip.visits[a] = 1; trip.items[CHAIN[a].main] = 1; }
+  for (const a of done) {
+    trip.completed.push(a); trip.entered.push(a); trip.visits[a] = 1;
+    for (const item of CHAIN[a].opens) trip.items[item] = 1;
+  }
   return trip;
 }
 
@@ -88,14 +110,28 @@ export const nextArea = area => ORDER[areaIndex(area) + 1] || null;
 export const isCompleted = (trip, area) => trip.completed.includes(area);
 export const have = (trip, item) => (trip.items[item] || 0) > 0;
 
-// Rule 2: the main item of the area before, the first time; open after that.
+// The nearest area before this one that is built (rule 2 passes over the rest).
+export function areaBefore(area) {
+  for (let i = areaIndex(area) - 1; i >= 0; i--) if (!NOT_BUILT.includes(ORDER[i])) return ORDER[i];
+  return null;
+}
+
+// Rule 2: what the area before opens, and the small thing from two back, the
+// first time; open after that.
 export function canEnter(trip, area) {
   if (areaIndex(area) < 0) return { ok: false, why: 'unknown' };
   if (trip.entered.includes(area) || areaIndex(area) === 0) return { ok: true };
-  const before = previousArea(area);
+  const before = areaBefore(area);
+  if (!before) return { ok: true };
   if (!isCompleted(trip, before)) return { ok: false, why: 'locked', needs: before };
-  const item = CHAIN[before].main;
-  return have(trip, item) ? { ok: true } : { ok: false, why: 'item', needs: item };
+  const missing = CHAIN[before].opens.find(item => !have(trip, item));
+  if (missing) return { ok: false, why: 'item', needs: missing };
+  // Two areas back in the trip itself (not counting only built ones: the small
+  // thing is meant for the area two after it); an area not built gives nothing yet.
+  const twoBack = ORDER[areaIndex(area) - 2];
+  const small = twoBack && !NOT_BUILT.includes(twoBack) && CHAIN[twoBack].small;
+  if (small && !have(trip, small)) return { ok: false, why: 'item', needs: small };
+  return { ok: true };
 }
 
 // Rule 5: the level for the next visit to an area, and any extra conditions.
@@ -161,14 +197,17 @@ function visited(trip, area) {
            entered: trip.entered.includes(area) ? trip.entered : [...trip.entered, area] };
 }
 
-// Rule 1 and 3: the area done. Refused unless the objective is met and the
-// area's main item has been found on this attempt (or was found before, on a
-// return visit). Then everything from the attempt is kept.
+// Rules 1, 3 and 6: the area done. Refused unless the objective is met and
+// everything the area opens has been found, on this attempt or before (a
+// return visit); the Daintree also needs all six talismans. Then everything
+// from the attempt is kept.
 export function completeAttempt(trip, attempt, { objectiveMet = false } = {}) {
   if (attempt.over) return { ok: false, why: 'over', trip };
-  const main = CHAIN[attempt.area].main;
   if (!objectiveMet) return { ok: false, why: 'objective', trip };
-  if (!(attempt.pending[main] > 0) && !have(trip, main)) return { ok: false, why: 'main-item', needs: main, trip };
+  const link = CHAIN[attempt.area];
+  const held = item => attempt.pending[item] > 0 || have(trip, item);
+  const missing = [...link.opens, ...(link.needsAll || [])].find(item => !held(item));
+  if (missing) return { ok: false, why: 'item', needs: missing, trip };
   const items = { ...trip.items };
   for (const [k, n] of Object.entries(attempt.spent)) items[k] = (items[k] || 0) - n;
   for (const [k, n] of Object.entries(attempt.pending)) items[k] = (items[k] || 0) + n;
@@ -187,3 +226,6 @@ export function failAttempt(trip, attempt) {
   const entered = trip.entered.includes(attempt.area) ? trip.entered : [...trip.entered, attempt.area];
   return { trip: { ...trip, entered }, attempt: { ...attempt, over: true } };
 }
+
+// Rule 6: the talismans set in the sceptre so far, in the settings' order.
+export function sceptre(trip) { return TALISMANS.filter(t => have(trip, t)); }

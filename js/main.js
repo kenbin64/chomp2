@@ -652,7 +652,7 @@ function treasureStep(dt, t) {
       drawQuest();
     } else if (e.type === 'open') {
       bookEvent('chest');
-      attempt = Trip.gain(attempt, 'gate-key'); game.hasKey = true;     // kept when the park is completed
+      attempt = Trip.gain(attempt, 'park-key'); game.hasKey = true;     // kept when the park is completed
       game.score += 500; sound.play.powerup();
       toast('The gate key! Feed everyone, fill up, then out the gate', 'good');
       bubbles.say(wally.root, 'The key to the gate! Ripper!', 3.6);
@@ -770,7 +770,7 @@ function ensureTrip(level = 'intermediate') {
 function start() {
   ensureTrip();
   attempt = Trip.startAttempt(progress.trip, 'park');
-  game.hasKey = Trip.have(progress.trip, 'gate-key');               // on a return visit he has it already
+  game.hasKey = Trip.have(progress.trip, 'park-key') || Trip.have(progress.trip, 'gate-key');   // on a return visit he has it already (gate-key: saves from before)
   game.tripDrain = Trip.drainFactor(progress.trip, 'park', attempt.level);
   sound.start(); sound.startMusic('park'); sound.moodMusic('park');
   $('title').hidden = true; $('over').hidden = true; $('win').hidden = true;
@@ -800,7 +800,8 @@ function finish(won, why = '') {
   if (won) {
     bookEvent('finish');
     const stars = starsFor(game.score, PARK_STARS);
-    const done = Trip.completeAttempt(progress.trip, Trip.gain(attempt, 'golden-mango', game.mangoes), { objectiveMet: true });
+    // Opening the gate gives the machete for the cane fields (trip-rules.js: what the park opens).
+    const done = Trip.completeAttempt(progress.trip, Trip.gain(Trip.gain(attempt, 'golden-mango', game.mangoes), 'machete'), { objectiveMet: true });
     if (done.ok) progress.trip = done.trip;
     progress = completeArea(progress, 'park', { score: game.score, stars, mangoes: game.mangoes });
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }

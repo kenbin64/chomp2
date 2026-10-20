@@ -77,11 +77,14 @@ export const SKYRAIL_FARE = 0;
 
 // What each main item is and where it comes from, for the map's "Needs ...".
 const NEED_TEXT = {
-  'gate-key': 'the gate key, from the chest on the bottom of the Croc Park lagoon',
-  'big-golden-mango': 'the Big Golden Mango, from the chest by the Esplanade Lagoon',
-  'skyrail-pass': "the Skyrail pass, from the reef's pirate chest",
-  'gorge-pass': 'the pass from the bottom of the Barron Falls bungee',
-  'boat-ticket': 'the Daintree river-boat ticket',
+  'machete': 'the machete, from opening the Croc Park gate',
+  'golden-mango': 'Golden Mangoes, found round Croc Park',
+  'talisman-fire': 'the fire talisman, from the middle of the cane fields',
+  'talisman-sun': 'the sun talisman, from the chest by the Esplanade Lagoon',
+  'talisman-moon': "the moon talisman, from the reef's pirate chest",
+  'talisman-air': 'the air talisman, from the boomerang throw in Kuranda',
+  'talisman-water': 'the water talisman, from the bottom of the zip line',
+  'talisman-earth': 'the opal, the earth talisman, from the bottom of the Mossman bungee',
 };
 
 // What an area still needs before Wally can go in, or null when he can. With a

@@ -546,7 +546,7 @@ function step(dt, t) {
   if (!game.chest && game.inCave && Math.hypot(wally.pos.x - ch.x, wally.pos.z - ch.z) < 2.2) {
     if (game.hasPearlKey) {
       game.chest = true; ch.opened = true; ch.mango.visible = true; bookEvent('chest');
-      attempt = Trip.gain(attempt, 'skyrail-pass');                    // kept when the reef is completed
+      attempt = Trip.gain(Trip.gain(attempt, 'talisman-moon'), 'skyrail-pass');   // the moon talisman and the ride up; kept when the reef is completed
       game.points += CHEST_POINTS; wally.cheer = 1.2;
       sound.play.powerup(); fx.burst(new THREE.Vector3(ch.x, SEABED_Y + 1.5, ch.z), [0xffd700, 0xffb51f, 0xffffff], 24);
       toast_('The pearl key fits! The Skyrail pass, the way up to Kuranda', 'good');

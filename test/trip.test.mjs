@@ -9,21 +9,44 @@ function check(name, ok, detail = '') {
 }
 const throws = f => { try { f(); return false; } catch { return true; } };
 
-// Play an area to the end: find its main item, meet the objective, complete.
+// Play an area to the end: find what it opens, meet the objective, complete.
 function clear(trip, area, finds = {}) {
   let a = T.startAttempt(trip, area);
-  a = T.gain(a, T.CHAIN[area].main);
+  for (const item of T.CHAIN[area].opens) a = T.gain(a, item);
   for (const [k, n] of Object.entries(finds)) a = T.gain(a, k, n);
   const r = T.completeAttempt(trip, a, { objectiveMet: true });
-  if (!r.ok) throw new Error(`could not clear ${area}: ${r.why}`);
+  if (!r.ok) throw new Error(`could not clear ${area}: ${r.why} ${r.needs || ''}`);
   return r.trip;
 }
 
 // ---- The chain ---------------------------------------------------------------------------
-check('six areas, in Ken\'s order', T.ORDER.join() === 'park,esplanade,reef,kuranda,mossman,daintree');
-check('every area has a main item', T.ORDER.every(a => T.CHAIN[a] && T.CHAIN[a].main));
-check('no two areas share a main item', new Set(T.ORDER.map(a => T.CHAIN[a].main)).size === T.ORDER.length);
-check('open questions are marked undecided', !T.CHAIN.kuranda.decided && !T.CHAIN.mossman.decided && T.CHAIN.reef.decided);
+check('seven areas, in Ken\'s order', T.ORDER.join() === 'park,cane,esplanade,reef,kuranda,mossman,daintree');
+check('seven is the limit', T.ORDER.length === 7);
+check('six talismans, one per sceptre setting', T.TALISMANS.length === 6 && new Set(T.TALISMANS).size === 6);
+check('the four elements and the sun and moon', ['sun', 'moon', 'air', 'earth', 'water', 'fire'].every(e => T.TALISMANS.includes(`talisman-${e}`)));
+check('every area but the last opens something', T.ORDER.slice(0, -1).every(a => T.CHAIN[a].opens.length > 0));
+check('Croc Park opens the machete, not a talisman', T.CHAIN.park.opens.join() === 'machete');
+check('the cane fields: the machete is the key, the fire talisman what it opens',
+  T.CHAIN.cane.key === 'machete' && T.CHAIN.cane.opens.join() === 'talisman-fire');
+check('Kuranda opens two talismans, air and water', T.CHAIN.kuranda.opens.join() === 'talisman-air,talisman-water');
+check('every talisman comes from exactly one area', T.TALISMANS.every(t => T.ORDER.filter(a => T.CHAIN[a].opens.includes(t)).length === 1));
+check('no key is a talisman (keys are just keys)', T.ORDER.every(a => !T.TALISMANS.includes(T.CHAIN[a].key)));
+check('the Daintree needs all six talismans', T.CHAIN.daintree.needsAll.join() === T.TALISMANS.join());
+check('open questions are marked undecided', !T.CHAIN.esplanade.decided && !T.CHAIN.kuranda.decided && !T.CHAIN.mossman.decided && T.CHAIN.park.decided);
+check('the Fibonacci small thing: golden mangoes from the park', T.CHAIN.park.small === 'golden-mango');
+
+// ---- Areas not built yet are passed over -------------------------------------------------
+check('the cane fields are not built yet', T.NOT_BUILT.includes('cane'));
+check('...so the Esplanade asks Croc Park', T.areaBefore('esplanade') === 'park');
+check('the reef asks the Esplanade', T.areaBefore('reef') === 'esplanade');
+check('the first area has nothing before it', T.areaBefore('park') === null);
+{
+  // The small thing is counted two areas back in the trip, not two built areas back.
+  const t = { ...T.freshTrip(), completed: ['park', 'esplanade'], entered: ['park', 'esplanade'], items: { machete: 1, 'talisman-sun': 1 } };
+  check('the reef does not ask for Croc Park\'s golden mangoes (they are for the Esplanade)',T.canEnter(t, 'reef').ok);
+  const noMango = { ...T.freshTrip(), completed: ['park'], entered: ['park'], items: { machete: 1 } };
+  check('the Esplanade needs golden mangoes from Croc Park (two back)', T.canEnter(noMango, 'esplanade').needs === 'golden-mango');
+}
 
 // ---- Rule 2: entry -----------------------------------------------------------------------
 let trip = T.freshTrip();
@@ -32,41 +55,44 @@ check('the Esplanade is locked before the park is done', !T.canEnter(trip, 'espl
 check('starting a locked area is refused', throws(() => T.startAttempt(trip, 'esplanade')));
 check('an unknown area is refused', !T.canEnter(trip, 'narnia').ok);
 check('no skipping ahead: the reef is locked too', !T.canEnter(trip, 'reef').ok);
-trip = clear(trip, 'park');
-check('with the gate key, the Esplanade opens', T.canEnter(trip, 'esplanade').ok);
-{ // Completed the park but somehow without the key: still locked.
-  const noKey = { ...trip, items: {} };
-  const e = T.canEnter(noKey, 'esplanade');
-  check('without the gate key the Esplanade stays locked', !e.ok && e.why === 'item' && e.needs === 'gate-key');
+trip = clear(trip, 'park', { 'golden-mango': 8, 'park-key': 1 });
+check('with the machete, the Esplanade opens', T.canEnter(trip, 'esplanade').ok);
+{ // Completed the park but somehow without the machete: still locked.
+  const noMachete = { ...trip, items: {} };
+  const e = T.canEnter(noMachete, 'esplanade');
+  check('without the machete the Esplanade stays locked, and says why', !e.ok && e.why === 'item' && e.needs === 'machete');
 }
 
-// ---- Rule 1: completing needs the objective and the main item ----------------------------
+// ---- Rule 1: completing needs the objective and what the area opens ----------------------
 {
   const a = T.startAttempt(trip, 'esplanade');
   check('objective not met: refused', T.completeAttempt(trip, a, { objectiveMet: false }).why === 'objective');
   const r = T.completeAttempt(trip, a, { objectiveMet: true });
-  check('main item not found: refused, and says which', !r.ok && r.why === 'main-item' && r.needs === 'big-golden-mango');
+  check('talisman not found: refused, and says which', !r.ok && r.why === 'item' && r.needs === 'talisman-sun');
   check('a refused completion changes nothing', !T.isCompleted(r.trip, 'esplanade') && r.trip === trip);
+  const keyOnly = T.completeAttempt(trip, T.gain(a, 'park-key'), { objectiveMet: true });
+  check('a key alone does not complete an area', !keyOnly.ok);
 }
-trip = clear(trip, 'esplanade', { 'golden-mango': 30 });
+trip = clear(trip, 'esplanade', { 'golden-mango': 30, 'big-golden-mango': 1 });
 check('Esplanade done: the reef opens', T.canEnter(trip, 'reef').ok);
-check('its finds are kept', trip.items['golden-mango'] === 30 && T.have(trip, 'big-golden-mango'));
+check('its finds are kept', trip.items['golden-mango'] === 38 && T.have(trip, 'big-golden-mango') && T.have(trip, 'talisman-sun'));
 
 // ---- Rule 3: keep only on completion ------------------------------------------------------
 {
   let a = T.startAttempt(trip, 'reef');
-  a = T.gain(a, 'pearl', 4); a = T.gain(a, 'seashell', 6); a = T.addPoints(a, 120);
+  a = T.gain(a, 'pearl', 4); a = T.gain(a, 'seashell', 6); a = T.gain(a, 'talisman-moon'); a = T.addPoints(a, 120);
   const f = T.failAttempt(trip, a);
   check('a failed attempt keeps no finds', !f.trip.items.pearl && !f.trip.items.seashell);
+  check('a failed attempt keeps no talisman', !T.have(f.trip, 'talisman-moon'));
   check('a failed attempt keeps no points (none are returned)', !('points' in f));
   check('a failed attempt does not complete the area', !T.isCompleted(f.trip, 'reef'));
-  check('earlier areas\' things are untouched', f.trip.items['golden-mango'] === 30 && T.have(f.trip, 'big-golden-mango'));
+  check('earlier areas\' things are untouched', f.trip.items['golden-mango'] === 38 && T.have(f.trip, 'big-golden-mango') && T.have(f.trip, 'talisman-sun'));
   check('after failing, gaining more does nothing', T.gain(f.attempt, 'pearl', 9) === f.attempt);
 }
 
 // ---- Rule 3: trades are undone on failure, but other areas' things come back -------------
 {
-  // At the reef: the Big Golden Mango (from the Esplanade) paid to the clam for the pearl key.
+  // At the reef: the Big Golden Mango (a trade item from the Esplanade) paid to the clam for the pearl key.
   let a = T.startAttempt(trip, 'reef');
   const t1 = T.trade(trip, a, { item: 'big-golden-mango', n: 1 }, { item: 'pearl-key', n: 1 });
   check('the clam trade goes through', t1.ok && T.available(trip, t1.attempt, 'pearl-key') === 1 && T.available(trip, t1.attempt, 'big-golden-mango') === 0);
@@ -85,23 +111,49 @@ check('its finds are kept', trip.items['golden-mango'] === 30 && T.have(trip, 'b
   check('...and failing keeps neither the shells nor the souvenir', !f.trip.items.seashell && !f.trip.items.souvenir);
 }
 {
-  const r = T.trade(trip, T.startAttempt(trip, 'reef'), { item: 'golden-mango', n: 31 }, { item: 'x', n: 1 });
+  const r = T.trade(trip, T.startAttempt(trip, 'reef'), { item: 'golden-mango', n: 39 }, { item: 'x', n: 1 });
   check('a trade for more than he has is refused', !r.ok && r.why === 'not-enough');
 }
 {
   // Completing keeps the trade's result and spends what was given.
   let a = T.startAttempt(trip, 'reef');
   a = T.trade(trip, a, { item: 'big-golden-mango', n: 1 }, { item: 'pearl-key', n: 1 }).attempt;
-  a = T.gain(a, 'skyrail-pass'); a = T.gain(a, 'seashell', 6);
+  a = T.gain(a, 'talisman-moon'); a = T.gain(a, 'skyrail-pass'); a = T.gain(a, 'seashell', 6);
   const r = T.completeAttempt(trip, a, { objectiveMet: true });
-  check('completing keeps the pearl key, the pass and the shells', r.ok && T.have(r.trip, 'pearl-key') && T.have(r.trip, 'skyrail-pass') && r.trip.items.seashell === 6);
+  check('completing keeps the pearl key, the moon talisman and the shells', r.ok && T.have(r.trip, 'pearl-key') && T.have(r.trip, 'talisman-moon') && r.trip.items.seashell === 6);
   check('...and the Big Golden Mango is spent', !T.have(r.trip, 'big-golden-mango'));
   trip = r.trip;
 }
 
 // ---- Rule 2: once entered, open to go back to (and no item needed again) -----------------
 check('the reef, once entered, stays open without the Big Golden Mango', T.canEnter(trip, 'reef').ok);
-check('Kuranda opens with the Skyrail pass', T.canEnter(trip, 'kuranda').ok);
+check('Kuranda opens with the moon talisman', T.canEnter(trip, 'kuranda').ok);
+{
+  const noMoon = { ...trip, items: { ...trip.items } }; delete noMoon.items['talisman-moon'];
+  check('...and not without it', T.canEnter(noMoon, 'kuranda').needs === 'talisman-moon');
+}
+
+// ---- Kuranda: both talismans (Ken, for consistency) ---------------------------------------
+{
+  let a = T.startAttempt(trip, 'kuranda');
+  a = T.gain(a, 'talisman-air');
+  const r = T.completeAttempt(trip, a, { objectiveMet: true });
+  check('Kuranda with only the air talisman is not done', !r.ok && r.needs === 'talisman-water');
+}
+
+// ---- Rule 2: the Fibonacci small thing from two areas back --------------------------------
+{
+  // Built in full (nothing passed over), the Esplanade needs the fire talisman from the cane
+  // fields and golden mangoes from Croc Park. Simulated by entering the cane fields directly.
+  let t = clear(T.freshTrip(), 'park', { 'golden-mango': 3 });
+  const viaCane = { ...t, entered: [...t.entered, 'cane'] };
+  check('the cane fields open with the machete', T.canEnter(t, 'cane').ok);
+  check('the cane fields need the machete', T.canEnter({ ...t, items: {} }, 'cane').needs === 'machete');
+  let a = T.startAttempt(viaCane, 'cane');
+  a = T.gain(a, 'talisman-fire');
+  const done = T.completeAttempt(viaCane, a, { objectiveMet: true });
+  check('the cane fields completed with the fire talisman', done.ok && T.have(done.trip, 'talisman-fire'));
+}
 
 // ---- Rule 4: lives ------------------------------------------------------------------------
 {
@@ -139,34 +191,58 @@ check('targets: 90% on hard, rounded up', T.target(8, 'hard') === 8 && T.target(
 check('a target is never more than what there is', [1, 3, 8, 13, 60].every(n => T.LEVELS.every(l => T.target(n, l) <= n && T.target(n, l) >= 1)));
 {
   const e = T.freshTrip('easy');
-  check('easy: half-speed meters in the first three areas', ['park', 'esplanade', 'reef'].every(a => T.drainFactor(e, a) === 0.5));
-  check('easy: three-quarter speed after that', T.drainFactor(e, 'kuranda') === 0.75);
+  check('easy: half-speed meters in the first three areas', ['park', 'cane', 'esplanade'].every(a => T.drainFactor(e, a) === 0.5));
+  check('easy: three-quarter speed after that', T.drainFactor(e, 'reef') === 0.75 && T.drainFactor(e, 'kuranda') === 0.75);
   check('intermediate: the game as it plays now', T.drainFactor(T.freshTrip('intermediate'), 'park') === 1);
   check('hard: faster', T.drainFactor(T.freshTrip('hard'), 'park') > 1);
 }
 
+// ---- Rule 6: the sceptre ------------------------------------------------------------------
+{
+  check('a fresh trip has an empty sceptre', T.sceptre(T.freshTrip()).length === 0);
+  check('the sceptre holds what has been won, in the settings\' order', T.sceptre(trip).join() === 'talisman-sun,talisman-moon');
+  const five = { ...T.freshTrip(), entered: ['daintree'], items: Object.fromEntries(T.TALISMANS.slice(0, 5).map(t => [t, 1])) };
+  const r = T.completeAttempt(five, T.startAttempt(five, 'daintree'), { objectiveMet: true });
+  check('the King needs all six: five is refused, and says which is missing', !r.ok && r.needs === 'talisman-fire');
+}
+
 // ---- The whole trip, start to finish ------------------------------------------------------
 {
+  // Every area played in full, as if all were built: entered in order, each opening the next.
   let t = T.freshTrip('intermediate');
-  for (const a of T.ORDER) t = clear(t, a);
+  for (const a of T.ORDER) { t = { ...t, entered: t.entered.includes(a) ? t.entered : [...t.entered, a] }; t = clear(t, a); }
   check('the whole trip can be completed, area by area', T.ORDER.every(a => T.isCompleted(t, a)));
-  check('the trip never skipped: each needed the one before', T.ORDER.slice(1).every(a => T.isCompleted(t, T.previousArea(a))));
+  check('at the end the sceptre is full', T.sceptre(t).length === 6);
 }
-check('the rules do not change a trip in place', (() => { const t = T.freshTrip(); const a = T.startAttempt(t, 'park'); T.completeAttempt(t, T.gain(a, 'gate-key'), { objectiveMet: true }); return t.completed.length === 0 && !t.items['gate-key']; })());
+{
+  // Only what is built today, through the rules with nothing forced.
+  let t = T.freshTrip('intermediate');
+  for (const a of T.ORDER.filter(x => !T.NOT_BUILT.includes(x))) {
+    check(`today's game: ${a} can be entered in turn`, T.canEnter(t, a).ok, JSON.stringify(T.canEnter(t, a)));
+    t = clear(t, a, a === 'park' ? { 'golden-mango': 8 } : {});
+  }
+}
+check('the rules do not change a trip in place', (() => { const t = T.freshTrip(); const a = T.startAttempt(t, 'park'); T.completeAttempt(t, T.gain(a, 'machete'), { objectiveMet: true }); return t.completed.length === 0 && !t.items.machete; })());
 
 // ---- Saved trips ---------------------------------------------------------------------------
 check('no saved trip reads as none', T.readTrip(undefined) === null && T.readTrip({}) === null);
 check('a trip with a made-up difficulty is refused', T.readTrip({ difficulty: 'nightmare' }) === null);
 {
-  const r = T.readTrip({ difficulty: 'easy', completed: ['park', 'narnia'], items: { 'gate-key': 1, bad: -2, junk: 'x' }, visits: { park: 1 }, entered: ['park'] });
-  check('a saved trip keeps real areas and counts only', r.completed.join() === 'park' && r.items['gate-key'] === 1 && !('bad' in r.items) && !('junk' in r.items));
+  const r = T.readTrip({ difficulty: 'easy', completed: ['park', 'narnia'], items: { machete: 1, bad: -2, junk: 'x' }, visits: { park: 1 }, entered: ['park'] });
+  check('a saved trip keeps real areas and counts only', r.completed.join() === 'park' && r.items.machete === 1 && !('bad' in r.items) && !('junk' in r.items));
 }
 {
   const t = T.tripFromProgress({ postcards: ['park', 'esplanade'], stars: { reef: 2 } });
   check('an old save carries over: finished areas stay finished', ['park', 'esplanade', 'reef'].every(a => T.isCompleted(t, a)));
-  check('...with their main items, so the next area opens', T.canEnter(t, 'kuranda').ok && T.have(t, 'skyrail-pass'));
+  check('...with what they open, so the next area opens', T.canEnter(t, 'kuranda').ok && T.have(t, 'talisman-moon'));
+  check('...and the cane fields are not forced on them', !T.isCompleted(t, 'cane'));
   check('...at intermediate', t.difficulty === 'intermediate');
   check('a brand-new save carries over as an empty trip', T.tripFromProgress({}).completed.length === 0);
+}
+{
+  // A trip saved under the old six-area rules (main items) still reads, and nobody is locked out.
+  const old = T.readTrip({ difficulty: 'intermediate', completed: ['park', 'esplanade'], entered: ['park', 'esplanade'], items: { 'gate-key': 1, 'big-golden-mango': 1 }, visits: { park: 1, esplanade: 1 } });
+  check('an old trip keeps its areas', T.isCompleted(old, 'esplanade') && T.canEnter(old, 'esplanade').ok);
 }
 
 check('tripFor: a save with its own trip keeps it', (() => { const t = T.freshTrip('hard'); return T.tripFor({ trip: t }) === t; })());
