@@ -47,16 +47,21 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
    (rule 3: each area gives him what he needs in the next). (Proposed wording: a cane knife, the Queensland
    cane cutter's tool.)
 2. **The sugar cane fields: the fire talisman** (Ken, 2026-10-19: it replaces the sugar talisman, so the
-   elements are represented). The cane is thick and it is easy to get lost, so he must
-   have the machete before going in. With it he beats down a trail and picks up the pieces of sugar cane he
-   needs to get the fire talisman.
-   - **The fire is never the danger:** he cannot go where fire is, and fire can never get to him. The
-     burning parts of the field only keep him to certain places, so the field is a hybrid maze, not a
-     traditional one.
-   - **The danger is the animals:** cane toads with their poison skin (touching one costs him, never kills;
-     true to life, toads poison what bites them), and fruit bats that steal his sugar cane or get in his way.
-   - **Open:** how the cane pieces get him the talisman (traded for it, or the price of opening the
-     chest). Nobody dies (rule 8).
+   elements are represented). **How it plays (Ken, 2026-10-20):**
+   - The cane is thick and easy to get lost in, so he needs the machete (from the Croc Park gate) to go in.
+   - Each swing of the machete clears a cane clump (a tile), leaving cut ground, so he beats down his own
+     path.
+   - Cutting drops pieces of sugar cane. He eats them to keep his energy up, before the cane toads and
+     fruit bats take them. Without them he runs out, and it is Kenny and the jar again.
+   - Cane toads have poison skin (touching one costs him, never kills; true to life, toads poison what
+     bites them); fruit bats steal his cane or get in his way.
+   - **Fire keeps him to particular areas of the field but can never reach him** (Ken): it is there for
+     tension, not danger. He cannot go where fire is.
+   - **In the middle of the field is the fire talisman**, and it takes him on to the Esplanade.
+   - Nobody dies (rule 8).
+   - **Models (Ken's Meshy, 2026-10-20):** `cane-tile.glb` (one clump on a soil base, 6.6k triangles,
+     already light), `cane-ground.glb` (the cut ground left after the machete), `cane-piece.glb` (one
+     piece of cane to pick up), each with a phone copy.
 3. **The Esplanade: the sun talisman** (Ken, 2026-10-19): the sunny tropical city, the lagoon, the sun on
    Trinity Inlet.
 4. **The reef: the moon talisman** (Ken, 2026-10-19): true to life, the reef's corals spawn together a few
