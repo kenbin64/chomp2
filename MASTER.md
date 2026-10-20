@@ -46,9 +46,10 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
    he receives the key to unlock it. Opening the gate gives him **the machete** he needs in the cane fields
    (rule 3: each area gives him what he needs in the next). (Proposed wording: a cane knife, the Queensland
    cane cutter's tool.)
-2. **The sugar cane fields: the sugar talisman.** The cane is thick and it is easy to get lost, so he must
+2. **The sugar cane fields: the fire talisman** (Ken, 2026-10-19: it replaces the sugar talisman, so the
+   elements are represented). The cane is thick and it is easy to get lost, so he must
    have the machete before going in. With it he beats down a trail and picks up the pieces of sugar cane he
-   needs to get the sugar talisman.
+   needs to get the fire talisman.
    - **The fire is never the danger:** he cannot go where fire is, and fire can never get to him. The
      burning parts of the field only keep him to certain places, so the field is a hybrid maze, not a
      traditional one.
@@ -65,7 +66,7 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
    talisman can come from anywhere.)
 7. **The Daintree: the paw paw talisman**, the final one, which he brings to the King.
 
-That is seven talismans: sugar, mango, pearl, flower, water, opal, paw paw. Croc Park gives the machete,
+That is seven talismans: fire, mango, pearl, flower, water, opal, paw paw. Croc Park gives the machete,
 not a talisman.
 - **Open:** the reef clam took the Big Golden Mango for the pearl key; if the mango talisman goes into the
   sceptre, what does the clam take instead?
