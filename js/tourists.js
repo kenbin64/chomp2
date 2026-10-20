@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import { BOARDWALK, deckHeight } from './rules.js';
-import { dress } from './models.js';
+import { dress, PEOPLE_SLOTS } from './models.js';
 import { addRim, contactShadow } from './look.js';
 
 const WALK_LIMIT = 30;          // they stay on the part of the deck over the lagoon and banks
@@ -196,11 +196,12 @@ export const CAST = [
   { file: 'tourist-22', who: 'Chinese Australian dad',   tall: [1.68, 1.80] },
   { file: 'tourist-23', who: 'Indian Australian student', tall: [1.55, 1.68] },
   { file: 'tourist-24', who: 'Australian boy, nine',     tall: [1.28, 1.40] },
+  { file: 'tourist-25', who: 'Thai teenage girl',        tall: [1.50, 1.62] },
 ];
 // The people models that loaded, each carrying its height range.
 export function peopleModels(models) {
   const list = [];
-  for (let i = 1; i <= 24; i++) {
+  for (let i = 1; i <= PEOPLE_SLOTS; i++) {
     const file = `tourist-${i}`, gltf = models.get(file);
     if (!gltf) continue;
     gltf.userData = gltf.userData || {};

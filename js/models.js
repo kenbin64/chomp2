@@ -17,10 +17,13 @@ const draco = new DRACOLoader();
 draco.setDecoderPath('./js/addons/libs/draco/');
 loader.setDRACOLoader(draco);          // models exported with Draco compression load too
 
+// How many people models there can be (tourist-1 to tourist-40; files not there are skipped).
+export const PEOPLE_SLOTS = 40;
+
 // Every model file the game knows about.
 export const MODEL_FILES = [
   'wally', 'wally-explorer', 'kenny', 'croc', 'pelican', 'flyingfox', 'jellyfish', 'toad', 'toast',
-  ...Array.from({ length: 24 }, (_, i) => `tourist-${i + 1}`),
+  ...Array.from({ length: PEOPLE_SLOTS }, (_, i) => `tourist-${i + 1}`),
   'food-fries', 'food-pizza', 'food-taco', 'food-hotdog', 'food-shrimp',
   'food-chicken', 'food-hoagie', 'food-hamburger', 'food-steak',
   'palm-1', 'palm-2', 'palm-crown', 'boat', 'jar', 'mango', 'seashell', 'coral', 'streetlamp', 'kuranda-shop', 'kuranda-canopy', 'kuranda-art',
