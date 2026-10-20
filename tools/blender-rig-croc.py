@@ -9,7 +9,9 @@
 #   Walk  the low "sprawl" walk: diagonal legs move together (front left with
 #         back right), each lifted a little as it swings forward, while the
 #         spine curves side to side and the tail drags in a gentle sway.
-#   Idle  lying still: breathing, a slow drift of the tail tip.
+#   Idle  lying still, the way a croc rests (Ken, 2026-10-20): the legs drawn in
+#         along its sides, elbows and knees bent, feet tucked beside the body (not
+#         spread flat as the model was made); breathing, a slow drift of the tail tip.
 #
 # The model lies flat (Blender: z up, the snout toward -y, its left side +x).
 # Bone positions were measured from the model (tools/blender-inspect.py and a
@@ -152,8 +154,20 @@ def walk(t):
     tail_wave(p, t, 4, lag=0.15, grow=1.0)
     return p
 
+def legs_resting(p):
+    # Drawn in close along the flanks: the upper leg swept back a little and down,
+    # the lower leg folded forward under it, so the foot sits beside the body.
+    for name, sg in (('Left', 1), ('Right', -1)):
+        p[name + 'Arm'] = [(Z, sg * 35), (Y, sg * 18)]
+        p[name + 'ForeArm'] = [(Z, -sg * 55)]
+        p[name + 'Hand'] = [(Z, sg * 25)]
+        p[name + 'UpLeg'] = [(Z, sg * 40), (Y, sg * 16)]
+        p[name + 'Leg'] = [(Z, -sg * 60)]
+        p[name + 'Foot'] = [(Z, sg * 30)]
+
 def idle(t):
     p = {}
+    legs_resting(p)
     p['Chest'] = [(X, 1.2 * sn(t))]                        # breathing
     p['Head'] = [(X, -1.0 * sn(t, 0.1))]
     tail_wave(p, t, 1.5, lag=0.2, grow=2.0)
