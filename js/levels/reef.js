@@ -111,6 +111,21 @@ if (realism && realism.waterNormals && quality.name !== 'low') {
   water = new THREE.Mesh(new THREE.PlaneGeometry(1400, 1400), new THREE.MeshPhongMaterial({ color: 0x23a7b8, specular: 0xffffff, shininess: 80, transparent: true, opacity: 0.9 }));
 }
 water.rotation.x = -Math.PI / 2; water.position.set(-40, 0, 420);
+water.userData.noAO = true;                          // not in the shading pass (it would draw the reflection again)
+// The reflection redraws the whole reef: only while the camera is above the sea,
+// where the reflection can be seen (under water the surface is seen from below).
+if (water.onBeforeRender) {
+  const mirror = water.onBeforeRender.bind(water);
+  // And the reef under the surface is left out of the reflection (a reflection
+  // shows what is above the water, never what is under it).
+  water.onBeforeRender = (renderer, sc, cam, ...rest) => {
+    if (cam.position.y <= 0) return;
+    const under = typeof reef !== 'undefined' && reef.root.visible ? reef.root : null;
+    if (under) under.visible = false;
+    mirror(renderer, sc, cam, ...rest);
+    if (under) under.visible = true;
+  };
+}
 scene.add(water);
 
 // Green Island: a sand cay with palms, and the jetty out to the dive spot.

@@ -126,8 +126,9 @@ function staghorn(rnd, color) {
 }
 // Brain coral: a rounded dome with deep winding grooves.
 function brain(rnd, color) {
-  // Welded first, so it shades smooth rather than as separate facets.
-  const raw = new THREE.IcosahedronGeometry(1, 12); raw.deleteAttribute('normal'); raw.deleteAttribute('uv');
+  // Welded first, so it shades smooth rather than as separate facets. (Detail 8,
+  // about 1,600 triangles: the grooves still read at the size it is seen; 12 was 3,400.)
+  const raw = new THREE.IcosahedronGeometry(1, 8); raw.deleteAttribute('normal'); raw.deleteAttribute('uv');
   const g = mergeVertices(raw), p = g.attributes.position, v = new THREE.Vector3(), s = rnd() * 10;
   for (let i = 0; i < p.count; i++) {
     v.fromBufferAttribute(p, i);
@@ -210,7 +211,9 @@ function vent(x, z, inCave) {
   const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.8, 0.9, 12, 1, true), new THREE.MeshStandardMaterial({ color: 0x3c3a36, roughness: 0.9, side: THREE.DoubleSide }));
   chimney.position.y = 0.45; g.add(chimney);
   const count = 46, bubbles = new THREE.InstancedMesh(new THREE.SphereGeometry(0.09, 8, 6),
-    new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, roughness: 0, transmission: 0.6, emissive: 0x6fdcff, emissiveIntensity: 0.25 }), count);
+    // Plain see-through, not glass (transmission): on bubbles this small they look the
+    // same, and glass made the renderer draw the whole reef again behind them every frame.
+    new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.45, roughness: 0, emissive: 0x6fdcff, emissiveIntensity: 0.3 }), count);
   bubbles.userData.seeds = Array.from({ length: count }, (_, i) => ({ t: i / count, x: (Math.random() - 0.5) * 0.5, z: (Math.random() - 0.5) * 0.5, s: 0.6 + Math.random() * 0.9 }));
   g.add(bubbles);
   const glow = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.6, 7, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0x9feeff, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
