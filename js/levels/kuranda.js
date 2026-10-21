@@ -171,7 +171,7 @@ window.chomp = { game, wally, food, scene };
 
 // ---- The trip: this run's gains (the air talisman here; the water at the zip line) ----------
 if (!progress.trip) { progress.trip = Trip.tripFor(progress); save(); }
-let attempt = Trip.startAttempt(progress.trip, 'kuranda', { force: true }); startRun('kuranda');
+let attempt = Trip.startAttempt(progress.trip, 'kuranda', { force: true }); startRun('kuranda', { level: attempt.level });
 game.hasAir = Trip.have(progress.trip, 'talisman-air');
 game.stationAway = true;                                         // he has to step off the mark before it starts again
 

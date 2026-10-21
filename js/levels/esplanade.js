@@ -230,7 +230,7 @@ let progress = readProgress((() => { try { return localStorage.getItem('chomp-pr
 // the pier price and the meter speed.
 if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progress); }
 const entry = Trip.canEnter(progress.trip, 'esplanade'), testingAll = params.has('all');
-let attempt = Trip.startAttempt(progress.trip, 'esplanade', { force: true }); startRun('esplanade');
+let attempt = Trip.startAttempt(progress.trip, 'esplanade', { force: true }); startRun('esplanade', { level: attempt.level });
 const PARK_MANGOES = 8;                              // what Croc Park holds (the pier price is a share of it)
 // This go's level: the mango target for the chest (a share of this course's
 // mangoes, rounded up) and the pier price (the same share of Croc Park's eight).

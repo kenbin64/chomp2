@@ -265,7 +265,7 @@ const game = {
 // time (?all opens it, for testing); this dive's level sets how fast air runs out.
 if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progress); }
 const entry = Trip.canEnter(progress.trip, 'reef'), testingAll = params.has('all');
-let attempt = Trip.startAttempt(progress.trip, 'reef', { force: true }); startRun('reef');
+let attempt = Trip.startAttempt(progress.trip, 'reef', { force: true }); startRun('reef', { level: attempt.level });
 game.tripDrain = Trip.drainFactor(progress.trip, 'reef', attempt.level);
 game.hasPearlKey = Trip.have(progress.trip, 'pearl-key');           // on a return dive he has it already
 game.keyRise = 9;

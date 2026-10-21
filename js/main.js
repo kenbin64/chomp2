@@ -883,7 +883,7 @@ function ensureTrip(level = 'intermediate') {
 
 function start() {
   ensureTrip();
-  attempt = Trip.startAttempt(progress.trip, 'park'); startRun('park');
+  attempt = Trip.startAttempt(progress.trip, 'park'); startRun('park', { level: attempt.level });
   game.hasKey = Trip.have(progress.trip, 'park-key') || Trip.have(progress.trip, 'gate-key');   // on a return visit he has it already (gate-key: saves from before)
   game.tripDrain = Trip.drainFactor(progress.trip, 'park', attempt.level);
   sound.start(); sound.startMusic('park'); sound.moodMusic('park');

@@ -49,7 +49,7 @@ const loadSave = () => readProgress((() => { try { return localStorage.getItem('
 let progress = loadSave();
 if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progress); }
 const entry = Trip.canEnter(progress.trip, 'cane'), testingAll = params.has('all');
-let attempt = Trip.startAttempt(progress.trip, 'cane', { force: true }); startRun('cane');
+let attempt = Trip.startAttempt(progress.trip, 'cane', { force: true }); startRun('cane', { level: attempt.level });
 
 // ---- The field --------------------------------------------------------------------
 // A new field every visit; ?seed=N gives a fixed one, for testing.

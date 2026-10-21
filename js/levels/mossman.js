@@ -51,7 +51,7 @@ const loadSave = () => readProgress((() => { try { return localStorage.getItem('
 let progress = loadSave();
 if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progress); }
 const entry = Trip.canEnter(progress.trip, 'mossman'), testingAll = params.has('all');
-let attempt = Trip.startAttempt(progress.trip, 'mossman', { force: true }); startRun('mossman');
+let attempt = Trip.startAttempt(progress.trip, 'mossman', { force: true }); startRun('mossman', { level: attempt.level });
 
 // ---- The ground: the gorge's rules, plus boulders that stop him ----------------------
 const dive = { under: false, depth: 0 };     // depth: how far below the floating line he is (0 floating)
