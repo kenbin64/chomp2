@@ -173,6 +173,8 @@ export function vineCourse({ scene, models, quality, wally, sound, fx, bubbles, 
 
   return {
     get state() { return st.state; },
+    // A good moment to let go: swinging forward, well up the swing (the window the tests check).
+    get goodRelease() { return st.state === 'swing' && st.swing.omega > 0.2 && st.swing.theta > 0.3 && st.swing.theta < 0.95; },
     get gathered() { return st.gathered; },
     get falls() { return st.falls; },
     total: fruit.length,

@@ -25,6 +25,7 @@ import { readProgress, outfitModel, wearing } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
 import { loadRealism } from '../realism.js';
 import * as sound from '../sound.js';
+import { say as forDevice } from '../device.js';
 import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
 
 const $ = id => document.getElementById(id);
@@ -235,7 +236,7 @@ function step(dt, t) {
 }
 function startPush() {
   game.phase = 'push'; game.beatT = -1.2; game.lastBeat = -1; game.pressed = -99;
-  meter.hidden = false; $('job').textContent = 'Press Space (or click, or A) on HEAVE!';
+  meter.hidden = false; $('job').textContent = forDevice({ keys: 'Press Space on HEAVE!', mouse: 'Click on HEAVE!', pad: 'Press A on HEAVE!', touch: 'Tap on HEAVE!' });
   bubbles.say(wally.root, 'Right, fellas! Everyone on the hull. On my word... HEAVE!', 3.2);
   toast('Press on the beat: when the marker hits the middle, HEAVE!', 'info');
 }

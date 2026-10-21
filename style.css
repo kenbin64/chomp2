@@ -78,7 +78,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #0d2a38; col
 .go:active { transform: translateY(3px); box-shadow: 0 3px 0 #c77d1a; }
 .keys { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; font-size: 15px; }
 kbd { background: rgba(255, 255, 255, 0.15); border-radius: 6px; padding: 1px 6px; font-family: inherit; }
-body.touch .keys.pc, body:not(.touch) .keys.phone { display: none; }
+body.touch .keys.pc:not([data-device]), body:not(.touch) .keys.phone:not([data-device]) { display: none; }   /* lists with data-device are switched by device.js */
 @media (max-width: 600px) { .score { font-size: 26px; } .quest { top: 64px; font-size: 13px; } .quest h2 { font-size: 15px; } .toast { font-size: 18px; } }
 
 /* Esplanade Run and the map */
@@ -508,3 +508,14 @@ body.touch .gear-use { bottom: 224px; }
 .credits-roll p { line-height: 1.5; }
 .credits-roll .big-warning { font-size: 26px; font-weight: 800; color: #ffb38a; margin: 22px 0 10px; }
 .the-end { position: fixed; inset: 0; z-index: 8; margin: 0; display: grid; place-items: center; font: 800 clamp(48px, 10vw, 110px) var(--font); color: #ffd166; text-shadow: 0 4px 0 #c0392b, 0 10px 30px rgba(0,0,0,0.6); pointer-events: none; animation: areafade 1.6s ease-out; }
+
+/* How to swing on the vines (daintree.js): the controls for the device in use, and the timing */
+.vine-help { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 5; text-align: center; pointer-events: none; font-family: var(--font); width: min(720px, 94vw); }
+.vine-step { margin: 0 0 8px; font-size: 26px; font-weight: 800; color: #fff; text-shadow: 0 2px 8px #000; transition: color 0.1s, transform 0.1s; }
+.vine-step.now { color: #7be36b; transform: scale(1.12); }
+.vine-keys { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; padding: 10px 16px; border-radius: 14px; background: rgba(8, 30, 44, 0.78); color: #fff; font-size: 16px; font-weight: 700; }
+.vine-keys kbd { display: inline-block; min-width: 1.6em; padding: 1px 8px; border: 2px solid rgba(255, 255, 255, 0.7); border-bottom-width: 4px; border-radius: 7px; background: rgba(255, 255, 255, 0.08); font: 800 14px/1.4 system-ui, sans-serif; }
+
+/* device.js: control lists shown only for the controls in use; a notice when a controller comes and goes */
+[data-device][hidden] { display: none !important; }
+.device-notice { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 9; padding: 8px 18px; border-radius: 12px; background: rgba(8, 30, 44, 0.88); color: #fff; font: 700 16px var(--font); pointer-events: none; animation: areafade 0.4s ease-out; }

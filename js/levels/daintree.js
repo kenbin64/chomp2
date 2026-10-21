@@ -16,6 +16,7 @@ import { HALF, START_Z, BOAT_START_Z, BOAT_LENGTH, AGROUND_Z, SANDBAR, CROC, riv
 import { buildDaintree } from './daintree-scene.js';
 import { vineCourse, forestGround, insideForest } from './daintree-forest.js';
 import { kingScene } from './king-court.js';
+import { device } from '../device.js';
 import { Wally } from '../wally.js';
 import { Food, randomKind, useJarModel } from '../food.js';
 import { Input, steering, easeBehind } from '../input.js';
@@ -299,9 +300,47 @@ function crocsStep(dt) {
 }
 
 // One frame in the rainforest: the swing, the camera from the side, the sun on him.
+// ---- How to swing: an on-screen guide for whatever Wally is being steered with (Ken) ------------
+// The last device touched decides it: keyboard, mouse, game controller or touch. With the mouse,
+// holding the left button swings him higher and a right click lets go.
+const vineHelp = { device: touch ? 'touch' : 'keys', mouseHeld: false, mouseLetGo: false, el: null };
+{
+  const el = document.createElement('div'); el.className = 'vine-help'; el.hidden = true;
+  el.innerHTML = '<p class="vine-step"></p><div class="vine-keys"></div>'; document.body.append(el); vineHelp.el = el;
+  addEventListener('pointerdown', e => {
+    if (game.phase !== 'forest' || e.pointerType === 'touch') return;
+    if (e.button === 0) vineHelp.mouseHeld = true;
+    if (e.button === 2) vineHelp.mouseLetGo = true;
+  });
+  addEventListener('pointerup', e => { if (e.button === 0) vineHelp.mouseHeld = false; });
+  addEventListener('contextmenu', e => { if (game.phase === 'forest') e.preventDefault(); });
+}
+const VINE_KEYS = {
+  keys: [['W', 'or', '\u2191', 'Swing higher (hold)'], ['Space', '', '', 'Leap for the vine / let go']],
+  mouse: [['Hold left button', '', '', 'Swing higher'], ['Right click', '', '', 'Leap for the vine / let go']],
+  pad: [['Left stick up', '', '', 'Swing higher (hold)'], ['A', '', '', 'Leap for the vine / let go']],
+  touch: [['Stick up', '', '', 'Swing higher (hold)'], ['Jump', '', '', 'Leap for the vine / let go']],
+};
+function drawVineHelp() {
+  const h = vineHelp.el; h.hidden = game.phase !== 'forest';
+  if (h.hidden) return;
+  const d = device();                                              // device.js: the controls in use
+  if (h.dataset.device !== d) {
+    h.dataset.device = d;
+    h.querySelector('.vine-keys').innerHTML = VINE_KEYS[d].map(([k1, or, k2, what]) => `<span><kbd>${k1}</kbd>${or ? ` ${or} <kbd>${k2}</kbd>` : ''} ${what}</span>`).join('');
+  }
+  const step = h.querySelector('.vine-step'), good = forest.goodRelease;
+  step.textContent = forest.state === 'bank' ? 'Leap for the first vine!' : forest.state === 'fly' ? 'Flying...' : good ? 'Let go NOW!' : 'Swing higher, and let go on the way up';
+  step.classList.toggle('now', good);
+}
+
 function forestStep(dt, t) {
   const k = input.read();
+  // The mouse: hold the left button to swing higher, right click to leap or let go.
+  if (vineHelp.mouseHeld) k.forward = Math.max(k.forward, 1);
+  if (vineHelp.mouseLetGo) { k.jump = true; vineHelp.mouseLetGo = false; }
   forest.update(dt, t, k);
+  drawVineHelp();
   if (forest.state === 'bank') wally.update(dt, { forward: 0, right: 0, jump: false, fours: false }, 0, 1);
   world.sun.target.position.copy(wally.pos); world.sun.position.copy(wally.pos).add(new THREE.Vector3(-30, 60, -20));
   drawHud();
@@ -386,12 +425,11 @@ function enterForest() {
   forest.start(() => enterCourt());
   $('hud').hidden = false;
   bubbles.say(wally.root, "Into the rainforest. Hang on, everyone. I'm coming, your Majesty!", 3.4);
-  toast_('Space: leap for the vine, and let go. Hold forward to swing higher. Let go on the way up!', 'info');
 }
 
 // ---- The King's court: a cinematic ----------------------------------------------------------------
 function enterCourt() {
-  game.phase = 'court';
+  game.phase = 'court'; drawVineHelp();
   fade(() => { $('hud').hidden = true; $('scene-skip').hidden = false; court.start(forest.gathered, () => { $('scene-skip').hidden = true; finish(true); }); });
 }
 

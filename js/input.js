@@ -24,6 +24,7 @@
 //        trigger runs on all fours (and dives), Y swings the camera behind him, Start pauses.
 
 import { settings } from './settings.js';
+import './device.js';                    // which controls are in use: keyboard, mouse, controller, touch (device.js)
 import { installSettingsUi } from './settings-ui.js';
 
 export class Input {

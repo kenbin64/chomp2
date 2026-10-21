@@ -24,6 +24,7 @@ import * as THREE from 'three';
 import { fly, outcome, catchableAt, sampleAt, HAND_Y, TILT_RANGE, IDEAL_TILT, IDEAL_FORCE } from './boomerang-physics.js';
 import { THROW_SPOT, GUIDE_SPOT, GUIDE_FROM, THROWERS } from './kuranda-rules.js';
 import { ModelSkin } from '../models.js';
+import { say as forDevice } from '../device.js';
 import { boomerangMesh } from './boomerang-shape.js';
 
 const EYE = 1.75;                     // Wally's eyes, above the ground
@@ -142,8 +143,8 @@ export function boomerangThrow({ scene, camera, wally, sound, models = new Map()
     ui.catchRing.hidden = true; ui.skip.hidden = phase !== 'opening';
     held.visible = ['tilt', 'force'].includes(phase);
     wally.root.visible = phase === 'opening';                     // first person: his own head would be in the way
-    if (phase === 'tilt') { s.tilt = Math.max(4, s.tilt); prompt('Tip it out: Up / Down, the mouse or the stick. Space or click to set the angle.'); say(GUIDE, s.throws ? '' : 'Lift it up. Near upright, tipped out a little.'); }
-    if (phase === 'force') { s.swingT = 0; const z = s.throws < 2 ? returningForces(s.tilt) : null; ui.zone.hidden = !z; if (z) { ui.zone.style.bottom = `${z[0] * 100}%`; ui.zone.style.height = `${Math.max(3, (z[1] - z[0]) * 100)}%`; } prompt('Space or click to throw, as hard as the meter shows.'); say('', ''); }
+    if (phase === 'tilt') { s.tilt = Math.max(4, s.tilt); prompt(forDevice({ keys: 'Tip it out with Up / Down (or W / S). Space sets the angle.', mouse: 'Tip it out by moving the mouse up and down. Click to set the angle.', pad: 'Tip it out with the left stick. A sets the angle.', touch: 'Tip it out with the stick. Tap to set the angle.' })); say(GUIDE, s.throws ? '' : 'Lift it up. Near upright, tipped out a little.'); }
+    if (phase === 'force') { s.swingT = 0; const z = s.throws < 2 ? returningForces(s.tilt) : null; ui.zone.hidden = !z; if (z) { ui.zone.style.bottom = `${z[0] * 100}%`; ui.zone.style.height = `${Math.max(3, (z[1] - z[0]) * 100)}%`; } prompt(forDevice({ keys: 'Press Space to throw, as hard as the meter shows.', mouse: 'Click to throw, as hard as the meter shows.', pad: 'Press A to throw, as hard as the meter shows.', touch: 'Tap to throw, as hard as the meter shows.' })); say('', ''); }
     if (phase === 'flight') { prompt(''); }
     if (phase === 'gift') { prompt(''); }
   }
