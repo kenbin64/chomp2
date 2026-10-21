@@ -271,8 +271,9 @@ function drawHud() {
 function finish(won = true) {
   game.running = false; $('hud').hidden = true; $('touch').hidden = true; caption('');
   $('result-title').textContent = won ? 'The mouth of the Daintree River' : 'Out of puff';
-  $('result-why').textContent = won ? 'All ten crocs made it up the coast. Next: up the river to the boat on the sandbar, and the push. (The push: next to build.)' : 'Kenny can only bring his jar three times. Try the swim again.';
+  $('result-why').textContent = won ? 'All ten crocs made it up the coast. Next: up the river to the boat on the sandbar, and the push.' : 'Kenny can only bring his jar three times. Try the swim again.';
   $('result').hidden = false; window.chomp.result = { won };
+  if (won) { $('again').textContent = 'The Great Push'; $('again').onclick = () => { location.href = 'push.html'; }; }
 }
 function start() { sound.start(); sound.startMusic('reef'); $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch; game.running = true; bubbles.say(wally.root, 'North to the Daintree, fellas! Follow the sceptre!', 3.4, 2); }
 function setPaused(p) { if (!game.running) return; game.paused = p; $('paused').hidden = !p; }

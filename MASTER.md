@@ -528,8 +528,11 @@ and keeps its ending where Ken has not changed it):**
      north along the coast (land on his left) past Palm Cove and Port Douglas to the mouth of the Daintree
      River; three tour boats keep alongside and the passengers throw him food (Ken), the feed-o-meter and
      Kenny's jar as everywhere. (Saltwater crocs do travel the coast.)
-   - **The push, played:** Wally leads them and they push the boat off the sandbar. The park's crocs are free
-     in the Daintree.
+   - **The Great Push, played (built 2026-10-21, `push.html`):** up the river to the stuck boat; Wally touches
+     each wild croc round it with the sceptre and it joins the line (Ken), then at the stern all fifteen take
+     their places along the hull and push on the beat of HEAVE! (Space, a click, or A; timing decides how far
+     each heave moves it) until the boat floats free and the passengers cheer. The park's crocs are free in
+     the Daintree.
    (This brings back the run back to Croc Park and the Kuranda train, dropped on 2026-10-19.)
 6. **The ending (Ken, 2026-10-20: keep, but change):** the third version's ending (Wally's choice to become a
    normal croc, Kenny sent by the King, the passengers' cheer, the celebration, Kenny's farewell and the last
