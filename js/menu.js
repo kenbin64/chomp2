@@ -80,11 +80,25 @@ function landscapeHint() {
   matchMedia('(orientation: landscape)').addEventListener('change', e => { if (e.matches) n.remove(); });
 }
 
+// On a touch screen the objective panel folds to its title after a few seconds, and a tap opens or
+// folds it (Ken: panels in the way of play). It opens again by itself when its heading changes.
+function foldQuest() {
+  if (!matchMedia('(pointer: coarse)').matches) return;
+  const q = document.querySelector('.panel.quest'); if (!q || q.dataset.folds) return;
+  q.dataset.folds = '1';
+  let timer = setTimeout(() => q.classList.add('mini'), 6000);
+  q.style.pointerEvents = 'auto';
+  q.addEventListener('click', () => { q.classList.toggle('mini'); clearTimeout(timer); if (!q.classList.contains('mini')) timer = setTimeout(() => q.classList.add('mini'), 6000); });
+  new MutationObserver(() => { if (!q.classList.contains('mini')) return; q.classList.remove('mini'); clearTimeout(timer); timer = setTimeout(() => q.classList.add('mini'), 5000); })
+    .observe(q.querySelector('h2') || q, { childList: true, subtree: true, characterData: true });   // a new objective (its heading), not the distance ticking down
+}
+
 export function installMenu() {
   if (window.__chompMenu) return; window.__chompMenu = true;
   paws(); pawsWords();
   closable(document.querySelector('.free-banner'), 'chomp-free-banner');
   landscapeHint();
+  foldQuest();
   fold();
   new MutationObserver(() => { pawsWords(); fold(); }).observe(document.body, { childList: true });   // buttons added later fold in too
   addEventListener('resize', fold);

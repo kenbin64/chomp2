@@ -23,6 +23,7 @@
 //        right stick turns the camera, A jumps (and swims up), B or a
 //        trigger runs on all fours (and dives), Y swings the camera behind him, Start pauses.
 
+import { showTip } from './tips.js';
 import { settings } from './settings.js';
 import './device.js';                    // which controls are in use: keyboard, mouse, controller, touch (device.js)
 import { installSettingsUi } from './settings-ui.js';
@@ -122,44 +123,56 @@ export class Input {
     if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
   }
 
+  // Touch (Ken, 2026-10-21): one green orb, bottom right where the thumb rests, is the controller. Put a
+  // finger on it and a gold ring lights round it: drag up to go the way he faces, left or right to turn,
+  // back to the middle to stop; a quick tap jumps. The finger never covers Wally. Any other drag on the
+  // screen turns the camera.
   bindTouch(canvas, ui) {
-    const half = () => innerWidth / 2;
+    const orb = ui.stick, R = 55;
+    orb.classList.add('orb');
+    const centre = () => { const r = orb.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+    const steer = t => {
+      const c = centre(), dx = t.clientX - c.x, dy = t.clientY - c.y, d = Math.hypot(dx, dy), k = d > R ? R / d : 1;
+      if (d > 10) this.stick.moved = true;
+      const still = d < R * 0.22;                                   // the middle: stop
+      this.stick.dx = still ? 0 : dx * k / R; this.stick.dy = still ? 0 : dy * k / R;
+      ui.knob.style.transform = `translate(${dx * k}px, ${dy * k}px)`;
+    };
+    orb.addEventListener('touchstart', e => {
+      const t = e.changedTouches[0];
+      if (!this.stick) { this.stick = { id: t.identifier, dx: 0, dy: 0, t0: performance.now(), moved: false }; orb.classList.add('active'); steer(t); }
+      e.preventDefault(); e.stopPropagation();
+    }, { passive: false });
     canvas.addEventListener('touchstart', e => {
-      for (const t of e.changedTouches) {
-        if (t.clientX < half() && !this.stick) {
-          this.stick = { id: t.identifier, x0: t.clientX, y0: t.clientY, dx: 0, dy: 0 };
-          ui.stick.style.display = 'block';
-          ui.stick.style.left = `${t.clientX - 60}px`; ui.stick.style.top = `${t.clientY - 60}px`;
-        } else if (!this.look) this.look = { id: t.identifier, x: t.clientX, y: t.clientY };
-      }
+      for (const t of e.changedTouches) if (!this.look) this.look = { id: t.identifier, x: t.clientX, y: t.clientY };
       e.preventDefault();
     }, { passive: false });
-    canvas.addEventListener('touchmove', e => {
+    addEventListener('touchmove', e => {
       for (const t of e.changedTouches) {
-        if (this.stick && t.identifier === this.stick.id) {
-          const dx = t.clientX - this.stick.x0, dy = t.clientY - this.stick.y0, d = Math.hypot(dx, dy), max = 55;
-          const k = d > max ? max / d : 1;
-          this.stick.dx = dx * k / max; this.stick.dy = dy * k / max;
-          ui.knob.style.transform = `translate(${dx * k}px, ${dy * k}px)`;
-        } else if (this.look && t.identifier === this.look.id) {
+        if (this.stick && t.identifier === this.stick.id) steer(t);
+        else if (this.look && t.identifier === this.look.id) {
           this.turn -= (t.clientX - this.look.x) * 0.008; this.tilt += (t.clientY - this.look.y) * 0.006;
           this.look.x = t.clientX; this.look.y = t.clientY;
         }
       }
-      e.preventDefault();
+      if (this.stick || this.look) e.preventDefault();
     }, { passive: false });
     const end = e => {
       for (const t of e.changedTouches) {
         if (this.stick && t.identifier === this.stick.id) {
-          this.stick = null; ui.stick.style.display = 'none'; ui.knob.style.transform = '';
+          if (!this.stick.moved && performance.now() - this.stick.t0 < 280) this.jumpQueued = true;   // a quick tap: jump
+          this.stick = null; orb.classList.remove('active'); ui.knob.style.transform = '';
         }
         if (this.look && t.identifier === this.look.id) this.look = null;
       }
     };
-    canvas.addEventListener('touchend', end); canvas.addEventListener('touchcancel', end);
+    addEventListener('touchend', end); addEventListener('touchcancel', end);
     const tap = (el, fn) => el.addEventListener('touchstart', e => { fn(); e.preventDefault(); e.stopPropagation(); }, { passive: false });
     tap(ui.jump, () => { this.jumpQueued = true; });
-    tap(ui.fours, () => { this.foursToggle = !this.foursToggle; ui.fours.classList.toggle('on', this.foursToggle); });
+    tap(ui.fours, () => {
+      this.foursToggle = !this.foursToggle; ui.fours.classList.toggle('on', this.foursToggle);
+      if (this.foursToggle) showTip('duck', 'Duck: Wally drops onto all fours, low enough to get under branches. In water it makes him dive. Tap Duck again to stand up.');
+    });
     tap(ui.pause, () => this.onPause && this.onPause());
     tap(ui.cam, () => { this.recenterQueued = true; });
   }

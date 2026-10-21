@@ -57,6 +57,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #0d2a38; col
 /* Touch controls */
 #touch { position: fixed; inset: 0; pointer-events: none; }
 #stick { position: absolute; width: 120px; height: 120px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.5); background: rgba(255, 255, 255, 0.12); display: none; }
+/* The steering orb (input.js): always there on a touch screen, below Wally; a gold ring while a finger is on it. */
+#stick.orb { display: block; pointer-events: auto; touch-action: none; left: auto; right: max(18px, env(safe-area-inset-right)); top: auto; bottom: max(20px, env(safe-area-inset-bottom)); width: 128px; height: 128px; border: 3px solid rgba(40, 90, 30, 0.7); background: radial-gradient(circle at 40% 35%, rgba(150, 230, 110, 0.75), rgba(60, 150, 50, 0.6) 60%, rgba(30, 90, 30, 0.55)); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); transition: box-shadow 0.12s, border-color 0.12s; }
+#stick.orb.active { border-color: #ffd166; box-shadow: 0 0 0 5px rgba(255, 209, 102, 0.85), 0 0 22px rgba(255, 209, 102, 0.7); }
+#stick.orb #knob { left: 39px; top: 39px; width: 50px; height: 50px; background: rgba(230, 255, 210, 0.85); box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
 #knob { position: absolute; left: 35px; top: 35px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255, 255, 255, 0.6); }
 #touch button { pointer-events: auto; position: absolute; border: 0; border-radius: 50%; color: #102030; font: 800 18px var(--font); background: rgba(255, 255, 255, 0.82); }
 #t-jump { right: 22px; bottom: max(26px, env(safe-area-inset-bottom)); width: 92px; height: 92px; background: #ffd166; }
@@ -605,3 +609,17 @@ body.phone-menu .free-banner { top: calc(max(10px, env(safe-area-inset-top)) + 5
 .note-x { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(255,255,255,0.15); color: #fff; font: 700 12px/24px var(--font); cursor: pointer; padding: 0; }
 .landscape-hint { position: fixed; z-index: 70; left: 50%; top: calc(max(10px, env(safe-area-inset-top)) + 160px); transform: translateX(-50%); width: min(340px, calc(100% - 32px)); padding: 10px 40px 10px 14px; border-radius: 14px; background: rgba(10, 30, 44, 0.92); border: 2px solid rgba(255, 209, 102, 0.6); color: #fff; font: 700 14px var(--font); text-align: center; }
 .landscape-hint .turn { display: inline-block; font-size: 20px; color: #ffd166; vertical-align: -2px; margin-right: 4px; }
+/* The bottom of a touch screen (Ken, 2026-10-21): the orb in the middle, Jump and Duck on the right, the item on the left. */
+body.touch #t-fours { right: calc(max(18px, env(safe-area-inset-right)) + 140px); bottom: max(26px, env(safe-area-inset-bottom)); width: 66px; height: 66px; font-size: 15px; }   /* Duck, beside the orb */
+body.touch #t-jump { display: none; }   /* a tap on the orb jumps */
+body.touch .gear-badge { bottom: max(24px, env(safe-area-inset-bottom)); left: 12px; padding: 6px 10px; column-gap: 6px; }
+body.touch .gear-badge b, body.touch .gear-badge small { display: none; }
+body.touch .gear-badge.empty { display: none; }
+body.touch .gear-use { bottom: calc(max(24px, env(safe-area-inset-bottom)) + 66px); left: 12px; }
+/* The objective panel folds to its title after a moment on touch screens; a tap opens it again (menu.js). */
+.panel.quest.mini { cursor: pointer; }
+.panel.quest.mini > :not(h2) { display: none; }
+.panel.quest.mini h2::after { content: ' ▸'; color: #ffd166; }
+/* Short landscape screens: tips up at the top, narrower, clear of the controls. */
+@media (max-height: 500px) { .tip-card, body.phone-menu .tip-card { top: calc(max(8px, env(safe-area-inset-top)) + 56px); width: min(400px, calc(100% - 380px)); min-width: 260px; font-size: 14px; padding: 8px 12px; } }
+#t-fours small { display: block; font-size: 10px; font-weight: 700; margin-top: -2px; opacity: 0.8; }
