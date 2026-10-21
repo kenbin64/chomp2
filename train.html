@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>html,body{background:#0b1d27}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#6a1c1c">
+<title>Kuranda Scenic Railway · Chomp 3D: Wally's Cairns Adventure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="fade" class="fade-screen"></div>
+<div id="cine-caption" class="cine-caption" hidden></div>
+<section id="title" class="overlay live-view">
+  <div class="card">
+    <p class="area">Down the range to Croc Park</p>
+    <h1>The Kuranda Train</h1>
+    <p>With the sceptre at full power, Wally and Kenny take the historic train from Kuranda down the range to Cairns, past Barron Falls and over the Stoney Creek bridge. Next stop: Croc Park, to bring out the crocs.</p>
+    <button id="ride" class="go" type="button">Ride the train</button>
+    <p class="fine"><a href="index.html?rescue" id="skip">Skip to Croc Park</a> &middot; any key or tap skips the ride</p>
+  </div>
+</section>
+<script type="module" src="js/levels/train.js"></script>
+</body>
+</html>

@@ -452,13 +452,16 @@ function finish(won) {
   game.running = false;
   $('hud').hidden = true; $('touch').hidden = true;
   $('result-title').textContent = won ? 'The King will grant the wish' : 'Out of puff';
-  $('result-why').textContent = won ? "The sceptre is whole again, and the King has heard Wally's wish. Next: the crocs of the park come to the rescue. (The rescue: next to build.)" : 'Kenny can only bring his jar three times in a place.';
+  $('result-why').textContent = won ? "The sceptre is whole again, and the King has heard Wally's wish. Next: down the range on the Kuranda train to Croc Park, to bring out the crocs." : 'Kenny can only bring his jar three times in a place.';
   markRetry(won, 'the Daintree River');
   $('result-lines').innerHTML = '';
   for (const [label, v] of [['Food caught', game.caught], ['Croc bites', game.bites], ['Snapped up by crocs', game.stolen], ['Paw paws for the King', `${forest.gathered} of ${forest.total}`], ['Points', game.points]]) {
     const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }
   $('result').hidden = false;
+  // After the King: on to the rescue. (The short journey south to Kuranda station is to come;
+  // for now the card goes straight to the train down the range.)
+  if (won && game.phase === 'court') { $('again').textContent = 'Take the train to Croc Park'; $('again').onclick = () => { location.href = 'train.html'; }; }
   window.chomp.result = { won, points: game.points };
 }
 

@@ -13,37 +13,18 @@
 import * as THREE from 'three';
 import { Trees } from '../trees.js';
 
-export const L = 1700;                                    // valley station (x = 0) to Kuranda (x = L)
-export const TOP = 330;                                   // the plateau above the plain
-export const GORGE = { x: 1390, w: 95, d: 150, head: -300 };   // the Barron Gorge crosses the line; the falls at its head (z = head). Wide enough for the land's grid to draw its walls cleanly.
-export const smooth = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
-export const coastAt = z => -380 + Math.sin(z * 0.004) * 60 + Math.sin(z * 0.011) * 18;
-// How deep the gorge is cut at a point (0 outside it): for its colour.
-export function gorgeCut(x, z) {
-  const along = smooth(GORGE.head - 6, GORGE.head + 420, z);
-  return GORGE.d * Math.exp(-Math.pow((x - GORGE.x - Math.sin(z * 0.006) * 28) / GORGE.w, 2)) * along;
-}
-export function height(x, z) {
-  if (x < coastAt(z)) return -6;                                   // the sea
-  const up = smooth(120, 1250, x);                                 // the range, rising to the plateau
-  let h = 2 + TOP * up;
-  const ridges = Math.sin(z * 0.011 + x * 0.004) * 22 + Math.sin(z * 0.027 - x * 0.009) * 10 + Math.sin(x * 0.021 + z * 0.013) * 7;
-  h += ridges * Math.min(1, up * 2.2) * (1 - smooth(1200, 1500, x) * 0.6);
-  // The gorge: a cut running down the range (+z), starting at the top of the
-  // falls and deepening down the cascade (as Ken's model drops), then on down.
-  const along = smooth(GORGE.head - 6, GORGE.head + 420, z);
-  const across = Math.exp(-Math.pow((x - GORGE.x - Math.sin(z * 0.006) * 28) / GORGE.w, 2));
-  h -= GORGE.d * across * along;
-  return h;
-}
+import { L, TOP, GORGE, smooth, coastAt, gorgeCut, height } from './range-height.js';
+export { L, TOP, GORGE, smooth, coastAt, gorgeCut, height };
 
-export function buildRange(scene, { quality, light, sun, clear = () => false }) {
+// shape(x, z, h): the drawn ground there, given the land's height h (a ride cuts its line in).
+export function buildRange(scene, { quality, light, sun, clear = () => false, fallsSheet = true, shape = (x, z, h) => h, detail = 1 }) {
+  const ground = (x, z) => shape(x, z, height(x, z));
   let fallsTex = null;
   {
-    const W = 3000, D = 2400, geo = new THREE.PlaneGeometry(W, D, quality.name === 'low' ? 150 : 300, quality.name === 'low' ? 120 : 240);
+    const W = 3000, D = 2400, geo = new THREE.PlaneGeometry(W, D, Math.round((quality.name === 'low' ? 150 : 300) * detail), Math.round((quality.name === 'low' ? 120 : 240) * detail));   // detail: a ride that needs a finer land (the railway's cuttings)
     geo.rotateX(-Math.PI / 2); geo.translate(600, 0, 0);
     const p = geo.attributes.position;
-    for (let i = 0; i < p.count; i++) p.setY(i, height(p.getX(i), p.getZ(i)));
+    for (let i = 0; i < p.count; i++) p.setY(i, ground(p.getX(i), p.getZ(i)));
     geo.computeVertexNormals();
     const n = geo.attributes.normal, col = [], c = new THREE.Color();
     const canopy = [new THREE.Color(0x12301a), new THREE.Color(0x183c1e), new THREE.Color(0x1f4723)];   // the floor under the canopy: deep shade
@@ -118,8 +99,8 @@ export function buildRange(scene, { quality, light, sun, clear = () => false }) 
       const step = Math.abs(z) < 260 ? near : farStep;
       if (Math.abs(x - GORGE.x) < GORGE.w * 1.4 && z > GORGE.head - 40) continue;   // the gorge stays open
       const px = x + (r() - 0.5) * step, pz = z + (r() - 0.5) * step;
-      const h = height(px, pz);
-      const s = height(px + 3, pz) - h, s2 = height(px, pz + 3) - h;
+      const h = ground(px, pz);
+      const s = ground(px + 3, pz) - h, s2 = ground(px, pz + 3) - h;
       if (Math.hypot(s, s2) > 2.6) continue;                            // too steep (the gorge walls): bare rock
       if (clear(px, pz)) continue;                                       // kept open by the ride (a station, a railway)
       const k = r();
@@ -135,8 +116,9 @@ export function buildRange(scene, { quality, light, sun, clear = () => false }) 
 
   // ---- The falls at the head of the gorge, as seen from the air -----------------------------
   // From the gondola, hundreds of metres off, the falls read as a white cascade with
-  // a plume of mist rising from it; Ken's falls model is for close up (the zip line).
-  {
+  // a plume of mist rising from it; Ken's falls model is for close up (the zip line, and the
+  // train's lookout, which passes fallsSheet: false and sets the model there itself).
+  if (fallsSheet) {
     const lip = height(GORGE.x, GORGE.head), foot = height(GORGE.x, GORGE.head + 260);
     const c = document.createElement('canvas'); c.width = 64; c.height = 256; const g = c.getContext('2d');
     for (let x = 0; x < 64; x++) for (let y = 0; y < 256; y += 2) { const v = 210 + Math.random() * 45; g.fillStyle = `rgba(${v},${v - 4},${v - 14},${0.55 + Math.random() * 0.45})`; g.fillRect(x, y, 1, 2 + Math.random() * 10); }
