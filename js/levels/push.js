@@ -25,6 +25,7 @@ import { readProgress, outfitModel, wearing } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
 import { loadRealism } from '../realism.js';
 import * as sound from '../sound.js';
+import { makeSceptre, ALL_TALISMANS } from '../sceptre-model.js';
 import { say as forDevice } from '../device.js';
 import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
 
@@ -48,7 +49,7 @@ const fpsWatch = watchFrameRate(quality_, lower => { quality_ = lower; renderer.
 const intro = areaIntro({ id: 'push', name: 'The Great Push', place: 'The Daintree River', focus: on => fpsWatch.focus(on),
   shots: () => orbitShots({ centre: { x: boatX(AGROUND_Z), y: 0, z: AGROUND_Z }, radius: 40, height: 28, low: 12, a0: Math.PI * 0.6, a1: Math.PI * 1.25 }) });
 
-const models = await loadModels([...MODEL_FILES, 'river-boat'], { light: touch || quality_.name === 'low' });
+const models = await loadModels([...MODEL_FILES, 'talisman-sun', 'talisman-moon', 'talisman-air', 'talisman-earth', 'talisman-fire', 'sceptre-hero', 'river-boat'], { light: touch || quality_.name === 'low' });
 const realism = await loadRealism(renderer, { light: touch || quality_.name === 'low' });
 const world = buildDaintree(scene, quality_, realism);
 
@@ -102,11 +103,8 @@ const progress = readProgress((() => { try { return localStorage.getItem('chomp-
 wally.useModel(models.get(outfitModel(progress)) || models.get('wally'));
 if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(progress, 'wally'));
 wally.pos.set(boatX(AGROUND_Z - 42), -0.45, AGROUND_Z - 42); wally.facing = 0; wally.root.position.copy(wally.pos);
-const sceptre = (() => {
-  const g = new THREE.Group(), gl = models.get('sceptre');
-  if (gl) { const m = gl.scene.clone(true), b = new THREE.Box3().setFromObject(m); m.scale.setScalar(1.5 / b.getSize(new THREE.Vector3()).y); m.position.sub(new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3())); m.position.y += 0.45; g.add(m); }
-  const light = new THREE.PointLight(0xffe2a0, 5, 12); light.position.y = 1.1; g.add(light); g.userData.light = light; scene.add(g); return g;
-})();
+const sceptreSet = makeSceptre(models, { height: 1.5, held: ALL_TALISMANS });   // all six talismans in place, shining; the sceptre glows (sceptre-model.js)
+const sceptre = (() => { const g = new THREE.Group(); sceptreSet.group.position.y = 0.45; g.add(sceptreSet.group); g.userData.light = new THREE.PointLight(0xffe2a0, 0, 1);   /* kept for old code that sets it; not added to the scene: the sceptre lights itself */ scene.add(g); return g; })();
 let hand = null; if (wally.skin) wally.skin.root.traverse(o => { if (o.isBone && /RightHand$/.test(o.name)) hand = o; });
 function holdSceptre(t) {
   if (wally.poser && wally.poser.ok) { wally.poser.tilt('RightArm', 0, 0, -1.25); wally.poser.tilt('RightForeArm', 0, 0, -0.3); }
@@ -295,7 +293,7 @@ function frame() {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt;
   if (game.running) step(dt, t); else { holdSceptre(t); placeBoat(t); for (const c of [...parkCrocs, ...wild]) { c.holder.position.set(c.x, -0.25, c.z); if (c.skin) c.skin.update(dt); } for (const p of passengers) { p.skin.play('nervous', { alternatives: ['idle'] }); p.skin.update(dt); } }
   bubbles.update(dt); fx.update(dt, t); world.update(t, camera);
-  frameCamera(dt); intro.update(dt, camera); fpsWatch(dt);
+  sceptreSet.update(t); frameCamera(dt); intro.update(dt, camera); fpsWatch(dt);
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }

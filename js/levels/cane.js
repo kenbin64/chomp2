@@ -11,6 +11,7 @@
 //
 // The field's rules are in cane-rules.js (tested), the look in cane-scene.js.
 
+import { openSceptre } from '../sceptre-card.js';
 import * as THREE from 'three';
 import * as Trip from '../trip-rules.js';
 import { CANE, makeField, cellToWorld, worldToCell, walkable, cuttable, cut, startCell, middle, cutsNeeded } from './cane-rules.js';
@@ -349,6 +350,7 @@ function step(dt, t) {
   // The chest in the clearing: the fire talisman.
   if (!game.talisman && Math.hypot(wally.pos.x - chest.x, wally.pos.z - chest.z) < 2.4) {
     game.talisman = true; game.points += 300; attempt = Trip.gain(attempt, 'talisman-fire');
+      setTimeout(() => openSceptre('talisman-fire'), 1600);                  // the sceptre card, the new talisman set in its place (Ken)
     sound.play.powerup(); wally.cheer = 1.2; fx.burst(new THREE.Vector3(chest.x, 1.5, chest.z), [0xff6a1a, 0xffc04a, 0xffffff], 40);
     toast_('The fire talisman!', 'good'); bubbles.say(wally.root, 'Crikey! The fire talisman! One for the sceptre!', 3.6);
     game.done = true; setTimeout(() => finish(true), 3000);

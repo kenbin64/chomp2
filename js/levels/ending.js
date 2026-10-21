@@ -17,6 +17,7 @@ import { HALF, AGROUND_Z, riverX, boatX, groundAt, crocsRoundBoat } from './dain
 import { buildDaintree } from './daintree-scene.js';
 import { loadModels, ModelSkin, MODEL_FILES } from '../models.js';
 import { kennysJar } from '../food.js';
+import { makeSceptre, ALL_TALISMANS } from '../sceptre-model.js';
 import { jarLabelTexture } from '../textures.js';
 import { Trees } from '../trees.js';
 import { peopleModels } from '../tourists.js';
@@ -40,7 +41,7 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1400);
 function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.fov = camera.aspect < 0.8 ? 66 : 50; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
-const models = await loadModels([...MODEL_FILES, 'river-boat', 'king-croc', 'king-throne'], { light: touch || quality.name === 'low' });
+const models = await loadModels([...MODEL_FILES, 'river-boat', 'king-croc', 'king-throne', 'talisman-sun', 'talisman-moon', 'talisman-air', 'talisman-earth', 'talisman-fire', 'sceptre-hero'], { light: touch || quality.name === 'low' });
 const realism = await loadRealism(renderer, { light: touch || quality.name === 'low' });
 // The ending's two places on the banks are kept open (no mangroves or forest there): the King's
 // spot on the near bank, Kenny's gum trees on the far bank.
@@ -86,7 +87,8 @@ const kingSkin = skinOf('king-croc', { height: 3.6 });
 const king = kingSkin ? holder(kingSkin, kingX + 0.35, yAt(kingX, kingZ) + 0.6, kingZ, Math.PI / 2) : null;
 if (kingSkin) kingSkin.play('Sit');
 // The sceptre, glowing.
-const sceptre = (() => { const g = new THREE.Group(), gl = models.get('sceptre'); if (gl) { const m = gl.scene.clone(true), b = new THREE.Box3().setFromObject(m); m.scale.setScalar(1.6 / b.getSize(new THREE.Vector3()).y); m.position.sub(new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3())); g.add(m); } const l = new THREE.PointLight(0xffe2a0, 4, 14); g.add(l); g.userData.light = l; scene.add(g); return g; })();
+const sceptreSet = makeSceptre(models, { height: 1.6, held: ALL_TALISMANS });   // all six in place, shining, glowing
+const sceptre = (() => { const g = new THREE.Group(); g.add(sceptreSet.group); g.userData.light = new THREE.PointLight(0xffe2a0, 0, 14);   /* not added: the sceptre lights itself */ scene.add(g); return g; })();
 // Wally (part human), and the croc he becomes.
 const progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
 const wallySkin = skinOf(outfitModel(progress), { height: 2.7 }) || skinOf('wally', { height: 2.7 });
@@ -144,14 +146,15 @@ function stage(dt, time) {
   const wp = wally.position, kp = kenny.position;
   // Who does what in each shot.
   for (const p of passengers) p.s.play(time < 52 ? 'cheer' : 'wave', { alternatives: ['idle'] });
-  if (kingSkin) kingSkin.play('Sit', { speed: 0.25 });                  // Ken: still on his throne, no hand gestures
+  if (kingSkin) kingSkin.play(who === K ? 'Speak' : 'Sit', { alternatives: ['Sit'] });   // Ken: alive (breathing, looking about, talking with his head), no hand to his face
   // The sceptre: in the King's raised hand, blazing at the change.
   sceptre.position.set(kingX + 0.9, yAt(kingX, kingZ) + (shot === 'raise' || shot === 'change' ? 3.4 : 2.0), kingZ - 1.2);   // upright beside him; it rises on its own at the change
   sceptre.userData.light.intensity = shot === 'change' ? 40 + Math.sin(into * 20) * 20 : 5;
   // The change: a flash, and Wally is a croc again.
   // After the change (34 s + 2.6) he is a croc, however we got here (played through, or skipped to).
   const changed = time >= 36.6; wally.visible = !changed; if (croc) croc.g.visible = changed;
-  if (shot === 'change' && into > 2.6 && into < 2.8) sceptre.userData.light.intensity = 120;
+  if (shot === 'change' && into > 2.4 && into < 2.6) sceptreSet.flare(1);          // the change: a burst of light
+  sceptreSet.update(time);
   if (shot === 'change') { const s = 1 + Math.sin(Math.min(1, into / 2.6) * Math.PI) * 0.15; wally.scale.setScalar(s); }
   if (wallySkin) wallySkin.play(shot === 'wally' ? 'Idle' : 'Idle');
   // Climbing and up the tree: arms raised round the trunk (the Celebrate move's raised arms, facing the trunk).

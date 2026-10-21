@@ -7,6 +7,7 @@
 // to the surface wins. Pearls carry over from the Esplanade (progress.pearls).
 // Rules: reef-rules.js (tested). Scenery under water: reef-scene.js.
 
+import { openSceptre } from '../sceptre-card.js';
 import { fitText } from '../signtext.js';
 import { installGear, snorkelling } from '../gear.js';
 import * as THREE from 'three';
@@ -569,6 +570,7 @@ function step(dt, t) {
     if (game.hasPearlKey) {
       game.chest = true; ch.opened = true; ch.mango.visible = true; bookEvent('chest');
       attempt = Trip.gain(Trip.gain(attempt, 'talisman-moon'), 'skyrail-pass');   // the moon talisman and the ride up; kept when the reef is completed
+      setTimeout(() => openSceptre('talisman-moon'), 1600);                  // the sceptre card, the new talisman set in its place (Ken)
       game.points += CHEST_POINTS; wally.cheer = 1.2;
       sound.play.powerup(); fx.burst(new THREE.Vector3(ch.x, SEABED_Y + 1.5, ch.z), [0xffd700, 0xffb51f, 0xffffff], 24);
       toast_('The pearl key fits! The Skyrail pass, the way up to Kuranda', 'good');

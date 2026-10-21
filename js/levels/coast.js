@@ -26,6 +26,7 @@ import { jarLabelTexture } from '../textures.js';
 import { readProgress, outfitModel, wearing } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
 import * as sound from '../sound.js';
+import { makeSceptre, ALL_TALISMANS } from '../sceptre-model.js';
 import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone, aimOffset } from '../rules.js';
 
@@ -49,7 +50,7 @@ const fpsWatch = watchFrameRate(quality, lower => { quality = lower; renderer.se
 const intro = areaIntro({ id: 'coast', name: 'Up the Coast', place: 'Cairns to the Daintree', focus: on => fpsWatch.focus(on),
   shots: () => courseShots({ from: { x: shoreX(260) - 14, z: 260 }, to: { x: wally.pos.x, z: wally.pos.z - 12 }, y: 0, height: 45, side: -26 }) });
 
-const models = await loadModels([...MODEL_FILES, 'river-boat'], { light: touch || quality.name === 'low' });
+const models = await loadModels([...MODEL_FILES, 'talisman-sun', 'talisman-moon', 'talisman-air', 'talisman-earth', 'talisman-fire', 'sceptre-hero', 'river-boat'], { light: touch || quality.name === 'low' });
 useJarModel(models.get('jar'));
 const realism = params.get('real') === '0' ? null : await loadRealism(renderer, { light: touch || quality.name === 'low' });
 const post = createPost(renderer, scene, camera, quality);
@@ -119,11 +120,8 @@ const progress = readProgress((() => { try { return localStorage.getItem('chomp-
 wally.useModel(models.get(outfitModel(progress)) || models.get('wally'));
 if (wally.skin) dressOutfit(wally.skin.root, 'wally', wearing(progress, 'wally'));
 wally.pos.set(shoreX(0) - 10, -SURFACE_DROP, 0); wally.facing = 0; wally.root.position.copy(wally.pos);
-const sceptre = (() => {
-  const g = new THREE.Group(), gl = models.get('sceptre');
-  if (gl) { const m = gl.scene.clone(true), b = new THREE.Box3().setFromObject(m); m.scale.setScalar(1.5 / b.getSize(new THREE.Vector3()).y); m.position.sub(new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3())); m.position.y += 0.45; g.add(m); }
-  const light = new THREE.PointLight(0xffe2a0, 5, 12); light.position.y = 1.1; g.add(light); scene.add(g); return g;
-})();
+const sceptreSet = makeSceptre(models, { height: 1.5, held: ALL_TALISMANS });   // all six talismans in place, shining; the sceptre glows (sceptre-model.js)
+const sceptre = (() => { const g = new THREE.Group(); sceptreSet.group.position.y = 0.45; g.add(sceptreSet.group); g.userData.light = new THREE.PointLight(0xffe2a0, 0, 1);   /* kept for old code that sets it; not added to the scene: the sceptre lights itself */ scene.add(g); return g; })();
 let hand = null; if (wally.skin) wally.skin.root.traverse(o => { if (o.isBone && /RightHand$/.test(o.name)) hand = o; });
 function holdSceptre() {
   if (wally.poser && wally.poser.ok) { wally.poser.tilt('RightArm', 0, 0, -1.25); wally.poser.tilt('RightForeArm', 0, 0, -0.3); }
@@ -302,7 +300,7 @@ function frame() {
   ripple.offset.set(t * 0.004, t * 0.009);
   if (ranges && ranges.userData.follow) ranges.userData.follow(camera);
   sun.position.copy(wally.pos).add(new THREE.Vector3(-60, 120, -50)); sun.target.position.copy(wally.pos);
-  followCamera(dt); intro.update(dt, camera); fpsWatch(dt);
+  sceptreSet.update(t); followCamera(dt); intro.update(dt, camera); fpsWatch(dt);
   post.render(); requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

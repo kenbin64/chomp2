@@ -8,6 +8,7 @@
 //
 // The gorge's rules are in mossman-rules.js (tested), the look in mossman-scene.js.
 
+import { openSceptre } from '../sceptre-card.js';
 import * as THREE from 'three';
 import * as Trip from '../trip-rules.js';
 import { POOLS, KEY_POOL, CHEST_POOL, SLIDE_HALF, SLIDE_SPEED, START, FINISH_Z, riverX, groundAt, insideGorge, bottomSpot, canReach, groupSpots, slideAt } from './mossman-rules.js';
@@ -253,6 +254,7 @@ function step(dt, t) {
   if (!game.talisman && canReach(wally.pos.x, wally.pos.z, dive.depth > 1.2, chestSpot.x, chestSpot.z)) {
     if (game.hasKey) {
       game.talisman = true; attempt = Trip.gain(attempt, 'talisman-earth'); game.points += 300;
+      setTimeout(() => openSceptre('talisman-earth'), 1600);                  // the sceptre card, the new talisman set in its place (Ken)
       sound.play.powerup(); wally.cheer = 1.2; fx.burst(new THREE.Vector3(chestSpot.x, chestSpot.y + 1, chestSpot.z), [0xb8e6ff, 0xff9ad8, 0xffffff], 40);
       toast_('The opal, the earth talisman!', 'good'); bubbles.say(wally.root, 'Crikey, the opal! Earth for the sceptre!', 3.6);
     } else if ((game.hint -= dt) <= 0) { game.hint = 5; toast_('Locked. The key is somewhere on the bottom of another hole', 'info'); }

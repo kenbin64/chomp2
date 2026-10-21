@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { COURSE, START } from './vine-rules.js';
 import { COURT } from './daintree-forest.js';
+import { makeSceptre, ALL_TALISMANS } from '../sceptre-model.js';
 
 const X = COURSE.x;
 const KING = 'The Croc King';
@@ -38,12 +39,9 @@ function linesFor(pawpaws) {
 export function kingScene({ scene, camera, wally, models, look, caption, sound }) {
   const top = look.top, wallyZ = COURT.throneZ - 6.5;
   // The sceptre: Wally holds it up, then it rises to the King; at the end it blazes with light.
-  const sceptre = (() => {
-    const gltf = models.get('sceptre'); const g = new THREE.Group(); g.visible = false; scene.add(g);
-    if (gltf) { const m = gltf.scene.clone(true), b = new THREE.Box3().setFromObject(m); m.scale.setScalar(1.6 / b.getSize(new THREE.Vector3()).y); m.position.sub(new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3())); g.add(m); }
-    const light = new THREE.PointLight(0xffe6a0, 0, 14); g.add(light); g.userData.light = light;
-    return g;
-  })();
+  // The sceptre, all six talismans in place and shining, glowing (sceptre-model.js).
+  const sceptreSet = makeSceptre(models, { height: 1.6, held: ALL_TALISMANS });
+  const sceptre = (() => { const g = new THREE.Group(); g.visible = false; g.add(sceptreSet.group); scene.add(g); g.userData.light = sceptreSet.light; return g; })();
   const s = { active: false, t: 0, line: -1, lines: [], done: null, look: new THREE.Vector3(), glow: 0 };
   const kingHead = new THREE.Vector3(X, top + 2.9, COURT.throneZ - 0.8), wallyHead = () => new THREE.Vector3(X, wally.pos.y + 2.3, wally.pos.z);
   const shots = {
@@ -85,10 +83,12 @@ export function kingScene({ scene, camera, wally, models, look, caption, sound }
       const from = new THREE.Vector3(X + 0.6, wally.pos.y + 2.2, wally.pos.z + 0.9), to = new THREE.Vector3(X + 0.9, top + 2.2, COURT.throneZ - 1.4);
       sceptre.position.lerpVectors(from, to, give * give * (3 - 2 * give)); sceptre.position.y += Math.sin(give * Math.PI) * 0.8;
       sceptre.rotation.y += dt * 0.6;
-      if (cue === 'glow') s.glow = Math.min(1, s.glow + dt * 0.5);
-      sceptre.userData.light.intensity = 2 + s.glow * 22 + Math.sin(t * 3) * 0.5;   // bright, but the King still reads
+      if (cue === 'glow') { s.glow = Math.min(1, s.glow + dt * 0.5); sceptreSet.flare(s.glow * 0.4); }   // full power: it blazes
+      sceptreSet.update(t);
       // The King: seated, talking when he speaks, raising the sceptre at the end.
-      if (look.kingSkin) { look.kingSkin.play(cue === 'glow' ? 'Raise' : who === 'king' ? 'Speak' : 'Sit', { once: cue === 'glow', alternatives: ['Sit'] }); look.kingSkin.update(dt); }
+      // Alive on his throne (Ken): breathing and looking about; talking with his head and an open hand when
+      // he speaks; never a hand to his face, and no arm raise.
+      if (look.kingSkin) { look.kingSkin.play(who === 'king' ? 'Speak' : 'Sit', { alternatives: ['Sit'] }); look.kingSkin.update(dt); }
     },
   };
 }

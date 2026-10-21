@@ -6,6 +6,7 @@
 // the end of the street. The clothes stall sells new gear for Wally and Kenny
 // for Golden Mangoes, and the river-boat ticket for the Daintree.
 
+import { openSceptre } from '../sceptre-card.js';
 import { installGear, snorkelling, drainFactor } from '../gear.js';
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
@@ -179,7 +180,7 @@ const station = boomerangThrow({ scene, camera, wally, sound, models, people: pe
   onTalisman: () => { game.hasAir = true; attempt = Trip.gain(attempt, 'talisman-air'); game.points += 300; wally.cheer = 1.2; },
   // Back at the archway, facing the street, ready to walk on (he has to step out before it starts again).
   onDone: caught => {
-    $('hud').hidden = false; if (caught && game.hasAir) bookFound('talisman-air');
+    $('hud').hidden = false; if (caught && game.hasAir) setTimeout(() => openSceptre('talisman-air'), 400);   // the sceptre card, air set in its place (Ken)
     wally.pos.set(CLEARING.x0 + 0.5, G, ENTRY.z); wally.root.position.copy(wally.pos); wally.facing = Math.PI * 1.5; cam.yaw = Math.PI / 2;
   },
 });

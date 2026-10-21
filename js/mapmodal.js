@@ -9,6 +9,7 @@
 
 import { AREAS } from './quests.js';
 import { resetAreaIntros } from './area-intro.js';
+import { installSceptre } from './sceptre-card.js';
 import { readProgress, isOpen, entryNeeds, ACTIVITIES, totalStars, activityOpen } from './progress.js';
 import { mapSvg, pinXY, markerXY, MARKERS } from './tripmap.js';
 
@@ -247,6 +248,7 @@ export function closeMap() {
 export function installMap({ pause = null } = {}) {
   onPause = pause;
   addNextStop();
+  installSceptre({ pause });                                    // the sceptre card, beside the map, in every area
   const b = el('button', 'map-button', '🗺 Map'); b.type = 'button'; b.title = 'The map (Tab)';
   b.onclick = () => (modal && !modal.hidden ? closeMap() : openMap());
   document.body.append(b);

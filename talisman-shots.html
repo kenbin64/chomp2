@@ -84,6 +84,21 @@ const BUILD = {
 // Ken's model for each, where it exists; the stand-in otherwise.
 const fromModel = name => { const t = models.get(name === 'sceptre' ? 'sceptre-hero' : `talisman-${name}`) || (name === 'sceptre' && models.get('sceptre')); return t ? t.scene.clone(true) : null; };
 
+// The sceptre's head straight on, framed exactly (orthographic), for the sceptre card: the model
+// scaled to height 1 and centred, the frame x -0.2..0.2, y 0.13..0.53 (sceptre-model.js SETTINGS are
+// in the same units, so the card can place each talisman over its setting).
+window.showHead = () => {
+  if (shown) scene.remove(shown);
+  const t = models.get('sceptre-hero') || models.get('sceptre'); if (!t) return false;
+  shown = t.scene.clone(true);
+  const box = new THREE.Box3().setFromObject(shown), size = box.getSize(new THREE.Vector3());
+  shown.scale.setScalar(1 / size.y); const b2 = new THREE.Box3().setFromObject(shown); shown.position.sub(b2.getCenter(new THREE.Vector3()));
+  scene.add(shown);
+  const cam = new THREE.OrthographicCamera(-0.2, 0.2, 0.53, 0.13, 0.01, 10); cam.position.set(0, 0, 3); cam.lookAt(0, 0, 0); cam.position.y = 0; cam.lookAt(0, 0, -1);
+  renderer.render(scene, cam);
+  return true;
+};
+
 let shown = null;
 window.show = name => {
   if (shown) scene.remove(shown);

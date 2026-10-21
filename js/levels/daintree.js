@@ -103,7 +103,7 @@ const intro = areaIntro({
   shots: () => courseShots({ from: { x: riverX(SANDBAR.z), z: SANDBAR.z }, to: { x: wally.pos.x, z: wally.pos.z - 10 }, y: 0, height: 40, side: 22 }),
 });
 
-const models = await loadModels([...MODEL_FILES, 'river-boat', 'king-croc', 'king-throne'], { light: touch || quality.name === 'low' });   // and Ken's riverboat
+const models = await loadModels([...MODEL_FILES, 'river-boat', 'king-croc', 'king-throne', 'talisman-sun', 'talisman-moon', 'talisman-air', 'talisman-earth', 'talisman-fire', 'sceptre-hero'], { light: touch || quality.name === 'low' });   // and Ken's riverboat
 useJarModel(models.get('jar'));
 const realism = await loadRealism(renderer, { light: touch || quality.name === 'low' });
 const world = buildDaintree(scene, quality, realism);

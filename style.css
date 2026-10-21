@@ -522,3 +522,24 @@ body.touch .gear-use { bottom: 224px; }
 
 /* The end-of-area card: the completed note (mapmodal.js markRetry) */
 .done-note { margin: 10px 0 4px; padding: 10px 14px; border-radius: 12px; background: rgba(123, 227, 107, 0.14); border: 2px solid rgba(123, 227, 107, 0.5); color: #e9ffe4; font-weight: 700; font-size: 15px; }
+
+/* The sceptre card (sceptre-card.js): the head with each talisman in its setting, shining; all six: it glows */
+.sceptre-button { position: fixed; z-index: 40; top: calc(max(10px, env(safe-area-inset-top)) + 46px); left: 50%; transform: translateX(-50%);   /* a second row, under the Map button (the top row is full) */ font: 800 16px var(--font); padding: 8px 14px; border-radius: 999px; border: 2px solid rgba(255,209,102,0.7); background: rgba(10, 30, 44, 0.75); color: #ffd166; cursor: pointer; }
+.sceptre-button:hover { background: rgba(255,209,102,0.25); }
+.sceptre-card .card { max-width: 560px; text-align: center; max-height: 92vh; overflow-y: auto; }
+.sceptre-sub { margin: 4px 0 10px; color: #b9d3cf; }
+.sceptre-art { position: relative; width: min(420px, 78vw); aspect-ratio: 1; margin: 0 auto; border-radius: 20px; background: radial-gradient(circle at 50% 45%, rgba(255, 209, 102, 0.12), transparent 65%); }
+.sceptre-art > img { width: 100%; height: 100%; display: block; }
+.sceptre-art.all { animation: sceptreglow 2.4s ease-in-out infinite; }
+@keyframes sceptreglow { 0%, 100% { filter: drop-shadow(0 0 10px rgba(255, 214, 120, 0.55)); } 50% { filter: drop-shadow(0 0 26px rgba(255, 230, 150, 0.95)); } }
+.sceptre-spot { position: absolute; transform: translate(-50%, -50%); border-radius: 50%; }
+.sceptre-spot:not(.in) { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18); }
+.sceptre-spot img { width: 100%; height: 100%; object-fit: contain; animation: talismanshine 2s ease-in-out infinite; }
+.sceptre-spot:nth-child(3) img { animation-delay: 0.3s; } .sceptre-spot:nth-child(4) img { animation-delay: 0.6s; } .sceptre-spot:nth-child(5) img { animation-delay: 0.9s; } .sceptre-spot:nth-child(6) img { animation-delay: 1.2s; } .sceptre-spot:nth-child(7) img { animation-delay: 1.5s; }
+@keyframes talismanshine { 0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 240, 190, 0.6)) brightness(1); } 50% { filter: drop-shadow(0 0 10px rgba(255, 240, 190, 1)) brightness(1.25); } }
+.sceptre-list { list-style: none; padding: 0; margin: 12px auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; text-align: left; max-width: 440px; font-size: 15px; color: #b9d3cf; }
+.sceptre-list li.in b { color: #7be36b; } .sceptre-list b { color: #ffd166; }
+@media (max-width: 560px) { .sceptre-list { grid-template-columns: 1fr; } }
+.sceptre-spot.new img { animation: talismanset 1.4s ease-out both, talismanshine 2s ease-in-out 1.4s infinite; }
+@keyframes talismanset { 0% { transform: scale(3) translateY(-30%); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+.sceptre-spot.new::after { content: 'New!'; position: absolute; left: 50%; top: -22px; transform: translateX(-50%); font: 800 14px var(--font); color: #7be36b; text-shadow: 0 1px 4px #000; white-space: nowrap; }

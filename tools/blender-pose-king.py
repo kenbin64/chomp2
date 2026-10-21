@@ -78,13 +78,18 @@ def sit(t):
     p = {}; seated(p, t); return p
 
 def speak(t):
+    # Talking (Ken, 2026-10-21: alive, but no hand to the face, which read as stroking his nose):
+    # the head nods and turns as he speaks, he leans in a little, the chest rises with his words,
+    # and the right hand opens a little off the armrest, staying low and out in front.
     p = {}; seated(p, t)
     w = s(t * 2)
-    aim(p, 'Right', (0.5, -0.75, -0.35))                               # the hand comes up, open, toward Wally
-    elbow(p, 'Right', 55 + 15 * w)
-    p['RightHand'] = [(Y, 10 * w)]
-    p['Head'] = [(X, -6 + 4 * s(t * 3)), (Z, 6 * s(t, 0.2))]
-    p['Spine'] = [(X, 9)]
+    aim(p, 'Right', mix(ARMREST, (0.42, -0.35, -0.85), 0.5 + 0.5 * s(t)))   # the arm eases forward off the rest, never up
+    elbow(p, 'Right', 40 + 10 * (0.5 + 0.5 * s(t)))
+    p['RightHand'] = [(Y, 8 * w), (X, -10)]                            # the palm turns up a little: an open hand
+    p['Head'] = [(X, -6 + 5 * s(t * 2)), (Z, 9 * s(t, 0.2))]           # nods with the words, looks to Wally and back
+    p['Neck'] = [(X, -2 + 2 * s(t * 2, 0.1))]
+    p['Spine'] = [(X, 9 + 2 * s(t))]                                   # leaning in as he speaks
+    p['Spine2'] = [(X, 3 * s(t * 2))]                                  # the chest with the breath of the words
     return p
 
 def raise_(t):
