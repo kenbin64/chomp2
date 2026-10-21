@@ -463,3 +463,24 @@ body.touch .gear-use { bottom: 224px; }
 .perf-note.fade { opacity: 0; }
 .perf-readout { position: fixed; right: 10px; bottom: 10px; padding: 3px 8px; border-radius: 6px; background: rgba(0,0,0,0.55); color: #cfe; font: 600 12px ui-monospace, monospace; z-index: 5; pointer-events: none; }
 .perf-readout[hidden] { display: none; }
+
+/* The boomerang throw in Kuranda (boomerang-throw.js): the angle and force meters, the guide's words */
+.boom-ui { position: fixed; inset: 0; z-index: 5; pointer-events: none; font-family: var(--font); color: #fff; }
+.boom-meters { position: absolute; right: 24px; bottom: 96px; display: flex; gap: 18px; align-items: flex-end; }
+.boom-angle, .boom-force { background: rgba(8, 30, 44, 0.72); border: 2px solid rgba(255, 255, 255, 0.35); border-radius: 14px; padding: 10px 12px 6px; text-align: center; }
+.boom-angle svg { width: 150px; height: 88px; display: block; }
+.boom-arc { fill: none; stroke: rgba(255, 255, 255, 0.45); stroke-width: 6; stroke-linecap: round; }
+.boom-hint { fill: none; stroke: #7be36b; stroke-width: 8; stroke-linecap: round; }
+.boom-needle { stroke: #ffd166; stroke-width: 5; stroke-linecap: round; }
+.boom-angle p, .boom-force p { margin: 4px 0 0; font-size: 14px; font-weight: 700; letter-spacing: 0.06em; }
+.boom-force-bar { position: relative; width: 34px; height: 150px; margin: 0 auto; border-radius: 10px; background: rgba(255, 255, 255, 0.15); overflow: hidden; }
+.boom-force-fill { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(#ff5a3c, #ffd166 45%, #7be36b); }
+.boom-force-zone { position: absolute; left: -2px; right: -2px; border: 3px solid #7be36b; border-radius: 4px; z-index: 1; }
+.boom-prompt { position: absolute; left: 0; right: 0; bottom: 64px; margin: 0; text-align: center; font-size: 17px; font-weight: 700; text-shadow: 0 2px 6px #000; }
+.boom-caption { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); max-width: min(720px, 86vw); margin: 0; padding: 12px 18px; border-radius: 14px;
+                background: rgba(8, 30, 44, 0.8); font-size: 19px; line-height: 1.35; text-align: center; }
+.boom-caption b { color: #ffd166; }
+.boom-catch { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 150px; height: 150px; border-radius: 50%; border: 6px solid #ffd166;
+              display: grid; place-items: center; font-size: 26px; font-weight: 800; color: #ffd166; text-shadow: 0 2px 8px #000; animation: boompulse 0.5s ease-in-out infinite alternate; }
+@keyframes boompulse { from { transform: translate(-50%, -50%) scale(0.92); } to { transform: translate(-50%, -50%) scale(1.06); } }
+@media (max-width: 640px) { .boom-meters { right: 12px; bottom: 150px; gap: 10px; } .boom-angle svg { width: 110px; height: 66px; } .boom-force-bar { height: 110px; } .boom-caption { bottom: 210px; font-size: 16px; } }

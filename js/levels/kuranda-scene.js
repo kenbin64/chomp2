@@ -14,6 +14,7 @@ import { bandCells } from '../forest-tiles.js';
 import { Trees } from '../trees.js';
 import { Grass } from '../grass.js';
 import { surfaceMaterial, applySky } from '../realism.js';
+import { CLEARING, THROW_SPOT, inClearing } from './kuranda-rules.js';
 
 export const STREET = { half: 5, z0: -10, z1: 230, ground: 0 };
 export const TRAIL_Z = 222;                        // the gate onto the Barron Falls trail
@@ -50,6 +51,37 @@ function skyrail(scene) {
     g.position.set(x0 + i * (x1 - x0) / 9, y, z); scene.add(g); gondolas.push(g);
   }
   return t => gondolas.forEach((g, i) => { g.position.x = x0 + (((i / 9) + t * 0.012) % 1) * (x1 - x0); g.rotation.z = Math.sin(t * 0.8 + i) * 0.03; });
+}
+
+// The boomerang clearing (Ken, 2026-10-20): a patch of short grass and bare earth off the
+// street, log seats round its edge, a ring of stones where Wally stands to throw, and a
+// sign at the street. The loop of a good throw fills it (kuranda-rules.js, tested).
+function boomerangClearing(scene, rnd) {
+  const w = CLEARING.x1 - CLEARING.x0, d = CLEARING.z1 - CLEARING.z0;
+  const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
+  g.fillStyle = '#5d6b34'; g.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 70; i++) { g.fillStyle = `rgba(${120 + rnd() * 30},${90 + rnd() * 25},${55 + rnd() * 20},${0.25 + rnd() * 0.35})`; g.beginPath(); g.ellipse(rnd() * 512, rnd() * 512, 12 + rnd() * 50, 8 + rnd() * 30, rnd() * 3, 0, Math.PI * 2); g.fill(); }   // worn earth
+  for (let i = 0; i < 9000; i++) { const s = 0.5 + rnd(); g.fillStyle = `rgba(${70 + rnd() * 50},${100 + rnd() * 50},${35 + rnd() * 25},0.7)`; g.fillRect(rnd() * 512, rnd() * 512, s, 2 + rnd() * 3); }   // short grass
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(w / 8, d / 8); tex.anisotropy = 4;
+  const ground = shadowed(new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tex, roughness: 1 })), false, true);
+  ground.rotation.x = -Math.PI / 2; ground.position.set((CLEARING.x0 + CLEARING.x1) / 2, 0.006, (CLEARING.z0 + CLEARING.z1) / 2); scene.add(ground);
+  const dressing = new THREE.Group();
+  // Log seats along the far sides, out of the throw.
+  const bark = mat(0x5a4330);
+  for (const [x, z, r] of [[CLEARING.x1 - 1.2, CLEARING.z0 + 6, 0], [CLEARING.x1 - 1.2, CLEARING.z0 + 15, 0.2], [CLEARING.x0 + 6, CLEARING.z0 + 1, Math.PI / 2], [CLEARING.x0 + 14, CLEARING.z0 + 1, Math.PI / 2 - 0.15]]) {
+    const log = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 3.2, 10), bark)); log.rotation.set(Math.PI / 2, 0, 0); log.rotation.z = r; log.position.set(x, 0.28, z); dressing.add(log);
+  }
+  // The throwing mark: a ring of river stones.
+  const stone = mat(0x8a857a);
+  for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, s = shadowed(new THREE.Mesh(new THREE.DodecahedronGeometry(0.14 + rnd() * 0.06, 0), stone)); s.position.set(THROW_SPOT.x + Math.cos(a) * 0.9, 0.06, THROW_SPOT.z + Math.sin(a) * 0.9); s.scale.y = 0.6; dressing.add(s); }
+  // The sign at the street.
+  const timber = mat(0x6e4a2c);
+  const post = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.2, 0.16), timber)); post.position.set(CLEARING.x0 + 0.6, 1.1, CLEARING.z1 - 3); dressing.add(post);
+  const sc = document.createElement('canvas'); sc.width = 512; sc.height = 128;
+  { const sg = sc.getContext('2d'); sg.fillStyle = '#3d2a18'; sg.fillRect(0, 0, 512, 128); sg.fillStyle = '#f6e7c4'; sg.textAlign = 'center'; fitText(sg, 'Boomerang throwing', 256, 80, 470, 56, 'bold {size}px "Trebuchet MS", sans-serif'); }
+  const st = new THREE.CanvasTexture(sc); st.colorSpace = THREE.SRGBColorSpace;
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.55), mat(0xffffff, { map: st })); board.position.set(CLEARING.x0 + 0.5, 2, CLEARING.z1 - 3); board.rotation.y = -Math.PI / 2; dressing.add(board);
+  scene.add(dressing);
 }
 
 export function buildKuranda(scene, q, realism = null, models = new Map()) {
@@ -112,6 +144,7 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
   for (let z = VILLAGE_END + 6; z < TRAIL_Z - 10; z += 19.5) {
     const side = (flip = -flip);
     if (STALLS.some(([sx, sz]) => Math.abs(sz - z) < 9)) continue;
+    if (inClearing(side * 8.2, z, 4)) continue;                       // the boomerang clearing stays open
     const [kind, sign] = EXTRA[e++ % EXTRA.length];
     stall(kind, sign, e, side * 8.2, z, side);
   }
@@ -127,6 +160,7 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
   let fb = 0;
   for (const side of [-1, 1]) for (let z = STREET.z0 + 5; z < TRAIL_Z - 6; z += 9 + rnd() * 6) {
     const x = side * (STREET.half + 0.7);
+    if (inClearing(x, z, 1)) continue;
     if (rnd() < 0.55) { const b = chalkboard(BOARDS[fb++ % BOARDS.length], fb); b.position.set(x, 0, z); b.rotation.y = side > 0 ? -Math.PI / 2 + 0.4 : Math.PI / 2 - 0.4; front.add(b); }
     else if (rnd() < 0.6) { const r = clothesRack(fb++); r.position.set(x + side * 0.4, 0, z); r.rotation.y = Math.PI / 2; front.add(r); }
     else { const r = edgeRocks(rnd); r.position.set(x, 0, z); front.add(r); }
@@ -151,6 +185,7 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
   // Queenslanders further back, both sides.
   const houses = new THREE.Group();
   for (let z = 6; z < STREET.z1 - 20; z += 32 + rnd() * 8) for (const side of [-1, 1]) {
+    if (inClearing(side * 19, z + side * 6, 6)) continue;             // not in the boomerang clearing
     if (artHut) {                                                  // Ken: his colourful art hut replaces the white houses
       const h = placeModel(artHut, 6.2); h.position.set(side * 18, 0, z + side * 6); h.rotation.y = face(side); scene.add(h);
       continue;
@@ -163,6 +198,9 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
 
   // The rainforest: Ken's trees, thick beyond the village.
   const trees = new Trees(scene, { light: q.name === 'low' });
+  // Every tree below goes in through here, so none stands in the boomerang clearing.
+  const addTree = trees.add.bind(trees);
+  trees.add = (kind, x, y, z, h) => (inClearing(x, z, kind === 'rainforest' ? 6 : 2) ? undefined : addTree(kind, x, y, z, h));
   // Ken: not a lot of trees, just dense enough to cover everything: fewer, bigger trees.
   // Ken's rainforest tile, two rows deep either side of the village: the thick
   // canopy close by. Drawn as impostor cards like the other trees (the Meshy
@@ -218,6 +256,7 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
   const bar = shadowed(new THREE.Mesh(new THREE.BoxGeometry(STREET.half * 2, 0.15, 0.15), mat(0xd8452f))); bar.position.y = 1.1; gate.add(bar);
   gate.position.set(0, 0, TRAIL_Z); scene.add(gate);
 
+  boomerangClearing(scene, rnd);
   const glide = skyrail(scene);
   return { sun, ranges, trees, grass, stalls: stallMeshes, gate, bar,
     night: setMarketNight,                       // the fairy lights glow after dark

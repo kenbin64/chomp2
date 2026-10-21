@@ -422,6 +422,19 @@ going back to earlier areas. **Open:** how this sits with rule 6 (going back) an
 
 **Side games (optional, bonus rewards only):**
 - **Boomerang**, taught respectfully by a local guide; Kuranda is Djabugay country (**Built**, `boomerang.html`). Earns items.
+- **The boomerang throw on the main path (Ken, 2026-10-20; built):** about halfway down Kuranda's street, in a
+  clearing off the right-hand side. An opening: a guide welcomes Wally to Djabugay country and shows him a throw,
+  which loops round and comes home to the guide's hand. Then **first person** through Wally's eyes: he lifts the
+  boomerang and tips it out, the **angle meter** shows the lean from upright; then the **force meter** swings and
+  he throws. **The physics decides** (`js/levels/boomerang-physics.js`, tested): lift off the spinning wings, at
+  right angles to the airflow, bends the flight into a circle; too upright it dives in, too flat or too hard it
+  climbs over him, too soft it falls short; a flatter throw needs less force. As a good throw comes in, time
+  slows a little for the catch. A miss: the guide says why; as many goes as he needs. **The first catch: the guide
+  gives him the air talisman.** The trail at the end of the street opens only with it. The end of Kuranda is the
+  zip line down Barron Falls (the water talisman); a Kuranda run with the air talisman is kept for the zip line
+  to finish (`chomp-kuranda-run`). The guide's model is still to come (`guide-djabugay.glb`, MODELS.md); until
+  then the guide is heard, not seen. **Cultural review:** the guide's words and look are to be checked with the
+  Djabugay community before release.
 - **The golf course**, in the valley below the Tableland next to Cairns, reached by the Skyrail: a buggy
   race and a round of golf (**Not built**, see `DESIGN-golf-course.md`).
 

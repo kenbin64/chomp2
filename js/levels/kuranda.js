@@ -13,7 +13,7 @@ import { Food, randomKind, kindFor, useJarModel } from '../food.js';
 import { Input, steering, easeBehind } from '../input.js';
 import { Bubbles, pickLine, chatty } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
-import { loadModels, dress } from '../models.js';
+import { loadModels, dress, MODEL_FILES } from '../models.js';
 import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
@@ -32,12 +32,15 @@ import { peopleModels } from '../tourists.js';
 import { kennysJar } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
 import { dressOutfit } from '../outfit.js';
-import { installBook, bookEvent, ability, HiddenFinds, openBook } from '../book.js';
+import { installBook, bookEvent, bookFound, ability, HiddenFinds, openBook } from '../book.js';
 import { startTrading, tradeStep } from '../trade.js';
 import { startQuest, questStep } from '../sidequest.js';
 import { DayNight } from '../daynight.js';
 import { StreetLamps } from '../lamps.js';
 import { buildKuranda, STREET, STALLS, SHOP, VENDOR, TRAIL_Z } from './kuranda-scene.js';
+import { inClearing, nearThrowSpot } from './kuranda-rules.js';
+import { boomerangThrow } from './boomerang-throw.js';
+import * as Trip from '../trip-rules.js';
 import { installVendor, openVendor } from '../vendormodal.js';
 import { Pickups, goldPiece } from '../pickups.js';
 
@@ -50,11 +53,17 @@ const G = STREET.ground;
 const STARS = [60, 95, 130];
 POSTCARDS.kuranda = POSTCARDS.kuranda || 'Kuranda sits in the rainforest above Cairns.';
 
-// ---- The ground: the village street, flat, between the stalls --------------------------
+// ---- The ground: the village street, flat, between the stalls, and the boomerang clearing --
+const onFoot = (x, z) => Math.abs(x) <= STREET.half + 0.6 || inClearing(x, z, -0.6);
 setGround({
   stand: () => ({ y: G, surface: 'land' }),
-  move: (x, z, nx, nz) => ({ x: Math.max(-STREET.half - 0.6, Math.min(STREET.half + 0.6, nx)),
-                             z: Math.max(STREET.z0 + 2, Math.min(game && game.ready ? STREET.z1 : TRAIL_Z - 0.8, nz)) }),
+  move: (x, z, nx, nz) => {
+    const zc = Math.max(STREET.z0 + 2, Math.min(game && game.ready && game.hasAir ? STREET.z1 : TRAIL_Z - 0.8, nz));
+    if (onFoot(nx, zc)) return { x: nx, z: zc };
+    if (onFoot(x, zc)) return { x, z: zc };                       // slide along the edge
+    if (onFoot(nx, z)) return { x: nx, z };
+    return { x: Math.max(-STREET.half - 0.6, Math.min(STREET.half + 0.6, nx)), z: zc };
+  },
   foodAt: () => G,
   isWater: () => false,
   start: () => ({ x: 0, y: G, z: 0 }),
@@ -84,7 +93,7 @@ const fpsWatch = watchFrameRate(quality, lower => {
   resize();
 });
 
-const models = await loadModels(undefined, { light: touch || quality.name === 'low' });
+const models = await loadModels([...MODEL_FILES, 'talisman-air', 'guide-djabugay'], { light: touch || quality.name === 'low' });   // the boomerang guide, when Ken's model is made
 useJarModel(models.get('jar'));
 const realism = params.get('real') === '0' ? null : await loadRealism(renderer, { light: touch || quality.name === 'low' });
 const world = buildKuranda(scene, quality, realism, models);   // Ken's shop model for the street
@@ -157,6 +166,20 @@ const game = {
   groupsDone: 0, groupsTotal: clusters.list.length, ready: false, inShop: false, shopAway: true, vendorAway: true, gold: 0,
 };
 window.chomp = { game, wally, food, scene };
+
+// ---- The trip: this run's gains (the air talisman here; the water at the zip line) ----------
+if (!progress.trip) { progress.trip = Trip.tripFor(progress); save(); }
+let attempt = Trip.startAttempt(progress.trip, 'kuranda', { force: true });
+game.hasAir = Trip.have(progress.trip, 'talisman-air');
+game.stationAway = true;                                         // he has to step off the mark before it starts again
+
+// The boomerang throw, halfway down the street (Ken, 2026-10-20): first person, angle
+// and force, the physics decides; the first catch wins the air talisman.
+const station = boomerangThrow({ scene, camera, wally, sound, models,
+  onTalisman: () => { game.hasAir = true; attempt = Trip.gain(attempt, 'talisman-air'); game.points += 300; wally.cheer = 1.2; },
+  onDone: caught => { $('hud').hidden = false; if (caught && game.hasAir) bookFound('talisman-air'); cam.yaw = Math.PI; },
+});
+window.chomp.station = station;
 
 // Gold pieces dropped along the street: a new spread each visit, two of them up
 // on stall awnings so he has to jump for them.
@@ -268,11 +291,15 @@ function step(dt, t) {
     if (e.type === 'flee') { game.scared++; toast_('Too close! They ran off with their snacks', 'bad'); }
     if ((e.type === 'flee' || e.type === 'empty') && !e.cluster.counted) { e.cluster.counted = true; game.groupsDone++; }
   }
+  // The boomerang mark: stepping onto it starts the throw.
+  if (nearThrowSpot(wally.pos.x, wally.pos.z)) { if (game.stationAway && !game.done) { game.stationAway = false; $('hud').hidden = true; station.begin(game.hasAir); return; } }
+  else game.stationAway = true;
+
   // Every group fed, then a full tank, then the trail opens (Ken's rule for every level).
   if (!game.ready && game.groupsDone >= game.groupsTotal) {
     if (game.energy >= FULL) {
-      game.ready = true; sound.play.powerup(); world.bar.visible = false;
-      toast_('Every group fed and a full tank! The Barron Falls trail is open', 'info');
+      game.ready = true; sound.play.powerup();
+      toast_(game.hasAir ? 'Every group fed and a full tank! The Barron Falls trail is open' : 'Every group fed and a full tank! Now see the boomerang guide in the clearing', 'info');
     } else if (!food.items.length) { finish(false, 'hungry'); return; }
   }
 
@@ -334,11 +361,12 @@ function step(dt, t) {
   if (game.energy < 25 && game.hungry <= 0) { bubbles.say(wally.root, pickLine('wallyHungry'), 3.4); game.hungry = 10; }
 
   // The trail: the way on, once the job is done.
-  if (!game.done && game.ready && wally.pos.z >= TRAIL_Z + 2) {
+  world.bar.visible = !(game.ready && game.hasAir);               // the trail opens with the job done and the air talisman won
+  if (!game.done && game.ready && game.hasAir && wally.pos.z >= TRAIL_Z + 2) {
     game.done = true; wally.cheer = 1.2; bubbles.say(wally.root, 'Barron Falls, here I come!', 3.4);
     setTimeout(() => finish(true), 2200);
-  } else if (!game.ready && wally.pos.z > TRAIL_Z - 2 && game.hintCool <= 0) {
-    game.hintCool = 6; toast_('Not yet! Feed out every group and fill up first', 'info');
+  } else if (!(game.ready && game.hasAir) && wally.pos.z > TRAIL_Z - 2 && game.hintCool <= 0) {
+    game.hintCool = 6; toast_(!game.ready ? 'Not yet! Feed out every group and fill up first' : 'Not yet! The boomerang guide in the clearing halfway down has something for you', 'info');
   }
   drawHud();
 }
@@ -385,7 +413,7 @@ function drawHud() {
   $('lives').textContent = '●'.repeat(Math.max(0, game.lives)) + '○'.repeat(Math.max(0, LIVES - game.lives));
   $('veg').hidden = game.boost <= 0;
   $('track-wally').style.left = `${Math.min(100, Math.max(0, wally.pos.z / TRAIL_Z * 100))}%`;
-  $('job').textContent = game.ready ? 'Head for the Barron Falls trail!' : game.groupsDone >= game.groupsTotal ? 'Now fill the feed-o-meter' : `Groups fed out ${game.groupsDone}/${game.groupsTotal}`;
+  $('job').textContent = game.ready ? (game.hasAir ? 'Head for the Barron Falls trail!' : 'Learn the boomerang in the clearing halfway down') : game.groupsDone >= game.groupsTotal ? 'Now fill the feed-o-meter' : `Groups fed out ${game.groupsDone}/${game.groupsTotal}`;
 }
 
 function start() {
@@ -411,6 +439,14 @@ function finish(won, why = '') {
   const total = game.foodPoints + finishBonus;
   const stars = won ? starsFor(total, STARS) : 0;
   if (won) { bookEvent('finish'); sound.fanfare(); progress = completeArea(progress, 'kuranda', { score: total, stars }); }
+  // The trip: Kuranda is done when both its talismans are won. The water talisman is at
+  // the zip line, so a run with the air talisman is kept for it to finish.
+  if (!progress.trip) progress.trip = Trip.tripFor(progress);
+  if (won) {
+    const done = Trip.completeAttempt(progress.trip, attempt, { objectiveMet: true });
+    if (done.ok) progress.trip = done.trip;
+    else try { localStorage.setItem('chomp-kuranda-run', JSON.stringify(attempt)); } catch { /* the zip line starts a fresh run */ }
+  } else progress.trip = Trip.failAttempt(progress.trip, attempt).trip;   // nothing from this run is kept
   save();
   $('result-title').textContent = won ? 'Off to Barron Falls!' : why === 'hungry' ? 'Still peckish!' : 'Out of puff';
   $('result-why').textContent = why === 'hungry' ? `Every group's fed, but Wally needs a full tank (${FULL}%) for the trail.` : '';
@@ -459,10 +495,11 @@ function makeBot() {
 let t = 0, last = performance.now();
 function frame() {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt;
-  if (game.running && !game.paused) step(dt, t);
+  if (game.running && !game.paused && !station.active) step(dt, t);
   bubbles.update(dt); fx.update(dt, t);
   world.update(t);
-  followCamera(dt);
+  if (station.active) { if (!game.paused) station.update(dt); }      // the boomerang throw has the camera
+  else followCamera(dt);
   intro.update(dt, camera);                       // the first-visit fly-over, when it plays
   { const night = daynight.update(game.paused ? 0 : dt, camera); lamps.update(dt, night, wally.pos); world.night(night); }
   fpsWatch(dt);

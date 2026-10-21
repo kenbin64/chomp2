@@ -330,6 +330,8 @@ board shorts need no models: they are coloured and patterned in the game (Hawaii
 | `acc-wig-blue.glb` | A big fluffy afro-style party wig in electric neon blue, cartoon style. |
 | `acc-wig-pink.glb` | A big fluffy party wig in bubblegum pink, cartoon style. |
 | `acc-boomerang.glb` | A traditional-shaped wooden boomerang, smooth polished wood, plain or with simple painted dots, about 60 cm tip to tip. Respectful, not a cartoon caricature. |
+| `guide-djabugay.glb` | The boomerang guide in Kuranda (Ken, 2026-10-20): an Aboriginal Australian man or woman, a Djabugay local, warm and dignified, in everyday modern clothes (a work shirt or a polo with a cultural centre's logo-free look, trousers, boots or sandals), holding a wooden boomerang. Realistic, not a caricature; no costume or body paint unless the Djabugay community asks for it. Standing, arms at sides, T-pose or A-pose for rigging. To be checked with the community. |
+| `talisman-air.glb` | The air talisman (Ken's set): a carved bronze frame in the style of air (swirls, feathers, wind) round its element, the same family as `talisman-fire.glb`. Until it is made, the game shows a bronze ring with glowing swirls. |
 | `acc-bandana.glb` | A red bandana with a white paisley pattern, folded and tied in a knot, shaped to sit around a neck. |
 | `acc-lei.glb` | A Hawaiian-style flower lei necklace: a full ring of bright pink, yellow and white hibiscus and frangipani flowers. |
 
