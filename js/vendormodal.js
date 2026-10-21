@@ -20,6 +20,7 @@ function build() {
     el('p', 'sub', `"G'day! I'll give you Golden Mangoes for your seashells."`),
     el('div', 'vendor-rows'), el('p', 'vendor-bank'), el('p', 'vendor-msg fine'),
     el('p', 'fine', `Golden Mangoes buy everything, the river-boat ticket to the Daintree too (${BOAT_TICKET_PRICE}): Outfits, then Gear and tickets.`));
+  const back = el('button', 'go book-back', 'Back to the game'); back.type = 'button'; back.onclick = closeVendor; card.append(back);
   modal.append(card);
   modal.addEventListener('click', e => { if (e.target === modal) closeVendor(); });
   document.body.append(modal);

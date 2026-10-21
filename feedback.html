@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feedback · Chomp 3D: Wally's Cairns Adventure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  /* The feedback and takedown form (Ken, 2026-10-21): it emails Ken; his address is never on the page. */
+  :root { --ink: #eaf4f2; --soft: #b9d3cf; --gold: #ffd166; --red: #c0392b; --green: #9be38f; --panel: rgba(12, 40, 56, 0.92); --line: rgba(255, 209, 102, 0.35); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0b1d27 linear-gradient(180deg, #0f3346, #0b1d27 420px); color: var(--ink); font: 17px/1.6 'Baloo 2', system-ui, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+  a { color: var(--gold); }
+  .back { display: inline-block; margin-bottom: 18px; font-weight: 800; text-decoration: none; }
+  h1 { margin: 0; font-size: clamp(36px, 8vw, 60px); line-height: 1.05; color: var(--gold); text-shadow: 0 4px 0 var(--red), 0 8px 18px rgba(0, 0, 0, 0.4); }
+  .lede { font-size: 18px; color: var(--soft); margin: 10px 0 20px; }
+  form { background: var(--panel); border: 2px solid var(--line); border-radius: 20px; padding: 20px 22px; display: grid; gap: 14px; }
+  label { display: grid; gap: 4px; font-weight: 800; }
+  label small { font-weight: 600; color: var(--soft); }
+  input, select, textarea { font: inherit; font-weight: 600; color: var(--ink); background: rgba(255, 255, 255, 0.06); border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 12px; padding: 9px 12px; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--gold); }
+  textarea { min-height: 160px; resize: vertical; }
+  .trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }   /* the robot trap: people never see it */
+  button { font: 800 18px inherit; font-family: inherit; padding: 10px 20px; border-radius: 999px; border: 0; background: var(--gold); color: #102030; cursor: pointer; justify-self: start; }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .status { min-height: 1.4em; margin: 0; font-weight: 800; }
+  .status.good { color: var(--green); } .status.bad { color: #ff9a8a; }
+  .fine { font-size: 14px; color: var(--soft); margin: 0; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="index.html">‹ Back to the game</a>
+  <h1>Feedback and takedowns</h1>
+  <p class="lede">Ideas, corrections, something broken, how people or culture are shown, or a copyright or takedown notice: it all comes here, and Ken reads every message.</p>
+  <form id="form" novalidate>
+    <label>What is it about?
+      <select name="kind" id="kind">
+        <option value="feedback">Feedback or an idea</option>
+        <option value="bug">Something is broken</option>
+        <option value="culture">How people or culture are shown</option>
+        <option value="takedown">Copyright or takedown notice</option>
+      </select>
+    </label>
+    <label>Your name <small>(optional; a nickname is fine)</small>
+      <input name="name" id="name" maxlength="80" autocomplete="nickname">
+    </label>
+    <label>Your email, for a reply <small id="reply-note">(optional)</small>
+      <input name="reply" id="reply" type="email" maxlength="120" autocomplete="email">
+    </label>
+    <label>Your message
+      <textarea name="message" id="message" maxlength="4000" required></textarea>
+    </label>
+    <div class="trap" aria-hidden="true"><label>Leave this empty <input name="website" id="website" tabindex="-1" autocomplete="off"></label></div>
+    <button type="submit" id="send">Send</button>
+    <p class="status" id="status" role="status"></p>
+    <p class="fine">Your message and any email you give are used only to read and answer this, never sold or shared. For a takedown notice, say what the work is, where it appears in the game, and that you own it or act for the owner.</p>
+  </form>
+</main>
+<script type="module">
+import { checkFeedback } from './js/feedback-rules.js';
+
+const $ = id => document.getElementById(id);
+const from = new URLSearchParams(location.search).get('from') || (document.referrer ? new URL(document.referrer).pathname : '');
+const SAY = { kind: 'Choose what it is about.', message: 'Write a few words in the message.', reply: 'That email address does not look right. A takedown notice needs one, so we can answer.', empty: 'Write a few words in the message.' };
+const replyNote = () => { $('reply-note').textContent = $('kind').value === 'takedown' ? '(needed for a takedown notice)' : '(optional)'; };
+$('kind').onchange = replyNote; replyNote();
+$('form').onsubmit = async e => {
+  e.preventDefault();
+  const body = { kind: $('kind').value, name: $('name').value, reply: $('reply').value, message: $('message').value, page: from, website: $('website').value };
+  const check = checkFeedback(body), status = $('status');
+  if (!check.ok && check.error !== 'spam') { status.className = 'status bad'; status.textContent = SAY[check.error] || 'Please check the form.'; return; }
+  $('send').disabled = true; status.className = 'status'; status.textContent = 'Sending...';
+  try {
+    const r = await fetch('api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await r.json().catch(() => ({}));
+    if (r.ok) { status.className = 'status good'; status.textContent = 'Sent. Thank you! Ken will read it.'; $('message').value = ''; }
+    else { status.className = 'status bad'; status.textContent = r.status === 429 ? 'That is a lot of messages for one hour. Please try again later.' : (SAY[data.error] || 'It could not be sent this time. Please try again.'); }
+  } catch { status.className = 'status bad'; status.textContent = 'It could not be sent: no connection. Please try again.'; }
+  $('send').disabled = false;
+};
+</script>
+</body>
+</html>

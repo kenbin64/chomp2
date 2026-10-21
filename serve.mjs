@@ -5,8 +5,9 @@
 // same Wi-Fi open it at this computer's address.
 
 import { createServer } from 'node:http';
-import { createReadStream, statSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createReadStream, statSync, readdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
 import { LEVELS, cleanName, validScore, addScore } from './js/leaderboard-rules.js';
+import { checkFeedback, emailText } from './js/feedback-rules.js';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { networkInterfaces } from 'node:os';
@@ -43,10 +44,31 @@ function leaderboard(req, res, url) {
   });
 }
 
+// The feedback and takedown form (js/feedback-rules.js). Here on this computer the messages go in
+// feedback.log beside the game (never committed); on the hosted site they are emailed to Ken.
+function feedback(req, res) {
+  const send = (code, body) => res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' }).end(JSON.stringify(body));
+  if (req.method !== 'POST') return send(405, { error: 'POST' });
+  let body = '';
+  req.on('data', c => { body += c; if (body.length > 20000) req.destroy(); });
+  req.on('end', () => {
+    let data; try { data = JSON.parse(body); } catch { return send(400, { error: 'not JSON' }); }
+    const r = checkFeedback(data);
+    if (!r.ok) return send(r.error === 'spam' ? 200 : 400, r.error === 'spam' ? { ok: true } : { error: r.error });   // a robot is told it worked
+    const mail = emailText(r.entry);
+    try { appendFileSync(join(root, 'feedback.log'), `${mail.subject}
+${mail.text}
+----
+`); } catch { return send(500, { error: 'not saved' }); }
+    send(200, { ok: true });
+  });
+}
+
 createServer((req, res) => {
   const url = new URL(req.url, 'http://x');
   const path = decodeURIComponent(url.pathname);
   if (path === '/api/scores') { leaderboard(req, res, url); return; }
+  if (path === '/api/feedback') { feedback(req, res); return; }
   // The list of model and backdrop files present, so the game only asks for those.
   if (path === '/models/index.json' || path === '/backdrops/index.json') {
     const folder = path.split('/')[1];

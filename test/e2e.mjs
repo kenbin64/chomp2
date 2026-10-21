@@ -232,6 +232,49 @@ test('the Scoreboard opens, shows the trip by area and switches boards', async (
   await p.done();
 });
 
+// ---- The map and the cards: a clear way back -------------------------------------------------
+test('the map names the level on its button and has Back to the game; so do the other cards', async () => {
+  const p = await page({ save: { unlocked: ['park'], mangoes: 5 } });
+  await go(p, 'cane.html?all', 5000);
+  await p.evaluate(() => document.querySelector('.map-button').click()); await wait(800);
+  const btns = await p.evaluate(() => [...document.querySelectorAll('.map-modal:not([hidden]) button.go')].map(b => b.textContent));
+  check('the level and its name on the button', btns.some(t => /Level 2: The Cane Fields/.test(t)), JSON.stringify(btns));
+  check('Back to the game on the map', btns.includes('Back to the game'));
+  await p.evaluate(() => [...document.querySelectorAll('.map-modal:not([hidden]) button.go')].find(b => b.textContent === 'Back to the game').click()); await wait(400);
+  check('and it closes the map', await p.evaluate(() => [...document.querySelectorAll('.map-modal')].every(m => m.hidden)));
+  for (const [btn, name] of [['.sceptre-button', 'sceptre card'], ['.score-button', 'Scoreboard']]) {
+    await p.evaluate(s => document.querySelector(s).click(), btn); await wait(800);
+    const ok = await p.evaluate(() => [...document.querySelectorAll('.map-modal:not([hidden]) button')].some(b => b.textContent === 'Back to the game'));
+    check(`Back to the game on the ${name}`, ok);
+    await p.evaluate(() => [...document.querySelectorAll('.map-modal:not([hidden]) button')].find(b => b.textContent === 'Back to the game').click()); await wait(300);
+  }
+  await p.done();
+});
+
+// ---- The feedback and takedown form ----------------------------------------------------------
+test('the feedback form: sends a message; refuses an empty one, a takedown with no email, and robots', async () => {
+  const { readFileSync, existsSync } = await import('node:fs');
+  const log = new URL('../feedback.log', import.meta.url);
+  const before = existsSync(log) ? readFileSync(log, 'utf8').length : 0;
+  const p = await page();
+  await go(p, 'feedback.html?from=e2e', 2500);
+  check('the form page shows no email address', await p.evaluate(() => !/@gmail|mailto:/.test(document.documentElement.innerHTML)));
+  await p.click('#send'); await wait(400);
+  check('an empty message is refused, with a reason', /few words/.test(await p.$eval('#status', e => e.textContent)));
+  await p.select('#kind', 'takedown'); await p.type('#message', 'This is my photograph.'); await p.click('#send'); await wait(400);
+  check('a takedown with no reply email is refused', /email/.test(await p.$eval('#status', e => e.textContent)));
+  await p.select('#kind', 'feedback'); await p.type('#name', 'E2E test'); await p.click('#send'); await wait(1500);
+  check('a good message is sent', /Sent/.test(await p.$eval('#status', e => e.textContent)));
+  const after = existsSync(log) ? readFileSync(log, 'utf8') : '';
+  check('and it arrives (here, the local feedback.log)', after.length > before && after.slice(before).includes('E2E test') && after.slice(before).includes('Page: e2e'));
+  const bot = await p.evaluate(async () => (await fetch('api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'feedback', message: 'Buy cheap pills now', website: 'http://spam' }) })).json());
+  const after2 = readFileSync(log, 'utf8');
+  check('a robot that fills the hidden field is told ok, and nothing is kept', bot.ok === true && !after2.includes('cheap pills'));
+  const bad = await p.evaluate(async () => (await fetch('api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{not json' })).status);
+  check('a broken request is refused', bad === 400, String(bad));
+  await p.done();
+});
+
 // ---- Run --------------------------------------------------------------------------------------
 try { const r = await fetch(BASE + 'index.html'); if (!r.ok) throw new Error(r.status); }
 catch { console.log(`The game server is not running at ${BASE}: start it with node serve.mjs`); await browser.close(); process.exit(1); }

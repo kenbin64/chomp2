@@ -159,6 +159,8 @@ function build() {
   const wrap = el('div', 'tripmap'), art = el('div', 'tripmap-art'), info = el('div', 'tripmap-info');
   art.innerHTML = mapSvg(); wrap.append(art, info); card.append(wrap);
   card.append(el('p', 'fine map-bank'));
+  const back = el('button', 'go book-back map-back', 'Back to the game'); back.type = 'button'; back.onclick = closeMap;   // Ken: a clear way back, not just the X
+  card.append(back);
   modal.append(card);
   modal.addEventListener('click', e => { if (e.target === modal) closeMap(); });
   document.body.append(modal);
@@ -177,11 +179,12 @@ function render() {
   const show = a => {
     const active = mapActive(progress, visited, a.id), needs = entryNeeds(progress, a.id), stars = progress.stars[a.id] || 0;
     box.innerHTML = '';
-    box.append(el('h2', null, a.name), el('p', 'place', a.ready ? (a.place || '') : 'Coming soon'));
+    box.append(el('h2', null, `Level ${AREAS.indexOf(a) + 1}: ${a.name}`), el('p', 'place', a.ready ? (a.place || '') : 'Coming soon'));
     if (a.ready) box.append(el('p', 'stars', '★'.repeat(stars) + '☆'.repeat(3 - stars)));
     if (a.objective) box.append(el('p', 'goal', a.objective));
     if (active) {
-      const b = el('button', 'go', a.id === HERE ? 'Back to it' : stars ? 'Play again' : 'Go there'); b.type = 'button'; b.onclick = () => go(a); box.append(b);
+      const level = `Level ${AREAS.indexOf(a) + 1}: ${a.name}`;          // Ken: the level and its name on the button
+      const b = el('button', 'go', a.id === HERE ? `Back to ${level}` : stars ? `Play ${level} again` : `Start ${level}`); b.type = 'button'; b.onclick = () => go(a); box.append(b);
     } else if (a.ready) {
       box.append(el('p', 'needs', needs ? `Needs ${needs.text}` : 'Finish the area before it to open this one.'));
     }
@@ -231,7 +234,7 @@ function render() {
       if (a.id === 'boomerang' && (active || testing)) { const b = el('button', 'go', 'Throw a boomerang'); b.type = 'button'; b.onclick = () => { location.href = 'boomerang.html' + (testing ? '?all' : ''); }; box.append(b); }
     });
   }
-  modal.querySelector('.map-bank').textContent = `★ ${have} · Golden Mangoes ${progress.mangoes || 0} · Pearls ${progress.pearls || 0} · Seashells ${progress.shells || 0} · Gold ${progress.coins || 0}`
+  modal.querySelector('.map-bank').textContent = `★ ${have} · Golden Mangoes ${progress.mangoes || 0} · Pearls ${progress.pearls || 0} · Seashells ${progress.shells || 0}`
     + (progress.badge ? ' · Ranger badge ✓' : '') + (progress.pier ? ' · Pier open ✓' : '') + (progress.skyrail ? ' · Skyrail pass ✓' : '') + (progress.boatTicket ? ' · Boat ticket ✓' : '');
   // Start on where the player is, or the next place to go.
   show(AREAS.find(a => a.id === HERE) || AREAS.find(a => mapActive(progress, visited, a.id) && !progress.stars[a.id]) || AREAS[0]);

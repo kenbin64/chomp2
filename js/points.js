@@ -141,7 +141,7 @@ export function openScore() {
   };
   for (const [id, name] of BOARDS) { const b = el('button', 'score-tab', name); b.type = 'button'; b.dataset.id = id; b.onclick = () => pick(id); tabs.append(b); }
   card.append(tabs, board); pick('trip');
-  const close = el('button', 'go', 'Close'); close.type = 'button'; close.onclick = closeScore; card.append(close);
+  const close = el('button', 'go', 'Back to the game'); close.type = 'button'; close.onclick = closeScore; card.append(close);
   box.append(card); box.hidden = false;
   if (onPause) onPause(true);
 }

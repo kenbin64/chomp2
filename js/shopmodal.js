@@ -163,6 +163,7 @@ function build() {
   lists.append(el('h3', null, 'Gear and tickets'), el('div', 'shop-grid extras')); lists.lastChild.dataset.who = 'extras';
   const side = el('div', 'shop-side'); const pv = el('div', 'shop-preview'); side.append(pv, el('div', 'shop-detail'));
   body.append(lists, side); card.append(body, el('p', 'shop-msg fine'));
+  const back = el('button', 'go book-back', 'Back to the game'); back.type = 'button'; back.onclick = closeShop; card.append(back);
   modal.append(card);
   modal.addEventListener('click', e => { if (e.target === modal) closeShop(); });
   document.body.append(modal);

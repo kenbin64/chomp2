@@ -47,7 +47,7 @@ export function openSceptre(added = null) {
   const list = el('ul', 'sceptre-list');
   for (const id of ORDER) { const li = el('li', have.includes(id) ? 'in' : ''); li.append(el('b', null, (have.includes(id) ? '✓ ' : '○ ') + WHERE[id][0]), el('span', null, ` ${WHERE[id][1]}`)); list.append(li); }
   card.append(list);
-  const close = el('button', 'go', 'Close'); close.type = 'button'; close.onclick = closeSceptre; card.append(close);
+  const close = el('button', 'go', 'Back to the game'); close.type = 'button'; close.onclick = closeSceptre; card.append(close);
   box.append(card); box.hidden = false;
   if (onPause) onPause(true);
 }

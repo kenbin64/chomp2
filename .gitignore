@@ -9,3 +9,5 @@ node_modules/
 Thumbs.db
 # The local leaderboard (players' names and scores on this PC).
 scores.json
+# Messages from the feedback form, on this PC.
+feedback.log
