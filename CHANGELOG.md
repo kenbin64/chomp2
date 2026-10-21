@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.1 (2026-10-21)
+
 The official beta release, for the first testers. Expect frequent updates: the game asks to update when
 one is out.
 
