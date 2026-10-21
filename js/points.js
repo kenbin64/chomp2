@@ -132,8 +132,15 @@ export function openScore() {
   for (const [k, t] of [['ground', 'Food caught off the ground'], ['air', 'Food caught in the air'], ['leap', 'Food caught in a leap'], ['pickup', 'Anything picked up'], ['talisman', 'A talisman'], ['catch', 'The boomerang caught'], ['croc', 'A croc that joins Wally'], ['heave', 'A heave on the beat'], ['star', 'Each star'], ['area', 'An area completed']])
     ul.append(el('li', null, `${t}: ${R.POINTS[k]}`));
   how.append(ul); card.append(how);
-  const board = el('div', 'score-board'); card.append(board);
-  showLeaderboard(board, 'trip', book.best, 0);       // the whole game's top ten (the personal best is what is posted)
+  // The leaderboards: the whole game's top ten, and each area's own (its best single runs).
+  const tabs = el('div', 'score-tabs'), board = el('div', 'score-board');
+  const BOARDS = [['trip', 'Whole game'], ['park', 'Croc Park'], ['cane', 'Cane fields'], ['esplanade', 'Esplanade'], ['reef', 'Reef'], ['kuranda', 'Kuranda'], ['mossman', 'Mossman']];
+  const pick = id => {
+    for (const b of tabs.children) b.classList.toggle('on', b.dataset.id === id);
+    showLeaderboard(board, id, id === 'trip' ? book.best : 0, 0);   // the whole game posts the personal best; an area board is posted from its end card
+  };
+  for (const [id, name] of BOARDS) { const b = el('button', 'score-tab', name); b.type = 'button'; b.dataset.id = id; b.onclick = () => pick(id); tabs.append(b); }
+  card.append(tabs, board); pick('trip');
   const close = el('button', 'go', 'Close'); close.type = 'button'; close.onclick = closeScore; card.append(close);
   box.append(card); box.hidden = false;
   if (onPause) onPause(true);

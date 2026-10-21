@@ -573,3 +573,6 @@ body.touch .gear-use { bottom: 224px; }
 .crocwise-note { margin: 10px 0 12px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 209, 102, 0.12); border: 1px solid rgba(255, 209, 102, 0.5); font-size: 15px; line-height: 1.4; text-align: left; }
 .push-arrow { position: absolute; left: 50%; top: -38px; transform: translateX(-50%); font-size: 30px; line-height: 1; color: #7be36b; text-shadow: 0 2px 6px #000; transition: transform 0.08s, color 0.08s; }   /* the beat: press when the marker is under it (Ken) */
 .push-arrow.now { color: #fff; transform: translateX(-50%) translateY(6px) scale(1.25); }
+.score-tabs { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 10px 0 4px; }
+.score-tab { font: 700 13px var(--font); padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(255,209,102,0.5); background: transparent; color: #eaf4f2; cursor: pointer; }
+.score-tab.on { background: #ffd166; color: #102030; }

@@ -8,6 +8,7 @@
 //
 // The gorge's rules are in mossman-rules.js (tested), the look in mossman-scene.js.
 
+import { showLeaderboard } from '../leaderboard.js';
 import { guideArrow } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { foundTalisman } from '../revisit.js';
@@ -379,6 +380,7 @@ function finish(won) {
     const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }
   $('result').hidden = false;
+  showLeaderboard(document.getElementById('board'), 'mossman', won ? total : 0, won ? stars : 0);   // finished runs go on the area's board; the top ten either way
   window.chomp.result = { won, total, stars };
 }
 
