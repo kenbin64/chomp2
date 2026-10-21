@@ -7,6 +7,7 @@
 // shown, greyed, with what it takes to get there. ?all opens everything, for
 // testing.
 
+import { areaForPath } from './area-path.js';
 import { installScore, clearTrip } from './points.js';
 import { AREAS } from './quests.js';
 import { resetAreaIntros } from './area-intro.js';
@@ -21,7 +22,7 @@ export function pageFor(id) {
   if (id === 'kuranda') { let seen = null; try { seen = localStorage.getItem('chomp-skyrail-seen'); } catch { /* not kept */ } if (!seen) return 'skyrail.html'; }
   return PAGES[id];
 }
-const HERE = { 'index.html': 'park', '': 'park', 'cane.html': 'cane', 'mossman.html': 'mossman', 'esplanade.html': 'esplanade', 'reef.html': 'reef', 'kuranda.html': 'kuranda' }[location.pathname.split('/').pop()];
+const HERE = areaForPath(location.pathname);   // with or without .html (area-path.js)
 const testing = new URLSearchParams(location.search).has('all');
 
 function progressNow() { return readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); }
