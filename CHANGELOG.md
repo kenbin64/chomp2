@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.6 (2026-10-21)
+
 - The guide's reef picture shows Wally on the Green Island jetty with the island behind, and the reef's
   entry names Green Island.
 
