@@ -5,6 +5,9 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- Beta testers page: also look for clunkiness and slow animation or movement, and report any bug, with
+  a button straight to the form.
+
 ## v1.0.0-beta.1 (2026-10-21)
 
 The official beta release, for the first testers. Expect frequent updates: the game asks to update when
