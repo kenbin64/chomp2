@@ -3,6 +3,7 @@
 // controls, moves Wally, has the tourists throw, flies the food, checks what
 // was caught, missed or stolen, and keeps the quest and the screen up to date.
 
+import { startRun, addPoints, bankRun } from './points.js';
 import { installGear, snorkelling, drainFactor } from './gear.js';
 import { showTip } from './tips.js';
 import * as THREE from 'three';
@@ -459,7 +460,7 @@ function caught(item) {
   if (daynight.night > 0.6) bookEvent('nightCatch');
   if (game.streak === 8) bookEvent('streak8');
   const pts = catchPoints(how, game.streak, game.boost > 0);
-  game.score += pts;
+  game.score += pts; addPoints(how);   // the trip's points (points.js): ground 1, air 2, leap 3
   game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[item.kind].energy);
   toast(`+${pts} ${how === 'leap' ? 'Jumping catch!' : how === 'air' ? 'In the air!' : item.name}`);
   const leapt = wally.airborne && wally.fromWater;
@@ -537,7 +538,7 @@ const parkKey = (() => {
       if (!this.out || game.hasKey) return;
       g.rotation.y += dt * 2; g.position.y += Math.sin(game.time * 3) * dt * 0.2;
       if (Math.hypot(g.position.x - wally.pos.x, g.position.z - wally.pos.z) < 1.4) {
-        game.hasKey = true; g.visible = false; attempt = Trip.gain(attempt, 'park-key');
+        game.hasKey = true; g.visible = false; attempt = Trip.gain(attempt, 'park-key'); addPoints('pickup');
         game.score += 200; sound.play.powerup(); toast('The key! Fill up, then out the gate', 'good');
         bubbles.say(wally.root, 'Got it! Now, out the gate.', 3.4); drawQuest();
       }
@@ -646,7 +647,7 @@ function step(dt, t) {
   for (const f of hidden.update(dt, t, wally.pos)) { toast(f.text, 'good'); sound.play.powerup(); }
   for (const m of parkMangoes.update(dt, t, wally.pos)) {
     bookEvent('mango');
-    game.mangoes++; game.score += 10; sound.play.goal(); fx.burst(m.mesh.position, [0xffc21a, 0xfff1a0], 10);
+    game.mangoes++; game.score += 10; addPoints('pickup'); sound.play.goal(); fx.burst(m.mesh.position, [0xffc21a, 0xfff1a0], 10);
     toast(`A Golden Mango! ${parkMangoes.found}/${parkMangoes.total}`, 'good');
     if (parkMangoes.found === parkMangoes.total) bubbles.say(wally.root, "Every mango in the park! Bonza!", 3.4);
     drawQuest();
@@ -882,7 +883,7 @@ function ensureTrip(level = 'intermediate') {
 
 function start() {
   ensureTrip();
-  attempt = Trip.startAttempt(progress.trip, 'park');
+  attempt = Trip.startAttempt(progress.trip, 'park'); startRun('park');
   game.hasKey = Trip.have(progress.trip, 'park-key') || Trip.have(progress.trip, 'gate-key');   // on a return visit he has it already (gate-key: saves from before)
   game.tripDrain = Trip.drainFactor(progress.trip, 'park', attempt.level);
   sound.start(); sound.startMusic('park'); sound.moodMusic('park');
@@ -920,7 +921,7 @@ function finish(won, why = '') {
     const stars = starsFor(game.score, PARK_STARS);
     // Opening the gate gives the machete for the cane fields (trip-rules.js: what the park opens).
     const done = Trip.completeAttempt(progress.trip, Trip.gain(Trip.gain(attempt, 'golden-mango', game.mangoes), 'machete'), { objectiveMet: true });
-    if (done.ok) progress.trip = done.trip;
+    if (done.ok) { progress.trip = done.trip; bankRun({ stars }); }
     progress = completeArea(progress, 'park', { score: game.score, stars, mangoes: game.mangoes });
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
     $('win-score').textContent = game.score.toLocaleString();

@@ -14,6 +14,7 @@
 //   dressOutfit(wally.skin.root, 'wally', wearing(progress, 'wally'))
 
 import * as THREE from 'three';
+import { wearHat, HIDE } from './hats.js';
 
 // The colour range the clothes are painted in (hue 0 to 1, wrapping past red),
 // how saturated a pixel must be to count as cloth, and where things are on the
@@ -37,9 +38,11 @@ function look(item) {
   return { hue: a.h, sat: a.s, light: a.l, hue2: b.h, sat2: b.s, light2: b.l, style: STYLE[item.style || 'plain'] };
 }
 
-// worn: { shirt, shorts } for Wally, { vest } for Kenny (items from wearing()).
+// worn: { shirt, shorts, hat } for Wally, { vest } for Kenny (items from wearing()).
+// hat: one of Wally's hats (hats.js); his own little hat is hidden while it is on.
 export function dressOutfit(root, who, worn) {
   if (!root) return;
+  if (who === 'wally') wearHat(root, worn && worn.hat);
   // Always start from their own clothes, so changing outfit never stacks.
   root.traverse(o => {
     if (!o.isMesh) return;
@@ -48,9 +51,10 @@ export function dressOutfit(root, who, worn) {
   });
   if (!worn) return;
   const upper = look(who === 'kenny' ? worn.vest : worn.shirt), lower = look(who === 'kenny' ? null : worn.shorts);
-  if (!upper && !lower) return;
+  const hideHat = who === 'wally' && !!worn.hat && worn.hat !== 'own';
+  if (!upper && !lower && !hideHat) return;
   const r = RANGE[who];
-  const key = `outfit-${who}-${JSON.stringify(upper)}-${JSON.stringify(lower)}`;
+  const key = `outfit-${who}-${JSON.stringify(upper)}-${JSON.stringify(lower)}-${hideHat ? JSON.stringify(HIDE) : 0}`;
   const glsl = (name, l) => l
     ? `vec4 ${name} = vec4(${l.hue.toFixed(4)}, ${l.sat.toFixed(4)}, ${l.light.toFixed(4)}, ${l.style.toFixed(1)}); vec3 ${name}B = vec3(${l.hue2.toFixed(4)}, ${l.sat2.toFixed(4)}, ${l.light2.toFixed(4)}); bool ${name}On = true;`
     : `vec4 ${name} = vec4(0.0); vec3 ${name}B = vec3(0.0); bool ${name}On = false;`;
@@ -65,12 +69,13 @@ export function dressOutfit(root, who, worn) {
         if (before) before.call(n, shader, renderer);
         shader.uniforms.outfitTime = clock;
         shader.vertexShader = shader.vertexShader
-          .replace('#include <common>', '#include <common>\nvarying float vBindY;')
-          .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBindY = position.y;');
+          .replace('#include <common>', '#include <common>\nvarying float vBindY;\nvarying vec3 vBindP;')
+          .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBindY = position.y; vBindP = position;');
         shader.fragmentShader = shader.fragmentShader
           .replace('#include <common>', `#include <common>
             uniform float outfitTime;
             varying float vBindY;
+            varying vec3 vBindP;
             vec3 oRgb2hsv(vec3 c) {
               vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
               vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
@@ -112,6 +117,13 @@ export function dressOutfit(root, who, worn) {
               vec3 hsv = oRgb2hsv(diffuseColor.rgb);
               bool cloth = ${r.lo > r.hi ? `(hsv.x >= ${r.lo.toFixed(3)} || hsv.x <= ${r.hi.toFixed(3)})` : `(hsv.x >= ${r.lo.toFixed(3)} && hsv.x <= ${r.hi.toFixed(3)})`} && hsv.y > ${r.sat.toFixed(2)};
               outfitGlow = 0.0;
+              ${hideHat ? `{                                                  // his own hat, hidden under the new one (hats.js HIDE): never his green skin
+                vec3 q = (vBindP - vec3(${HIDE.x.toFixed(3)}, ${HIDE.y.toFixed(3)}, ${HIDE.z.toFixed(3)})) / vec3(${HIDE.rx.toFixed(3)}, ${HIDE.ry.toFixed(3)}, ${HIDE.rz.toFixed(3)});
+                bool skin = hsv.x > 0.17 && hsv.x < 0.45 && hsv.y > 0.25;
+                float line = ${HIDE.above.toFixed(3)} + ${HIDE.slope.toFixed(3)} * vBindP.z;   // the brim's line: it tips up at the front, over his eyes
+                bool cream = hsv.x > 0.04 && hsv.x < 0.17 && hsv.y > 0.18 && hsv.z > 0.45;   // the brim's own colour (not his eye whites, irises or pupils)
+                if (dot(q, q) < 1.0 && !skin && (vBindP.y > line || (cream && vBindP.y > line - ${HIDE.brim.toFixed(3)}))) discard;
+              }` : ''}
               if (cloth && vBindY < ${r.head.toFixed(3)}) {
                 bool lowerPart = vBindY < ${r.waist.toFixed(3)};
                 if (lowerPart && oLoOn) diffuseColor.rgb = oCloth(hsv, oLo, oLoB, vBindY, outfitGlow) ;

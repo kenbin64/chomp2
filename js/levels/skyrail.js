@@ -21,7 +21,8 @@ import * as sound from '../sound.js';
 import { loadRealism } from '../realism.js';
 import { L, TOP, GORGE, height, buildRange } from './range-land.js';
 import { addSky, addLights } from '../world.js';
-import { readProgress, outfitModel } from '../progress.js';
+import { readProgress, outfitModel, wearing } from '../progress.js';
+import { dressOutfit } from '../outfit.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -110,9 +111,9 @@ function gondola(withWally) {
   if (withWally) {
     const progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
     const wg = models.get(outfitModel(progress)) || models.get('wally');
-    if (wg) { const w = new ModelSkin(wg, { height: 1.55 }); w.root.position.set(0.35, -0.65, 0); w.root.rotation.y = Math.PI / 2; cabin.add(w.root); }
+    if (wg) { const w = new ModelSkin(wg, { height: 1.55 }); dressOutfit(w.root, 'wally', wearing(progress, 'wally')); w.root.position.set(0.35, -0.65, 0); w.root.rotation.y = Math.PI / 2; cabin.add(w.root); }
     const kg = models.get('kenny');
-    if (kg) { const k = new ModelSkin(kg, { height: 0.7 }); k.root.position.set(-0.55, -0.65, 0.4); k.root.rotation.y = Math.PI / 2; cabin.add(k.root); }
+    if (kg) { const k = new ModelSkin(kg, { height: 0.7 }); dressOutfit(k.root, 'kenny', wearing(progress, 'kenny')); k.root.position.set(-0.55, -0.65, 0.4); k.root.rotation.y = Math.PI / 2; cabin.add(k.root); }
   }
   cabin.position.y = -HANG; g.add(cabin);
   g.traverse(o => { if (o.isMesh && o.material !== glass) o.castShadow = true; });

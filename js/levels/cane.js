@@ -11,7 +11,10 @@
 //
 // The field's rules are in cane-rules.js (tested), the look in cane-scene.js.
 
+import { startRun, addPoints, bankRun } from '../points.js';
 import { foundTalisman } from '../revisit.js';
+import { installGear, snorkelling, drainFactor } from '../gear.js';
+import { installBook, openBook } from '../book.js';
 import * as THREE from 'three';
 import * as Trip from '../trip-rules.js';
 import { CANE, makeField, cellToWorld, worldToCell, walkable, cuttable, cut, startCell, middle, cutsNeeded } from './cane-rules.js';
@@ -46,7 +49,7 @@ const loadSave = () => readProgress((() => { try { return localStorage.getItem('
 let progress = loadSave();
 if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progress); }
 const entry = Trip.canEnter(progress.trip, 'cane'), testingAll = params.has('all');
-let attempt = Trip.startAttempt(progress.trip, 'cane', { force: true });
+let attempt = Trip.startAttempt(progress.trip, 'cane', { force: true }); startRun('cane');
 
 // ---- The field --------------------------------------------------------------------
 // A new field every visit; ?seed=N gives a fixed one, for testing.
@@ -237,7 +240,7 @@ const chest = (() => {
 // ---- Kenny and his jar --------------------------------------------------------------------
 const kennyMesh = new THREE.Group(); kennyMesh.visible = false; scene.add(kennyMesh);
 let kennyPoser = null;
-{ const skin = dress(kennyMesh, models.get('kenny'), { height: 1.3 }); if (skin && skin.clips.size) kennyPoser = new HumanoidPoser(skin.root); }
+{ const skin = dress(kennyMesh, models.get('kenny'), { height: 1.3 }); if (skin && skin.clips.size) kennyPoser = new HumanoidPoser(skin.root); if (skin) dressOutfit(skin.root, 'kenny', wearing(progress, 'kenny')); }   // his vest from the markets, in every area
 const vegemite = kennysJar(jarLabelTexture()); vegemite.visible = false; scene.add(vegemite);
 
 // ---- State --------------------------------------------------------------------------------
@@ -304,7 +307,7 @@ function step(dt, t) {
 
   // Energy: it runs down, slower on easy (trip-rules.js).
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (!game.done && game.faint <= 0) game.energy -= energyDrain(wally.mode, moving, 'cane') * game.tripDrain * dt;
+  if (!game.done && game.faint <= 0) game.energy -= energyDrain(wally.mode, moving, 'cane') * game.tripDrain * drainFactor() * dt;   // vitamins halve it
 
   // Eating cane: walk over a piece in the open.
   for (const p of pieces) {
@@ -312,7 +315,7 @@ function step(dt, t) {
     p.mesh.rotation.y += dt * 1.5;
     if (!walkable(field, p.i, p.j)) continue;                // still inside standing cane
     if (Math.hypot(p.mesh.position.x - wally.pos.x, p.mesh.position.z - wally.pos.z) < 1.1 && game.faint <= 0) {
-      takePiece(p); game.eaten++; game.points += 10;
+      takePiece(p); game.eaten++; game.points += 10; addPoints('pickup');
       game.energy = Math.min(ENERGY_MAX, game.energy + CANE.pieceEnergy);
       wally.chomp('ground'); sound.play.chomp();
       toast_('+10 Sugar cane!'); if (game.eaten === 1) bubbles.say(wally.root, 'Sweet as! Real sugar cane!', 3);
@@ -349,7 +352,7 @@ function step(dt, t) {
 
   // The chest in the clearing: the fire talisman.
   if (!game.talisman && Math.hypot(wally.pos.x - chest.x, wally.pos.z - chest.z) < 2.4) {
-    game.talisman = true; game.points += 300; attempt = Trip.gain(attempt, 'talisman-fire');
+    game.talisman = true; game.points += 300; attempt = Trip.gain(attempt, 'talisman-fire'); addPoints('talisman');
       setTimeout(() => foundTalisman('talisman-fire', toast_), 1600);          // new: the sceptre card; already sealed: a random useful prize (revisit.js)
     sound.play.powerup(); wally.cheer = 1.2; fx.burst(new THREE.Vector3(chest.x, 1.5, chest.z), [0xff6a1a, 0xffc04a, 0xffffff], 40);
     toast_('The fire talisman!', 'good'); bubbles.say(wally.root, 'Crikey! The fire talisman! One for the sceptre!', 3.6);
@@ -448,7 +451,7 @@ function finish(won) {
   if (won) {
     sound.fanfare();
     const done = Trip.completeAttempt(progress.trip, attempt, { objectiveMet: true });
-    if (done.ok) progress.trip = done.trip;
+    if (done.ok) { progress.trip = done.trip; bankRun({ stars }); }
     progress = completeArea(progress, 'cane', { score: total, stars });
   } else progress.trip = Trip.failAttempt(progress.trip, attempt).trip;   // nothing from this attempt is kept
   saveProgress(progress);
@@ -491,3 +494,5 @@ function frame() {
 requestAnimationFrame(frame);
 if (params.has('play')) start();
 installMap({ pause: on => { if (game.running) game.paused = on; } });
+installBook({ pause: on => { if (game.running) game.paused = on; } });
+installGear({ scene, wally, hasAir: false, toast: (t, k) => toast_(t, k), openBook: () => openBook('wally'), running: () => game.running && !game.paused, pause: on => { if (game.running) game.paused = on; } });   // the carried items work here too (gear.js)

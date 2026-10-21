@@ -201,13 +201,28 @@ export const OUTFITS = [
   { id: 'vest-redearth', who: 'kenny', name: 'Red earth vest',     price: 25, look: { vest: { colour: 0xa8452c, style: 'plain' } } },
   { id: 'vest-neon',     who: 'kenny', name: 'Neon orange vest',   price: 40, look: { vest: { colour: 0xff7a1a, style: 'neon' } } },
   { id: 'vest-disco',    who: 'kenny', name: 'Disco vest',         price: 50, look: { vest: { colour: 0x40c0ff, style: 'disco' } } },
+  // Wally's hats (Ken, 2026-10-21), worn with any outfit made from his own model (hats.js builds them).
+  // earn: not bought but won: 'finish' for finishing the whole trip, best: a personal best of that many points.
+  { id: 'own',         who: 'hat', name: 'His own hat',      price: 0,  about: 'The little hat he always wears.' },
+  { id: 'akubra',      who: 'hat', name: 'Bush hat',         price: 15, about: 'A brown felt bush hat with a wide brim.' },
+  { id: 'cork',        who: 'hat', name: 'Cork hat',         price: 20, about: 'The bush hat with corks on strings, to keep the flies off.' },
+  { id: 'bucket',      who: 'hat', name: 'Bucket hat',       price: 12, about: 'A soft khaki fishing hat.' },
+  { id: 'cap',         who: 'hat', name: 'Surf cap',         price: 12, about: 'A surf blue cap.' },
+  { id: 'beanie',      who: 'hat', name: 'Beanie',           price: 10, about: 'A red knitted beanie with a pompom. Brave, in Cairns.' },
+  { id: 'hardhat',     who: 'hat', name: 'Hard hat',         price: 15, about: 'Safety first in the cane fields.' },
+  { id: 'captain',     who: 'hat', name: "Skipper's cap",    price: 25, about: 'A white skipper\'s cap with a gold badge, for the river boats.' },
+  { id: 'tricorn',     who: 'hat', name: 'Pirate hat',       price: 25, about: 'Three corners and gold trim. Arr!' },
+  { id: 'tophat',      who: 'hat', name: 'Top hat',          price: 30, about: 'Very fancy, with a red band.' },
+  { id: 'party',       who: 'hat', name: 'Party hat',        price: 8,  about: 'Stripes and a pompom.' },
+  { id: 'gold-akubra', who: 'hat', name: 'Golden bush hat',  price: 0,  earn: { best: 400 }, about: 'Won with a personal best of 400 points.' },
+  { id: 'crown',       who: 'hat', name: 'Crown',            price: 0,  earn: { finish: true }, about: 'Won by finishing the whole trip: a gift from the King.' },
 ];
 // Earlier names, for older saves.
 export const WARDROBE = OUTFITS;
-const DEFAULT = { wally: 'classic', kenny: 'vest-ranger' };
+const DEFAULT = { wally: 'classic', kenny: 'vest-ranger', hat: 'own' };
 
 export function freshWardrobe() {
-  return { owned: OUTFITS.filter(i => i.price === 0 && !i.needs).map(i => i.id), wear: { ...DEFAULT } };
+  return { owned: OUTFITS.filter(i => i.price === 0 && !i.needs && !i.earn).map(i => i.id), wear: { ...DEFAULT } };
 }
 
 // Buy an outfit. Returns { progress, ok, why }: why is 'unknown', 'soon', 'owned' or 'mangoes'.
@@ -216,6 +231,7 @@ export function buyItem(progress, id) {
   const wardrobe = progress.wardrobe || freshWardrobe();
   if (!item) return { progress, ok: false, why: 'unknown' };
   if (item.needs) return { progress, ok: false, why: 'soon' };
+  if (item.earn) return { progress, ok: false, why: 'earn' };
   if (wardrobe.owned.includes(id)) return { progress, ok: false, why: 'owned' };
   if ((progress.mangoes || 0) < item.price) return { progress, ok: false, why: 'mangoes' };
   return { ok: true, progress: { ...progress, mangoes: progress.mangoes - item.price,
@@ -240,7 +256,16 @@ export function outfitModel(progress) { const o = outfitOn(progress, 'wally'); r
 // What outfit.js puts on: { shirt, shorts } for Wally, { vest } for Kenny.
 export function wearing(progress, who) {
   const o = outfitOn(progress, who);
-  return (o && !o.model && o.look) || {};
+  const look = (o && !o.model && o.look) || {};
+  if (who !== 'wally' || (o && o.model)) return look;              // a whole-model outfit has its own hat
+  const hat = outfitOn(progress, 'hat');
+  return hat && hat.id !== 'own' ? { ...look, hat: hat.id } : look;
+}
+// The hats won so far (finishing the trip, a personal best), added to what he owns.
+export function earnHats(progress, { finished = false, best = 0 } = {}) {
+  const w = progress.wardrobe || freshWardrobe();
+  const won = OUTFITS.filter(i => i.earn && !w.owned.includes(i.id) && ((i.earn.finish && finished) || (i.earn.best && best >= i.earn.best))).map(i => i.id);
+  return won.length ? { ...progress, wardrobe: { ...w, owned: [...w.owned, ...won] } } : progress;
 }
 
 // ---- Gear and tickets (Ken, 2026-10-17) ----------------------------------------
@@ -253,7 +278,7 @@ export const EXTRAS = [
   { id: 'boomerang',       kind: 'gear',   name: 'Boomerang',          price: 60, ready: false, about: 'Thrown and caught again: handy in later levels.' },
   { id: 'ticket-zipline',  kind: 'ticket', name: 'Zip line ticket',    price: 25, ready: true, activity: 'zipline', about: 'One ride down the Barron Gorge on the zip line (Barron Falls, at the end of the Kuranda markets).' },
   { id: 'ticket-bungee',   kind: 'ticket', name: 'Bungee jump ticket', price: 35, ready: false, activity: 'bungee', about: 'A leap over Barron Falls.' },
-  { id: 'ticket-cruise',   kind: 'ticket', name: 'River cruise ticket', price: BOAT_TICKET_PRICE, pay: 'coins', ready: true, about: 'The river boat on the Daintree (opens the Daintree River).' },
+  { id: 'ticket-cruise',   kind: 'ticket', name: 'River cruise ticket', price: BOAT_TICKET_PRICE, pay: 'coins', ready: true, about: 'On the Daintree, the boat passengers know Wally and throw him tucker more often.' },
   { id: 'ticket-rapids',   kind: 'ticket', name: 'River rapids ticket', price: 30, ready: false, activity: 'rapids', about: 'A raft down the white water at Mossman Gorge.' },
 ];
 export function hasExtra(progress, id) {
@@ -341,7 +366,7 @@ function readWardrobe(w) {
   const known = id => OUTFITS.some(i => i.id === id && !i.needs);
   const owned = [...new Set([...f.owned, ...(Array.isArray(w.owned) ? w.owned.filter(known) : [])])];
   const wear = { ...f.wear };
-  for (const who of ['wally', 'kenny']) {
+  for (const who of ['wally', 'kenny', 'hat']) {
     const id = w.wear && w.wear[who];
     if (typeof id === 'string' && owned.includes(id) && OUTFITS.find(i => i.id === id).who === who) wear[who] = id;
   }

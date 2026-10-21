@@ -79,7 +79,19 @@ check('every area has a postcard', AREAS.every(a => typeof POSTCARDS[a.id] === '
   check('no name: he is Wally', P.crocName(p0) === 'Wally');
   const old = P.readProgress(JSON.stringify({ unlocked: ['park'], wardrobe: { owned: ['shirt-reef', 'made-up'], wear: { wally: { shirt: 'shirt-reef' } } } }));
   check('an older save starts again in his own clothes', P.outfitOn(old, 'wally').id === 'classic' && !old.wardrobe.owned.includes('made-up'));
-  check('every outfit belongs to Wally or Kenny and has a price', P.OUTFITS.every(i => ['wally', 'kenny'].includes(i.who) && i.price >= 0));
+  check('every outfit is for Wally, Kenny or a hat, and has a price', P.OUTFITS.every(i => ['wally', 'kenny', 'hat'].includes(i.who) && i.price >= 0));
+  {
+    let p = P.freshProgress();
+    check('he starts in his own hat, and it shows nothing extra', P.outfitOn(p, 'hat').id === 'own' && !('hat' in P.wearing(p, 'wally')));
+    check('an earned hat cannot be bought', P.buyItem({ ...p, mangoes: 999 }, 'crown').why === 'earn');
+    p = { ...p, mangoes: 50 };
+    const r = P.buyItem(p, 'akubra'); p = P.wearItem(r.progress, 'akubra');
+    check('a bought hat is worn with his outfit, and kept with the save', r.ok && P.wearing(p, 'wally').hat === 'akubra' && P.readProgress(JSON.stringify(p)).wardrobe.wear.hat === 'akubra');
+    check('a hat and an outfit are separate choices', P.outfitOn(P.wearItem(P.wearItem({ ...p, wardrobe: { ...p.wardrobe, owned: [...p.wardrobe.owned, 'reef'] } }, 'reef'), 'akubra'), 'wally').id === 'reef');
+    check('a whole-model outfit keeps its own hat', !('hat' in P.wearing(P.wearItem({ ...p, wardrobe: { ...p.wardrobe, owned: [...p.wardrobe.owned, 'explorer'] } }, 'explorer'), 'wally')));
+    const e = P.earnHats(p, { finished: true, best: 100 });
+    check('finishing the trip wins the crown; a best of 400 wins the golden bush hat', e.wardrobe.owned.includes('crown') && !e.wardrobe.owned.includes('gold-akubra') && P.earnHats(e, { best: 400 }).wardrobe.owned.includes('gold-akubra'));
+  }
 }
 
 // Going back (Ken): a finished or visited area stays open, and every return trip banks more.

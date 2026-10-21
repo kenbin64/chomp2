@@ -4,6 +4,7 @@
 // ducking the branches, braking in the brake zone to land on the far platform.
 // The ride is in zipline-rules.js (tested). One ticket a ride.
 
+import { startRun, addPoints, bankRun } from '../points.js';
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
 import { loadModels } from '../models.js';
@@ -493,7 +494,7 @@ function storyEnd() {
   let run = null; try { run = JSON.parse(localStorage.getItem('chomp-kuranda-run') || 'null'); } catch { /* none */ }
   const attempt = Trip.gain(run || Trip.startAttempt(p.trip, 'kuranda', { force: true }), 'talisman-water');
   const done = Trip.completeAttempt(p.trip, Trip.have(p.trip, 'talisman-air') || (run && run.pending['talisman-air']) ? attempt : Trip.gain(attempt, 'talisman-air'), { objectiveMet: true });
-  if (done.ok) p.trip = done.trip;
+  if (done.ok) { p.trip = done.trip; startRun('kuranda', { carry: true }); addPoints('talisman'); bankRun(); }   // the run begun in Kuranda village, banked here
   saveProgress(p); try { localStorage.removeItem('chomp-kuranda-run'); } catch { /* fine */ }
   if (hadWater) foundTalisman('talisman-water', toast); else openSceptre('talisman-water');   // new: the card with water set in its place
   setTimeout(() => { const f = document.getElementById('cine-caption'); if (f) { f.textContent = 'On to Mossman Gorge'; f.hidden = false; } setTimeout(() => { location.href = 'mossman.html'; }, 1800); }, 4200);

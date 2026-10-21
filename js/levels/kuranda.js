@@ -6,6 +6,7 @@
 // the end of the street. The clothes stall sells new gear for Wally and Kenny
 // for Golden Mangoes, and the river-boat ticket for the Daintree.
 
+import { startRun, addPoints, bankRun } from '../points.js';
 import { foundTalisman, givePrize } from '../revisit.js';
 import { installGear, snorkelling, drainFactor } from '../gear.js';
 import * as THREE from 'three';
@@ -170,14 +171,14 @@ window.chomp = { game, wally, food, scene };
 
 // ---- The trip: this run's gains (the air talisman here; the water at the zip line) ----------
 if (!progress.trip) { progress.trip = Trip.tripFor(progress); save(); }
-let attempt = Trip.startAttempt(progress.trip, 'kuranda', { force: true });
+let attempt = Trip.startAttempt(progress.trip, 'kuranda', { force: true }); startRun('kuranda');
 game.hasAir = Trip.have(progress.trip, 'talisman-air');
 game.stationAway = true;                                         // he has to step off the mark before it starts again
 
 // The boomerang throw, halfway down the street (Ken, 2026-10-20): first person, angle
 // and force, the physics decides; the first catch wins the air talisman.
 const station = boomerangThrow({ scene, camera, wally, sound, models, people: peopleModels(models),
-  onTalisman: () => { game.hasAir = true; attempt = Trip.gain(attempt, 'talisman-air'); game.points += 300; wally.cheer = 1.2; },
+  onTalisman: () => { game.hasAir = true; attempt = Trip.gain(attempt, 'talisman-air'); game.points += 300; wally.cheer = 1.2; addPoints('catch'); addPoints('talisman'); },
   // Back at the archway, facing the street, ready to walk on (he has to step out before it starts again).
   onDone: caught => {
     $('hud').hidden = false;
@@ -278,7 +279,7 @@ function step(dt, t) {
 
   // Gold pieces visitors have dropped along the street (Ken): banked as soon as he has them.
   for (const g of streetGold.update(dt, t, wally.pos)) {
-    game.gold++; progress = { ...progress, coins: (progress.coins || 0) + 1 }; save(); bookEvent('gold');
+    game.gold++; addPoints('pickup'); progress = { ...progress, coins: (progress.coins || 0) + 1 }; save(); bookEvent('gold');
     sound.play.goal(); fx.burst(g.mesh.position, [0xffd24a, 0xffffff], 10);
     toast_(`A gold piece someone dropped! ${streetGold.found}/${streetGold.total}`, 'good');
   }
@@ -324,7 +325,7 @@ function step(dt, t) {
       fx.burst(p, CRUMBS[it.kind] || [0xffffff]); food.take(it, 'eaten'); wally.chomp(how); sound.play.chomp(); fx.shake(0.1, 0.1);
       game.streak++; game.caught++;
       if (daynight.night > 0.6) bookEvent('nightCatch');
-      const pts = catchPoints(how, game.streak, game.boost > 0); game.foodPoints += pts; game.points += pts;
+      const pts = catchPoints(how, game.streak, game.boost > 0); game.foodPoints += pts; game.points += pts; addPoints(how);
       game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[it.kind].energy);
       toast_(`+${pts} ${how === 'leap' ? 'Jumping catch!' : how === 'air' ? 'In the air!' : it.name}`);
       if (chatty()) bubbles.say(wally.root, pickLine('wallyCatch'), 3.4);
@@ -454,8 +455,9 @@ function finish(won, why = '') {
   if (!progress.trip) progress.trip = Trip.tripFor(progress);
   if (won) {
     const done = Trip.completeAttempt(progress.trip, attempt, { objectiveMet: true });
-    if (done.ok) progress.trip = done.trip;
-    else try { localStorage.setItem('chomp-kuranda-run', JSON.stringify(attempt)); } catch { /* the zip line starts a fresh run */ }
+    if (done.ok) { progress.trip = done.trip; bankRun({ stars }); }
+    else try { addPoints('star', stars);   // not done until the zip line: its stars go with the run (points.js)
+      localStorage.setItem('chomp-kuranda-run', JSON.stringify(attempt)); } catch { /* the zip line starts a fresh run */ }
   } else progress.trip = Trip.failAttempt(progress.trip, attempt).trip;   // nothing from this run is kept
   save();
   $('result-title').textContent = won ? 'Off to Barron Falls!' : why === 'hungry' ? 'Still peckish!' : 'Out of puff';

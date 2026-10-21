@@ -7,10 +7,11 @@
 // shown, greyed, with what it takes to get there. ?all opens everything, for
 // testing.
 
+import { installScore, clearTrip } from './points.js';
 import { AREAS } from './quests.js';
 import { resetAreaIntros } from './area-intro.js';
 import { installSceptre } from './sceptre-card.js';
-import { readProgress, isOpen, entryNeeds, ACTIVITIES, totalStars, activityOpen } from './progress.js';
+import { readProgress, freshProgress, isOpen, entryNeeds, ACTIVITIES, totalStars, activityOpen } from './progress.js';
 import { mapSvg, pinXY, markerXY, MARKERS } from './tripmap.js';
 
 const PAGES = { park: 'index.html?play', cane: 'cane.html', esplanade: 'esplanade.html', reef: 'reef.html', kuranda: 'kuranda.html', mossman: 'mossman.html', daintree: 'daintree.html' };
@@ -129,8 +130,11 @@ export function askNewTrip() {
 // are kept), then the opening screen, where Play asks for the difficulty again.
 export function newTrip() {
   // (Kept: the best score, the leaderboard name, the settings and which tips were seen.)
+  clearTrip();                             // this trip's points go; the personal best stays (points.js)
+  const wardrobe = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()).wardrobe;
   for (const k of ['chomp-progress', 'chomp-visited', 'chomp-opening-done', 'chomp-skyrail-seen', 'chomp-zipline-intro']) { try { localStorage.removeItem(k); } catch { /* nothing kept */ } }
   resetAreaIntros();                       // every area's fly-over plays again
+  try { localStorage.setItem('chomp-progress', JSON.stringify({ ...freshProgress(), wardrobe })); } catch { /* not kept */ }   // the clothes and hats bought stay theirs (Ken: changes stick)
   location.href = 'index.html';
 }
 
@@ -249,6 +253,7 @@ export function installMap({ pause = null } = {}) {
   onPause = pause;
   addNextStop();
   installSceptre({ pause });                                    // the sceptre card, beside the map, in every area
+  installScore({ pause });                                      // the points and the Scoreboard (points.js)
   const b = el('button', 'map-button', '🗺 Map'); b.type = 'button'; b.title = 'The map (Tab)';
   b.onclick = () => (modal && !modal.hidden ? closeMap() : openMap());
   document.body.append(b);

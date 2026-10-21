@@ -8,6 +8,7 @@
 // The river is the Daintree level's (daintree-rules.js, daintree-scene.js); the push is push-rules.js
 // and the line is rescue-rules.js (all tested).
 
+import { startRun, addPoints, bankRun, installScore } from '../points.js';
 import * as THREE from 'three';
 import { AGROUND_Z, BOAT_LENGTH, riverX, boatX, groundAt, insideRiver, crocsRoundBoat } from './daintree-rules.js';
 import { buildDaintree } from './daintree-scene.js';
@@ -159,7 +160,7 @@ function press() {
   const q = quality(game.beatT);
   word.textContent = rating(q); word.className = 'push-word ' + (q >= 1 ? 'perfect' : q > 0 ? 'good' : 'miss');
   if (q > 0) {
-    boat.moved = heave(boat.moved, q); game.heaves++; if (q >= 1) game.perfect++;
+    boat.moved = heave(boat.moved, q); game.heaves++; if (q >= 1) { game.perfect++; addPoints('heave'); }
     for (const c of line) c.lunge = 0.35 * q;
     sound.play.land(); fx.shake && fx.shake(0.25 * q); game.flash = q;
     fx.splash(new THREE.Vector3(stern().x, 0, stern().z + 2), 18);
@@ -185,7 +186,7 @@ function step(dt, t) {
     line.forEach((c, i) => { const want = placeInLine(trail, i + 1); if (want) { const f = follow(c, want, dt); c.x = f.x; c.z = f.z; c.heading = f.heading; } });
     // The sceptre's touch: a wild croc he comes close to joins the line (Ken).
     for (const w of wild) if (!w.called && Math.hypot(w.x - wally.pos.x, w.z - wally.pos.z) < CALL) {
-      w.called = true; line.push(w); game.flash = 1.5; sound.play.powerup();
+      w.called = true; line.push(w); game.flash = 1.5; sound.play.powerup(); addPoints('croc');
       const n = wild.filter(x => x.called).length;
       toast(`A wild croc follows the sceptre! ${n} of ${wild.length}`, 'good');
       if (n === 1) bubbles.say(wally.root, "G'day, mate. Give us a hand, will ya?", 2.6);
@@ -280,7 +281,7 @@ function frameCamera(dt) {
 }
 
 function start() { if (intro.due()) { $('title').hidden = true; sound.start(); intro.play(camera, begin); return; } begin(); }
-function begin() { sound.start(); sound.startMusic('esplanade'); $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch; game.running = true; $('job').textContent = 'Touch the wild crocs round the boat with the sceptre, then lead everyone to the stern'; bubbles.say(wally.root, 'There she is, stuck fast. Follow me, everyone!', 3.2, 2); }
+function begin() { sound.start(); sound.startMusic('esplanade'); $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch; game.running = true; startRun('finale', { carry: true }); $('job').textContent = 'Touch the wild crocs round the boat with the sceptre, then lead everyone to the stern'; bubbles.say(wally.root, 'There she is, stuck fast. Follow me, everyone!', 3.2, 2); }
 $('play').onclick = start;
 $('again').onclick = () => location.reload();
 
@@ -297,3 +298,4 @@ function frame() {
 }
 requestAnimationFrame(frame);
 if (params.has('play')) start();
+installScore({ pause: on => { if (game.running) game.paused = on; } });   // the points and the Scoreboard (points.js)

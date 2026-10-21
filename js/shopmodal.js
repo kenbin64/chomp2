@@ -6,7 +6,8 @@
 // in-app purchase), wear what you own, and give your croc a name.
 
 import * as THREE from 'three';
-import { readProgress, OUTFITS, buyItem, wearItem, outfitOn, outfitModel, wearing, crocName, setCrocName, EXTRAS, hasExtra, buyExtra, saveProgress, ticketsFor } from './progress.js';
+import { readProgress, OUTFITS, buyItem, wearItem, outfitOn, outfitModel, wearing, crocName, setCrocName, EXTRAS, hasExtra, buyExtra, saveProgress, ticketsFor, earnHats } from './progress.js';
+import { readBook } from './points.js';
 import { loadModels, ModelSkin } from './models.js';
 import { dressOutfit } from './outfit.js';
 import { cleanName } from './leaderboard-rules.js';
@@ -15,6 +16,9 @@ import { bookEvent } from './book.js';
 let modal = null, onPause = null, preview = null, picked = null;
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function load() { return readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); }
+// The hats won so far (the crown for finishing, the golden bush hat for a best of 400), added on opening.
+function finished() { try { return localStorage.getItem('chomp-finished') === '1'; } catch { return false; } }
+function grantHats() { const p = load(), e = earnHats(p, { finished: finished(), best: readBook().best }); if (e !== p) saveProgress(e); }
 function save(p) { saveProgress(p); }
 const hex = c => '#' + c.toString(16).padStart(6, '0');
 
@@ -22,7 +26,8 @@ const hex = c => '#' + c.toString(16).padStart(6, '0');
 function swatch(o) {
   const s = el('span', 'sw');
   const L = o.look || {}, a = L.shirt || L.vest, b = L.shorts;
-  if (o.model) { s.textContent = o.needs ? '…' : '★'; s.classList.add('sw-model'); }
+  if (o.who === 'hat') { s.textContent = o.earn ? '🏆' : o.id === 'own' ? '🎩' : '👒'; s.classList.add('sw-model'); }
+  else if (o.model) { s.textContent = o.needs ? '…' : '★'; s.classList.add('sw-model'); }
   else if (!a) s.style.background = o.who === 'wally' ? 'linear-gradient(135deg,#f06a2a 50%,#f06a2a 50%)' : '#8a6a48';
   else if (a.style === 'disco') s.style.background = 'linear-gradient(135deg,#ff2fa8,#ffd23a,#39ff6a,#40c0ff,#d040ff)';
   else s.style.background = `linear-gradient(135deg, ${hex(a.colour)} 0 55%, ${hex((b || a).colour)} 55% 100%)`;
@@ -47,11 +52,13 @@ async function makePreview(box) {
   size(); addEventListener('resize', size);
   const show = o => {
     holder.clear(); skin = null; who = o.who;
+    const hat = o.who === 'hat' ? o : null;
+    if (hat) { const on = outfitOn(load(), 'wally'); o = on.model ? OUTFITS.find(i => i.id === 'classic') : on; }   // a hat: on Wally, in his outfit (or his own clothes, if his outfit has its own hat)
     const gltf = models.get(o.who === 'kenny' ? 'kenny' : (o.model && !o.needs ? o.model : 'wally'));
     if (!gltf) return;
     skin = new ModelSkin(gltf, { height: o.who === 'kenny' ? 1.6 : 2.6 });
     holder.add(skin.root);
-    if (!o.model || o.who === 'kenny') dressOutfit(skin.root, o.who, (o.look) || {});
+    if (!o.model || o.who === 'kenny') dressOutfit(skin.root, o.who, { ...(o.look || {}), ...(o.who === 'wally' ? { hat: hat ? hat.id : outfitOn(load(), 'hat').id } : {}) });
     skin.play('idle', { alternatives: ['walk'] });
   };
   let last = performance.now();
@@ -74,14 +81,14 @@ function render() {
   modal.querySelector('.shop-mangoes').textContent = progress.mangoes || 0;
   const name = modal.querySelector('.shop-name input');
   if (document.activeElement !== name) name.value = progress.crocName || '';
-  for (const who of ['wally', 'kenny']) {
+  for (const who of ['wally', 'hat', 'kenny']) {
     const list = modal.querySelector(`.shop-grid[data-who="${who}"]`); list.innerHTML = '';
     const on = outfitOn(progress, who);
     for (const o of OUTFITS.filter(i => i.who === who)) {
       const card = el('button', `shop-item${o.id === (picked && picked.id) ? ' picked' : ''}${o.needs ? ' soon' : ''}`);
       card.type = 'button';
       card.append(swatch(o), el('b', null, o.name));
-      const state = o.needs ? 'Coming soon' : on.id === o.id ? 'Wearing' : owned.includes(o.id) ? 'Owned' : `🥭 ${o.price}`;
+      const state = o.needs ? 'Coming soon' : on.id === o.id ? 'Wearing' : owned.includes(o.id) ? 'Owned' : o.earn ? 'To win' : `🥭 ${o.price}`;
       card.append(el('span', `st${on.id === o.id ? ' on' : ''}`, state));
       card.onclick = () => { picked = o; if (preview) preview.show(o); render(); };
       list.append(card);
@@ -109,6 +116,7 @@ function render() {
   d.append(el('h3', null, o.name), el('p', null, o.about || ''));
   const msg = modal.querySelector('.shop-msg');
   if (o.needs) d.append(el('p', 'fine', 'Coming soon: her model is on the way.'));
+  else if (o.earn && !owned.includes(o.id)) d.append(el('p', 'fine', o.earn.finish ? 'Not for sale: finish the whole trip to win it.' : `Not for sale: reach a personal best of ${o.earn.best} points to win it (the Scoreboard shows yours).`));
   else if (outfitOn(progress, o.who).id === o.id) d.append(el('p', 'fine', 'Wearing it now.'));
   else if (owned.includes(o.id)) {
     const b = el('button', 'go', 'Wear it'); b.type = 'button';
@@ -150,6 +158,7 @@ function build() {
   const lists = el('div', 'shop-lists');
   lists.append(el('h3', null, 'Wally'), el('div', 'shop-grid'));
   lists.lastChild.dataset.who = 'wally';
+  lists.append(el('h3', null, "Wally's hats"), el('div', 'shop-grid')); lists.lastChild.dataset.who = 'hat';
   lists.append(el('h3', null, 'Kenny'), el('div', 'shop-grid')); lists.lastChild.dataset.who = 'kenny';
   lists.append(el('h3', null, 'Gear and tickets'), el('div', 'shop-grid extras')); lists.lastChild.dataset.who = 'extras';
   const side = el('div', 'shop-side'); const pv = el('div', 'shop-preview'); side.append(pv, el('div', 'shop-detail'));
@@ -161,6 +170,7 @@ function build() {
 }
 
 export function openShop() {
+  grantHats();
   if (!modal) build();
   picked = picked || outfitOn(load(), 'wally');
   modal.querySelector('.shop-msg').textContent = '';

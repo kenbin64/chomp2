@@ -6,6 +6,7 @@
 // (Ken). Then, next to build: up the coast to the Daintree, and the push.
 // The rules are rescue-rules.js (tested); the park is world.js's.
 
+import { startRun, addPoints, bankRun, installScore } from '../points.js';
 import * as THREE from 'three';
 import { buildWorld, drawnHeight } from '../world.js';
 import { Wally } from '../wally.js';
@@ -178,7 +179,7 @@ function step(dt, t) {
   // Calling: the sceptre calls any croc he comes close to.
   for (const c of crocs) {
     if (c.called || Math.hypot(c.x - wally.pos.x, c.z - wally.pos.z) > CALL) continue;
-    c.called = true; c.order = ++game.called; game.flash = 1; sound.play.powerup();
+    c.called = true; c.order = ++game.called; game.flash = 1; sound.play.powerup(); addPoints('croc');
     toast(`${c.name} follows the sceptre! ${game.called} of ${crocs.length}`, 'good');
     if (game.called === 1) bubbles.say(wally.root, "That's it, mate. Follow me!", 2.6);
     if (allCalled(crocs)) openGate();
@@ -260,7 +261,7 @@ function start() {
 function begin() {
   sound.start(); sound.startMusic('park');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
-  game.running = true;
+  game.running = true; startRun('finale', { carry: true });   // the finale's run, begun on the Daintree
   bubbles.say(wally.root, "G'day, fellas! The King's set you free. Follow me to the sea!", 3.8, 2);
   toast('Walk up to each croc: the sceptre calls it into your line', 'info');
 }
@@ -286,3 +287,4 @@ function frame() {
 requestAnimationFrame(frame);
 window.chomp = { game, wally, crocs, scene, camera, trail, sceptre };
 if (params.has('play')) start();
+installScore({ pause: on => { if (game.running) game.paused = on; } });   // the points and the Scoreboard (points.js)

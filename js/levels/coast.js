@@ -5,6 +5,7 @@
 // him food, since he is still part human (Ken); the feed-o-meter and Kenny's jar as everywhere.
 // Rules: coast-rules.js (the coast, the boats) and rescue-rules.js (the crocs' line), both tested.
 
+import { startRun, addPoints, bankRun, installScore } from '../points.js';
 import * as THREE from 'three';
 import { LENGTH, MOUTH_Z, BEACH, LANE, SURFACE_DROP, PLACES, shoreX, placeAt, swimStep, reachedMouth, BOATS, boatTarget, boatStep, inThrowRange } from './coast-rules.js';
 import { SPACING, addToTrail, placeInLine, follow } from './rescue-rules.js';
@@ -26,6 +27,8 @@ import { jarLabelTexture } from '../textures.js';
 import { readProgress, outfitModel, wearing } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
 import * as sound from '../sound.js';
+import { installGear, snorkelling, drainFactor } from '../gear.js';
+import { installBook, openBook } from '../book.js';
 import { makeSceptre, ALL_TALISMANS, holdHigh } from '../sceptre-model.js';
 import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone, aimOffset } from '../rules.js';
@@ -131,7 +134,7 @@ const bubbles = new Bubbles(scene, touch ? 3 : 4);
 const fx = new Effects(scene, food);
 const kennyMesh = new THREE.Group(); kennyMesh.visible = false; scene.add(kennyMesh);
 let kennyPoser = null;
-{ const skin = dress(kennyMesh, models.get('kenny'), { height: 1.3 }); if (skin && skin.clips.size) kennyPoser = new HumanoidPoser(skin.root); }
+{ const skin = dress(kennyMesh, models.get('kenny'), { height: 1.3 }); if (skin && skin.clips.size) kennyPoser = new HumanoidPoser(skin.root); if (skin) dressOutfit(skin.root, 'kenny', wearing(progress, 'kenny')); }   // his vest from the markets, in every area
 const vegemite = kennysJar(jarLabelTexture()); vegemite.visible = false; scene.add(vegemite);
 
 // ---- The crocs: the line from Croc Park, following him ---------------------------------------------
@@ -209,7 +212,7 @@ function step(dt, t) {
 
   // Energy, Kenny.
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (!game.done && game.faint <= 0) game.energy -= energyDrain(wally.mode, moving, 'park') * dt;   // a long swim: the gentlest drain
+  if (!game.done && game.faint <= 0) game.energy -= energyDrain(wally.mode, moving, 'park') * drainFactor() * dt;   // a long swim: the gentlest drain
   if (game.energy <= 0 && game.faint <= 0 && !game.done) outOfPuff();
   if (game.faint > 0) rescueStep(dt, t);
 
@@ -222,7 +225,7 @@ function step(dt, t) {
     if (d < 1.5) {
       fx.burst(p, CRUMBS[it.kind] || [0xffffff]); food.take(it, 'eaten'); wally.chomp(); sound.play.chomp();
       game.streak++; game.caught++;
-      const how = it.landed ? 'ground' : (wally.airborne ? 'leap' : 'air'), pts = catchPoints(how, game.streak, false);
+      const how = it.landed ? 'ground' : (wally.airborne ? 'leap' : 'air'), pts = catchPoints(how, game.streak, false); addPoints(how);
       game.points += pts; game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[it.kind].energy);
       toast(`+${pts} ${how === 'air' ? 'In the air!' : it.name}`);
     } else closest = Math.min(closest, d);
@@ -283,7 +286,7 @@ function finish(won = true) {
   if (won) { $('again').textContent = 'The Great Push'; $('again').onclick = () => { location.href = 'push.html'; }; }
 }
 function start() { if (intro.due()) { $('title').hidden = true; sound.start(); intro.play(camera, begin); return; } begin(); }
-function begin() { sound.start(); sound.startMusic('reef'); $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch; game.running = true; bubbles.say(wally.root, 'North to the Daintree, fellas! Follow the sceptre!', 3.4, 2); }
+function begin() { sound.start(); sound.startMusic('reef'); $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch; game.running = true; startRun('finale', { carry: true }); bubbles.say(wally.root, 'North to the Daintree, fellas! Follow the sceptre!', 3.4, 2); }
 function setPaused(p) { if (!game.running) return; game.paused = p; $('paused').hidden = !p; }
 $('play').onclick = start; $('resume').onclick = () => setPaused(false); $('again').onclick = () => location.reload();
 
@@ -302,3 +305,6 @@ function frame() {
 }
 requestAnimationFrame(frame);
 if (params.has('play')) start();
+installBook({ pause: on => { if (game.running) game.paused = on; } });
+installGear({ scene, wally, food, mouth: () => wally.mouthPosition(), hasAir: false, toast: (t, k) => toast(t, k), openBook: () => openBook('wally'), running: () => game.running && !game.paused, pause: on => { if (game.running) game.paused = on; } });   // the carried items work here too (gear.js)
+installScore({ pause: on => { if (game.running) game.paused = on; } });   // the points and the Scoreboard (points.js)

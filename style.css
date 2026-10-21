@@ -543,3 +543,25 @@ body.touch .gear-use { bottom: 224px; }
 .sceptre-spot.new img { animation: talismanset 1.4s ease-out both, talismanshine 2s ease-in-out 1.4s infinite; }
 @keyframes talismanset { 0% { transform: scale(3) translateY(-30%); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
 .sceptre-spot.new::after { content: 'New!'; position: absolute; left: 50%; top: -22px; transform: translateX(-50%); font: 800 14px var(--font); color: #7be36b; text-shadow: 0 1px 4px #000; white-space: nowrap; }
+
+/* The trip's points (points.js): the score pill beside the Sceptre, and the Scoreboard card. */
+.score-button { position: fixed; z-index: 40; top: calc(max(10px, env(safe-area-inset-top)) + 46px); left: 50%; transform: translateX(72px); display: flex; align-items: baseline; gap: 6px; font: 800 16px var(--font); padding: 7px 14px; border-radius: 999px; border: 2px solid rgba(255,209,102,0.7); background: rgba(10, 30, 44, 0.75); color: #ffd166; cursor: pointer; }
+.score-button:hover { background: rgba(255,209,102,0.25); }
+.score-button small { color: #fff; opacity: 0.75; font-weight: 600; font-size: 12px; }
+.score-button.bump .score-run { display: inline-block; animation: count-bump 0.4s ease-out; }
+.score-pop { position: absolute; right: 8px; top: -6px; color: #9fffa8; font-weight: 800; pointer-events: none; animation: score-pop 0.9s ease-out forwards; }
+@keyframes score-pop { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-26px); } }
+.score-cheer { position: fixed; z-index: 60; left: 50%; top: 22%; transform: translateX(-50%); padding: 14px 26px; border-radius: 18px; background: rgba(10,30,44,0.9); border: 3px solid #ffd166; color: #ffd166; font: 800 24px var(--font); text-align: center; pointer-events: none; animation: score-cheer 3.2s ease-out forwards; }
+@keyframes score-cheer { 0% { opacity: 0; transform: translateX(-50%) scale(0.7); } 10% { opacity: 1; transform: translateX(-50%) scale(1.06); } 18% { transform: translateX(-50%) scale(1); } 85% { opacity: 1; } 100% { opacity: 0; } }
+.score-card .card { width: min(560px, 100%); max-height: calc(100vh - 24px); overflow: auto; }
+.score-top { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 6px 0 12px; }
+.score-stat { display: grid; padding: 8px 16px; border-radius: 14px; background: rgba(255,209,102,0.12); border: 1px solid rgba(255,209,102,0.4); min-width: 110px; }
+.score-stat small { opacity: 0.8; } .score-stat b { font-size: 26px; color: #ffd166; }
+.score-areas { width: 100%; border-collapse: collapse; margin: 4px 0 8px; text-align: left; }
+.score-areas td { padding: 5px 8px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.score-areas td:last-child { text-align: right; font-weight: 800; color: #ffd166; }
+.score-areas tr.todo td { opacity: 0.55; }
+.score-how { text-align: left; margin: 6px 0 10px; } .score-how summary { cursor: pointer; font-weight: 700; }
+.trip-score { margin: 8px 0 14px; padding: 10px 14px; border-radius: 14px; background: rgba(255,209,102,0.12); border: 2px solid rgba(255,209,102,0.5); }
+.trip-score h2 { margin: 0 0 4px; color: #ffd166; }
+@media (max-width: 560px) { .score-button { transform: translateX(64px); padding: 6px 10px; } .score-button small { display: none; } }

@@ -12,6 +12,7 @@
 //   6. The credits.
 // Skippable (Space, Enter, Escape, the Skip button) straight to the credits.
 
+import { startRun, bankRun, readBook, openScore } from '../points.js';
 import * as THREE from 'three';
 import { HALF, AGROUND_Z, riverX, boatX, groundAt, crocsRoundBoat } from './daintree-rules.js';
 import { buildDaintree } from './daintree-scene.js';
@@ -98,6 +99,7 @@ const wally = wallySkin ? holder(wallySkin, wallyX, yAt(wallyX, wallyZ), wallyZ,
 const croc = (() => { const s = skinOf('croc-regular', { length: 3.6 }); if (!s) return null; const g = holder(s, wallyX, yAt(wallyX, wallyZ), wallyZ, Math.atan2(kingX - wallyX, kingZ - wallyZ)); g.visible = false; s.play('idle'); return { g, s }; })();
 // Kenny.
 const kennySkin = skinOf('kenny', { height: 1.3 });
+if (kennySkin) dressOutfit(kennySkin.root, 'kenny', wearing(progress, 'kenny'));   // his vest from the markets
 let heldJar = null; if (kennySkin) kennySkin.root.traverse(o => { if (o.name === 'HeldJar') heldJar = o; });   // his jar, a separate piece
 const kenny = kennySkin ? holder(kennySkin, wallyX + 1.2, yAt(wallyX + 1.2, wallyZ - 1.4), wallyZ - 1.4, Math.atan2(kingX - wallyX, kingZ - wallyZ)) : new THREE.Group();
 const jar = kennysJar(jarLabelTexture()); jar.visible = false; scene.add(jar);
@@ -220,6 +222,16 @@ function credits() {
   playing = false; caption('', ''); $('skip').hidden = true; $('fade').classList.add('on');
   try { localStorage.setItem('chomp-finished', '1'); } catch { /* fine */ }
   setTimeout(() => { $('credits').hidden = false; }, 900);
+  // The trip's points (points.js): the finale banked, the trip score and the personal best shown,
+  // and the Scoreboard a click away (Ken: something to beat next time).
+  if (!$('credits').querySelector('.trip-score')) {
+    startRun('finale', { carry: true }); const r = bankRun({ stars: 3 });
+    const book = readBook(), box = document.createElement('div'); box.className = 'trip-score';
+    const trip = r ? r.trip : 0;
+    box.innerHTML = `<h2>Your trip: ${trip.toLocaleString()} points</h2><p>${r && r.newBest ? 'A new personal best!' : `Personal best: ${book.best.toLocaleString()}`}</p>`;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'go'; b.textContent = 'Scoreboard and leaderboard'; b.onclick = e => { e.stopPropagation(); openScore(); };
+    box.append(b); $('credits').querySelector('.card h1').after(box);
+  }
 }
 function start() { sound.start(); sound.startMusic('theme'); $('title').hidden = true; $('skip').hidden = false; playing = true; t = 0; }
 $('play').onclick = start;

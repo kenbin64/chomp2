@@ -18,7 +18,8 @@ import * as sound from '../sound.js';
 import { loadRealism } from '../realism.js';
 import { Trees } from '../trees.js';
 import { addSky, addLights } from '../world.js';
-import { readProgress, outfitModel } from '../progress.js';
+import { readProgress, outfitModel, wearing } from '../progress.js';
+import { dressOutfit } from '../outfit.js';
 import { GORGE, height, buildRange } from './range-land.js';
 import { ROUTE, FALLS_STOP, buildLine, runs, stoneyCreek, at } from './train-rules.js';
 
@@ -397,9 +398,9 @@ for (let k = 0; k < 8; k++) train.push({ g: car(CAR, ctex, 0x6a1c1c, false), len
 {
   const progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
   const wg = models.get(outfitModel(progress)) || models.get('wally');
-  if (wg) { const w = new ModelSkin(wg, { height: 1.6 }); w.root.position.set(0.7, 0.9, CAR / 2 + 0.2); w.root.rotation.y = Math.PI / 2; train[1].g.add(w.root); }
+  if (wg) { const w = new ModelSkin(wg, { height: 1.6 }); dressOutfit(w.root, 'wally', wearing(progress, 'wally')); w.root.position.set(0.7, 0.9, CAR / 2 + 0.2); w.root.rotation.y = Math.PI / 2; train[1].g.add(w.root); }
   const kg = models.get('kenny');
-  if (kg) { const k = new ModelSkin(kg, { height: 0.75 }); k.root.position.set(-0.6, 0.9, CAR / 2 + 0.25); k.root.rotation.y = Math.PI / 2; train[1].g.add(k.root); }
+  if (kg) { const k = new ModelSkin(kg, { height: 0.75 }); dressOutfit(k.root, 'kenny', wearing(progress, 'kenny')); k.root.position.set(-0.6, 0.9, CAR / 2 + 0.25); k.root.rotation.y = Math.PI / 2; train[1].g.add(k.root); }
 }
 // Put the train on the line with its front at distance s.
 function placeTrain(s) {

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hat Test</title>
+<!-- Wally's hats close up (js/hats.js), to check each one sits right and covers his own:
+     hat-test.html?hat=akubra&view=side       views: front, side, back, three (a three-quarter view)
+     &anim=run plays a move, so the hat can be seen following his head. -->
+<style>html, body { margin: 0; height: 100%; background: #9fc6d8; } canvas { display: block; width: 100%; height: 100%; }
+#label { position: fixed; top: 10px; left: 12px; font: 600 18px system-ui; color: #10202a; }</style>
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<canvas id="c"></canvas><div id="label"></div>
+<script type="module">
+import * as THREE from 'three';
+import { loadModels, ModelSkin } from './js/models.js';
+import { dressOutfit } from './js/outfit.js';
+
+const q = new URLSearchParams(location.search);
+const hat = q.get('hat') || 'akubra', view = q.get('view') || 'three', anim = q.get('anim');
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9fc6d8);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x556644, 2));
+const sun = new THREE.DirectionalLight(0xfff0dd, 2.4); sun.position.set(3, 5, 4); scene.add(sun);
+const models = await loadModels(['wally'], { light: true });
+const skin = new ModelSkin(models.get('wally'), { height: 2.7 });
+scene.add(skin.root);
+dressOutfit(skin.root, 'wally', { hat });
+skin.play(anim || 'idle', { alternatives: ['walk'] });
+document.getElementById('label').textContent = `${hat} · ${view}${anim ? ' · ' + anim : ''}`;
+const camera = new THREE.PerspectiveCamera(30, 1, 0.05, 50);
+const yaw = { front: 0, side: Math.PI / 2, back: Math.PI, three: 0.7 }[view] ?? 0.7;
+const head = new THREE.Vector3(0, 2.45, 0.1);
+camera.position.set(Math.sin(yaw) * 4, 2.8, Math.cos(yaw) * 4); camera.lookAt(head);
+const size = () => { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); };
+size(); addEventListener('resize', size);
+let last = performance.now();
+renderer.setAnimationLoop(now => { const dt = Math.min(0.05, (now - last) / 1000); last = now; skin.update(anim ? dt : 0); renderer.render(scene, camera); });
+window.redress = h => dressOutfit(skin.root, 'wally', { hat: h || hat });   // for checking from the console
+window.hatReady = true;
+</script>
+</body>
+</html>

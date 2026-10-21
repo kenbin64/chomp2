@@ -8,6 +8,7 @@
 // leave pearls, which carry on to the Great Barrier Reef. In the sea he can
 // swim under water (air meter) and crawl back up onto the boardwalk.
 
+import { startRun, addPoints, bankRun } from '../points.js';
 import { foundTalisman } from '../revisit.js';
 import { fitText } from '../signtext.js';
 import { installGear, snorkelling, drainFactor } from '../gear.js';
@@ -202,6 +203,7 @@ let kennyPoser = null;
 {
   const k = models.get('kenny');
   const kennySkin = dress(kennyMesh, k, { height: 1.3 });
+  if (kennySkin) dressOutfit(kennySkin.root, 'kenny', wearing(readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()), 'kenny'));   // his vest from the markets
   if (kennySkin && kennySkin.clips.size) kennyPoser = new HumanoidPoser(kennySkin.root);   // waving, with his jar out
   if (!kennySkin) {
     const body = new THREE.Mesh(new THREE.SphereGeometry(0.45, 24, 18), new THREE.MeshStandardMaterial({ color: 0x9a9a9e }));
@@ -228,7 +230,7 @@ let progress = readProgress((() => { try { return localStorage.getItem('chomp-pr
 // the pier price and the meter speed.
 if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progress); }
 const entry = Trip.canEnter(progress.trip, 'esplanade'), testingAll = params.has('all');
-let attempt = Trip.startAttempt(progress.trip, 'esplanade', { force: true });
+let attempt = Trip.startAttempt(progress.trip, 'esplanade', { force: true }); startRun('esplanade');
 const PARK_MANGOES = 8;                              // what Croc Park holds (the pier price is a share of it)
 // This go's level: the mango target for the chest (a share of this course's
 // mangoes, rounded up) and the pier price (the same share of Croc Park's eight).
@@ -453,7 +455,7 @@ function bigMangoChest(dt) {
     if (game.mangoes >= mangoTarget) {
       // Until the Esplanade's own key and chest are built (Ken, 2026-10-20: key, then the chest with the
       // talisman), this chest holds the sun talisman as well as the Big Golden Mango (a trade item).
-      attempt = Trip.gain(Trip.gain(attempt, 'big-golden-mango'), 'talisman-sun'); game.hasBigMango = true;    // kept when the Esplanade is completed
+      attempt = Trip.gain(Trip.gain(attempt, 'big-golden-mango'), 'talisman-sun'); game.hasBigMango = true; addPoints('talisman');    // kept when the Esplanade is completed
       setTimeout(() => foundTalisman('talisman-sun', toast_), 1600);          // new: the sceptre card; already sealed: a random useful prize (revisit.js)
       game.points += 150; sound.play.powerup(); fx.burst(c.group.position, [0xffb51f, 0xffe066, 0xffffff], 34);
       toast_('The Big Golden Mango! The reef will need it', 'good'); bubbles.say(wally.root, 'Crikey, look at the size of it!', 3.4);
@@ -569,7 +571,7 @@ function step(dt, t) {
     if (m.taken) continue;
     m.mesh.rotation.y += dt * 3; m.mesh.position.y = m.y + Math.sin(t * 3 + m.z) * 0.08;
     if (Math.abs(m.z - wally.pos.z) < 1.4 && Math.abs(m.x - wally.pos.x) < 1.1 && Math.abs(m.y - (wally.pos.y + 1.2)) < 1.4) {
-      m.taken = true; scene.remove(m.mesh); game.mangoes++; game.points += 1; sound.play.goal(); bookEvent('mango');
+      m.taken = true; scene.remove(m.mesh); game.mangoes++; game.points += 1; addPoints('pickup'); sound.play.goal(); bookEvent('mango');
       fx.burst(m.mesh.position, [0xffb51f, 0xffe066], 8);
       if (game.mangoes === mangoes.length) {                      // the full set: Ken's bonus, one star's worth
         game.points += MANGO_SET_BONUS; fx.burst(wally.pos, [0xffb51f, 0xffe066, 0xffffff], 30);
@@ -597,7 +599,7 @@ function step(dt, t) {
     if (p.taken) continue;
     p.mesh.userData.pearl.position.y = 0.16 + Math.sin(t * 3 + p.z) * 0.05;
     if (Math.abs(p.z - wally.pos.z) < 1.4 && Math.abs(p.x - wally.pos.x) < 1.4 && wally.pos.y > G - 0.5) {
-      p.taken = true; scene.remove(p.mesh); game.pearls++; game.points += 5; sound.play.goal();
+      p.taken = true; scene.remove(p.mesh); game.pearls++; game.points += 5; addPoints('pickup'); sound.play.goal();
       fx.burst(p.mesh.position, [0xffffff, 0xffd6f0], 10); toast_(`A pearl! ${game.pearls} now`, 'good'); bookEvent('pearl');
     }
   }
@@ -624,7 +626,7 @@ function step(dt, t) {
       game.streak++; game.caught++;
       if (daynight.night > 0.6) bookEvent('nightCatch');
       const how = it.landed ? 'ground' : (wally.airborne ? 'leap' : 'air');
-      const pts = catchPoints(how, game.streak, game.boost > 0); game.foodPoints += pts; game.points += pts;
+      const pts = catchPoints(how, game.streak, game.boost > 0); game.foodPoints += pts; game.points += pts; addPoints(how);
       game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[it.kind].energy);
       toast_(`+${pts} ${how === 'leap' ? 'Jumping catch!' : how === 'air' ? 'In the air!' : it.name}`);
       if (chatty()) bubbles.say(wally.root, pickLine('wallyCatch'), 3.4);
@@ -776,7 +778,7 @@ function finish(won, why = '') {
   if (won) {
     let a = Trip.gain(Trip.gain(attempt, 'golden-mango', game.mangoes), 'pearl', game.pearls);
     const done = Trip.completeAttempt(progress.trip, a, { objectiveMet: true });
-    if (done.ok) progress.trip = done.trip;
+    if (done.ok) { progress.trip = done.trip; bankRun({ stars }); }
     if (game.pierOpen && !progress.pier) progress = openPier(progress, pierPrice).progress;   // the pier is paid for now
     progress = completeArea(progress, 'esplanade', { score: s.total, stars, mangoes: game.mangoes, pearls: game.pearls });
   } else progress.trip = Trip.failAttempt(progress.trip, attempt).trip;   // nothing from this attempt is kept (trip-rules.js)

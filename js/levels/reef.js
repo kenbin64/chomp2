@@ -7,6 +7,7 @@
 // to the surface wins. Pearls carry over from the Esplanade (progress.pearls).
 // Rules: reef-rules.js (tested). Scenery under water: reef-scene.js.
 
+import { startRun, addPoints, bankRun } from '../points.js';
 import { foundTalisman } from '../revisit.js';
 import { fitText } from '../signtext.js';
 import { installGear, snorkelling } from '../gear.js';
@@ -220,6 +221,7 @@ const kennyMesh = new THREE.Group(); scene.add(kennyMesh);
 let kennyPoser = null;
 {
   const skin = dress(kennyMesh, models.get('kenny'), { height: 1.3 });
+  if (skin) dressOutfit(skin.root, 'kenny', wearing(readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()), 'kenny'));   // his vest from the markets
   if (skin && skin.clips.size) kennyPoser = new HumanoidPoser(skin.root);
   if (!skin) {
     const body = new THREE.Mesh(new THREE.SphereGeometry(0.45, 24, 18), new THREE.MeshStandardMaterial({ color: 0x9a9a9e }));
@@ -263,7 +265,7 @@ const game = {
 // time (?all opens it, for testing); this dive's level sets how fast air runs out.
 if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progress); }
 const entry = Trip.canEnter(progress.trip, 'reef'), testingAll = params.has('all');
-let attempt = Trip.startAttempt(progress.trip, 'reef', { force: true });
+let attempt = Trip.startAttempt(progress.trip, 'reef', { force: true }); startRun('reef');
 game.tripDrain = Trip.drainFactor(progress.trip, 'reef', attempt.level);
 game.hasPearlKey = Trip.have(progress.trip, 'pearl-key');           // on a return dive he has it already
 game.keyRise = 9;
@@ -508,7 +510,7 @@ function step(dt, t) {
   for (const p of reef.pearls) {
     if (p.taken || atTop) continue;
     if (Math.hypot(wally.pos.x - p.x, wally.pos.z - p.z) < 1.6) {
-      p.taken = true; p.mesh.userData.pearl.visible = false; game.pearls++; game.found++; game.points += PEARL_POINTS;
+      p.taken = true; p.mesh.userData.pearl.visible = false; game.pearls++; game.found++; game.points += PEARL_POINTS; addPoints('pickup');
       sound.play.goal(); fx.burst(p.mesh.position.clone().setY(SWIM_Y), [0xffffff, 0xffd6f0], 10);
       toast_(`A pearl! ${game.pearls} now`, 'good'); bookEvent('pearl');
     }
@@ -522,7 +524,7 @@ function step(dt, t) {
       if (tr.touched) { const k = 1 + Math.sin(tr.phase * 4) * 0.08; tr.thing.scale.setScalar(k); tr.thing.material.emissiveIntensity = 1.6; }
       if (!tr.touched && !atTop && canTouchStarfish(wally.pos.x, wally.pos.z, game.depth, tr.x, tr.z)) {
         const T = TREASURES[tr.kind]; tr.touched = true;
-        game.treasure += T.points; game.treasures++; game.points += T.points; bookEvent('starfish');
+        game.treasure += T.points; game.treasures++; game.points += T.points; bookEvent('starfish'); addPoints('pickup');
         sound.play.goal(); fx.burst(tr.mesh.position.clone(), [0xff9a5a, 0xffd0a0], 10);
         toast_(`A starfish! It glows where Wally touched it (+${T.points})`, 'good');
       }
@@ -533,7 +535,7 @@ function step(dt, t) {
     if (!atTop && canCollect(wally.pos.x, wally.pos.z, game.depth, tr.x, tr.z, tr.y)) {
       const T = TREASURES[tr.kind];
       tr.taken = true; tr.mesh.visible = false;
-      game.treasure += T.points; game.treasures++; game.points += T.points;
+      game.treasure += T.points; game.treasures++; game.points += T.points; addPoints('pickup');
       if (tr.kind === 'shell' || tr.kind === 'conch') { game.shells++; bookEvent('shell'); }   // seashells: sold to the Kuranda market vendor for gold
       if (tr.kind === 'conch') bookEvent('conch');
       sound.play.goal(); fx.burst(tr.mesh.position.clone(), tr.kind === 'conch' ? [0xffc8a0, 0xffffff] : tr.kind === 'shell' ? [0xfff0d0, 0xffffff] : [0xff9a5a, 0xffd0a0], 10);
@@ -569,7 +571,7 @@ function step(dt, t) {
   if (!game.chest && game.inCave && Math.hypot(wally.pos.x - ch.x, wally.pos.z - ch.z) < 2.2) {
     if (game.hasPearlKey) {
       game.chest = true; ch.opened = true; ch.mango.visible = true; bookEvent('chest');
-      attempt = Trip.gain(Trip.gain(attempt, 'talisman-moon'), 'skyrail-pass');   // the moon talisman and the ride up; kept when the reef is completed
+      attempt = Trip.gain(Trip.gain(attempt, 'talisman-moon'), 'skyrail-pass'); addPoints('talisman');   // the moon talisman and the ride up; kept when the reef is completed
       setTimeout(() => foundTalisman('talisman-moon', toast_), 1600);          // new: the sceptre card; already sealed: a random useful prize (revisit.js)
       game.points += CHEST_POINTS; wally.cheer = 1.2;
       sound.play.powerup(); fx.burst(new THREE.Vector3(ch.x, SEABED_Y + 1.5, ch.z), [0xffd700, 0xffb51f, 0xffffff], 24);
@@ -671,7 +673,7 @@ function finish(won, why = '') {
     if (won) {
       bookEvent('finish');
       const done = Trip.completeAttempt(progress.trip, Trip.gain(Trip.gain(attempt, 'pearl', game.found), 'seashell', game.shells), { objectiveMet: true });
-      if (done.ok) progress.trip = done.trip;
+      if (done.ok) { progress.trip = done.trip; bankRun({ stars }); }
       progress = completeArea(progress, 'reef', { score: s.total, stars, mangoes: game.mangoes, pearls: game.found, shells: game.shells });
     } else progress.trip = Trip.failAttempt(progress.trip, attempt).trip;
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }

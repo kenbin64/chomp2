@@ -10,12 +10,15 @@
 //
 // The river's rules are in daintree-rules.js (tested), the look in daintree-scene.js.
 
+import { startRun, addPoints, bankRun } from '../points.js';
 import * as THREE from 'three';
 import * as Trip from '../trip-rules.js';
 import { HALF, START_Z, BOAT_START_Z, BOAT_LENGTH, AGROUND_Z, SANDBAR, CROC, riverX, boatX, groundAt, insideRiver, boatStep, aground, inThrowRange, crocSpots, crocsRoundBoat, crocStep, crocBites, afterBite } from './daintree-rules.js';
 import { buildDaintree } from './daintree-scene.js';
 import { vineCourse, forestGround, insideForest } from './daintree-forest.js';
 import { kingScene } from './king-court.js';
+import { installGear, snorkelling, drainFactor } from '../gear.js';
+import { installBook, openBook } from '../book.js';
 import { device } from '../device.js';
 import { Wally } from '../wally.js';
 import { Food, randomKind, useJarModel } from '../food.js';
@@ -118,7 +121,7 @@ const bubbles = new Bubbles(scene, touch ? 3 : 4);
 const fx = new Effects(scene, food);
 const kennyMesh = new THREE.Group(); kennyMesh.visible = false; scene.add(kennyMesh);
 let kennyPoser = null;
-{ const skin = dress(kennyMesh, models.get('kenny'), { height: 1.3 }); if (skin && skin.clips.size) kennyPoser = new HumanoidPoser(skin.root); }
+{ const skin = dress(kennyMesh, models.get('kenny'), { height: 1.3 }); if (skin && skin.clips.size) kennyPoser = new HumanoidPoser(skin.root); if (skin) dressOutfit(skin.root, 'kenny', wearing(progress, 'kenny')); }   // his vest from the markets, in every area
 const vegemite = kennysJar(jarLabelTexture()); vegemite.visible = false; scene.add(vegemite);
 
 // ---- The rainforest and the King's court (daintree-forest.js, king-court.js) --------------------
@@ -207,7 +210,7 @@ function passengersStep(dt, t) {
     const mySide = Math.sign(local.x) === p.side;
     if (p.throwing > 0) { p.throwing -= dt; if (p.throwing <= 0.4 && !p.thrown) { p.thrown = true; passengerThrow(p); } }
     else if (near && mySide && p.cool <= 0 && !game.done) {
-      p.throwing = 0.75; p.thrown = false; p.cool = 2.2 + Math.random() * 2.5;
+      p.throwing = 0.75; p.thrown = false; p.cool = (2.2 + Math.random() * 2.5) * (progress.boatTicket ? 0.6 : 1);   // a river-cruise ticket: the passengers know him, and feed him more often
       p.skin.play('throw', { once: true, fit: 0.6, alternatives: ['idle'] });
       if (Math.random() < 0.25) bubbles.say(p.g, pickLine('touristThrow'), 2.2);
     }
@@ -249,7 +252,7 @@ function step(dt, t) {
 
   // Energy.
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (!game.done && game.faint <= 0) game.energy -= energyDrain(wally.mode, moving, 'daintree') * game.tripDrain * dt;
+  if (!game.done && game.faint <= 0) game.energy -= energyDrain(wally.mode, moving, 'daintree') * game.tripDrain * drainFactor() * dt;   // vitamins halve it
   if (game.energy <= 0 && game.faint <= 0 && !game.done) outOfPuff('Out of puff!');
   if (game.faint > 0) rescueStep(dt, t);
 
@@ -264,7 +267,7 @@ function step(dt, t) {
       fx.burst(p, CRUMBS[it.kind] || [0xffffff]); food.take(it, 'eaten'); wally.chomp(); sound.play.chomp();
       game.streak++; game.caught++;
       const how = it.landed ? 'ground' : (wally.airborne ? 'leap' : 'air'), pts = catchPoints(how, game.streak, false);
-      game.points += pts; game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[it.kind].energy);
+      game.points += pts; addPoints(how); game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[it.kind].energy);
       toast_(`+${pts} ${how === 'air' ? 'In the air!' : it.name}`);
     } else closest = Math.min(closest, d);
   }
@@ -481,7 +484,7 @@ function start() {
 function begin() {
   sound.start(); sound.startMusic('esplanade');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
-  game.running = true;
+  game.running = true; startRun('finale');   // the finale's points run on through the rescue to the ending
   bubbles.say(wally.root, "The Daintree! The oldest rainforest there is. And a tour boat full of lunch!", 3.8, 2);
 }
 function setPaused(p) { if (!game.running) return; game.paused = p; $('paused').hidden = !p; }
@@ -544,3 +547,5 @@ function frame() {
 requestAnimationFrame(frame);
 if (params.has('play')) start();
 installMap({ pause: on => { if (game.running) game.paused = on; } });
+installBook({ pause: on => { if (game.running) game.paused = on; } });
+installGear({ scene, wally, food, mouth: () => wally.mouthPosition(), hasAir: false, toast: (t, k) => toast_(t, k), openBook: () => openBook('wally'), running: () => game.running && !game.paused, pause: on => { if (game.running) game.paused = on; } });   // the carried items work here too (gear.js)

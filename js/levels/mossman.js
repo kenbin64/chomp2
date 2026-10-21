@@ -8,7 +8,10 @@
 //
 // The gorge's rules are in mossman-rules.js (tested), the look in mossman-scene.js.
 
+import { startRun, addPoints, bankRun } from '../points.js';
 import { foundTalisman } from '../revisit.js';
+import { installGear, snorkelling, drainFactor } from '../gear.js';
+import { installBook, openBook } from '../book.js';
 import * as THREE from 'three';
 import * as Trip from '../trip-rules.js';
 import { POOLS, KEY_POOL, CHEST_POOL, SLIDE_HALF, SLIDE_SPEED, START, FINISH_Z, riverX, groundAt, insideGorge, bottomSpot, canReach, groupSpots, slideAt } from './mossman-rules.js';
@@ -48,7 +51,7 @@ const loadSave = () => readProgress((() => { try { return localStorage.getItem('
 let progress = loadSave();
 if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progress); }
 const entry = Trip.canEnter(progress.trip, 'mossman'), testingAll = params.has('all');
-let attempt = Trip.startAttempt(progress.trip, 'mossman', { force: true });
+let attempt = Trip.startAttempt(progress.trip, 'mossman', { force: true }); startRun('mossman');
 
 // ---- The ground: the gorge's rules, plus boulders that stop him ----------------------
 const dive = { under: false, depth: 0 };     // depth: how far below the floating line he is (0 floating)
@@ -120,7 +123,7 @@ clusters.useModels(peopleModels(models));
 
 const kennyMesh = new THREE.Group(); kennyMesh.visible = false; scene.add(kennyMesh);
 let kennyPoser = null;
-{ const skin = dress(kennyMesh, models.get('kenny'), { height: 1.3 }); if (skin && skin.clips.size) kennyPoser = new HumanoidPoser(skin.root); }
+{ const skin = dress(kennyMesh, models.get('kenny'), { height: 1.3 }); if (skin && skin.clips.size) kennyPoser = new HumanoidPoser(skin.root); if (skin) dressOutfit(skin.root, 'kenny', wearing(progress, 'kenny')); }   // his vest from the markets, in every area
 const vegemite = kennysJar(jarLabelTexture()); vegemite.visible = false; scene.add(vegemite);
 
 // ---- The key, and the chest with the opal ------------------------------------------------
@@ -215,12 +218,12 @@ function step(dt, t) {
   } else game.onSlide = false;
 
   // Air under water.
-  if (!game.done && game.faint <= 0) game.air = airStep(game.air, dive.depth > 0.6 ? 'under' : 'surface', dt);
+  if (!game.done && game.faint <= 0) game.air = airStep(game.air, dive.depth > 0.6 ? 'under' : 'surface', dive.depth > 0.6 && snorkelling() ? 0 : dt);   // the Snorkel: air stays full
   if (game.air <= 0 && game.faint <= 0) { dive.under = false; outOfPuff('Out of air!'); }
 
   // Energy.
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (!game.done && game.faint <= 0) game.energy -= energyDrain(wally.mode, moving, 'mossman') * game.tripDrain * dt;
+  if (!game.done && game.faint <= 0) game.energy -= energyDrain(wally.mode, moving, 'mossman') * game.tripDrain * drainFactor() * dt;   // vitamins halve it
   if (game.energy <= 0 && game.faint <= 0 && !game.done) outOfPuff('Out of puff!');
   if (game.faint > 0) rescueStep(dt, t);
 
@@ -240,7 +243,7 @@ function step(dt, t) {
       clusters.cheer(it.cluster); fx.burst(p, CRUMBS[it.kind] || [0xffffff]); food.take(it, 'eaten'); wally.chomp(); sound.play.chomp();
       game.streak++; game.caught++;
       const how = it.landed ? 'ground' : (wally.airborne ? 'leap' : 'air'), pts = catchPoints(how, game.streak, false);
-      game.points += pts; game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[it.kind].energy);
+      game.points += pts; addPoints(how); game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[it.kind].energy);
       toast_(`+${pts} ${how === 'air' ? 'In the air!' : it.name}`);
     } else closest = Math.min(closest, d);
   }
@@ -249,12 +252,12 @@ function step(dt, t) {
   // The key, and the chest with the opal.
   key.rotation.y += dt * 1.5;
   if (!game.hasKey && canReach(wally.pos.x, wally.pos.z, dive.depth > 1.2, keySpot.x, keySpot.z)) {
-    game.hasKey = true; key.visible = false; attempt = Trip.gain(attempt, 'mossman-key');
+    game.hasKey = true; key.visible = false; attempt = Trip.gain(attempt, 'mossman-key'); addPoints('pickup');
     game.points += 100; sound.play.powerup(); toast_('A key! Now find what it opens', 'good'); bubbles.say(wally.root, "A key, right on the bottom! What's it for?", 3.4);
   }
   if (!game.chestOpen && canReach(wally.pos.x, wally.pos.z, dive.depth > 1.2, chestSpot.x, chestSpot.z)) {
     if (game.hasKey) {
-      game.chestOpen = true; game.talisman = true; attempt = Trip.gain(attempt, 'talisman-earth'); game.points += 300;
+      game.chestOpen = true; game.talisman = true; attempt = Trip.gain(attempt, 'talisman-earth'); game.points += 300; addPoints('talisman');
       setTimeout(() => foundTalisman('talisman-earth', toast_), 1600);          // new: the sceptre card; already sealed: a random useful prize (revisit.js)
       sound.play.powerup(); wally.cheer = 1.2; fx.burst(new THREE.Vector3(chestSpot.x, chestSpot.y + 1, chestSpot.z), [0xb8e6ff, 0xff9ad8, 0xffffff], 40);
       if (!game.hadOpal) { toast_('The opal, the earth talisman!', 'good'); bubbles.say(wally.root, 'Crikey, the opal! Earth for the sceptre!', 3.6); }
@@ -350,7 +353,7 @@ function finish(won) {
   if (won) {
     sound.fanfare();
     const done = Trip.completeAttempt(progress.trip, attempt, { objectiveMet: true });
-    if (done.ok) progress.trip = done.trip;
+    if (done.ok) { progress.trip = done.trip; bankRun({ stars }); }
     progress = completeArea(progress, 'mossman', { score: total, stars });
   } else progress.trip = Trip.failAttempt(progress.trip, attempt).trip;
   saveProgress(progress);
@@ -391,3 +394,5 @@ function frame() {
 requestAnimationFrame(frame);
 if (params.has('play')) start();
 installMap({ pause: on => { if (game.running) game.paused = on; } });
+installBook({ pause: on => { if (game.running) game.paused = on; } });
+installGear({ scene, wally, food, mouth: () => wally.mouthPosition(), hasAir: true, underWater: () => dive.depth > 0.6, toast: (t, k) => toast_(t, k), openBook: () => openBook('wally'), running: () => game.running && !game.paused, pause: on => { if (game.running) game.paused = on; } });   // the carried items work here too (gear.js)

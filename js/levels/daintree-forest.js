@@ -11,6 +11,7 @@
 // Controls: Space (or A, or Jump) leaps for the first vine and lets go of a vine; holding
 // forward pumps the swing higher.
 
+import { addPoints } from '../points.js';
 import * as THREE from 'three';
 import { Trees } from '../trees.js';
 import { ModelSkin } from '../models.js';
@@ -227,7 +228,7 @@ export function vineCourse({ scene, models, quality, wally, sound, fx, bubbles, 
       if (st.state === 'swing' || st.state === 'fly') {
         const hy = wally.pos.y + HANG * 0.6;
         for (const p of fruit) if (!p.got && Math.hypot(p.s.z - wally.pos.z, p.s.y - hy) < PAWPAW_REACH) {
-          p.got = true; p.m.visible = false; st.gathered++; sound.play.powerup();
+          p.got = true; p.m.visible = false; st.gathered++; sound.play.powerup(); addPoints('pickup');
           toast(`A pawpaw for the King! ${st.gathered} of ${fruit.length}`, 'good');
           if (st.gathered === 1) bubbles.say(wally.root, 'A ripe pawpaw! The King might like these.', 3);
         }
