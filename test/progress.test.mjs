@@ -140,6 +140,11 @@ check('every area has a postcard', AREAS.every(a => typeof POSTCARDS[a.id] === '
   const back = P.readProgress(JSON.stringify(t.progress));
   check('badge, pier, shells, mangoes, Skyrail pass and ticket are saved', back.badge && back.pier && back.shells === 0 && back.mangoes === 5 && back.skyrail && back.boatTicket);
   check('an old save: its tokens and gold come across as Golden Mangoes, one for one', P.readProgress(JSON.stringify({ ...P.freshProgress(), mangoes: 2, tokens: 3, coins: 4 })).mangoes === 9);
+  check('a broken old save: negative or nonsense tokens and gold count for nothing', P.readProgress(JSON.stringify({ ...P.freshProgress(), mangoes: 2, tokens: -5, coins: 'lots' })).mangoes === 2);
+  check('and tokens and gold are never kept beside the mangoes', (q => q.tokens === 0 && q.coins === 0)(P.readProgress(JSON.stringify({ ...P.freshProgress(), tokens: 3, coins: 4 }))));
+  check('the exact price is enough; one short is not', P.buyBoatTicket({ ...P.freshProgress(), mangoes: P.BOAT_TICKET_PRICE }).ok && !P.buyBoatTicket({ ...P.freshProgress(), mangoes: P.BOAT_TICKET_PRICE - 1 }).ok);
+  check('selling no shells, or more than he has, never makes mangoes from nothing', P.sellToVendor({ ...P.freshProgress(), shells: 0 }, { shells: 5 }).gold === 0 && P.sellToVendor({ ...P.freshProgress(), shells: 2 }, { shells: -3 }).gold === 0);
+  check('gold found counts as mangoes', P.bankFinds(P.freshProgress(), { mangoes: 1, coins: 2 }).mangoes === 3);
   check('an older save that finished the park still has its badge', P.readProgress(JSON.stringify({ unlocked: ['park', 'esplanade'], stars: { park: 2 } })).badge);
 }
 

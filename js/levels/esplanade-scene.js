@@ -88,7 +88,7 @@ function addGround(scene, realism, q) {
   for (const [z0, z1] of [[MID - LENGTH / 2, PIER.z0], [PIER.z1, MID + LENGTH / 2]]) {
     const len = z1 - z0;
     const m = paved ? paved.clone() : concrete;
-    if (paved) for (const k of ['map', 'normalMap', 'roughnessMap']) { m[k] = paved[k].clone(); m[k].repeat.set(PATH.half * 2 / 2.4, len / 2.4); m[k].needsUpdate = true; }
+    if (paved) for (const k of ['map', 'normalMap', 'roughnessMap']) { if (!paved[k]) continue; m[k] = paved[k].clone(); m[k].repeat.set(PATH.half * 2 / 2.4, len / 2.4); m[k].needsUpdate = true; }   // (the phone set has fewer maps: skip any it lacks)
     const walk = shadowed(new THREE.Mesh(new THREE.BoxGeometry(PATH.half * 2, 0.25, len), m), false, true);
     walk.position.set(0, G - 0.125, (z0 + z1) / 2); scene.add(walk);
     // The seawall: a sloping concrete face from the sea floor up to the walk,

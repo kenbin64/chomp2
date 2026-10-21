@@ -56,6 +56,20 @@ check("Ken's values: ground 1, air 2, a pickup 1, a talisman 3", P.POINTS.ground
   check('a saved book keeps only real areas and whole points', b.areas.park === 12 && !('cane' in b.areas) && !('moon' in b.areas) && !('reef' in b.areas) && b.best === 99 && b.trips === 0);
   check('nonsense reads as a fresh book', P.readBook('junk').best === 0 && P.readBook(null).trips === 0);
 }
+{
+  // Edge cases.
+  const r = P.freshRun('park', 'easy');
+  check('half a pickup, a string count or an inherited name gives nothing', P.award(r, 'pickup', 0.5).gained === 0 && P.award(r, 'pickup', '2').gained === 0 && P.award(r, 'toString').gained === 0 && P.award(r, 'pickup', 0).gained === 0);
+  check('no run, no points', P.award(null, 'air').gained === 0);
+  check('an unknown level counts as intermediate', P.freshRun('reef', 'impossible').level === 'intermediate');
+  check('stars past three or below none are held to 0..3', P.bank(P.freshBook(), { ...P.freshRun('cane', 'easy'), pts: 0 }, { stars: 9 }).total === P.POINTS.area + 3 && P.bank(P.freshBook(), { ...P.freshRun('cane', 'easy'), pts: 0 }, { stars: -2 }).total === P.POINTS.area);
+  const odd = P.bank(P.freshBook(), { ...P.freshRun('cane', 'intermediate'), pts: 3 });
+  check('scores at a level always come out whole', Number.isInteger(odd.total) && Number.isInteger(odd.trip));
+  check('a revisit with nothing picked up changes nothing', P.bankExtra(odd.book, { ...P.freshRun('cane', 'hard'), pts: 0 }).gained === 0);
+  // The most a strong player could reach: every area at hard, a big run each, and every area gone back to in full.
+  let big = P.freshBook(); for (const a of P.AREAS) { big = P.bank(big, { ...P.freshRun(a, 'hard'), pts: 400 }, { stars: 3 }).book; big = P.bankExtra(big, { ...P.freshRun(a, 'hard'), pts: 9999 }).book; }
+  check('a huge honest trip still fits the whole-game board', validScore('trip', P.tripScore(big), 0), String(P.tripScore(big)));
+}
 check('the trip has its own leaderboard', LEVELS.includes('trip') && validScore('trip', 500, 0) && !validScore('trip', MAX_SCORE.trip + 1, 0));
 
 console.log(`${passed} passed, ${failed} failed`);

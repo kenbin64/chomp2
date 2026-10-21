@@ -6,7 +6,7 @@
 export const LEVELS = ['park', 'cane', 'esplanade', 'reef', 'kuranda', 'mossman', 'trip'];   // trip: the whole game's points (points-rules.js)
 // The most a run can believably score on each level, with room to spare. A
 // score above this is refused (a cheat or a bug, not a record).
-export const MAX_SCORE = { park: 600, cane: 2500, esplanade: 1200, reef: 800, kuranda: 700, mossman: 2000, trip: 5000 };
+export const MAX_SCORE = { park: 600, cane: 2500, esplanade: 1200, reef: 800, kuranda: 700, mossman: 2000, trip: 20000 };   // trip: room for a hard trip played well, every area gone back to (points-rules.js)
 export const BOARD_SIZE = 10;
 
 // A few words a family game should not show. Checked inside names too, with

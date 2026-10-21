@@ -42,7 +42,7 @@ const atLevel = (pts, run) => Math.round(pts * (DIFFICULTY_BONUS[run.level] || D
 
 // Points for something done in a run. Returns the new run and how many points it gave.
 export function award(run, kind, n = 1) {
-  if (!run || !(kind in POINTS) || !Number.isFinite(n) || n <= 0) return { run, gained: 0 };
+  if (!run || !Object.hasOwn(POINTS, kind) || !Number.isInteger(n) || n <= 0) return { run, gained: 0 };   // whole things only: a score must stay a whole number
   const gained = POINTS[kind] * n;
   return { run: { ...run, pts: run.pts + gained, counts: { ...run.counts, [kind]: (run.counts[kind] || 0) + n } }, gained };
 }
