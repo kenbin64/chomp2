@@ -3,7 +3,7 @@
 // controls, moves Wally, has the tourists throw, flies the food, checks what
 // was caught, missed or stolen, and keeps the quest and the screen up to date.
 
-import { isApp, installApp } from './menu.js';
+import { isApp, installApp, isInstalled } from './menu.js';
 import { guideArrow, nearest } from './guide-arrow.js';
 import { startRun, addPoints, bankRun, failRun } from './points.js';
 import { installGear, snorkelling, drainFactor } from './gear.js';
@@ -991,15 +991,24 @@ $('how').onclick = () => { $('how-card').hidden = false; };
 // how to play, the trailer). Installed as an app: straight to the title screen, with Play and How to play.
 // Pages that bring the player here mid-game (?play, ?map, ?go, testing) skip the landing page.
 {
-  const skip = ['play', 'map', 'go', 'noopening', 'bot', 'all'].some(k => params.has(k)) || (() => { try { return sessionStorage.getItem('chomp-landed') === '1'; } catch { return false; } })();
+  const skip = ['play', 'map', 'go', 'noopening', 'bot', 'all', 'app'].some(k => params.has(k)) || (() => { try { return sessionStorage.getItem('chomp-landed') === '1'; } catch { return false; } })();
   const toTitle = () => { try { sessionStorage.setItem('chomp-landed', '1'); } catch { /* fine */ } $('landing').hidden = true; $('title').hidden = false; };
-  if (isApp()) document.body.classList.add('as-app');                 // the app: no trailer or free-to-play line on the title
+  if (isApp()) { document.body.classList.add('as-app'); try { localStorage.setItem('chomp-installed', '1'); } catch { /* fine */ } }                 // the app: no trailer or free-to-play line on the title
   else if (!skip) { $('landing').hidden = false; $('title').hidden = true; }
   $('land-how').onclick = () => { $('how-card').hidden = false; };
   $('land-browser').onclick = toTitle;
+  // Once it is installed, the landing page in a browser tab offers Play instead of Install.
+  const installed = () => {
+    $('land-install').hidden = true; $('land-play').hidden = false;
+    const note = $('land-note'); note.hidden = false; note.textContent = 'Installed. You can also open Chomp 3D from its own icon.';
+  };
+  if (isInstalled()) installed();
+  addEventListener('chomp-installed', installed);
+  $('land-play').onclick = toTitle;
   $('land-install').onclick = async () => {
     const r = await installApp(), note = $('land-note');
-    if (r === 'unavailable') { note.hidden = false; note.textContent = 'This browser cannot install apps. Open this page in Chrome, Edge or Safari to install it, or play in your browser now.'; }
+    if (r === 'installed') installed();
+    if (r === 'unavailable') { note.hidden = false; note.textContent = isInstalled() ? 'Already installed: open Chomp 3D from its icon, or play here.' : 'This browser cannot install apps. Open this page in Chrome, Edge or Safari to install it, or play in your browser now.'; }
   };
 }
 $('how-close').onclick = () => { $('how-card').hidden = true; };
