@@ -10,11 +10,12 @@ function check(name, ok, detail = '') {
 
 check('the land is on his left going north, the sea on his right, all the way', [0, 200, 400, 700].every(z => !C.inWater(C.shoreX(z) + 5, z) && C.inWater(C.shoreX(z) - 5, z)));
 check('the coast has headlands and bays (not a straight line)', Math.max(...[0, 100, 200, 300, 400, 500].map(C.shoreX)) - Math.min(...[0, 100, 200, 300, 400, 500].map(C.shoreX)) > 10);
-check('the places come in order: Cairns, Palm Cove, Port Douglas, the river mouth', C.PLACES.every((p, i) => i === 0 || p[0] > C.PLACES[i - 1][0]) && C.placeAt(500) === 'Port Douglas' && C.placeAt(10) === 'Off Cairns');
+check('the places come in order: Cairns, Palm Cove, Port Douglas, the river mouth', C.PLACES.every((p, i) => i === 0 || p[0] > C.PLACES[i - 1][0]) && C.placeAt(230) === 'Port Douglas' && C.placeAt(10) === 'Off Cairns');
 {
   let p = { x: C.shoreX(0) - 10, z: 0 };
   for (let i = 0; i < 4000; i++) p = C.swimStep(p.x, p.z, C.shoreX(p.z + 0.25) - 10, p.z + 0.25);   // following the coast, as a player steers
   check('swimming north he reaches the river mouth', C.reachedMouth(p.z), p.z.toFixed(0));
+  check('the swim ends at the mouth, before the hills behind it, and when its name shows', C.END_Z < C.MOUTH_Z && C.placeAt(C.END_Z) === 'The Daintree River mouth' && !C.reachedMouth(C.END_Z - 1));
   let n = { x: C.shoreX(0) - 10, z: 0 };
   for (let i = 0; i < 4000; i++) n = C.swimStep(n.x, n.z, n.x, n.z + 0.25);   // holding straight north, never steering
   check('swimming straight on he slides round the bends and still gets there', C.reachedMouth(n.z) && C.inWater(n.x, n.z), n.z.toFixed(0));

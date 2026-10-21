@@ -7,7 +7,7 @@
 
 import { startRun, addPoints, bankRun, installScore } from '../points.js';
 import * as THREE from 'three';
-import { LENGTH, MOUTH_Z, BEACH, LANE, SURFACE_DROP, PLACES, shoreX, placeAt, swimStep, reachedMouth, BOATS, boatTarget, boatStep, inThrowRange } from './coast-rules.js';
+import { LENGTH, MOUTH_Z, BEACH, LANE, SURFACE_DROP, PLACES, shoreX, placeAt, swimStep, reachedMouth, END_Z, BOATS, boatTarget, boatStep, inThrowRange } from './coast-rules.js';
 import { SPACING, addToTrail, placeInLine, follow } from './rescue-rules.js';
 import { Wally } from '../wally.js';
 import { Food, randomKind, useJarModel, kennysJar } from '../food.js';
@@ -268,7 +268,7 @@ function drawHud() {
   $('score').textContent = game.points.toLocaleString(); $('caught').textContent = game.caught;
   $('energy-fill').style.width = `${Math.max(0, game.energy)}%`; $('feed').classList.toggle('red', inRedZone(game.energy));
   $('lives').textContent = '●'.repeat(Math.max(0, game.lives)) + '○'.repeat(Math.max(0, LIVES - game.lives));
-  $('job').textContent = `Lead the crocs up the coast to the Daintree (${Math.max(0, Math.round(MOUTH_Z - wally.pos.z))} m to go)`;
+  $('job').textContent = `Lead the crocs up the coast to the Daintree (${Math.max(0, Math.round(END_Z - wally.pos.z))} m to go)`;
 }
 // On to the next stage of the journey by itself: a fade to black, its name, and it carries on.
 function carryOn(page, title) {

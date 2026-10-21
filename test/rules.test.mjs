@@ -220,7 +220,8 @@ check('food passing under the deck carries on to the water', R.foodSurface(0, B.
   const secs = lvl => 100 / d('upright', true, lvl);
   check('Croc Park gives the most time on the meter', secs('park') > secs('esplanade') && secs('esplanade') > secs('reef'));
   check('running flat out in Croc Park, a full meter lasts over a minute', secs('park') > 60);
-  check('levels get harder in trip order', ['park', 'esplanade', 'reef', 'kuranda', 'daintree', 'mossman'].every((k, i, a) => i === 0 || L[k] >= L[a[i - 1]]));
+  check('levels get harder in trip order', ['park', 'esplanade', 'reef', 'kuranda', 'mossman'].every((k, i, a) => i === 0 || L[k] >= L[a[i - 1]]));
+  check('the Daintree finale is set by time (Ken): a full meter lasts about a minute, not 45 seconds', Math.abs(L.daintree / 1.15 - 45 / 60) < 0.01);
   check('no level given means the full rate', d('upright', true) === d('upright', true, 'reef'));
 }
 

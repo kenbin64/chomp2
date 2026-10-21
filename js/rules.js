@@ -53,7 +53,7 @@ export const ENERGY_MAX = 100;
 // How fast the feed-o-meter runs down on each level (Ken: the first level is
 // the training level, so it gives the most time, and each level after is a
 // little harder). 1 is the full rate.
-export const LEVEL_DRAIN = { park: 0.6, cane: 0.55, esplanade: 0.8, reef: 1, kuranda: 1.1, daintree: 1.15, mossman: 1.2 };
+export const LEVEL_DRAIN = { park: 0.6, cane: 0.55, esplanade: 0.8, reef: 1, kuranda: 1.1, daintree: 0.86, mossman: 1.2 };
 
 export function energyDrain(mode, moving, level = null) {
   const base = { upright: 1.6, fours: 2.6, swim: 1.3 }[mode] ?? 1.6;

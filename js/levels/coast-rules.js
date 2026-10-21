@@ -8,7 +8,7 @@
 // sees it), the open sea to the right. Distances
 // are compressed: the real way is about 100 km.
 
-export const LENGTH = 720;                  // metres from the start off Cairns to the river mouth
+export const LENGTH = 300;                  // metres from the start off Cairns to the river mouth (Ken, 2026-10-21: about a minute's swim)
 export const START_Z = 0, MOUTH_Z = LENGTH;
 export const BEACH = 6;                     // the sand between the water's edge and the trees
 export const LANE = 34;                     // how far out to sea he may swim from the water's edge
@@ -17,7 +17,7 @@ export const SURFACE_DROP = 0.45;
 // The water's edge (x) at z: a long coast with headlands and bays, the river mouth at the end.
 export const shoreX = z => 30 + Math.sin(z * 0.009) * 14 + Math.sin(z * 0.023 + 1) * 6 + Math.max(0, (z - (MOUTH_Z - 60)) * 0.15);
 // Places along the way (shown as they pass): [z, name].
-export const PLACES = [[-Infinity, 'Off Cairns'], [230, 'Palm Cove'], [470, 'Port Douglas'], [MOUTH_Z - 40, 'The Daintree River mouth']];
+export const PLACES = [[-Infinity, 'Off Cairns'], [100, 'Palm Cove'], [200, 'Port Douglas'], [MOUTH_Z - 40, 'The Daintree River mouth']];
 export const placeAt = z => PLACES.filter(p => z >= p[0]).pop()[1];
 
 export const inWater = (x, z) => x < shoreX(z);
@@ -33,7 +33,10 @@ export function swimStep(x, z, nx, nz) {
   if (ok(x, nz)) return { x, z: nz };
   return { x, z };
 }
-export const reachedMouth = z => z >= MOUTH_Z;
+// The swim ends as he comes up to the river mouth (Ken, 2026-10-21: not after he has swum on into
+// the hills behind it): as soon as the mouth's name shows.
+export const END_Z = MOUTH_Z - 40;
+export const reachedMouth = z => z >= END_Z;
 
 // The boats: each keeps alongside Wally, out to sea of him, a little ahead or behind, at a boat's
 // speed; they space themselves out along the line. A boat's place for Wally at (wx, wz):
