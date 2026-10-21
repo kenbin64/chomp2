@@ -100,8 +100,8 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
 6. **Mossman: the opal talisman** (earth), after Kuranda. He bungees down and grabs the opal. (The opal is
    Australia's national gemstone; Queensland's boulder opal comes from the outback, not Mossman, but a
    talisman can come from anywhere.)
-7. **The Daintree:** the King. (Was: no talisman here, the sceptre arrives full. **Open since Ken 2026-10-20:** the
-   fourth version of the finale has Wally find the final talisman in the rainforest.)
+7. **The Daintree:** the King. **The seventh talisman** (Ken, 2026-10-20), found on the vines in the
+   rainforest: the heart of the sceptre. (Was: no talisman here. **Open:** its name, element and look.)
 
 **Mangoes, pearls, shells and paw paws are not talismans (Ken, 2026-10-19):** they are things to trade, or
 things required to get items or talismans. (This replaces the mango, pearl and paw paw talismans.)
@@ -494,7 +494,9 @@ and keeps its ending where Ken has not changed it):**
    round it; the passengers call out "Help us, Wally!" Wally remembers: the King lives in the Daintree
    rainforest. He must bring the sceptre to the King to help the people. (Nobody is harmed.)
 3. **The rainforest, played:** Wally swings on vines into the rainforest, where he gets **the final
-   talisman** (**Open:** which one; see the talisman list, which has all six before the Daintree).
+   talisman**: **a seventh talisman** (Ken, 2026-10-20), new, the heart of the sceptre, found on the vines.
+   (**Open:** its name, element and look, and its setting on the sceptre.) He also gathers **paw paws** on
+   the vines, a gift for the King (Ken, 2026-10-20: kept).
 4. **The King, a cinematic:** Wally finds himself face to face with the King Croc on his throne. The King
    asks what his wish is. Ken's lines, close to his words:
    - **Wally:** "My wish is to save the people on the tour boat."
@@ -508,11 +510,11 @@ and keeps its ending where Ken has not changed it):**
      Croc Park to prove himself, so I used the last magic of the sceptre to turn you into your current
      self. Now that all the talismans are back on the sceptre, its full power is back, and I can grant your
      wish."
-5. **The rescue:** the sceptre brings the crocs of the park to the river; they push the boat off the
-   sandbar. (**Open:** played or cinematic.) The park's crocs are free in the Daintree.
-6. **Open (Ken to confirm):** whether the third version's ending stays as it is: Wally's choice to become a
+5. **The rescue, played (Ken, 2026-10-20):** the sceptre brings the crocs of the park to the river; Wally
+   leads them and they push the boat off the sandbar. The park's crocs are free in the Daintree.
+6. **The ending (Ken, 2026-10-20: keep, but change):** the third version's ending (Wally's choice to become a
    normal croc, Kenny sent by the King, the passengers' cheer, the celebration, Kenny's farewell and the last
-   line. And whether the paw paw gift for the King stays.
+   line) stays, with changes. **Open:** what changes.
 
 **The third version (Ken 2026-10-19; steps 1 to 5 replaced by the fourth version above):**
 1. **The river:** the Daintree, a river with crocs in it and rainforest on both banks. The tour boat, full
