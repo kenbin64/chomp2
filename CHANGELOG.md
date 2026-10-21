@@ -23,4 +23,7 @@ one is out.
 - **Respect and safety:** Acknowledgement of Country, a Be Crocwise line, a feedback and takedown form,
   privacy (nothing sold, saved on the device), free to play, PolyForm Strict licence.
 - **Updates:** an open game tells the player when a newer version is out, with an Update button.
+- **Feedback:** a form for feedback, problems and takedown notices, from the landing page, the title
+  screen and any pause; it reaches Ken by email without showing his address. A page for beta testers
+  (beta.html): installing, updates, what to try, known rough edges.
 - **Tests:** 27 unit suites and a browser suite run against the local and live sites.

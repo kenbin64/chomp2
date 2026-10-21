@@ -39,7 +39,7 @@
 <main>
   <a class="back" href="index.html">‹ Back to the game</a>
   <h1>Feedback and takedowns</h1>
-  <p class="lede">Ideas, corrections, something broken, how people or culture are shown, or a copyright or takedown notice: it all comes here, and Ken reads every message.</p>
+  <p class="lede"><a href="beta.html">Testing the beta? What to try is here.</a> Ideas, corrections, something broken, how people or culture are shown, or a copyright or takedown notice: it all comes here, and Ken reads every message.</p>
   <form id="form" novalidate>
     <label>What is it about?
       <select name="kind" id="kind">
@@ -68,6 +68,7 @@
 import { checkFeedback } from './js/feedback-rules.js';
 
 const $ = id => document.getElementById(id);
+const kindAsked = new URLSearchParams(location.search).get('kind'); if (kindAsked && [...document.querySelectorAll('#kind option')].some(o => o.value === kindAsked)) document.getElementById('kind').value = kindAsked;
 const from = new URLSearchParams(location.search).get('from') || (document.referrer ? new URL(document.referrer).pathname : '');
 const SAY = { kind: 'Choose what it is about.', message: 'Write a few words in the message.', reply: 'That email address does not look right. A takedown notice needs one, so we can answer.', empty: 'Write a few words in the message.' };
 const replyNote = () => { $('reply-note').textContent = $('kind').value === 'takedown' ? '(needed for a takedown notice)' : '(optional)'; };

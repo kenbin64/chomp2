@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1d27">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<title>Beta testers · Chomp 3D: Wally's Cairns Adventure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  /* The beta testers' page (Ken, 2026-10-21): what the beta is, what to try, and how to tell Ken. */
+  :root { --ink: #eaf4f2; --soft: #b9d3cf; --gold: #ffd166; --red: #c0392b; --green: #9be38f; --panel: rgba(12, 40, 56, 0.92); --line: rgba(255, 209, 102, 0.35); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0b1d27 linear-gradient(180deg, #0f3346, #0b1d27 420px); color: var(--ink); font: 17px/1.6 'Baloo 2', system-ui, sans-serif; }
+  main { max-width: 820px; margin: 0 auto; padding: 24px 16px 64px; }
+  a { color: var(--gold); }
+  .back { display: inline-block; margin-bottom: 18px; font-weight: 800; text-decoration: none; }
+  h1 { margin: 0; font-size: clamp(36px, 8vw, 60px); line-height: 1.05; color: var(--gold); text-shadow: 0 4px 0 var(--red), 0 8px 18px rgba(0, 0, 0, 0.4); }
+  .badge { display: inline-block; margin: 8px 0 0; padding: 2px 12px; border-radius: 999px; background: var(--gold); color: #102030; font-weight: 800; }
+  .lede { font-size: 19px; color: var(--soft); margin: 12px 0 22px; }
+  section { background: var(--panel); border: 2px solid var(--line); border-radius: 20px; padding: 18px 22px; margin: 16px 0; }
+  h2 { margin: 0 0 6px; font-size: 26px; color: var(--gold); line-height: 1.2; }
+  ul, ol { margin: 6px 0; padding-left: 22px; } li { margin: 4px 0; }
+  .big { display: inline-block; margin: 8px 0 4px; padding: 12px 22px; border-radius: 999px; background: var(--gold); color: #102030; font-weight: 800; font-size: 19px; text-decoration: none; }
+  .fine { font-size: 14px; color: var(--soft); }
+  #ver:empty { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="index.html">‹ Back to the game</a>
+  <h1>Thank you for testing</h1>
+  <p class="badge">Beta <span id="ver"></span></p>
+  <p class="lede">Chomp 3D: Wally's Cairns Adventure is in beta. You are among the first to play it, and what you find makes it better before everyone else arrives. It is free, a portfolio piece by Ken Bingham, not a commercial product.</p>
+
+  <section>
+    <h2>Found something? Tell Ken</h2>
+    <p>Anything broken, confusing, too hard, too easy, or just an idea: every message is read. Say which device and browser you used, and which level you were in.</p>
+    <a class="big" href="feedback.html?kind=bug&amp;from=beta">Send feedback or report a problem</a>
+    <p class="fine">You can also reach the form from the landing page, the title screen and any pause (Paws) in the game.</p>
+  </section>
+
+  <section>
+    <h2>Updates come often</h2>
+    <p>In the beta there will be many updates, sometimes several a day. When a new one is out, the game shows an <b>Update ready</b> card between runs: tap <b>Update</b>. Your game, outfits and points are kept.</p>
+    <p class="fine">The version you are playing is on the title screen and on the About page. Put it in your message when you report a problem.</p>
+  </section>
+
+  <section>
+    <h2>Install it like an app</h2>
+    <ul>
+      <li><b>Android, or Chrome and Edge on a computer:</b> on the first page, tap <b>Install the app</b>.</li>
+      <li><b>iPhone and iPad:</b> in Safari, tap <b>Share</b>, then <b>Add to Home Screen</b>.</li>
+      <li>Or just play in the browser: the link is under the buttons on the first page.</li>
+    </ul>
+    <p>It plays best on a phone held sideways.</p>
+  </section>
+
+  <section>
+    <h2>Things to look for</h2>
+    <ol>
+      <li><b>Getting started:</b> one tap on Play should put you in the game. Was anything in the way?</li>
+      <li><b>The controls:</b> the green orb (drag to go and turn, tap to jump on a phone; hover and click on a computer), the mouse (click the game, then hold left to go), the keys, or a game controller. Which felt best? What felt clumsy?</li>
+      <li><b>Each level:</b> Croc Park, the cane fields, the Esplanade, the reef, Kuranda and the zip line, Mossman Gorge, the Daintree and the rescue. Where did you get stuck, lost, or bored?</li>
+      <li><b>Different screens:</b> a phone upright and sideways, a tablet, a computer. Did buttons cover the game anywhere?</li>
+      <li><b>Points and leaderboards:</b> does it make you want another go?</li>
+      <li><b>The people and places:</b> if you know Cairns, or how a culture is shown, does anything look wrong? Please say.</li>
+      <li><b>Getting stuck:</b> anywhere Wally stops dead against something you cannot see, falls through the ground, or cannot get out.</li>
+      <li><b>Buttons and cards:</b> any that do nothing, cover the game, or will not close.</li>
+      <li><b>Saving:</b> close the game and come back: are your outfits, hats, points and progress still there?</li>
+      <li><b>Words:</b> spelling mistakes, or anything that reads oddly.</li>
+      <li><b>Sound:</b> too loud, too quiet, or missing.</li>
+    </ol>
+    <a class="big" href="feedback.html?kind=bug&amp;from=beta">Tell Ken what you found</a>
+  </section>
+
+  <section>
+    <h2>Known rough edges</h2>
+    <ul>
+      <li>On older or low-power phones it may run slowly; tell Ken which phone.</li>
+      <li>The music is a placeholder, to be replaced.</li>
+      <li>Some levels are still being tuned for difficulty and length.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Send feedback any time</h2>
+    <p>Big or small, it all helps. <a href="feedback.html?kind=feedback&amp;from=beta">Open the feedback form</a>.</p>
+  </section>
+
+  <section>
+    <h2>Your privacy</h2>
+    <p>Your game saves on your own device. Nothing about you is sold or shared, and there are no ads or tracking. Leaderboards keep only the name you choose and your score. <a href="about.html#privacy">More about privacy</a>.</p>
+  </section>
+</main>
+<script>fetch('version.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(v => { if (v && v.number) document.getElementById('ver').textContent = v.number; }).catch(() => {});</script>
+</body>
+</html>
