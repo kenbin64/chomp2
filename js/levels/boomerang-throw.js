@@ -22,16 +22,20 @@
 
 import * as THREE from 'three';
 import { fly, outcome, catchableAt, sampleAt, HAND_Y, TILT_RANGE, IDEAL_TILT, IDEAL_FORCE } from './boomerang-physics.js';
-import { THROW_SPOT, GUIDE_SPOT } from './kuranda-rules.js';
+import { THROW_SPOT, GUIDE_SPOT, GUIDE_FROM, THROWERS } from './kuranda-rules.js';
+import { ModelSkin } from '../models.js';
 
 const EYE = 1.75;                     // Wally's eyes, above the ground
 const SWING = 1.7;                    // seconds for the force meter to swing up and back
-const GUIDE = 'Guide';
+const GUIDE = 'Instructor';
+const WALK_UP = 3.2;                  // seconds for the instructor to walk up to Wally
 
-// The guide's words. (Kuranda is Djabugay country; the guide's portrayal is to be
-// checked with the community, MASTER.md. Plain and warm, no put-on accent.)
+// The instructor: an Aboriginal Australian man, a Djabugay local (Ken: culturally
+// correct). His portrayal is to be checked with the community, MASTER.md. Plain and
+// warm words, no put-on accent.
 const OPENING = [
-  { who: GUIDE, text: "G'day, Wally. Welcome to Djabugay country. Want to learn the boomerang?", t: 3.6 },
+  { who: null, text: '', t: 4.8, wide: true },                    // the clearing, visitors throwing
+  { who: GUIDE, text: "G'day, Wally. Welcome to Djabugay country. I teach the boomerang here. Want to learn?", t: 4.4, walk: true },
   { who: 'Wally', text: "Too right! I've always wanted a go.", t: 2.4 },
   { who: GUIDE, text: 'Watch first. Hold it near upright, tipped out a little. Throw it firm, and let it spin.', t: 3.8, demo: true },
   { who: GUIDE, text: 'See how it comes round? It does the work. You just wait for it.', t: 3.4 },
@@ -92,7 +96,7 @@ function returningForces(tilt) {
   return ok.length ? [ok[0], ok[ok.length - 1]] : null;
 }
 
-export function boomerangThrow({ scene, camera, wally, sound, models = new Map(), onTalisman = () => {}, onDone = () => {} }) {
+export function boomerangThrow({ scene, camera, wally, sound, models = new Map(), people = [], onTalisman = () => {}, onDone = () => {} }) {
   const ui = buildUi();
   const held = boomerangMesh(), flying = boomerangMesh();
   const spinner = new THREE.Group(); spinner.add(flying);
@@ -100,8 +104,11 @@ export function boomerangThrow({ scene, camera, wally, sound, models = new Map()
   held.visible = false; held.scale.setScalar(0.55);                 // in his hand, not filling the view
   if (!camera.parent) scene.add(camera);                          // so the held boomerang, a child of the camera, is drawn
   camera.add(held);
-  const guide = models.get('guide-djabugay') ? models.get('guide-djabugay').scene.clone(true) : null;   // Ken's model, when it is made
-  if (guide) { guide.position.set(GUIDE_SPOT.x, 0, GUIDE_SPOT.z); guide.rotation.y = -THROW_SPOT.aim; guide.visible = false; scene.add(guide); }
+  // The instructor, from Ken's model when it is made (no stand-in: he is a Djabugay man).
+  const guideGltf = models.get('guide-djabugay');
+  const guide = guideGltf ? standing(scene, new ModelSkin(guideGltf, { height: 1.78 })) : null;
+  if (guide) { guide.root.position.set(GUIDE_SPOT.x, 0, GUIDE_SPOT.z); faceToward(guide.root, THROW_SPOT.x, THROW_SPOT.z); }
+  const throwers = makeThrowers(scene, people);
   const talisman = makeTalisman(models); scene.add(talisman);
 
   const s = { active: false, phase: 'off', t: 0, line: 0, tilt: 0, force: 0, swingT: 0, path: null, at: 0, result: null, throws: 0,
@@ -156,15 +163,22 @@ export function boomerangThrow({ scene, camera, wally, sound, models = new Map()
     s.active = true; s.has = !!hasTalisman; s.throws = 0; s.line = 0; s.caught = false;
     ui.ui.hidden = false;
     wally.pos.set(THROW_SPOT.x, 0, THROW_SPOT.z); wally.root.position.copy(wally.pos); wally.facing = Math.PI - THROW_SPOT.aim; wally.vel.set(0, 0, 0);
-    if (guide) guide.visible = true;
+    if (guide) { guide.root.position.set(GUIDE_SPOT.x, 0, GUIDE_SPOT.z); faceToward(guide.root, THROW_SPOT.x, THROW_SPOT.z); }
     s.demoPath = fly({ x: GUIDE_SPOT.x, y: HAND_Y, z: GUIDE_SPOT.z }, THROW_SPOT.aim, IDEAL_TILT, IDEAL_FORCE);
     if (s.has) { enter('tilt'); say(GUIDE, 'Back for another go? Go on then.'); return; }
+    if (guide) { guide.root.position.set(GUIDE_FROM.x, 0, GUIDE_FROM.z); faceToward(guide.root, THROW_SPOT.x, THROW_SPOT.z); }   // across the clearing, to walk up
+    throwers.soon();                                               // the visitors throw in the wide shot
     enter('opening'); say(OPENING[0].who, OPENING[0].text);
   }
-  function skipOpening() { if (s.phase === 'opening') { flyer.visible = false; s.pressed = false; enter('tilt'); } }   // the skip press is not also a throw
+  function skipOpening() {
+    if (s.phase !== 'opening') return;
+    flyer.visible = false; s.pressed = false;                       // the skip press is not also a throw
+    if (guide) { guide.root.position.set(GUIDE_SPOT.x, 0, GUIDE_SPOT.z); faceToward(guide.root, THROW_SPOT.x, THROW_SPOT.z); }
+    enter('tilt');
+  }
   function finish() {
     s.active = false; s.phase = 'off'; ui.ui.hidden = true; ui.skip.hidden = true; held.visible = false; flyer.visible = false; talisman.visible = false;
-    wally.root.visible = true; if (guide) guide.visible = false;
+    wally.root.visible = true;
     onDone(s.caught);
   }
 
@@ -172,15 +186,29 @@ export function boomerangThrow({ scene, camera, wally, sound, models = new Map()
   function updateOpening(dt) {
     s.t += dt;
     const L = OPENING[s.line];
+    if (L.wide) {                                                   // a cut to the clearing from over the archway, easing in
+      const u = Math.min(1, s.t / L.t), e = u * u * (3 - 2 * u);
+      camera.position.set(6.5 + e * 6, 8 - e * 4.6, 111.5 - e * 2);    // from just inside the archway (clear of its beam) in toward the visitors
+      s.look.set(21, 1.3, 107); camera.lookAt(s.look);
+    } else if (L.walk && guide) {                                   // the instructor walks up to Wally
+      const u = Math.min(1, s.t / WALK_UP);
+      guide.root.position.set(GUIDE_FROM.x + (GUIDE_SPOT.x - GUIDE_FROM.x) * u, 0, GUIDE_FROM.z + (GUIDE_SPOT.z - GUIDE_FROM.z) * u);
+      faceToward(guide.root, u < 1 ? GUIDE_SPOT.x : THROW_SPOT.x, u < 1 ? GUIDE_SPOT.z : THROW_SPOT.z);
+      guide.play(u < 1 ? 'walk' : 'wave', { alternatives: ['idle'] });
+      s.look.lerp(new THREE.Vector3(guide.root.position.x, 1.5, guide.root.position.z), Math.min(1, dt * 3));
+    }
+    if (L.demo && guide && s.t < dt * 1.5) guide.play('throw', { once: true, fit: 0.6, alternatives: ['idle'] });
     if (L.demo) {
       const p = sampleAt(s.demoPath, Math.max(0, s.t - 0.6));
       flyer.visible = s.t > 0.6 && s.t - 0.6 < s.demoPath[s.demoPath.length - 1].t;
       placeFlyer(s.demoPath, Math.max(0, s.t - 0.6), dt);
       s.look.lerp(new THREE.Vector3(p.x, p.y, p.z), Math.min(1, dt * 3));
-    } else s.look.lerp(new THREE.Vector3(GUIDE_SPOT.x, 1.5, GUIDE_SPOT.z), Math.min(1, dt * 2));
-    // Behind and to the left of Wally, so both he and the guide are in the shot, and the clearing beyond.
-    camera.position.lerp(new THREE.Vector3(THROW_SPOT.x - 4.5, 2.6, THROW_SPOT.z + 3.5), Math.min(1, dt * 2));
-    camera.lookAt(s.look);
+    } else if (!L.wide && !(L.walk && guide)) s.look.lerp(new THREE.Vector3(GUIDE_SPOT.x, 1.5, GUIDE_SPOT.z), Math.min(1, dt * 2));
+    if (!L.wide) {
+      // Behind and to the left of Wally, so both he and the instructor are in the shot, and the clearing beyond.
+      camera.position.lerp(new THREE.Vector3(THROW_SPOT.x - 4.5, 2.6, THROW_SPOT.z + 3.5), Math.min(1, dt * (s.line === 1 && s.t < 0.1 ? 60 : 2)));
+      camera.lookAt(s.look);
+    }
     const long = L.demo ? Math.max(L.t, s.demoPath[s.demoPath.length - 1].t + 0.8) : L.t;
     if (s.t >= long) {
       s.line++; s.t = 0; flyer.visible = false;
@@ -270,15 +298,7 @@ export function boomerangThrow({ scene, camera, wally, sound, models = new Map()
   }
 
   // The boomerang in flight: its plane leaning by the tilt, turned to its heading, spinning.
-  function placeFlyer(path, t, dt) {
-    const a = sampleAt(path, t), b = sampleAt(path, t + 0.05);
-    flyer.position.set(a.x, a.y, a.z);
-    const heading = Math.atan2(b.x - a.x, -(b.z - a.z));            // 0 = -z, toward +x
-    // Its flat faces (local z) point to the left of its heading; then it leans by the tilt,
-    // rolling about its flight line (local x), so the faces point left and up, as the lift does.
-    flyer.rotation.set(0, -heading - Math.PI / 2, 0); flyer.rotateX(-a.tilt * Math.PI / 180);
-    spinner.rotation.z += dt * 30;
-  }
+  const placeFlyer = (path, t, dt) => poseFlight(flyer, spinner, path, t, dt);
   function drawAngle(hint) {
     ui.needle.setAttribute('transform', `rotate(${s.tilt.toFixed(1)})`);
     ui.angleNum.textContent = `${Math.round(s.tilt)}°`;
@@ -289,7 +309,11 @@ export function boomerangThrow({ scene, camera, wally, sound, models = new Map()
     get active() { return s.active; },
     get phase() { return s.phase; },
     begin,
+    // Every frame, the station or not: the visitors throw while nobody is at the mark, and
+    // stop to watch while Wally has his turn.
     update(dt) {
+      throwers.update(dt, !s.active || s.phase === 'opening');
+      if (guide) { if (!s.active) guide.play('idle'); guide.update(dt); }
       if (!s.active) return;
       if (s.phase === 'opening') updateOpening(dt);
       else if (s.phase === 'tilt') updateTilt(dt);
@@ -302,6 +326,63 @@ export function boomerangThrow({ scene, camera, wally, sound, models = new Map()
     testThrow(tilt, force) { s.tilt = tilt; s.force = force; release(); return s.result; },
     testCatch() { s.pressed = true; },
     get debug() { return { phase: s.phase, at: s.at, closestAt: s.path && s.result ? s.path[s.result.at].t : null, kind: s.result && s.result.kind, ring: !ui.catchRing.hidden }; },
+  };
+}
+
+// The boomerang in flight: its plane leaning by the tilt, turned to its heading, spinning.
+function poseFlight(group, spinner, path, t, dt) {
+  const a = sampleAt(path, t), b = sampleAt(path, t + 0.05);
+  group.position.set(a.x, a.y, a.z);
+  const heading = Math.atan2(b.x - a.x, -(b.z - a.z));              // 0 = -z, toward +x
+  // Its flat faces (local z) point to the left of its heading; then it leans by the tilt,
+  // rolling about its flight line (local x), so the faces point left and up, as the lift does.
+  group.rotation.set(0, -heading - Math.PI / 2, 0); group.rotateX(-a.tilt * Math.PI / 180);
+  spinner.rotation.z += dt * 30;
+}
+
+// A person in a holder: fitting a model to its height lifts its own root so its feet are
+// on the ground, so it is the holder that is placed and turned. Returns the skin, with
+// root swapped for the holder (its animation still plays on the model inside).
+function standing(scene, skin) {
+  const holder = new THREE.Group(); holder.add(skin.root); scene.add(holder);
+  return { play: (...a) => skin.play(...a), update: dt => skin.update(dt), root: holder };
+}
+
+// A model turned to face a point on the ground (models face +z).
+function faceToward(root, x, z) { root.rotation.y = Math.atan2(x - root.position.x, z - root.position.z); }
+
+// The visitors learning at the far side of the clearing (Ken: other people throwing
+// boomerangs), from the game's cast: each throws (the throw animation), the boomerang
+// flies its loop by the same physics and comes back, and they throw again.
+function makeThrowers(scene, people) {
+  const list = THROWERS.slice(0, people.length).map((w, i) => {
+    const gltf = people[people.length - 1 - i];                   // from the end of the cast, away from the first street groups
+    const tall = gltf.userData && gltf.userData.tall, h = Array.isArray(tall) ? (tall[0] + tall[1]) / 2 : 1.72;
+    const skin = standing(scene, new ModelSkin(gltf, { height: h }));
+    skin.root.position.set(w.x, 0, w.z);
+    skin.root.rotation.y = Math.PI - w.aim;                         // facing the way they throw
+    const spinner = new THREE.Group(); spinner.add(boomerangMesh());
+    const flight = new THREE.Group(); flight.add(spinner); flight.visible = false; scene.add(flight);
+    const from = { x: w.x + Math.cos(w.aim) * 0.35, y: HAND_Y, z: w.z + Math.sin(w.aim) * 0.35 };
+    const path = fly(from, w.aim, IDEAL_TILT, IDEAL_FORCE), back = path[outcome(path, from).at].t;
+    return { skin, spinner, flight, path, back, t: -1.5 - i * 2.5 };
+  });
+  return {
+    soon() { list.forEach((w, i) => { if (w.t < 0 || w.t > w.back) w.t = -0.4 - i * 1.6; }); },
+    update(dt, throwing) {
+      for (const w of list) {
+        if (throwing || (w.t >= 0 && w.t < w.back)) w.t += dt;      // a boomerang in the air always finishes its loop
+        if (w.t >= 0 && w.t < 0.1) w.skin.play('throw', { once: true, fit: 0.6, alternatives: ['idle'] });
+        const flying = w.t > 0.35 && w.t < w.back;
+        w.flight.visible = flying;
+        if (flying) poseFlight(w.flight, w.spinner, w.path, w.t - 0.35, dt);
+        else if (w.t >= w.back) {                                   // caught: a moment, then the next throw
+          w.skin.play(w.t < w.back + 1.2 ? 'cheer' : 'idle', { alternatives: ['idle'] });
+          if (w.t > w.back + 3) w.t = -1;
+        } else if (w.t < 0) w.skin.play('idle');
+        w.skin.update(dt);
+      }
+    },
   };
 }
 

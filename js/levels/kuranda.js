@@ -38,7 +38,7 @@ import { startQuest, questStep } from '../sidequest.js';
 import { DayNight } from '../daynight.js';
 import { StreetLamps } from '../lamps.js';
 import { buildKuranda, STREET, STALLS, SHOP, VENDOR, TRAIL_Z } from './kuranda-scene.js';
-import { inClearing, nearThrowSpot } from './kuranda-rules.js';
+import { inClearing, enteredClearing, CLEARING, ENTRY } from './kuranda-rules.js';
 import { boomerangThrow } from './boomerang-throw.js';
 import * as Trip from '../trip-rules.js';
 import { installVendor, openVendor } from '../vendormodal.js';
@@ -54,7 +54,7 @@ const STARS = [60, 95, 130];
 POSTCARDS.kuranda = POSTCARDS.kuranda || 'Kuranda sits in the rainforest above Cairns.';
 
 // ---- The ground: the village street, flat, between the stalls, and the boomerang clearing --
-const onFoot = (x, z) => Math.abs(x) <= STREET.half + 0.6 || inClearing(x, z, -0.6);
+const onFoot = (x, z) => Math.abs(x) <= STREET.half + 0.6 || inClearing(x, z, 0.4);   // the clearing overlaps the street edge: no gap to stick in
 setGround({
   stand: () => ({ y: G, surface: 'land' }),
   move: (x, z, nx, nz) => {
@@ -175,9 +175,13 @@ game.stationAway = true;                                         // he has to st
 
 // The boomerang throw, halfway down the street (Ken, 2026-10-20): first person, angle
 // and force, the physics decides; the first catch wins the air talisman.
-const station = boomerangThrow({ scene, camera, wally, sound, models,
+const station = boomerangThrow({ scene, camera, wally, sound, models, people: peopleModels(models),
   onTalisman: () => { game.hasAir = true; attempt = Trip.gain(attempt, 'talisman-air'); game.points += 300; wally.cheer = 1.2; },
-  onDone: caught => { $('hud').hidden = false; if (caught && game.hasAir) bookFound('talisman-air'); cam.yaw = Math.PI; },
+  // Back at the archway, facing the street, ready to walk on (he has to step out before it starts again).
+  onDone: caught => {
+    $('hud').hidden = false; if (caught && game.hasAir) bookFound('talisman-air');
+    wally.pos.set(CLEARING.x0 + 0.5, G, ENTRY.z); wally.root.position.copy(wally.pos); wally.facing = Math.PI * 1.5; cam.yaw = Math.PI / 2;
+  },
 });
 window.chomp.station = station;
 
@@ -291,9 +295,9 @@ function step(dt, t) {
     if (e.type === 'flee') { game.scared++; toast_('Too close! They ran off with their snacks', 'bad'); }
     if ((e.type === 'flee' || e.type === 'empty') && !e.cluster.counted) { e.cluster.counted = true; game.groupsDone++; }
   }
-  // The boomerang mark: stepping onto it starts the throw.
-  if (nearThrowSpot(wally.pos.x, wally.pos.z)) { if (game.stationAway && !game.done) { game.stationAway = false; $('hud').hidden = true; station.begin(game.hasAir); return; } }
-  else game.stationAway = true;
+  // The boomerang clearing (Ken): walking in under the archway starts the throw, in first person.
+  if (enteredClearing(wally.pos.x, wally.pos.z)) { if (game.stationAway && !game.done) { game.stationAway = false; $('hud').hidden = true; station.begin(game.hasAir); return; } }
+  else if (!inClearing(wally.pos.x, wally.pos.z)) game.stationAway = true;
 
   // Every group fed, then a full tank, then the trail opens (Ken's rule for every level).
   if (!game.ready && game.groupsDone >= game.groupsTotal) {
@@ -374,6 +378,7 @@ function step(dt, t) {
 // ---- Camera: on a leash behind him ---------------------------------------------------
 const camTarget = new THREE.Vector3();
 function followCamera(dt) {
+  if (window.chomp.camHold) { window.chomp.camHold(camera); return; }   // testing: a fixed camera
   camTarget.lerp(wally.pos.clone().add(new THREE.Vector3(0, 1.6, 0)), Math.min(1, dt * 6));
   cam.manual = Math.max(0, cam.manual - dt);
   if (game.running) {
@@ -498,8 +503,9 @@ function frame() {
   if (game.running && !game.paused && !station.active) step(dt, t);
   bubbles.update(dt); fx.update(dt, t);
   world.update(t);
-  if (station.active) { if (!game.paused) station.update(dt); }      // the boomerang throw has the camera
-  else followCamera(dt);
+  if (!game.paused) station.update(dt);                           // the clearing's visitors, and the throw when it is on
+  if (!station.active) followCamera(dt);                           // while it is on, the throw has the camera
+  else wally.update(dt, { forward: 0, right: 0, jump: false, fours: false }, cam.yaw, 1);   // standing easy at the mark, not frozen mid-stride
   intro.update(dt, camera);                       // the first-visit fly-over, when it plays
   { const night = daynight.update(game.paused ? 0 : dt, camera); lamps.update(dt, night, wally.pos); world.night(night); }
   fpsWatch(dt);

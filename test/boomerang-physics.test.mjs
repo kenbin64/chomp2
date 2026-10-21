@@ -2,7 +2,7 @@
 // Run:  node test/boomerang-physics.test.mjs
 
 import * as B from '../js/levels/boomerang-physics.js';
-import { CLEARING, THROW_SPOT, GUIDE_SPOT, inClearing, nearThrowSpot } from '../js/levels/kuranda-rules.js';
+import { CLEARING, THROW_SPOT, GUIDE_SPOT, THROWERS, inClearing, nearThrowSpot } from '../js/levels/kuranda-rules.js';
 
 let passed = 0, failed = 0;
 function check(name, ok, detail = '') {
@@ -88,6 +88,10 @@ check('a flatter throw needs less force: thrown as hard as an upright one it cli
   }
   check('every throw that comes back stays over the clearing', backs > 5 && outside === 0, `${outside} of ${backs} leave it`);
   check('the thrower stands in the clearing', nearThrowSpot(THROW_SPOT.x, THROW_SPOT.z) && inClearing(THROW_SPOT.x, THROW_SPOT.z));
+  check('the visitors\' throws come back to them, over the clearing', THROWERS.every(w => { const from = { x: w.x, y: B.HAND_Y, z: w.z }, p = B.fly(from, w.aim, B.IDEAL_TILT, B.IDEAL_FORCE);
+    const o = B.outcome(p, from);                                 // up to the catch: they catch it there
+    return o.kind === 'back' && p.slice(0, o.at + 1).every(q => inClearing(q.x, q.z, 3)); }));
+  check('the visitors stand in the clearing, away from Wally\'s mark', THROWERS.every(w => inClearing(w.x, w.z) && Math.hypot(w.x - THROW_SPOT.x, w.z - THROW_SPOT.z) > 8));
   check('the guide stands beside him, not in the throw', Math.hypot(GUIDE_SPOT.x - THROW_SPOT.x, GUIDE_SPOT.z - THROW_SPOT.z) < 2.5 && GUIDE_SPOT.z > THROW_SPOT.z);
 }
 

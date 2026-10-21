@@ -14,7 +14,7 @@ import { bandCells } from '../forest-tiles.js';
 import { Trees } from '../trees.js';
 import { Grass } from '../grass.js';
 import { surfaceMaterial, applySky } from '../realism.js';
-import { CLEARING, THROW_SPOT, inClearing } from './kuranda-rules.js';
+import { CLEARING, THROW_SPOT, ENTRY, inClearing } from './kuranda-rules.js';
 
 export const STREET = { half: 5, z0: -10, z1: 230, ground: 0 };
 export const TRAIL_Z = 222;                        // the gate onto the Barron Falls trail
@@ -74,14 +74,45 @@ function boomerangClearing(scene, rnd) {
   // The throwing mark: a ring of river stones.
   const stone = mat(0x8a857a);
   for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, s = shadowed(new THREE.Mesh(new THREE.DodecahedronGeometry(0.14 + rnd() * 0.06, 0), stone)); s.position.set(THROW_SPOT.x + Math.cos(a) * 0.9, 0.06, THROW_SPOT.z + Math.sin(a) * 0.9); s.scale.y = 0.6; dressing.add(s); }
-  // The sign at the street.
+  // The way in (Ken: a big sign, and easy for Wally to get to): a timber archway over the
+  // open side of the clearing, its board facing the street; and a tall sign on the street
+  // edge before it, facing Wally as he comes down the street, pointing him in.
   const timber = mat(0x6e4a2c);
-  const post = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.2, 0.16), timber)); post.position.set(CLEARING.x0 + 0.6, 1.1, CLEARING.z1 - 3); dressing.add(post);
-  const sc = document.createElement('canvas'); sc.width = 512; sc.height = 128;
-  { const sg = sc.getContext('2d'); sg.fillStyle = '#3d2a18'; sg.fillRect(0, 0, 512, 128); sg.fillStyle = '#f6e7c4'; sg.textAlign = 'center'; fitText(sg, 'Boomerang throwing', 256, 80, 470, 56, 'bold {size}px "Trebuchet MS", sans-serif'); }
-  const st = new THREE.CanvasTexture(sc); st.colorSpace = THREE.SRGBColorSpace;
-  const board = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.55), mat(0xffffff, { map: st })); board.position.set(CLEARING.x0 + 0.5, 2, CLEARING.z1 - 3); board.rotation.y = -Math.PI / 2; dressing.add(board);
+  const ez = ENTRY.z, half = ENTRY.half;
+  for (const s of [-1, 1]) { const p = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.45, 5.6, 0.45), timber)); p.position.set(CLEARING.x0 + 0.3, 2.8, ez + s * half); dressing.add(p); }
+  const beam = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, half * 2 + 1.2), timber)); beam.position.set(CLEARING.x0 + 0.3, 5.6, ez); dressing.add(beam);
+  const arch = new THREE.Mesh(new THREE.PlaneGeometry(half * 2 - 0.4, 1.5), mat(0xffffff, { map: signBoard('BOOMERANG THROWING', 'Learn from a local guide', 0) }));
+  arch.position.set(CLEARING.x0 + 0.02, 4.6, ez); arch.rotation.y = -Math.PI / 2; dressing.add(arch);          // faces the street (-x)
+  // Big enough to read from well up the street, hung high over its edge, clear of heads.
+  const pole = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.34, 5.4, 0.34), timber)); pole.position.set(STREET.half - 0.1, 2.7, ez - half - 9); dressing.add(pole);
+  const street = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 1.75), mat(0xffffff, { map: signBoard('Boomerang throwing', 'This way', -1) }));
+  street.position.set(STREET.half - 2.8, 4.3, ez - half - 9.2); street.rotation.y = Math.PI; dressing.add(street);   // faces back up the street (-z)
   scene.add(dressing);
+}
+
+// A painted board: big words, a smaller line, a boomerang, and an arrow when arrow is -1
+// (pointing left as seen from the front) or 1 (right).
+function signBoard(text, sub, arrow) {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 320; const g = c.getContext('2d');
+  g.fillStyle = '#3d2a18'; g.fillRect(0, 0, 1024, 320);
+  g.strokeStyle = '#d9a441'; g.lineWidth = 14; g.strokeRect(14, 14, 996, 292);
+  // A boomerang at each end, ochre with white dots.
+  for (const [x, flip] of [[120, 1], [904, -1]]) {
+    g.save(); g.translate(x, 160); g.scale(flip, 1); g.rotate(-0.5);
+    g.fillStyle = '#c8742c'; g.beginPath(); g.moveTo(-70, 30); g.quadraticCurveTo(0, -60, 70, 30); g.lineTo(58, 44); g.quadraticCurveTo(0, -30, -58, 44); g.closePath(); g.fill();
+    g.fillStyle = '#f6e7c4'; for (let i = -4; i <= 4; i++) { const x = i * 13; g.beginPath(); g.arc(x, 22 - 40 * (1 - (x / 70) ** 2), 4, 0, Math.PI * 2); g.fill(); }   // dots along the arm
+    g.restore();
+  }
+  g.fillStyle = '#ffd166'; g.textAlign = 'center';
+  fitText(g, text, 512, 150, 640, 110, 'bold {size}px "Trebuchet MS", sans-serif');
+  g.fillStyle = '#f6e7c4';
+  fitText(g, sub, 512, 250, 600, 60, 'bold {size}px "Trebuchet MS", sans-serif');
+  if (arrow) {                                                     // an arrow under the words
+    g.save(); g.translate(512 + arrow * 380, 252); g.scale(arrow, 1); g.fillStyle = '#ffd166';
+    g.beginPath(); g.moveTo(40, 0); g.lineTo(0, -26); g.lineTo(0, -10); g.lineTo(-40, -10); g.lineTo(-40, 10); g.lineTo(0, 10); g.lineTo(0, 26); g.closePath(); g.fill(); g.restore();
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  return t;
 }
 
 export function buildKuranda(scene, q, realism = null, models = new Map()) {
@@ -166,7 +197,7 @@ export function buildKuranda(scene, q, realism = null, models = new Map()) {
     else { const r = edgeRocks(rnd); r.position.set(x, 0, z); front.add(r); }
   }
   scene.add(bakeStall(front));
-  overStreet(scene, STREET.half, STREET.z0, TRAIL_Z - 6);
+  overStreet(scene, STREET.half, STREET.z0, TRAIL_Z - 6, (x, z) => x > 0 && Math.abs(z - ENTRY.z) < ENTRY.half + 0.6);   // no pole in the boomerang archway
   // Queenslanders behind the market (Ken: the bungalows looked cheap).
   const fronts = ['#f2e3c4', '#dcebd8', '#f5d6c2', '#e4dcf0', '#f0e9b8', '#cfe3ea'], shutters = ['#2f6b5a', '#8a3b2a', '#2f4f7a', '#6a4a8a'];
   // The village end of the street: a row of shops facing the street, every one

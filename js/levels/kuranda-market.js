@@ -311,7 +311,8 @@ export function queenslander(w, colour, shutters = '#2f6b5a') {
 }
 
 // ---- Over the street: bunting, shade sails, fairy-light strings ---------------------------
-export function overStreet(scene, half, z0, z1) {
+// keepClear(x, z): true where no pole may stand (a way in off the street).
+export function overStreet(scene, half, z0, z1, keepClear = () => false) {
   mats();
   const g = new THREE.Group(), bulbs = [];
   const flagGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-0.16, 0, 0), new THREE.Vector3(0.16, 0, 0), new THREE.Vector3(0, -0.36, 0)]);
@@ -325,7 +326,10 @@ export function overStreet(scene, half, z0, z1) {
       if (kind === 1) bulbs.push(ball(0.05, M.bulb, x, y - 0.1, zz, g));
     }
   }
-  for (let z = z0 + 8; z < z1; z += 9) for (const s of [-1, 1]) cyl(0.06, 0.08, 6.8, M.timberDark, s * (half + 1.5), 3.4, z + (s > 0 ? 2 : 0), g, 6);   // poles that hold them up
+  for (let z = z0 + 8; z < z1; z += 9) for (const s of [-1, 1]) {                       // poles that hold them up
+    const px = s * (half + 1.5), pz = z + (s > 0 ? 2 : 0);
+    if (!keepClear(px, pz)) cyl(0.06, 0.08, 6.8, M.timberDark, px, 3.4, pz, g, 6);
+  }
   const baked = bake(g);
   scene.add(baked);
   return { group: baked };

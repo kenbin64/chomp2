@@ -423,7 +423,9 @@ going back to earlier areas. **Open:** how this sits with rule 6 (going back) an
 **Side games (optional, bonus rewards only):**
 - **Boomerang**, taught respectfully by a local guide; Kuranda is Djabugay country (**Built**, `boomerang.html`). Earns items.
 - **The boomerang throw on the main path (Ken, 2026-10-20; built):** about halfway down Kuranda's street, in a
-  clearing off the right-hand side. An opening: a guide welcomes Wally to Djabugay country and shows him a throw,
+  clearing on Wally's left as he walks down it, under a big timber archway (a tall sign on the street points him
+  in); stepping in starts the throw. An opening (Ken): touching the entrance cuts to a wide shot of the clearing, visitors throwing boomerangs; the
+  instructor, **an Aboriginal Australian man** (Ken: culturally correct), walks up, welcomes Wally to Djabugay country and shows him a throw,
   which loops round and comes home to the guide's hand. Then **first person** through Wally's eyes: he lifts the
   boomerang and tips it out, the **angle meter** shows the lean from upright; then the **force meter** swings and
   he throws. **The physics decides** (`js/levels/boomerang-physics.js`, tested): lift off the spinning wings, at
