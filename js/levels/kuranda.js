@@ -444,6 +444,7 @@ function setPaused(p) { if (!game.running) return; game.paused = p; $('paused').
 function finish(won, why = '') {
   game.running = false;
   $('hud').hidden = true; $('touch').hidden = true;
+  const toZip = won && game.hasAir && !params.has('stay');        // the end of Kuranda: straight down Barron Falls on the zip line
   const finishBonus = won ? 20 + Math.round(Math.max(0, game.energy) / 10) : 0;
   const total = game.foodPoints + finishBonus;
   const stars = won ? starsFor(total, STARS) : 0;
@@ -470,6 +471,7 @@ function finish(won, why = '') {
   $('result').hidden = false;
   showLeaderboard($('board'), 'kuranda', won ? total : 0, won ? stars : 0);   // finished runs go on the board; the top ten either way
   window.chomp.result = { won, total, stars };
+  if (toZip) { $('result').hidden = true; const c = document.createElement('div'); c.className = 'cine-caption'; c.textContent = 'Down Barron Falls on the zip line'; document.body.append(c); setTimeout(() => { location.href = 'zipline.html?story'; }, 2000); }
 }
 
 $('play').onclick = start;

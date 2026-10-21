@@ -22,6 +22,9 @@ import { readProgress, saveProgress, outfitModel, wearing, activityOpen, tickets
 import { giveGear, ABILITIES } from '../book-rules.js';
 import { dressOutfit } from '../outfit.js';
 import { goldPiece, mangoMaker } from '../pickups.js';
+import * as Trip from '../trip-rules.js';
+import { foundTalisman } from '../revisit.js';
+import { openSceptre } from '../sceptre-card.js';
 import { LINES, cableY, ride, landing, layout, reaches, hitsBranch, score, HANG, SWAY, TUCK, DANGLE, BRAKE_ZONE } from './zipline-rules.js';
 
 const $ = id => document.getElementById(id);
@@ -343,13 +346,16 @@ const strap = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1, 6), new T
 
 // ---- The ride -------------------------------------------------------------------------------
 const game = { running: false, state: null, side: 0, sideV: 0, height: 0, keys: new Set(), got: { mango: 0, gold: 0, token: 0, gear: 0 }, branchesHit: 0, land: null, crawl: false, end: 0, chosen: 'practice' };
-window.chomp = { game, wally };
+window.chomp = { game, wally, finish: () => finish() };
 function toast(text, kind = 'good') { const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text; $('toasts').appendChild(el); setTimeout(() => el.remove(), 1800); while ($('toasts').children.length > 3) $('toasts').firstChild.remove(); }
 addEventListener('keydown', e => { game.keys.add(e.key); if (e.key === ' ') e.preventDefault(); });
 addEventListener('keyup', e => game.keys.delete(e.key));
 
+// ?story: the zip line at the end of Kuranda, on the way of the story (free, no stars needed, it
+// starts at once, and the landing wins the water talisman and goes on to Mossman Gorge).
+const story = params.has('story');
 function start() {
-  const r = params.has('free') ? { ok: true, progress: load() } : useTicket(load(), 'zipline');
+  const r = params.has('free') || story ? { ok: true, progress: load() } : useTicket(load(), 'zipline');
   if (!r.ok) { toast('You need a zip line ticket: Buy a ticket', 'bad'); return; }
   saveProgress(r.progress);
   buildLine(game.chosen);
@@ -475,8 +481,22 @@ function finish() {
                             ['Branches hit', game.branchesHit], ['Landing', { perfect: 'Perfect (+100)', pad: 'Safety pad (+20)', short: 'Short' }[game.land]], ['Score', pts], ['Best on this line', p.ziplineBest[game.chosen]]]) {
     const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }
+  if (story) { storyEnd(); return; }
   $('result').hidden = false;
   drawTitle();
+}
+// The landing at the foot of Barron Falls: the water talisman, and Kuranda complete (its run, saved
+// when Wally left the village with the air talisman, is finished here), then on to Mossman Gorge.
+function storyEnd() {
+  let p = load(); if (!p.trip) p.trip = Trip.tripFor(p);
+  const hadWater = Trip.have(p.trip, 'talisman-water');
+  let run = null; try { run = JSON.parse(localStorage.getItem('chomp-kuranda-run') || 'null'); } catch { /* none */ }
+  const attempt = Trip.gain(run || Trip.startAttempt(p.trip, 'kuranda', { force: true }), 'talisman-water');
+  const done = Trip.completeAttempt(p.trip, Trip.have(p.trip, 'talisman-air') || (run && run.pending['talisman-air']) ? attempt : Trip.gain(attempt, 'talisman-air'), { objectiveMet: true });
+  if (done.ok) p.trip = done.trip;
+  saveProgress(p); try { localStorage.removeItem('chomp-kuranda-run'); } catch { /* fine */ }
+  if (hadWater) foundTalisman('talisman-water', toast); else openSceptre('talisman-water');   // new: the card with water set in its place
+  setTimeout(() => { const f = document.getElementById('cine-caption'); if (f) { f.textContent = 'On to Mossman Gorge'; f.hidden = false; } setTimeout(() => { location.href = 'mossman.html'; }, 1800); }, 4200);
 }
 
 function drawHud() {
@@ -502,13 +522,14 @@ function drawTitle() {
 $('ride').onclick = start; $('again').onclick = () => { $('result').hidden = true; $('title').hidden = false; drawTitle(); };
 $('z-buy').onclick = () => openShop();
 $('z-intro').onclick = e => { e.stopPropagation(); playIntro(); };
-if (!activityOpen(progress, 'zipline') && !params.has('all')) {
+if (!activityOpen(progress, 'zipline') && !params.has('all') && !story) {
   $('title').querySelector('p:not(.area)').textContent = 'The zip line opens with more stars. Earn stars across the trip and come back!';
   $('ride').hidden = true;
 }
 installMap({ pause: () => {} }); installShop({ pause: () => {} }); installBook({ pause: () => {} });
 buildLine('practice'); drawTitle();
-if (!params.has('play') && (() => { try { return !localStorage.getItem('chomp-zipline-intro'); } catch { return true; } })()) playIntro();   // the first visit
+if (story) setTimeout(start, 600);
+else if (!params.has('play') && (() => { try { return !localStorage.getItem('chomp-zipline-intro'); } catch { return true; } })()) playIntro();   // the first visit
 
 // ---- Loop -----------------------------------------------------------------------------------
 let last = performance.now(), t = 0;

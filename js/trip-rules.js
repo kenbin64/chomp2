@@ -126,11 +126,8 @@ export function canEnter(trip, area) {
   if (!isCompleted(trip, before)) return { ok: false, why: 'locked', needs: before };
   const missing = CHAIN[before].opens.find(item => !have(trip, item));
   if (missing) return { ok: false, why: 'item', needs: missing };
-  // Two areas back in the trip itself (not counting only built ones: the small
-  // thing is meant for the area two after it); an area not built gives nothing yet.
-  const twoBack = ORDER[areaIndex(area) - 2];
-  const small = twoBack && !NOT_BUILT.includes(twoBack) && CHAIN[twoBack].small;
-  if (small && !have(trip, small)) return { ok: false, why: 'item', needs: small };
+  // (The small thing from two areas back is a bonus, never a lock (Ken, 2026-10-21: completing an
+  // area always opens the next): a player who missed every golden mango can still go on.)
   return { ok: true };
 }
 

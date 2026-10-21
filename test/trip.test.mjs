@@ -47,7 +47,7 @@ check('the first area has nothing before it', T.areaBefore('park') === null);
   const t = { ...T.freshTrip(), completed: ['park', 'cane', 'esplanade'], entered: ['park', 'cane', 'esplanade'], items: { machete: 1, 'talisman-fire': 1, 'talisman-sun': 1 } };
   check('the reef does not ask for Croc Park\'s golden mangoes (they are for the Esplanade)',T.canEnter(t, 'reef').ok);
   const noMango = { ...T.freshTrip(), completed: ['park', 'cane'], entered: ['park', 'cane'], items: { machete: 1, 'talisman-fire': 1 } };
-  check('the Esplanade needs golden mangoes from Croc Park (two back)', T.canEnter(noMango, 'esplanade').needs === 'golden-mango');
+  check('missing every golden mango in Croc Park never locks the Esplanade (a bonus, not a lock)', T.canEnter(noMango, 'esplanade').ok);
 }
 
 // ---- Rule 2: entry -----------------------------------------------------------------------
@@ -259,6 +259,23 @@ check('tripFor: a save with its own trip keeps it', (() => { const t = T.freshTr
 check('tripFor: an old save is carried over', T.isCompleted(T.tripFor({ postcards: ['park'] }), 'park'));
 check('tripFor: a new player gets a fresh trip', T.tripFor({}).completed.length === 0 && T.tripFor({}).difficulty === 'intermediate');
 check('forcing a locked area is for testing only: it works but changes no rules', (() => { const t = T.freshTrip(); const a = T.startAttempt(t, 'reef', { force: true }); return a.area === 'reef' && !T.canEnter(t, 'reef').ok; })());
+
+// ---- The whole trip can always be walked: complete an area and the next one opens -------------
+{
+  let trip = T.tripFor({});
+  const order = T.ORDER, broken = [];
+  for (let i = 0; i < order.length; i++) {
+    const area = order[i];
+    if (!T.canEnter(trip, area).ok) { broken.push(`${area} locked`); break; }
+    let a = T.startAttempt(trip, area);
+    const link = T.CHAIN[area];
+    for (const item of [...(link.key ? [link.key] : []), ...link.opens]) a = T.gain(a, item);
+    const done = T.completeAttempt(trip, a, { objectiveMet: true });
+    if (!done.ok) { broken.push(`${area} would not complete: ${done.why} ${done.needs || ''}`); break; }
+    trip = done.trip;
+  }
+  check('playing the trip in order, every area opens once the one before is completed', broken.length === 0, broken.join('; '));
+}
 
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
