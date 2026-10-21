@@ -3,7 +3,7 @@
 // controls, moves Wally, has the tourists throw, flies the food, checks what
 // was caught, missed or stolen, and keeps the quest and the screen up to date.
 
-import { isApp, installApp, isInstalled } from './menu.js';
+import { isApp } from './menu.js';
 import { guideArrow, nearest } from './guide-arrow.js';
 import { startRun, addPoints, bankRun, failRun } from './points.js';
 import { installGear, snorkelling, drainFactor } from './gear.js';
@@ -992,30 +992,9 @@ $('how').onclick = () => { location.href = 'how-to-play.html'; };   // its own p
 // The version playing, on the title screen (Ken, 2026-10-21), so a tester can say which one: written by
 // each publish (version.json); on this computer there is none, and nothing shows.
 fetch('version.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(v => { if (v && v.number) $('title-version').textContent = v.number.includes('beta') ? `Beta · version ${v.number}` : `Version ${v.number}`; }).catch(() => {});
-// The front screen (Ken, 2026-10-21). In a browser: the landing page first (free to play, install the app,
-// how to play, the trailer). Installed as an app: straight to the title screen, with Play and How to play.
-// Pages that bring the player here mid-game (?play, ?map, ?go, testing) skip the landing page.
-{
-  const skip = ['play', 'map', 'go', 'noopening', 'bot', 'all', 'app'].some(k => params.has(k)) || (() => { try { return sessionStorage.getItem('chomp-landed') === '1'; } catch { return false; } })();
-  const toTitle = () => { try { sessionStorage.setItem('chomp-landed', '1'); } catch { /* fine */ } $('landing').hidden = true; $('title').hidden = false; };
-  if (isApp()) { document.body.classList.add('as-app'); try { localStorage.setItem('chomp-installed', '1'); } catch { /* fine */ } }                 // the app: no trailer or free-to-play line on the title
-  else if (!skip) { $('landing').hidden = false; $('title').hidden = true; }
-  $('land-how').onclick = () => { location.href = 'how-to-play.html'; };
-  $('land-browser').onclick = toTitle;
-  // Once it is installed, the landing page just says so (Ken, 2026-10-21: the only Play button is on the
-  // title screen, and it goes straight into the game).
-  const installed = () => {
-    $('land-install').hidden = true;
-    const note = $('land-note'); note.hidden = false; note.textContent = 'Installed. Open Chomp 3D from its icon, or play in your browser below.';
-  };
-  if (isInstalled()) installed();
-  addEventListener('chomp-installed', installed);
-  $('land-install').onclick = async () => {
-    const r = await installApp(), note = $('land-note');
-    if (r === 'installed') installed();
-    if (r === 'unavailable') { note.hidden = false; note.textContent = isInstalled() ? 'Already installed: open Chomp 3D from its icon, or play here.' : 'This browser cannot install apps. Open this page in Chrome, Edge or Safari to install it, or play in your browser now.'; }
-  };
-}
+// The front screen is the title, with its one Play button (Ken, 2026-10-21: the landing page only got in
+// the way). Installed as an app, it leaves out the trailer and the install button.
+if (isApp()) document.body.classList.add('as-app');
 $('credits').onclick = () => { $('credits-card').hidden = false; };
 // Ken's promo trailer (the brand name on the jar covered with a V: tools/cover-label-keys.py).
 // It plays muted in a small window on the opening screen (not on phones, or when
@@ -1025,7 +1004,7 @@ const peek = $('trailer-peek'), peekVideo = peek.querySelector('video');
 const stillOnly = matchMedia('(prefers-reduced-motion: reduce)').matches || touch;
 if (!stillOnly) peekVideo.play().catch(() => {});
 function openTrailer() { peekVideo.pause(); $('trailer-box').hidden = false; const v = $('trailer-video'); v.muted = false; v.volume = 1; v.currentTime = 0; v.play().catch(() => {}); }
-$('trailer').onclick = openTrailer; peek.onclick = openTrailer; $('land-trailer').onclick = openTrailer;
+$('trailer').onclick = openTrailer; peek.onclick = openTrailer;
 $('trailer-close').onclick = () => { const v = $('trailer-video'); v.pause(); $('trailer-box').hidden = true; if (!stillOnly) peekVideo.play().catch(() => {}); };
 $('credits-close').onclick = () => { $('credits-card').hidden = true; };
 // Play goes straight into the game (Ken, 2026-10-21: two or three buttons before play was too many).

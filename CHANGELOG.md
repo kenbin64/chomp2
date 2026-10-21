@@ -5,6 +5,9 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- No landing page: the game opens straight on the Wally title screen, whose one Play button starts the
+  game. Install the app sits beside Play where the device can install it.
+
 - How to play is its own page (how-to-play.html), opened from the landing page and the title screen,
   with the controls for phones and tablets, computers and controllers, and how the game starts.
 

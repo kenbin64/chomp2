@@ -239,15 +239,17 @@ test('the Scoreboard opens, shows the trip by area and switches boards', async (
 });
 
 // ---- The map and the cards: a clear way back -------------------------------------------------
-test('the landing page in a browser: free to play, install, how to play, trailer; then the title', async () => {
+test('the front screen is the title: one Play button, and it starts the game', async () => {
   const p = await page();
   await go(p, 'index.html', 3000);
-  const t = await p.evaluate(() => ({ shown: !document.getElementById('landing').hidden, title: document.getElementById('title').hidden, text: document.getElementById('landing').textContent }));
-  check('a browser opens on the landing page, the title waiting', t.shown && t.title);
-  check('it says free to play and offers install, how to play and the trailer', /Free to play/.test(t.text) && /Install the app/.test(t.text) && /How to play/.test(t.text) && /trailer/.test(t.text));
+  const t = await p.evaluate(() => ({ title: !document.getElementById('title').hidden, landing: !!document.getElementById('landing'), plays: [...document.querySelectorAll('button')].filter(b => b.offsetParent && /^\s*play\s*$/i.test(b.textContent)).length, text: document.getElementById('title').textContent }));
+  check('it opens on the title, with no page before it', t.title && !t.landing);
+  check('exactly one Play button', t.plays === 1, String(t.plays));
+  check('How to play and where it begins are there', /How to play/.test(t.text) && /Begin at Croc Park in Cairns, Australia/.test(t.text));
   check('no in-game buttons over it', await p.evaluate(() => [...document.querySelectorAll('.paws-button, .sceptre-button, .score-button')].every(b => getComputedStyle(b).display === 'none')));
-  await p.evaluate(() => document.getElementById('land-browser').click()); await wait(400);
-  check('"or play in your browser" goes to the title with Play and where it begins', await p.evaluate(() => !document.getElementById('title').hidden && /Begin at Croc Park in Cairns, Australia/.test(document.getElementById('title').textContent)));
+  await p.evaluate(() => document.getElementById('play').click());
+  let running = false; for (let i = 0; i < 40 && !running; i++) { await wait(1000); running = await p.evaluate(() => !!(window.chomp && window.chomp.game && window.chomp.game.running)); }
+  check('Play goes straight into the game', running);
   await p.done();
 });
 test('the map stays away until the first level is complete', async () => {

@@ -138,7 +138,7 @@ function appButtons() {
   const where = document.querySelector('.opener-buttons');
   if (!where && !phone()) return;                                   // in a level on a computer: not needed, kept out of the way
   const canFull = document.fullscreenEnabled && !isApp() && phone();   // a computer has F11
-  if (!isApp() && (installEvent || isApple()) && !where && !document.querySelector('.install-button')) {   // (the landing page has its own Install)
+  if (!isApp() && (installEvent || isApple()) && !document.querySelector('.install-button')) {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'ghost install-button'; b.textContent = '📲 Install the game';
     b.onclick = async () => { if (installEvent) { installEvent.prompt(); const r = await installEvent.userChoice.catch(() => null); if (r && r.outcome === 'accepted') b.remove(); installEvent = null; } else howToInstall(); };
     (where || document.body).append(b); fold();
