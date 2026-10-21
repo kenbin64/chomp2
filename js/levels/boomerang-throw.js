@@ -24,6 +24,7 @@ import * as THREE from 'three';
 import { fly, outcome, catchableAt, sampleAt, HAND_Y, TILT_RANGE, IDEAL_TILT, IDEAL_FORCE } from './boomerang-physics.js';
 import { THROW_SPOT, GUIDE_SPOT, GUIDE_FROM, THROWERS } from './kuranda-rules.js';
 import { ModelSkin } from '../models.js';
+import { boomerangMesh } from './boomerang-shape.js';
 
 const EYE = 1.75;                     // Wally's eyes, above the ground
 const SWING = 1.7;                    // seconds for the force meter to swing up and back
@@ -47,19 +48,6 @@ const TIPS = {
   away: 'It wandered off. Tip it out a little and throw it firm.',
   missed: 'It came right to you! Clap your hands on it as it comes in.',
 };
-
-// ---- The boomerang: polished timber, two arms, red bands ---------------------------------
-function boomerangMesh() {
-  const shape = new THREE.Shape();
-  shape.moveTo(-0.38, 0.05); shape.quadraticCurveTo(0, 0.2, 0.38, 0.05); shape.lineTo(0.36, -0.03); shape.quadraticCurveTo(0, 0.1, -0.36, -0.03); shape.closePath();
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.025, bevelEnabled: true, bevelSize: 0.01, bevelThickness: 0.01, bevelSegments: 2 });
-  geo.center();                                                  // in the x-y plane: its flat faces look along z
-  const g = new THREE.Group();
-  g.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xa8743f, roughness: 0.35 })));
-  for (const x of [-0.2, 0.2]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.04), new THREE.MeshStandardMaterial({ color: 0xc23b2b, roughness: 0.4 })); b.position.set(x, 0.07, 0); g.add(b); }
-  g.traverse(o => { if (o.isMesh) o.castShadow = true; });
-  return g;
-}
 
 // ---- The page: the meters, the words, the prompts ----------------------------------------------
 function buildUi() {
@@ -101,7 +89,8 @@ export function boomerangThrow({ scene, camera, wally, sound, models = new Map()
   const held = boomerangMesh(), flying = boomerangMesh();
   const spinner = new THREE.Group(); spinner.add(flying);
   const flyer = new THREE.Group(); flyer.add(spinner); flyer.visible = false; scene.add(flyer);
-  held.visible = false; held.scale.setScalar(0.55);                 // in his hand, not filling the view
+  held.visible = false; held.scale.setScalar(0.7);                  // in his hand, not filling the view
+  flyer.scale.setScalar(1.3);                                      // a touch large in the air, so it reads at a distance
   if (!camera.parent) scene.add(camera);                          // so the held boomerang, a child of the camera, is drawn
   camera.add(held);
   // The instructor, from Ken's model when it is made (no stand-in: he is a Djabugay man).
@@ -377,7 +366,7 @@ function makeThrowers(scene, people) {
         w.flight.visible = flying;
         if (flying) poseFlight(w.flight, w.spinner, w.path, w.t - 0.35, dt);
         else if (w.t >= w.back) {                                   // caught: a moment, then the next throw
-          w.skin.play(w.t < w.back + 1.2 ? 'cheer' : 'idle', { alternatives: ['idle'] });
+          w.skin.play(throwing && w.t < w.back + 1.2 ? 'cheer' : 'idle', { alternatives: ['idle'] });   // while Wally throws, they just watch
           if (w.t > w.back + 3) w.t = -1;
         } else if (w.t < 0) w.skin.play('idle');
         w.skin.update(dt);
