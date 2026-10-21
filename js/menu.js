@@ -90,7 +90,7 @@ function questPanel() {
   const show = document.createElement('button'); show.type = 'button'; show.className = 'quest-show'; show.textContent = '🎯'; show.title = 'Show the objective'; show.setAttribute('aria-label', 'Show the objective'); show.hidden = true;
   let timer = 0;
   const hide = () => { q.classList.add('tucked'); show.hidden = false; clearTimeout(timer); };
-  const open = () => { q.classList.remove('tucked'); show.hidden = true; clearTimeout(timer); if (matchMedia('(pointer: coarse)').matches) timer = setTimeout(hide, 8000); };
+  const open = () => { q.classList.remove('tucked'); show.hidden = true; clearTimeout(timer); if (matchMedia('(max-width: 1000px), (pointer: coarse)').matches) timer = setTimeout(hide, 5000); };   // small screens: out of the way after 5 seconds
   x.onclick = e => { e.stopPropagation(); hide(); };
   show.onclick = e => { e.stopPropagation(); open(); };
   q.append(x); document.body.append(show);

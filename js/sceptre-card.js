@@ -25,6 +25,14 @@ function held() {
 // added: a talisman just found (Ken, 2026-10-21): the card opens on it, set in its place, marked New.
 // (It is kept for good when the area is completed; until then it counts here as found.)
 export function openSceptre(added = null) {
+  // A talisman just found: a short line instead of the whole card (Ken: keep the field of play free).
+  // The card is still on the Sceptre button.
+  if (added) {
+    const n = el('div', 'found-line', `✦ The ${WHERE[added][0]} Talisman! Complete the area to seal it in the sceptre.`);
+    n.setAttribute('role', 'status'); n.addEventListener('pointerdown', () => n.remove());
+    document.body.append(n); setTimeout(() => n.remove(), 4500);
+    return;
+  }
   if (!box) {
     box = el('div', 'map-modal sceptre-card'); box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', "The King's sceptre");
     box.addEventListener('click', e => { if (e.target === box) closeSceptre(); });

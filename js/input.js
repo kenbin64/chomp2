@@ -28,6 +28,15 @@ import { settings } from './settings.js';
 import './device.js';                    // which controls are in use: keyboard, mouse, controller, touch (device.js)
 import { installSettingsUi } from './settings-ui.js';
 
+// The orb: how fast a full push to the side turns him (radians a second), and how far the knob may
+// travel, as a share of the steering reach, so it always stays inside the orb.
+const ORB_TURN = 1.7, KNOB = 0.7;
+// Arrows inside the orb, so it explains itself: up to go, round arrows left and right to turn.
+const ORB_ARROWS = '<svg class="orb-arrows" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="rgba(255,255,240,0.85)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">'
+  + '<path d="M38 22 L50 10 L62 22"/><path d="M40 80 L50 90 L60 80" opacity="0.5"/>'
+  + '<path d="M22 38 A30 30 0 0 0 22 62"/><path d="M16 44 L22 38 L28 43"/>'
+  + '<path d="M78 38 A30 30 0 0 1 78 62"/><path d="M84 44 L78 38 L72 43"/></g></svg>';
+
 export class Input {
   constructor(canvas, touchUi) {
     this.keys = new Set();
@@ -49,7 +58,7 @@ export class Input {
     let drag = null;
     this.aim = 0; this.mouseMode = 'wally'; this.mouseRun = false;
     // Only while a level is being played: not over a menu, card, tip or the map.
-    const MODALS = '.overlay:not([hidden]), .map-modal:not([hidden]), .tip-card:not([hidden])';
+    const MODALS = '.overlay:not([hidden]), .map-modal:not([hidden])';   // (a tip is a slim line now, never in the way)
     this.canLock = () => !document.querySelector(MODALS);
     // Any card coming up gives the cursor back for ordinary clicking; when the last
     // card is dismissed, Wally has the mouse again (Ken, 2026-10-20). The click or key
@@ -106,6 +115,7 @@ export class Input {
     canvas.addEventListener('wheel', e => { this.zoom += Math.sign(e.deltaY) * 1.2; e.preventDefault(); }, { passive: false });
 
     if (touchUi) this.bindTouch(canvas, touchUi);
+    else this.bindMouseOrb();
     installSettingsUi();
   }
 
@@ -129,14 +139,14 @@ export class Input {
   // screen turns the camera.
   bindTouch(canvas, ui) {
     const orb = ui.stick, R = 55;
-    orb.classList.add('orb');
+    orb.classList.add('orb'); if (!orb.querySelector('.orb-arrows')) orb.insertAdjacentHTML('afterbegin', ORB_ARROWS);
     const centre = () => { const r = orb.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
     const steer = t => {
       const c = centre(), dx = t.clientX - c.x, dy = t.clientY - c.y, d = Math.hypot(dx, dy), k = d > R ? R / d : 1;
       if (d > 10) this.stick.moved = true;
       const still = d < R * 0.22;                                   // the middle: stop
       this.stick.dx = still ? 0 : dx * k / R; this.stick.dy = still ? 0 : dy * k / R;
-      ui.knob.style.transform = `translate(${dx * k}px, ${dy * k}px)`;
+      ui.knob.style.transform = `translate(${dx * k * KNOB}px, ${dy * k * KNOB}px)`;
     };
     orb.addEventListener('touchstart', e => {
       const t = e.changedTouches[0];
@@ -177,6 +187,33 @@ export class Input {
     tap(ui.cam, () => { this.recenterQueued = true; });
   }
 
+  // The same green orb on a computer (Ken, 2026-10-21: the best controller), always on the right. The
+  // cursor only has to rest over it: up from the middle goes the way he faces, to the side turns, the
+  // middle stops him, and moving off it stops him. A click on it jumps. The keys still work as well.
+  bindMouseOrb() {
+    const orb = document.getElementById('stick'), knob = document.getElementById('knob'), hud = document.getElementById('hud');
+    if (!orb || !knob || !hud) return;
+    hud.append(orb); orb.classList.add('orb', 'mouse-orb'); if (!orb.querySelector('.orb-arrows')) orb.insertAdjacentHTML('afterbegin', ORB_ARROWS);           // it shows and hides with the rest of the play screen
+    const R = 55;
+    const steer = e => {
+      const r = orb.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      const d = Math.hypot(dx, dy), k = d > R ? R / d : 1, still = d < R * 0.22;
+      this.stick = { id: 'mouse', dx: still ? 0 : dx * k / R, dy: still ? 0 : dy * k / R };
+      knob.style.transform = `translate(${dx * k * KNOB}px, ${dy * k * KNOB}px)`; orb.classList.add('active');
+    };
+    // Once the cursor is on the orb it keeps steering until it strays well past the edge, so reaching
+    // for full speed never drops it.
+    const stop = () => { this.stick = null; knob.style.transform = ''; orb.classList.remove('active'); };
+    orb.addEventListener('mouseenter', steer);
+    addEventListener('mousemove', e => {
+      if (!orb.classList.contains('active')) return;
+      const r = orb.getBoundingClientRect();
+      if (Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2)) > r.width * 0.85) stop(); else steer(e);
+    });
+    orb.addEventListener('mousedown', e => { if (e.button === 0) this.jumpQueued = true; e.preventDefault(); e.stopPropagation(); });
+    orb.addEventListener('click', e => e.stopPropagation());
+  }
+
   // A game controller, if one is plugged in: this frame's stick, d-pad and
   // buttons. A, Y and Start count once per press, like the keys.
   readPad() {
@@ -210,7 +247,15 @@ export class Input {
     if (f && r || this.kf && this.kr) { f = this.kf; r = this.kr; }
     const pad = this.readPad(), padMoving = !!(pad && (pad.forward || pad.right));
     if (padMoving) { f = pad.forward; r = pad.right; }
-    if (this.stick) { f = -this.stick.dy; r = this.stick.dx; }
+    // The orb (Ken, 2026-10-21): up goes forward, the sides TURN him at a steady rate (not a sideways
+    // step, which with the camera following made him spin). A gentle curve: small moves are slow.
+    if (this.stick) {
+      const sx = this.stick.dx, sy = this.stick.dy, ease = v => Math.sign(v) * Math.pow(Math.abs(v), 1.6);
+      f = sy < 0 ? ease(-sy) : -ease(sy) * 0.5;                       // backing up is slower
+      if (Math.abs(sx) > 0.2 && Math.abs(f) < 0.25) f = 0.25 * Math.abs(sx);   // pushed to the side alone: a slow walk round, so he turns too
+      r = 0;
+      this.turn -= ease(sx) * ORB_TURN * dt;
+    }
     if (pad) { this.turn += pad.turn; this.tilt += pad.tilt; }
     const turnKeys = (k.has('q') ? 1 : 0) - (k.has('e') ? 1 : 0);
     const out = {

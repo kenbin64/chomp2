@@ -8,7 +8,7 @@
 // showTip returns false when the tip was not shown (seen before, or tips are
 // off), so a level can still give its own quick message for things that matter.
 
-import { settings, setSetting } from './settings.js';
+import { settings } from './settings.js';
 
 const SEEN = 'chomp-tips-seen';
 let seen = (() => { try { return new Set(JSON.parse(localStorage.getItem(SEEN) || '[]')); } catch { return new Set(); } })();
@@ -27,16 +27,14 @@ function hide() {
   if (next) setTimeout(() => open(next.id, next.text), 400);
 }
 
+// A tip is one slim line at the top that fades by itself; a tap clears it (Ken, 2026-10-21: keep the
+// field of play free). Tips can be turned off on any pause screen.
 function open(id, text) {
   card = document.createElement('div');
-  card.className = 'tip-card'; card.setAttribute('role', 'status');
-  card.innerHTML = '<p></p><div class="tip-buttons"><button type="button" class="tip-ok">Got it</button><button type="button" class="tip-off">Turn tips off</button></div>';
-  card.querySelector('p').textContent = text;
-  card.querySelector('.tip-ok').onclick = hide;
-  card.querySelector('.tip-off').onclick = () => { setSetting('tips', false); waiting.length = 0; hide(); };
-  for (const b of card.querySelectorAll('button')) b.addEventListener('pointerdown', e => e.stopPropagation());
+  card.className = 'tip-line'; card.setAttribute('role', 'status'); card.textContent = text;
+  card.addEventListener('pointerdown', e => { e.stopPropagation(); hide(); });
   document.body.append(card);
-  timer = setTimeout(hide, 8000);
+  timer = setTimeout(hide, 5000);
 }
 
 export function showTip(id, text) {
