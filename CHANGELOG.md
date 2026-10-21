@@ -5,6 +5,9 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- The guide's reef picture shows Wally on the Green Island jetty with the island behind, and the reef's
+  entry names Green Island.
+
 ## v1.0.0-beta.5 (2026-10-21)
 
 - Green Island at the reef: a long rainforest island with a white beach behind the jetty, and "Green

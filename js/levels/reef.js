@@ -363,6 +363,7 @@ for (const [id, flag] of [['b-dive', 'diveQueued'], ['b-up', 'upQueued']]) {
   $(id).addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); game[flag] = true; });
 }
 const cam = { yaw: Math.PI / 2, pitch: 0.3, dist: 10, manual: 0 };
+window.chomp.cam = cam;                                           // for testing and screenshots
 window.chomp.cam = cam;
 
 // ---- Under-water look -------------------------------------------------------------------
