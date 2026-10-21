@@ -19,6 +19,9 @@ import { mapSvg, pinXY, markerXY, MARKERS } from './tripmap.js';
 const PAGES = { park: 'index.html?play', cane: 'cane.html', esplanade: 'esplanade.html', reef: 'reef.html', kuranda: 'kuranda.html', mossman: 'mossman.html', daintree: 'daintree.html' };
 // The page that takes Wally to an area. The first time he heads for Kuranda he rides the
 // Skyrail up the range (skyrail.html, which goes on to the village), as in the real trip.
+// Into a level straight away (Ken, 2026-10-21: one Play button, then the game): ?go starts it.
+const withGo = page => page + (page.includes('?') ? '&go' : '?go');
+
 export function pageFor(id) {
   if (id === 'kuranda') { let seen = null; try { seen = localStorage.getItem('chomp-skyrail-seen'); } catch { /* not kept */ } if (!seen) return 'skyrail.html'; }
   return PAGES[id];
@@ -50,7 +53,7 @@ export function addNextStop() {
     const progress = progressNow(), i = AREAS.findIndex(a => a.id === here), next = AREAS[i + 1];
     const done = (progress.stars[here] || 0) > 0 || progress.postcards.includes(here);
     if (!done || !next || !next.ready || !PAGES[next.id] || !mapActive(progress, visitedNow(), next.id)) return;
-    const a = el('a', 'go next-stop', `Continue on to ${next.name} \u203a`); const page = pageFor(next.id); a.href = page + (testing ? (page.includes('?') ? '&all' : '?all') : '');
+    const a = el('a', 'go next-stop', `Continue on to ${next.name} \u203a`); const page = pageFor(next.id); a.href = withGo(page) + (testing ? '&all' : '');
     buttons.prepend(a);
   };
   for (const buttons of document.querySelectorAll('.end-buttons')) {
@@ -175,7 +178,7 @@ function render() {
   pins.innerHTML = ''; marks.innerHTML = '';
   const go = a => {
     if (a.id === HERE) { closeMap(); if (window.chompStartHere) window.chompStartHere(); return; }
-    location.href = pageFor(a.id);
+    location.href = withGo(pageFor(a.id));                      // straight into it: the only Play is on the first title screen
   };
   const show = a => {
     const active = mapActive(progress, visited, a.id), needs = entryNeeds(progress, a.id), stars = progress.stars[a.id] || 0;

@@ -678,3 +678,5 @@ body.as-app #trailer, body.as-app .trailer-peek, body.as-app .free-banner { disp
 .overlay.landing .opener-blur { display: block !important; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(16px) brightness(0.55); transform: scale(1.08); }
 #landing:not([hidden]) ~ .landscape-hint { display: none; }
 .landing-buttons [hidden] { display: none !important; }
+.opener-bar .title-version { margin: 0; font: 700 12px var(--font); color: rgba(255,255,255,0.75); text-shadow: 0 1px 4px #000; }
+.opener-bar .title-version:empty { display: none; }

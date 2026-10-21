@@ -987,6 +987,9 @@ window.chompMapClosed = () => {
 
 // The opener: How to play opens the instructions over the art; Got it closes them.
 $('how').onclick = () => { $('how-card').hidden = false; };
+// The version playing, on the title screen (Ken, 2026-10-21), so a tester can say which one: written by
+// each publish (version.json); on this computer there is none, and nothing shows.
+fetch('version.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(v => { if (v && v.number) $('title-version').textContent = `Version ${v.number}`; }).catch(() => {});
 // The front screen (Ken, 2026-10-21). In a browser: the landing page first (free to play, install the app,
 // how to play, the trailer). Installed as an app: straight to the title screen, with Play and How to play.
 // Pages that bring the player here mid-game (?play, ?map, ?go, testing) skip the landing page.
@@ -997,14 +1000,14 @@ $('how').onclick = () => { $('how-card').hidden = false; };
   else if (!skip) { $('landing').hidden = false; $('title').hidden = true; }
   $('land-how').onclick = () => { $('how-card').hidden = false; };
   $('land-browser').onclick = toTitle;
-  // Once it is installed, the landing page in a browser tab offers Play instead of Install.
+  // Once it is installed, the landing page just says so (Ken, 2026-10-21: the only Play button is on the
+  // title screen, and it goes straight into the game).
   const installed = () => {
-    $('land-install').hidden = true; $('land-play').hidden = false;
-    const note = $('land-note'); note.hidden = false; note.textContent = 'Installed. You can also open Chomp 3D from its own icon.';
+    $('land-install').hidden = true;
+    const note = $('land-note'); note.hidden = false; note.textContent = 'Installed. Open Chomp 3D from its icon, or play in your browser below.';
   };
   if (isInstalled()) installed();
   addEventListener('chomp-installed', installed);
-  $('land-play').onclick = toTitle;
   $('land-install').onclick = async () => {
     const r = await installApp(), note = $('land-note');
     if (r === 'installed') installed();

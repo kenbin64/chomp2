@@ -54,7 +54,7 @@ function fold() {
 
 // Any card open: Escape closes it (its own Back or close button, so the page's own closing runs).
 function closeTopCard() {
-  const open = [...document.querySelectorAll('.map-modal')].filter(m => !m.hidden && m.offsetParent !== null).pop();
+  const open = [...document.querySelectorAll('.map-modal:not(.update-card)')].filter(m => !m.hidden && m.offsetParent !== null).pop();
   if (!open) return false;
   const btn = [...open.querySelectorAll('button')].find(b => /Back to the game|Close|No, go back/.test(b.textContent)) || open.querySelector('.map-close');
   if (btn) btn.click(); else open.click();
@@ -148,6 +148,30 @@ function appButtons() {
   }
 }
 
+// Updates (Ken, 2026-10-21): when a newer version has been published, the game says it must update, with
+// an Update button. Each publish writes version.json (playbutterflyfx build.mjs); the game remembers the
+// version it started with and checks again when it comes back to the screen and every ten minutes. The
+// card waits until no level is being played (the title, a pause, the end of a level), so it never cuts a
+// run short. The local server has no version.json, so nothing shows there.
+let startedWith = null;
+async function latestVersion() {
+  try { const r = await fetch('version.json', { cache: 'no-store' }); if (!r.ok) return null; return (await r.json()).version || null; } catch { return null; }
+}
+function playing() { const g = window.chomp && window.chomp.game; return !!(g && g.running && !g.paused && !g.done); }
+function updateCard() {
+  if (document.querySelector('.update-card')) return;
+  if (playing()) { setTimeout(updateCard, 4000); return; }        // after this run: at a pause or the end of the level
+  const box = document.createElement('div'); box.className = 'map-modal update-card'; box.setAttribute('role', 'alertdialog'); box.setAttribute('aria-label', 'Update ready');
+  box.innerHTML = '<div class="card"><h1>Update ready</h1><p>A new version of Chomp 3D is ready. Update now to keep playing: your game and points are kept.</p><button type="button" class="go">Update</button></div>';
+  box.querySelector('button').onclick = () => location.reload();
+  document.body.append(box);
+}
+async function checkForUpdate() {
+  const v = await latestVersion(); if (!v) return;
+  if (!startedWith) { startedWith = v; return; }
+  if (v !== startedWith) updateCard();
+}
+
 export function installMenu() {
   if (window.__chompMenu) return; window.__chompMenu = true;
   paws(); pawsWords();
@@ -155,6 +179,8 @@ export function installMenu() {
   landscapeHint();
   questPanel();
   appButtons();
+  checkForUpdate(); setInterval(checkForUpdate, 10 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });   // a phone app brought back after a while
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});   // makes the game installable (sw.js)
   fold();
   new MutationObserver(() => { pawsWords(); fold(); }).observe(document.body, { childList: true });   // buttons added later fold in too

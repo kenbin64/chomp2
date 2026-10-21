@@ -206,7 +206,8 @@
     <p><a class="go-link" href="feedback.html">Open the feedback and takedown form</a></p>
   </section>
 
-  <p class="credit">Chomp 3D: Wally's Cairns Adventure. Created by Ken Bingham, 2014 and 2026.</p>
+  <p class="credit">Chomp 3D: Wally's Cairns Adventure. Created by Ken Bingham, 2014 and 2026. <span id="game-version"></span></p>
+  <script>fetch('version.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(v => { if (v && v.number) document.getElementById('game-version').textContent = `Version ${v.number} (${v.commit}).`; }).catch(() => {});</script>
 </main>
 </body>
 </html>

@@ -11,3 +11,5 @@ Thumbs.db
 scores.json
 # Messages from the feedback form, on this PC.
 feedback.log
+# Written by the portal build for each publish (the update check).
+version.json
