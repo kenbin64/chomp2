@@ -5,6 +5,9 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- The first task is clear from the start: a big gold arrow bobs above the pond over the sceptre, and the
+  on-screen arrow points to it with the distance, until Wally finds it.
+
 ## v1.0.0-beta.2 (2026-10-21)
 
 - Beta testers page: also look for clunkiness and slow animation or movement, and report any bug, with

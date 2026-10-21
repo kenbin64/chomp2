@@ -122,6 +122,17 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
     sceptre.position.copy(where.sceptre); sceptre.visible = false; scene.add(sceptre);
     sceptre.userData.glow = glow;
   }
+  // A big gold arrow just above the water, pointing down at it (Ken, 2026-10-21: players must know how to
+  // proceed right off the bat). It bobs, and goes once he has found it.
+  const pointer = (() => {
+    const g = new THREE.Group(), gold = new THREE.MeshBasicMaterial({ color: 0xffd166, toneMapped: false });
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.55, 0.9, 20), gold); head.rotation.x = Math.PI; head.position.y = 0.45;
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 1.1, 14), gold); shaft.position.y = 1.45;
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.06, 8, 40), gold); ring.rotation.x = Math.PI / 2; ring.position.y = -0.95;
+    g.add(head, shaft, ring); g.visible = false; g.userData.noAO = true;
+    g.position.set(where.sceptre.x, 1.2, where.sceptre.z); scene.add(g);
+    return g;
+  })();
   // The sceptre on Wally's back once he has it (he carries it the whole trip).
   const carried = sceptre.children[0].children[0].clone(true);
   carried.visible = false; carried.rotation.set(0.3, 0, 0.55); carried.position.set(0.1, 1.15, -0.32);
@@ -150,7 +161,7 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
   }
 
   function enter(p) {
-    phase = p; time = 0;
+    phase = p; time = 0; pointer.visible = p === 'croc';
     showSkip(p === 'intro' || p === 'change' || p === 'sign' || p === 'kenny');
     if (p === 'intro') {
       setModel(true);
@@ -189,7 +200,7 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
   }
 
   function finish() {
-    phase = null; showSkip(false);
+    phase = null; showSkip(false); pointer.visible = false;
     clusters.showMarks(true);
     try { localStorage.setItem('chomp-opening-done', '1'); } catch { /* it plays again next time */ }
     if (onDone) onDone();
@@ -218,6 +229,7 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
         if (n !== line) { line = n; say(n < INTRO_LINES.length ? INTRO_LINES[n] : null); if (n >= INTRO_LINES.length) captionAt = -1; }
       }
       if (Math.random() < dt * 2) fx.splash(new THREE.Vector3(sceptre.position.x, -0.4, sceptre.position.z), 2);   // bubbles where it lies
+      pointer.position.y = 1.2 + Math.sin(t * 3) * 0.25; pointer.rotation.y += dt * 1.5;   // bobbing over the spot
       const near = Math.hypot(wally.pos.x - sceptre.position.x, wally.pos.z - sceptre.position.z) < 1.8;
       if (near && underWater()) enter('change');
       else if (near && (time % 6) < dt) toast('Down under the water! Shift to dive', 'info');
