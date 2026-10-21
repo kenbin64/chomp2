@@ -13,7 +13,7 @@ import { installScore, clearTrip } from './points.js';
 import { AREAS } from './quests.js';
 import { resetAreaIntros } from './area-intro.js';
 import { installSceptre } from './sceptre-card.js';
-import { readProgress, freshProgress, isOpen, entryNeeds, ACTIVITIES, totalStars, activityOpen } from './progress.js';
+import { readProgress, freshProgress, PROGRESS_CHANGED, isOpen, entryNeeds, ACTIVITIES, totalStars, activityOpen } from './progress.js';
 import { mapSvg, pinXY, markerXY, MARKERS } from './tripmap.js';
 
 const PAGES = { park: 'index.html?play', cane: 'cane.html', esplanade: 'esplanade.html', reef: 'reef.html', kuranda: 'kuranda.html', mossman: 'mossman.html', daintree: 'daintree.html' };
@@ -261,12 +261,16 @@ export function installMap({ pause = null } = {}) {
   installSceptre({ pause });                                    // the sceptre card, beside the map, in every area
   installScore({ pause });                                      // the points and the Scoreboard (points.js)
   installMenu();                                                // Paws, the phone menu, every card closable (menu.js)
-  const b = el('button', 'map-button', '🗺 Map'); b.type = 'button'; b.title = 'The map (Tab)';
+  // The map comes in once the first level is complete (Ken, 2026-10-21: one less button before play).
+  const tripStarted = () => { const p = progressNow(); return (p.trip && p.trip.completed.length > 0) || p.postcards.length > 0; };
+  const b = el('button', 'map-button trip-map-button', '🗺 Map'); b.type = 'button'; b.title = 'The map (Tab)';
   b.onclick = () => (modal && !modal.hidden ? closeMap() : openMap());
+  b.hidden = !tripStarted();
+  addEventListener(PROGRESS_CHANGED, () => { b.hidden = !tripStarted(); });
   document.body.append(b);
   addEventListener('keydown', e => {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
-    if (e.key === 'Tab') { e.preventDefault(); modal && !modal.hidden ? closeMap() : openMap(); }
+    if (e.key === 'Tab' && !b.hidden) { e.preventDefault(); modal && !modal.hidden ? closeMap() : openMap(); }
     else if (e.key === 'Escape') closeMap();
   });
 }

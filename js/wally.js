@@ -10,6 +10,7 @@
 
 import * as THREE from 'three';
 import { ground } from './ground.js';
+import { setOrbHeading } from './input.js';
 import { shirtTexture } from './textures.js';
 import { dress } from './models.js';
 import { rigWally, WallyMotion, shapeFor, HumanoidPoser } from './rig.js';
@@ -373,6 +374,10 @@ export class Wally {
   // input: { forward, right, jump, fours } ; camYaw: which way the camera looks ;
   // pace: multiplier from energy and power-ups. Returns events for sound.
   update(dt, input, camYaw, pace) {
+    if (this.facing !== undefined && camYaw !== undefined) {         // his heading on screen, for the orb's arrows (input.js)
+      const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw), rx = Math.cos(camYaw), rz = -Math.sin(camYaw), hx = Math.sin(this.facing), hz = Math.cos(this.facing);
+      setOrbHeading(Math.atan2(hx * rx + hz * rz, hx * fx + hz * fz));
+    }
     const events = [];
     this.time += dt;
     const inWater = this.surface === 'water';

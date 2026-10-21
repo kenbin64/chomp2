@@ -3,6 +3,7 @@
 // controls, moves Wally, has the tourists throw, flies the food, checks what
 // was caught, missed or stolen, and keeps the quest and the screen up to date.
 
+import { isApp, installApp } from './menu.js';
 import { guideArrow, nearest } from './guide-arrow.js';
 import { startRun, addPoints, bankRun, failRun } from './points.js';
 import { installGear, snorkelling, drainFactor } from './gear.js';
@@ -986,6 +987,21 @@ window.chompMapClosed = () => {
 
 // The opener: How to play opens the instructions over the art; Got it closes them.
 $('how').onclick = () => { $('how-card').hidden = false; };
+// The front screen (Ken, 2026-10-21). In a browser: the landing page first (free to play, install the app,
+// how to play, the trailer). Installed as an app: straight to the title screen, with Play and How to play.
+// Pages that bring the player here mid-game (?play, ?map, ?go, testing) skip the landing page.
+{
+  const skip = ['play', 'map', 'go', 'noopening', 'bot', 'all'].some(k => params.has(k)) || (() => { try { return sessionStorage.getItem('chomp-landed') === '1'; } catch { return false; } })();
+  const toTitle = () => { try { sessionStorage.setItem('chomp-landed', '1'); } catch { /* fine */ } $('landing').hidden = true; $('title').hidden = false; };
+  if (isApp()) document.body.classList.add('as-app');                 // the app: no trailer or free-to-play line on the title
+  else if (!skip) { $('landing').hidden = false; $('title').hidden = true; }
+  $('land-how').onclick = () => { $('how-card').hidden = false; };
+  $('land-browser').onclick = toTitle;
+  $('land-install').onclick = async () => {
+    const r = await installApp(), note = $('land-note');
+    if (r === 'unavailable') { note.hidden = false; note.textContent = 'This browser cannot install apps. Open this page in Chrome, Edge or Safari to install it, or play in your browser now.'; }
+  };
+}
 $('how-close').onclick = () => { $('how-card').hidden = true; };
 $('credits').onclick = () => { $('credits-card').hidden = false; };
 // Ken's promo trailer (the brand name on the jar covered with a V: tools/cover-label-keys.py).
@@ -996,7 +1012,7 @@ const peek = $('trailer-peek'), peekVideo = peek.querySelector('video');
 const stillOnly = matchMedia('(prefers-reduced-motion: reduce)').matches || touch;
 if (!stillOnly) peekVideo.play().catch(() => {});
 function openTrailer() { peekVideo.pause(); $('trailer-box').hidden = false; const v = $('trailer-video'); v.muted = false; v.volume = 1; v.currentTime = 0; v.play().catch(() => {}); }
-$('trailer').onclick = openTrailer; peek.onclick = openTrailer;
+$('trailer').onclick = openTrailer; peek.onclick = openTrailer; $('land-trailer').onclick = openTrailer;
 $('trailer-close').onclick = () => { const v = $('trailer-video'); v.pause(); $('trailer-box').hidden = true; if (!stillOnly) peekVideo.play().catch(() => {}); };
 $('credits-close').onclick = () => { $('credits-card').hidden = true; };
 // Play goes straight into the game (Ken, 2026-10-21: two or three buttons before play was too many).

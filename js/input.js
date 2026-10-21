@@ -28,14 +28,21 @@ import { settings } from './settings.js';
 import './device.js';                    // which controls are in use: keyboard, mouse, controller, touch (device.js)
 import { installSettingsUi } from './settings-ui.js';
 
-// The orb: how fast a full push to the side turns him (radians a second), and how far the knob may
-// travel, as a share of the steering reach, so it always stays inside the orb.
-const ORB_TURN = 1.7, KNOB = 0.7;
+// The orb: how fast a full push to the side turns him (radians a second).
+const ORB_TURN = 1.7;
+// Which way Wally faces on screen, as an angle from straight up (clockwise), set by wally.js every frame.
+// The orb's arrows turn to it (Ken, 2026-10-21: the orb always at Wally's orientation), and a push is read
+// against them: toward the up arrow is forward for him, whichever way the camera looks.
+let orbAngle = 0;
+export function setOrbHeading(a) { if (Number.isFinite(a)) orbAngle = a; }
+// A push on the orb (screen pixels from its middle) turned into Wally's own frame.
+function toWally(dx, dy) { const c = Math.cos(orbAngle), s = Math.sin(orbAngle); return { x: dx * c + dy * s, y: -dx * s + dy * c }; }
 // Arrows inside the orb, so it explains itself: up to go, round arrows left and right to turn.
 const ORB_ARROWS = '<svg class="orb-arrows" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="rgba(255,255,240,0.85)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">'
-  + '<path d="M38 22 L50 10 L62 22"/><path d="M40 80 L50 90 L60 80" opacity="0.5"/>'
-  + '<path d="M22 38 A30 30 0 0 0 22 62"/><path d="M16 44 L22 38 L28 43"/>'
-  + '<path d="M78 38 A30 30 0 0 1 78 62"/><path d="M84 44 L78 38 L72 43"/></g></svg>';
+  + '<g class="a-go"><path d="M36 26 L50 10 L64 26"/><path d="M50 12 L50 36"/></g><g class="a-back" opacity="0.5"><path d="M40 80 L50 90 L60 80"/></g>'
+  + '<g class="a-left"><path d="M22 36 A30 30 0 0 0 22 64"/><path d="M15 43 L22 36 L29 42"/></g>'
+  + '<g class="a-right"><path d="M78 36 A30 30 0 0 1 78 64"/><path d="M85 43 L78 36 L71 42"/></g>'
+  + '<circle cx="50" cy="50" r="5" fill="rgba(255,255,240,0.7)" stroke="none"/></g></svg>';
 
 export class Input {
   constructor(canvas, touchUi) {
@@ -52,8 +59,9 @@ export class Input {
     addEventListener('blur', () => this.keys.clear());
 
     // The mouse. Click the game to take the cursor (pointer lock); then moving the
-    // mouse turns Wally, the left button held runs him forward, and the right button
-    // held hands the mouse to the camera until it is let go. Esc gives the cursor back.
+    // mouse turns Wally gradually, the left button held takes him forward, a quick click
+    // jumps, and the right button held hands the mouse to the camera until it is let go.
+    // Esc gives the cursor back.
     // Without the cursor taken, dragging turns the camera.
     let drag = null;
     this.aim = 0; this.mouseMode = 'wally'; this.mouseRun = false;
@@ -74,13 +82,13 @@ export class Input {
     // or free (click the game to take it).
     const chip = document.createElement('div'); chip.className = 'mouse-chip'; document.body.append(chip);
     this.showChip = () => {
-      chip.textContent = !locked() ? '' : this.mouseMode === 'wally' ? '🖱 Mouse turns Wally · hold left: run · hold right: look around · Esc: cursor' : '🖱 Looking around · let go of the right button to steer';
+      chip.textContent = !locked() ? '' : this.mouseMode === 'wally' ? '🖱 Mouse turns Wally · hold left: go · click: jump · hold right: look around · Esc: cursor' : '🖱 Looking around · let go of the right button to steer';
       chip.hidden = !locked();
     };
     this.showChip();
     canvas.addEventListener('mousedown', e => {
       if (locked()) {
-        if (e.button === 0) this.mouseRun = true;
+        if (e.button === 0) { this.mouseRun = true; this.leftDown = { t: performance.now(), moved: 0 }; }   // held: go; a quick click: jump (mouseup)
         if (e.button === 2) { this.mouseMode = 'camera'; this.showChip(); }
         return;
       }
@@ -88,7 +96,12 @@ export class Input {
       drag = { x: e.clientX, y: e.clientY, moved: 0 };
     });
     addEventListener('mouseup', e => {
-      if (e.button === 0) this.mouseRun = false;
+      if (e.button === 0) {
+        this.mouseRun = false;
+        // A quick click, the mouse barely moved: jump (Ken, 2026-10-21: hold left to go, click to jump).
+        if (locked() && this.leftDown && performance.now() - this.leftDown.t < 220 && this.leftDown.moved < 12) this.jumpQueued = true;
+        this.leftDown = null;
+      }
       if (e.button === 2 && this.mouseMode === 'camera') { this.mouseMode = 'wally'; this.showChip(); }
       // A click (not a drag) on the game takes the cursor, while a level is being played.
       if (drag && drag.moved < 6 && !locked() && this.canLock && this.canLock()) canvas.requestPointerLock?.();
@@ -103,7 +116,8 @@ export class Input {
     });
     addEventListener('mousemove', e => {
       if (locked()) {
-        if (this.mouseMode === 'wally') this.aim -= e.movementX * 0.0035;
+        if (this.leftDown) this.leftDown.moved += Math.abs(e.movementX) + Math.abs(e.movementY);
+        if (this.mouseMode === 'wally') this.aim -= e.movementX * 0.0022;   // a gradual turn (Ken: too fast before)
         else this.turn -= e.movementX * 0.004;
         this.tilt += e.movementY * 0.0025; return;
       }
@@ -140,13 +154,13 @@ export class Input {
   bindTouch(canvas, ui) {
     const orb = ui.stick, R = 55;
     orb.classList.add('orb'); if (!orb.querySelector('.orb-arrows')) orb.insertAdjacentHTML('afterbegin', ORB_ARROWS);
+    this.orbArrows = orb.querySelector('.orb-arrows');
     const centre = () => { const r = orb.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
     const steer = t => {
-      const c = centre(), dx = t.clientX - c.x, dy = t.clientY - c.y, d = Math.hypot(dx, dy), k = d > R ? R / d : 1;
+      const c = centre(), w = toWally(t.clientX - c.x, t.clientY - c.y), d = Math.hypot(w.x, w.y), k = d > R ? R / d : 1;
       if (d > 10) this.stick.moved = true;
       const still = d < R * 0.22;                                   // the middle: stop
-      this.stick.dx = still ? 0 : dx * k / R; this.stick.dy = still ? 0 : dy * k / R;
-      ui.knob.style.transform = `translate(${dx * k * KNOB}px, ${dy * k * KNOB}px)`;
+      this.stick.dx = still ? 0 : w.x * k / R; this.stick.dy = still ? 0 : w.y * k / R;
     };
     orb.addEventListener('touchstart', e => {
       const t = e.changedTouches[0];
@@ -171,7 +185,7 @@ export class Input {
       for (const t of e.changedTouches) {
         if (this.stick && t.identifier === this.stick.id) {
           if (!this.stick.moved && performance.now() - this.stick.t0 < 280) this.jumpQueued = true;   // a quick tap: jump
-          this.stick = null; orb.classList.remove('active'); ui.knob.style.transform = '';
+          this.stick = null; orb.classList.remove('active');
         }
         if (this.look && t.identifier === this.look.id) this.look = null;
       }
@@ -193,17 +207,18 @@ export class Input {
   bindMouseOrb() {
     const orb = document.getElementById('stick'), knob = document.getElementById('knob'), hud = document.getElementById('hud');
     if (!orb || !knob || !hud) return;
-    hud.append(orb); orb.classList.add('orb', 'mouse-orb'); if (!orb.querySelector('.orb-arrows')) orb.insertAdjacentHTML('afterbegin', ORB_ARROWS);           // it shows and hides with the rest of the play screen
+    hud.append(orb); orb.classList.add('orb', 'mouse-orb'); if (!orb.querySelector('.orb-arrows')) orb.insertAdjacentHTML('afterbegin', ORB_ARROWS);
+    this.orbArrows = orb.querySelector('.orb-arrows');           // it shows and hides with the rest of the play screen
     const R = 55;
     const steer = e => {
-      const r = orb.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-      const d = Math.hypot(dx, dy), k = d > R ? R / d : 1, still = d < R * 0.22;
-      this.stick = { id: 'mouse', dx: still ? 0 : dx * k / R, dy: still ? 0 : dy * k / R };
-      knob.style.transform = `translate(${dx * k * KNOB}px, ${dy * k * KNOB}px)`; orb.classList.add('active');
+      const r = orb.getBoundingClientRect(), w = toWally(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+      const d = Math.hypot(w.x, w.y), k = d > R ? R / d : 1, still = d < R * 0.22;
+      this.stick = { id: 'mouse', dx: still ? 0 : w.x * k / R, dy: still ? 0 : w.y * k / R };
+      orb.classList.add('active');
     };
     // Once the cursor is on the orb it keeps steering until it strays well past the edge, so reaching
     // for full speed never drops it.
-    const stop = () => { this.stick = null; knob.style.transform = ''; orb.classList.remove('active'); };
+    const stop = () => { this.stick = null; orb.classList.remove('active'); };
     orb.addEventListener('mouseenter', steer);
     addEventListener('mousemove', e => {
       if (!orb.classList.contains('active')) return;
@@ -255,6 +270,13 @@ export class Input {
       if (Math.abs(sx) > 0.2 && Math.abs(f) < 0.25) f = 0.25 * Math.abs(sx);   // pushed to the side alone: a slow walk round, so he turns too
       r = 0;
       this.turn -= ease(sx) * ORB_TURN * dt;
+    }
+    if (this.orbArrows) {
+      this.orbArrows.style.transform = `rotate(${orbAngle}rad)`;
+      const s = this.stick || { dx: 0, dy: 0 };
+      // The compass lights the way he is going, from the orb or from the mouse (hold left: go; moving it: turn).
+      this.orbArrows.classList.toggle('go', s.dy < -0.15 || this.mouseRun); this.orbArrows.classList.toggle('back', s.dy > 0.15);
+      this.orbArrows.classList.toggle('left', s.dx < -0.2 || this.aim > 0.004); this.orbArrows.classList.toggle('right', s.dx > 0.2 || this.aim < -0.004);
     }
     if (pad) { this.turn += pad.turn; this.tilt += pad.tilt; }
     const turnKeys = (k.has('q') ? 1 : 0) - (k.has('e') ? 1 : 0);

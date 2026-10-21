@@ -239,8 +239,25 @@ test('the Scoreboard opens, shows the trip by area and switches boards', async (
 });
 
 // ---- The map and the cards: a clear way back -------------------------------------------------
+test('the landing page in a browser: free to play, install, how to play, trailer; then the title', async () => {
+  const p = await page();
+  await go(p, 'index.html', 3000);
+  const t = await p.evaluate(() => ({ shown: !document.getElementById('landing').hidden, title: document.getElementById('title').hidden, text: document.getElementById('landing').textContent }));
+  check('a browser opens on the landing page, the title waiting', t.shown && t.title);
+  check('it says free to play and offers install, how to play and the trailer', /Free to play/.test(t.text) && /Install the app/.test(t.text) && /How to play/.test(t.text) && /trailer/.test(t.text));
+  check('no in-game buttons over it', await p.evaluate(() => [...document.querySelectorAll('.paws-button, .sceptre-button, .score-button')].every(b => getComputedStyle(b).display === 'none')));
+  await p.evaluate(() => document.getElementById('land-browser').click()); await wait(400);
+  check('"or play in your browser" goes to the title with Play and where it begins', await p.evaluate(() => !document.getElementById('title').hidden && /Begin at Croc Park in Cairns, Australia/.test(document.getElementById('title').textContent)));
+  await p.done();
+});
+test('the map stays away until the first level is complete', async () => {
+  const p = await page({ save: { unlocked: ['park'], trip: { difficulty: 'easy', completed: [], items: {}, visits: {}, entered: [] } } });
+  await go(p, 'cane.html?all', 5000);
+  check('a new game: no Map button yet (one less before play)', await p.evaluate(() => { const b = document.querySelector('.trip-map-button'); return !!b && b.hidden; }));
+  await p.done();
+});
 test('the map names the level on its button and has Back to the game; so do the other cards', async () => {
-  const p = await page({ save: { unlocked: ['park'], mangoes: 5 } });
+  const p = await page({ save: { unlocked: ['park', 'cane'], mangoes: 5, trip: { difficulty: 'easy', completed: ['park'], items: {}, visits: { park: 1 }, entered: ['park'] } } });
   await go(p, 'cane.html?all', 5000);
   await p.evaluate(() => document.querySelector('.map-button').click()); await wait(800);
   const btns = await p.evaluate(() => [...document.querySelectorAll('.map-modal:not([hidden]) button.go')].map(b => b.textContent));

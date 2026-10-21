@@ -104,7 +104,7 @@ function questPanel() {
 // do it from the Share menu, so there the button shows how. Hidden when already running as the app.
 let installEvent = null;
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvent = e; appButtons(); });
-const isApp = () => matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
+export const isApp = () => matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
 const isApple = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 function howToInstall() {
   let box = document.querySelector('.install-card');
@@ -117,11 +117,19 @@ function howToInstall() {
   }
   box.hidden = false;
 }
+// Install the game: the browser's own prompt where there is one, the Share steps on an iPhone or iPad.
+// Returns 'prompted', 'apple' or 'unavailable' (a browser that cannot install apps, such as Firefox).
+export async function installApp() {
+  if (installEvent) { installEvent.prompt(); await installEvent.userChoice.catch(() => null); installEvent = null; return 'prompted'; }
+  if (isApple()) { howToInstall(); return 'apple'; }
+  return 'unavailable';
+}
+
 function appButtons() {
   const where = document.querySelector('.opener-buttons');
   if (!where && !phone()) return;                                   // in a level on a computer: not needed, kept out of the way
-  const canFull = document.fullscreenEnabled && !isApp();
-  if (!isApp() && (installEvent || isApple()) && !document.querySelector('.install-button')) {
+  const canFull = document.fullscreenEnabled && !isApp() && phone();   // a computer has F11
+  if (!isApp() && (installEvent || isApple()) && !where && !document.querySelector('.install-button')) {   // (the landing page has its own Install)
     const b = document.createElement('button'); b.type = 'button'; b.className = 'ghost install-button'; b.textContent = '📲 Install the game';
     b.onclick = async () => { if (installEvent) { installEvent.prompt(); const r = await installEvent.userChoice.catch(() => null); if (r && r.outcome === 'accepted') b.remove(); installEvent = null; } else howToInstall(); };
     (where || document.body).append(b); fold();

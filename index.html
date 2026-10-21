@@ -71,6 +71,25 @@
   <button id="t-cam" type="button" aria-label="Camera behind Wally">Cam</button>
 </div>
 
+<!-- The landing page (Ken, 2026-10-21): what a browser shows first. Installed as an app, the game opens
+     straight on the title screen below instead. -->
+<section id="landing" class="overlay landing" hidden>
+  <img class="opener-blur" src="assets/title/opener.webp" alt="">
+  <div class="card landing-card">
+    <img class="landing-logo" src="assets/icons/icon-192.png" alt="">
+    <h1>Chomp 3D</h1>
+    <p class="area">Wally's Cairns Adventure</p>
+    <p class="landing-free"><b>Free to play.</b> A portfolio piece by Ken Bingham, not a commercial product. No ads, no tracking, and nothing about you is ever sold.</p>
+    <div class="landing-buttons">
+      <button id="land-install" class="go" type="button">&#x1F4F2; Install the app</button>
+      <button id="land-how" class="ghost" type="button">How to play</button>
+      <button id="land-trailer" class="ghost" type="button">&#9654; Watch the trailer</button>
+    </div>
+    <p class="landing-note" id="land-note" hidden></p>
+    <p class="fine"><button id="land-browser" class="link" type="button">or play in your browser</button> &middot; <a href="about.html#privacy">Privacy</a> &middot; <a href="about.html">About</a></p>
+  </div>
+</section>
+
 <section id="title" class="overlay opener">
   <!-- Ken's opener art: the title is painted on the sign -->
   <img class="opener-blur" src="assets/title/opener.webp" alt="">
@@ -85,6 +104,7 @@
       <button id="how" class="ghost" type="button">How to play</button>
       <button id="trailer" class="ghost" type="button">&#9654; Trailer</button>
     </div>
+    <p class="begin">Begin at Croc Park in Cairns, Australia</p>
     <p class="credit">Directed by Ken Bingham &middot; Human-centric AI assist: VS Code and Claude &middot; <a href="about.html#made">How it was made</a> &middot; <button id="credits" class="link" type="button">Credits</button> &middot; <a href="about.html">About</a> &middot; <a href="guide.html">How to play</a> &middot; <a href="about.html#privacy">Free to play &amp; privacy</a></p>
   </div>
   <!-- Ken's promo trailer, playing muted on the opening screen; click for the full trailer with sound. -->
