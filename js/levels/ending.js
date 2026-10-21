@@ -96,6 +96,7 @@ const wally = wallySkin ? holder(wallySkin, wallyX, yAt(wallyX, wallyZ), wallyZ,
 const croc = (() => { const s = skinOf('croc-regular', { length: 3.6 }); if (!s) return null; const g = holder(s, wallyX, yAt(wallyX, wallyZ), wallyZ, Math.atan2(kingX - wallyX, kingZ - wallyZ)); g.visible = false; s.play('idle'); return { g, s }; })();
 // Kenny.
 const kennySkin = skinOf('kenny', { height: 1.3 });
+let heldJar = null; if (kennySkin) kennySkin.root.traverse(o => { if (o.name === 'HeldJar') heldJar = o; });   // his jar, a separate piece
 const kenny = kennySkin ? holder(kennySkin, wallyX + 1.2, yAt(wallyX + 1.2, wallyZ - 1.4), wallyZ - 1.4, Math.atan2(kingX - wallyX, kingZ - wallyZ)) : new THREE.Group();
 const jar = kennysJar(jarLabelTexture()); jar.visible = false; scene.add(jar);
 // The gum trees on the far bank, one close by for Kenny.
@@ -104,8 +105,8 @@ const gums = new Trees(scene, { light: quality.name === 'low' });
 for (let k = 0; k < 14; k++) { const z = gumZ - 26 + k * 4 + Math.sin(k) * 2, x = farX + 9 + (k % 3) * 4; gums.add('eucalyptus', x, yAt(x, z), z, 18 + (k % 4) * 3); }
 gums.build();
 const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.42, 9, 10), new THREE.MeshStandardMaterial({ color: 0xd9d2c3, roughness: 0.8 }));   // Kenny's tree: a pale gum trunk to climb
-trunk.position.set(gumX, yAt(gumX, gumZ) + 4.5, gumZ); trunk.castShadow = true; scene.add(trunk);
-{ const crown = new Trees(scene, { light: quality.name === 'low' }); crown.add('eucalyptus', gumX + 0.3, yAt(gumX, gumZ), gumZ, 15); crown.build(); }   // its crown, a gum like the rest
+trunk.position.set(gumX, yAt(gumX, gumZ) + 4.5, gumZ); trunk.visible = false;   // Ken: no white strip; he climbs the gum tree itself (kept only as his line up)
+{ const crown = new Trees(scene, { light: quality.name === 'low' }); crown.add('eucalyptus', gumX, yAt(gumX, gumZ), gumZ, 15); crown.build(); }   // its crown, a gum like the rest
 
 // ---- The script: [start second, who, words, shot] ----------------------------------------------------
 const K = 'The Croc King';
@@ -125,12 +126,12 @@ const LINES = [
   [60, null, '', 'carry'],
   [71, null, '', 'jar'],
   [78, null, '', 'climb'],
-  [86, null, '', 'eyes'],
-  [90, 'Kenny', 'If you see a croc in the Daintree, give it room. It might be Wally.', 'eyes'],
-  [97, null, '', 'sink'],                                       // Ken: the last scene is Wally's eyes above the water, going down
-  [103, null, '', 'end'],                                       // and The End
+  [86, null, '', 'sink'],                                       // Ken: after the climb, Wally's eyes above the water,
+  [88, 'Kenny', 'If you see a croc in the Daintree, give it room. It might be Wally.', 'sink'],   // Kenny's line over them,
+  [96, null, '', 'sink'],                                       // and then he dips under
+  [101, null, '', 'end'],                                       // and The End
 ];
-const END_T = 107;
+const END_T = 105;
 let t = 0, playing = false, line = -1;
 function caption(who, text) { const c = $('scene-caption'); c.hidden = !text; if (!text) return; c.querySelector('b').textContent = who ? `${who}:` : ''; c.querySelector('span').textContent = text; }
 function lineAt(time) { let i = 0; while (i < LINES.length - 1 && time >= LINES[i + 1][0]) i++; return i; }
@@ -143,9 +144,9 @@ function stage(dt, time) {
   const wp = wally.position, kp = kenny.position;
   // Who does what in each shot.
   for (const p of passengers) p.s.play(time < 52 ? 'cheer' : 'wave', { alternatives: ['idle'] });
-  if (kingSkin) kingSkin.play(shot === 'raise' || shot === 'change' ? 'Raise' : who === K ? 'Speak' : 'Sit', { once: shot === 'raise', alternatives: ['Sit'] });
+  if (kingSkin) kingSkin.play('Sit', { speed: 0.25 });                  // Ken: still on his throne, no hand gestures
   // The sceptre: in the King's raised hand, blazing at the change.
-  sceptre.position.set(kingX + 0.4, yAt(kingX, kingZ) + (shot === 'raise' || shot === 'change' ? 5.6 : 3.4), kingZ - 0.9);
+  sceptre.position.set(kingX + 0.9, yAt(kingX, kingZ) + (shot === 'raise' || shot === 'change' ? 3.4 : 2.0), kingZ - 1.2);   // upright beside him; it rises on its own at the change
   sceptre.userData.light.intensity = shot === 'change' ? 40 + Math.sin(into * 20) * 20 : 5;
   // The change: a flash, and Wally is a croc again.
   // After the change (34 s + 2.6) he is a croc, however we got here (played through, or skipped to).
@@ -155,6 +156,7 @@ function stage(dt, time) {
   if (wallySkin) wallySkin.play(shot === 'wally' ? 'Idle' : 'Idle');
   // Climbing and up the tree: arms raised round the trunk (the Celebrate move's raised arms, facing the trunk).
   if (kennySkin) kennySkin.play(shot === 'kenny' ? 'Wave' : shot === 'party' ? 'Celebrate' : shot === 'jar' ? 'Offer' : (shot === 'climb' || shot === 'eyes' || shot === 'sink' || shot === 'end') ? 'Celebrate' : 'Idle', { speed: shot === 'climb' ? 1 : 0.15, alternatives: ['Idle'] });
+  if (heldJar) heldJar.visible = time < 76;                         // the jar is put away after the farewell offer
   for (const c of crowd) { c.g.visible = shot === 'party'; c.s.play('cheer', { alternatives: ['idle'] }); }
   // The farewell: across the river, Kenny on Wally's back.
   if (croc) {
@@ -184,8 +186,8 @@ function stage(dt, time) {
         kenny.position.set(gumX - 0.62, yAt(gumX, gumZ) + 0.1 + Math.min(1, cu) * 5.5, gumZ); kenny.rotation.y = Math.PI / 2;   // facing the trunk, hugging it
         // Wally slides back into the river; then only his eyes show.
         const su = shot === 'climb' ? ease((into - 3) / 4) : 1;
-        const down = shot === 'sink' ? ease((into - 1.8) / 3.4) * 0.8 : shot === 'end' ? 0.8 : 0;   // the last scene: the eyes go under
-        cg.position.set(x1 - 3 - su * 7, -0.1 - su * 0.04 - down, z1 + 1 - su * 0.5); cg.rotation.y = Math.PI / 2;   // back in the water below Kenny's tree, eyes and snout showing, looking up at him
+        const down = shot === 'sink' && time >= 96 ? ease((time - 96.5) / 3.5) * 0.8 : shot === 'end' ? 0.8 : 0;   // only after Kenny's line   // the last scene: the eyes go under
+        cg.position.set(x1 - 3 - su * 7, -0.1 - su * 0.21 - down, z1 + 1 - su * 0.5);   // low: just his eyes above the water cg.rotation.y = Math.PI / 2;   // back in the water below Kenny's tree, eyes and snout showing, looking up at him
       }
     }
   }
