@@ -240,8 +240,9 @@ function drawHud() {
 function finish() {
   game.done = true; game.running = false; $('hud').hidden = true; $('touch').hidden = true;
   $('result-title').textContent = 'The crocs of Croc Park are free';
-  $('result-why').textContent = 'Every croc followed the sceptre out to the sea. Next: up the coast to the Daintree, and the boat on the sandbar. (Up the coast and the push: next to build.)';
+  $('result-why').textContent = 'Every croc followed the sceptre out to the sea. Next: up the coast to the Daintree, and the boat on the sandbar. ';
   $('result').hidden = false;
+  $('again').textContent = 'Up the coast'; $('again').onclick = () => { location.href = 'coast.html'; };
   window.chomp.result = { done: true };
 }
 

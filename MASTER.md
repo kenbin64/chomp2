@@ -524,8 +524,10 @@ and keeps its ending where Ken has not changed it):**
      the harbour side; he leads them over the sand into the sea while the people in the park cheer (Ken).
    - **Boats follow them up the coast (Ken, 2026-10-21):** boats come alongside and throw Wally food, since he
      is still part human.
-   - **Up the coast, played:** Wally leads the crocs out to sea and north along the coast to the mouth of
-     the Daintree River, up the river to the sandbar (saltwater crocs do travel the coast).
+   - **Up the coast, played (built 2026-10-21, `coast.html`):** Wally, sceptre held high, leads the ten crocs
+     north along the coast (land on his left) past Palm Cove and Port Douglas to the mouth of the Daintree
+     River; three tour boats keep alongside and the passengers throw him food (Ken), the feed-o-meter and
+     Kenny's jar as everywhere. (Saltwater crocs do travel the coast.)
    - **The push, played:** Wally leads them and they push the boat off the sandbar. The park's crocs are free
      in the Daintree.
    (This brings back the run back to Croc Park and the Kuranda train, dropped on 2026-10-19.)
