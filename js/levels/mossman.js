@@ -17,7 +17,7 @@ import { Food, kindFor, useJarModel } from '../food.js';
 import { Input, steering, easeBehind } from '../input.js';
 import { Bubbles, pickLine, chatty } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
-import { loadModels, dress } from '../models.js';
+import { loadModels, dress, MODEL_FILES } from '../models.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
@@ -95,7 +95,7 @@ const intro = areaIntro({
     return courseShots({ from: { x: riverX(last.z), z: last.z }, to: { x: wally.pos.x, z: wally.pos.z + 8 }, y: (x, z) => groundAt(x, z).y, height: 34, side: 12 }); },
 });
 
-const models = await loadModels(undefined, { light: touch || quality.name === 'low' });
+const models = await loadModels([...MODEL_FILES, 'talisman-earth'], { light: touch || quality.name === 'low' });   // and Ken's opal, the earth talisman
 useJarModel(models.get('jar'));
 const realism = await loadRealism(renderer, { light: touch || quality.name === 'low' });
 const world = buildMossman(scene, quality, realism);

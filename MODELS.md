@@ -381,3 +381,15 @@ Kenny's moves, same way (`kenny@walk.glb` and so on). He is always happy and bou
 | `kenny@sit.glb` | loop | Sits down contentedly and sways from side to side |
 
 Tourists (`tourist-1@walk.glb` and so on, or shared): walk, throw (an overarm throw), startled (jumps back with hands up, laughing rather than scared), idle.
+
+## The talismans and the new sceptre, all six (Ken's Meshy models, 2026-10-21)
+
+Ken sent the sun, moon, air and earth talismans and a new rainforest sceptre (six empty settings in its
+head). Each was decimated keeping Meshy's texture and compressed (Draco, WebP): the talismans 16k
+triangles with 1024 textures (`talisman-sun.glb` 563 KB, `-moon` 458 KB, `-air` 495 KB, `-earth` 536 KB),
+phone copies 8k with 512 textures; the sceptre 50k with 2048 (`sceptre-hero.glb` 2.0 MB), 16k with 1024
+(`sceptre.glb` 620 KB), phone 8k with 512 (217 KB). The fire talisman is from 2026-10-19. The water
+talisman came as a picture (`assets/talismans/talisman-water.png`), not a model yet. **The settings (Ken,
+final):** heaven above, earth below: sun at the top, moon to its right, air to its left; earth at the
+bottom, fire to its right, water to its left. The guide's stills are rendered from these models by
+`talisman-shots.html`.

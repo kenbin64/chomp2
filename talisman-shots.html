@@ -33,7 +33,7 @@ const key = new THREE.DirectionalLight(0xfff2dd, 2.2); key.position.set(2, 3, 4)
 scene.add(new THREE.AmbientLight(0xffffff, 0.4));
 const camera = new THREE.PerspectiveCamera(30, W / H, 0.01, 100);
 
-const models = await loadModels(['talisman-fire', 'sceptre-hero', 'sceptre']);
+const models = await loadModels(['talisman-fire', 'talisman-sun', 'talisman-moon', 'talisman-air', 'talisman-earth', 'sceptre-hero', 'sceptre']);
 const bronze = new THREE.MeshStandardMaterial({ color: 0xb08a4a, metalness: 0.9, roughness: 0.3 });
 const glow = (color, emissive, k = 0.9) => new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity: k, roughness: 0.25, metalness: 0.2 });
 
@@ -81,10 +81,13 @@ const BUILD = {
   sceptre() { const t = models.get('sceptre-hero') || models.get('sceptre'); return t ? t.scene.clone(true) : null; },
 };
 
+// Ken's model for each, where it exists; the stand-in otherwise.
+const fromModel = name => { const t = models.get(name === 'sceptre' ? 'sceptre-hero' : `talisman-${name}`) || (name === 'sceptre' && models.get('sceptre')); return t ? t.scene.clone(true) : null; };
+
 let shown = null;
 window.show = name => {
   if (shown) scene.remove(shown);
-  shown = BUILD[name]();
+  shown = fromModel(name) || BUILD[name]();
   if (!shown) return false;
   scene.add(shown);
   // Frame it: centred, filling most of the picture, turned a little so it reads as solid.

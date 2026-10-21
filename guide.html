@@ -47,6 +47,22 @@
   .big-warning { font-size: clamp(26px, 5vw, 38px); font-weight: 800; color: #ffb38a; line-height: 1.15; margin: 6px 0 10px; }
   .cloud { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; padding: 0; list-style: none; }
   .cloud li { margin: 0; padding: 4px 12px; border-radius: 999px; background: rgba(255, 209, 102, 0.12); border: 1px solid var(--line); font-weight: 700; }
+  .sceptre-map { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto auto auto auto; gap: 4px 10px; max-width: 460px; margin: 14px auto; align-items: center; justify-items: center;
+                 background: radial-gradient(ellipse at 50% 30%, rgba(255, 209, 102, 0.16), transparent 60%), radial-gradient(ellipse at 50% 85%, rgba(155, 227, 143, 0.12), transparent 60%); border: 2px solid var(--line); border-radius: 18px; padding: 12px; }
+  .sceptre-map figure { margin: 0; text-align: center; }
+  .sceptre-map img { width: 100%; max-width: 110px; display: block; margin: 0 auto; }
+  .sceptre-map figcaption { font-weight: 800; color: var(--gold); margin: 0; }
+  .sceptre-map .pos-sun { grid-column: 2; grid-row: 1; }
+  .sceptre-map .pos-air { grid-column: 1; grid-row: 2; }
+  .sceptre-map .pos-moon { grid-column: 3; grid-row: 2; }
+  .sceptre-map .band { grid-column: 1 / 4; margin: 0; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; font-size: 13px; }
+  .sceptre-map .heaven { grid-row: 3; color: var(--gold); }
+  .sceptre-map .pos-staff { display: none; }
+  .sceptre-map .earth { grid-row: 4; color: var(--green); }
+  .sceptre-map .pos-water { grid-column: 1; grid-row: 5; }
+  .sceptre-map .pos-fire { grid-column: 3; grid-row: 5; }
+  .sceptre-map .pos-earth { grid-column: 2; grid-row: 6; }
+  .talismans.one { grid-template-columns: minmax(150px, 220px); }
   .credit { font-size: 15px; color: var(--soft); text-align: center; margin-top: 28px; }
   @media (max-width: 700px) { .place { grid-template-columns: 1fr; } .trio { grid-template-columns: 1fr; } section { padding: 16px 16px; } }
 </style>
@@ -194,17 +210,34 @@
 
   <section id="talismans">
     <h2>The six talismans and the sceptre</h2>
-    <p>Each talisman goes back into its own setting on the Croc King's sceptre: heaven above (sun, moon and air), earth below (earth, water and fire).</p>
-    <div class="talismans">
-      <figure><img src="screens/guide/talisman-sceptre.png" alt="The Croc King's sceptre"><b>The sceptre</b><figcaption>Found at the bottom of the Croc Park pond.</figcaption></figure>
-      <figure><img src="screens/guide/talisman-fire.png" alt="The fire talisman"><b>Fire</b><figcaption>The cane fields</figcaption></figure>
-      <figure><img src="screens/guide/talisman-sun.png" alt="The sun talisman"><b>Sun</b><figcaption>The Esplanade</figcaption></figure>
-      <figure><img src="screens/guide/talisman-moon.png" alt="The moon talisman"><b>Moon</b><figcaption>The reef</figcaption></figure>
-      <figure><img src="screens/guide/talisman-air.png" alt="The air talisman"><b>Air</b><figcaption>Kuranda: the boomerang</figcaption></figure>
-      <figure><img src="screens/guide/talisman-water.png" alt="The water talisman"><b>Water</b><figcaption>Kuranda: the zip line</figcaption></figure>
-      <figure><img src="screens/guide/talisman-earth.png" alt="The earth talisman, an opal"><b>Earth</b><figcaption>Mossman: the opal</figcaption></figure>
+    <p>The Croc King's sceptre has six settings, and each talisman goes back into its own: <b>heaven above</b> and <b>earth below</b>.</p>
+    <div class="sceptre-map" aria-label="Where each talisman sits on the sceptre">
+      <figure class="pos-sun"><img src="screens/guide/talisman-sun.png" alt=""><figcaption>Sun</figcaption></figure>
+      <figure class="pos-air"><img src="screens/guide/talisman-air.png" alt=""><figcaption>Air</figcaption></figure>
+      <figure class="pos-moon"><img src="screens/guide/talisman-moon.png" alt=""><figcaption>Moon</figcaption></figure>
+      <p class="band heaven">Heaven</p>
+      <figure class="pos-staff"><img src="screens/guide/talisman-sceptre.png" alt="The sceptre"></figure>
+      <p class="band earth">Earth</p>
+      <figure class="pos-water"><img src="screens/guide/talisman-water.png" alt=""><figcaption>Water</figcaption></figure>
+      <figure class="pos-fire"><img src="screens/guide/talisman-fire.png" alt=""><figcaption>Fire</figcaption></figure>
+      <figure class="pos-earth"><img src="screens/guide/talisman-earth.png" alt=""><figcaption>Earth</figcaption></figure>
     </div>
-    <p class="note">The sceptre and the fire and water talismans are the finished artwork. The sun, moon, air and earth pictures are stand-ins until their artwork is made.</p>
+    <p class="note">Heaven above: the sun at the top, the moon to its right, the air to its left. Earth below: the earth at the bottom, the fire to its right, the water to its left.</p>
+    <h3>Heaven</h3>
+    <div class="talismans">
+      <figure><img src="screens/guide/talisman-sun.png" alt="The sun talisman: a gold star with a fiery orb"><b>Sun</b><figcaption>The Esplanade</figcaption></figure>
+      <figure><img src="screens/guide/talisman-moon.png" alt="The moon talisman: a full moon in silver"><b>Moon</b><figcaption>The reef</figcaption></figure>
+      <figure><img src="screens/guide/talisman-air.png" alt="The air talisman: a swirling sky-blue orb"><b>Air</b><figcaption>Kuranda: the boomerang</figcaption></figure>
+    </div>
+    <h3>Earth</h3>
+    <div class="talismans">
+      <figure><img src="screens/guide/talisman-earth.png" alt="The earth talisman: an opal in carved stone"><b>Earth</b><figcaption>Mossman: the opal</figcaption></figure>
+      <figure><img src="screens/guide/talisman-fire.png" alt="The fire talisman: a flame in a carved frame"><b>Fire</b><figcaption>The cane fields</figcaption></figure>
+      <figure><img src="screens/guide/talisman-water.png" alt="The water talisman: a sapphire drop in silver waves"><b>Water</b><figcaption>Kuranda: the zip line</figcaption></figure>
+    </div>
+    <div class="talismans one">
+      <figure><img src="screens/guide/talisman-sceptre.png" alt="The Croc King's sceptre"><b>The sceptre</b><figcaption>Found at the bottom of the Croc Park pond.</figcaption></figure>
+    </div>
   </section>
 
   <section id="tips">
