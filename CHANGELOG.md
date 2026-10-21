@@ -5,6 +5,9 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- How to play is its own page (how-to-play.html), opened from the landing page and the title screen,
+  with the controls for phones and tablets, computers and controllers, and how the game starts.
+
 - The Esplanade's joggers are real people now (they were the early stand-in figures), running at their
   own heights.
 - Tips and notes sit below the buttons on a computer, never over them.

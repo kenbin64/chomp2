@@ -148,7 +148,7 @@ body.touch .dive-buttons button { width: 70px; height: 58px; font-size: 15px; }
   background: rgba(255, 255, 255, 0.12); border: 2px solid rgba(255, 255, 255, 0.55); }
 .ghost:hover { background: rgba(255, 255, 255, 0.22); }
 .credit { margin: 10px 0 0; font-size: 15px; letter-spacing: 0.02em; color: #ffe3a3; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); }
-.how-card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-height: calc(100% - 32px); }
+.how-card { position: fixed; z-index: 80; left: 50%; top: 50%; transform: translate(-50%, -50%); max-height: calc(100% - 32px); overflow: auto; width: min(560px, calc(100% - 24px)); }   /* above the landing page and the title */
 /* Upright screens (phones): show the whole picture, with a soft blurred copy filling the space around it. */
 .opener-blur { display: none; }
 @media (max-aspect-ratio: 6/5) {
@@ -213,7 +213,7 @@ body.touch .dive-buttons button { width: 70px; height: 58px; font-size: 15px; }
 .difficulty-choice:hover, .difficulty-choice:focus { border-color: #ffd166; background: rgba(255, 209, 102, 0.15); outline: none; }
 .difficulty-choice.suggested { border-color: rgba(255, 209, 102, 0.8); }
 /* Ken's promo trailer, over the opener. */
-.trailer-box { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 12px; padding: 16px; background: rgba(4, 14, 20, 0.88); }
+.trailer-box { position: fixed; z-index: 80; inset: 0; display: grid; place-items: center; align-content: center; gap: 12px; padding: 16px; background: rgba(4, 14, 20, 0.88); }
 .trailer-box video { width: min(960px, 100%); max-height: calc(100% - 90px); border-radius: 14px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); background: #000; }
 .trailer-box .go { margin: 0; }
 .map-area .needs { display: block; margin-top: 4px; font-size: 12px; color: #ffb38a; }

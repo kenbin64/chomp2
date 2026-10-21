@@ -988,7 +988,7 @@ window.chompMapClosed = () => {
 };
 
 // The opener: How to play opens the instructions over the art; Got it closes them.
-$('how').onclick = () => { $('how-card').hidden = false; };
+$('how').onclick = () => { location.href = 'how-to-play.html'; };   // its own page (Ken: not a pop-up)
 // The version playing, on the title screen (Ken, 2026-10-21), so a tester can say which one: written by
 // each publish (version.json); on this computer there is none, and nothing shows.
 fetch('version.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(v => { if (v && v.number) $('title-version').textContent = v.number.includes('beta') ? `Beta · version ${v.number}` : `Version ${v.number}`; }).catch(() => {});
@@ -1000,7 +1000,7 @@ fetch('version.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).t
   const toTitle = () => { try { sessionStorage.setItem('chomp-landed', '1'); } catch { /* fine */ } $('landing').hidden = true; $('title').hidden = false; };
   if (isApp()) { document.body.classList.add('as-app'); try { localStorage.setItem('chomp-installed', '1'); } catch { /* fine */ } }                 // the app: no trailer or free-to-play line on the title
   else if (!skip) { $('landing').hidden = false; $('title').hidden = true; }
-  $('land-how').onclick = () => { $('how-card').hidden = false; };
+  $('land-how').onclick = () => { location.href = 'how-to-play.html'; };
   $('land-browser').onclick = toTitle;
   // Once it is installed, the landing page just says so (Ken, 2026-10-21: the only Play button is on the
   // title screen, and it goes straight into the game).
@@ -1016,7 +1016,6 @@ fetch('version.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).t
     if (r === 'unavailable') { note.hidden = false; note.textContent = isInstalled() ? 'Already installed: open Chomp 3D from its icon, or play here.' : 'This browser cannot install apps. Open this page in Chrome, Edge or Safari to install it, or play in your browser now.'; }
   };
 }
-$('how-close').onclick = () => { $('how-card').hidden = true; };
 $('credits').onclick = () => { $('credits-card').hidden = false; };
 // Ken's promo trailer (the brand name on the jar covered with a V: tools/cover-label-keys.py).
 // It plays muted in a small window on the opening screen (not on phones, or when
