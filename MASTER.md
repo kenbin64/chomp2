@@ -100,8 +100,8 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
 6. **Mossman: the opal talisman** (earth), after Kuranda. He bungees down and grabs the opal. (The opal is
    Australia's national gemstone; Queensland's boulder opal comes from the outback, not Mossman, but a
    talisman can come from anywhere.)
-7. **The Daintree:** the King. **Six talismans only** (Ken, 2026-10-20). **Open:** the fourth version of the finale
-   has Wally get "the final talisman" on the vines; which of the six that is, if any.
+7. **The Daintree:** the King. **Six talismans only** (Ken, 2026-10-20); the opal at Mossman is the last, so the
+   sceptre arrives full.
 
 **Mangoes, pearls, shells and paw paws are not talismans (Ken, 2026-10-19):** they are things to trade, or
 things required to get items or talismans. (This replaces the mango, pearl and paw paw talismans.)
@@ -495,8 +495,9 @@ and keeps its ending where Ken has not changed it):**
    rainforest. He must bring the sceptre to the King to help the people. (Nobody is harmed.)
 3. **The rainforest, played:** Wally swings on vines into the rainforest, where he gets **the final
    talisman** (Ken's words). **There are only six talismans (Ken, 2026-10-20; a seventh was considered and
-   dropped).** **Open:** which of the six is found here, if any (all six are won before the Daintree in the
-   list above). He also gathers **paw paws** on the vines, a gift for the King (Ken, 2026-10-20: kept).
+   dropped).** **The final talisman is the opal (earth), at Mossman (Ken, 2026-10-20: "opal is the last");
+   Mossman Gorge is the southern part of Daintree National Park, so it is won in the rainforest, and the
+   sceptre comes to the King full. The vines here lead to the King. He also gathers **paw paws** on the vines, a gift for the King (Ken, 2026-10-20: kept).
 4. **The King, a cinematic:** Wally finds himself face to face with the King Croc on his throne. The King
    asks what his wish is. Ken's lines, close to his words:
    - **Wally:** "My wish is to save the people on the tour boat."
