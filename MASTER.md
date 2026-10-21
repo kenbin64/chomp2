@@ -512,8 +512,20 @@ and keeps its ending where Ken has not changed it):**
      Croc Park to prove himself, so I used the last magic of the sceptre to turn you into your current
      self. Now that all the talismans are back on the sceptre, its full power is back, and I can grant your
      wish."
-5. **The rescue, played (Ken, 2026-10-20):** the sceptre brings the crocs of the park to the river; Wally
-   leads them and they push the boat off the sandbar. The park's crocs are free in the Daintree.
+5. **The rescue (Ken, 2026-10-21: Wally goes back for the crocs; replaces "the sceptre brings them"):**
+   - **To Kuranda, a cinematic journey:** from the Daintree south and up onto the Tableland to Kuranda
+     station.
+   - **Down on the Kuranda Scenic Railway, a cinematic** (as breathtaking as the Skyrail): the historic train
+     winds down the range past Barron Falls, over the Stoney Creek Falls bridge and through the tunnels,
+     the coast opening out below, down to Cairns. (Geography: the railway runs between Kuranda and Cairns,
+     not to the Daintree; hence the journey to Kuranda first.)
+   - **Croc Park:** Wally, with the sceptre at full power, brings out all the crocs of the park (the King's
+     real quest). (**Open:** played or a cinematic.)
+   - **Up the coast, played:** Wally leads the crocs out to sea and north along the coast to the mouth of
+     the Daintree River, up the river to the sandbar (saltwater crocs do travel the coast).
+   - **The push, played:** Wally leads them and they push the boat off the sandbar. The park's crocs are free
+     in the Daintree.
+   (This brings back the run back to Croc Park and the Kuranda train, dropped on 2026-10-19.)
 6. **The ending (Ken, 2026-10-20: keep, but change):** the third version's ending (Wally's choice to become a
    normal croc, Kenny sent by the King, the passengers' cheer, the celebration, Kenny's farewell and the last
    line) stays, with changes. **Open:** what changes.
