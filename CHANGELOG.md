@@ -5,7 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
-The first numbered release, for the first testers.
+The official beta release, for the first testers. Expect frequent updates: the game asks to update when
+one is out.
 
 - **The trip:** seven levels from Croc Park to the Daintree, the rescue and the ending; six talismans set
   in the King's sceptre; going back to a level makes it harder.

@@ -989,7 +989,7 @@ window.chompMapClosed = () => {
 $('how').onclick = () => { $('how-card').hidden = false; };
 // The version playing, on the title screen (Ken, 2026-10-21), so a tester can say which one: written by
 // each publish (version.json); on this computer there is none, and nothing shows.
-fetch('version.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(v => { if (v && v.number) $('title-version').textContent = `Version ${v.number}`; }).catch(() => {});
+fetch('version.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(v => { if (v && v.number) $('title-version').textContent = v.number.includes('beta') ? `Beta · version ${v.number}` : `Version ${v.number}`; }).catch(() => {});
 // The front screen (Ken, 2026-10-21). In a browser: the landing page first (free to play, install the app,
 // how to play, the trailer). Installed as an app: straight to the title screen, with Play and How to play.
 // Pages that bring the player here mid-game (?play, ?map, ?go, testing) skip the landing page.

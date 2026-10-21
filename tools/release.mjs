@@ -5,7 +5,8 @@
 //   node tools/release.mjs patch      a fix              1.0.0 -> 1.0.1
 //   node tools/release.mjs minor      something new      1.0.0 -> 1.1.0
 //   node tools/release.mjs major      a big change       1.0.0 -> 2.0.0
-//   node tools/release.mjs 1.0.0      an exact version (the first release)
+//   node tools/release.mjs beta       the next beta update     1.0.0-beta.1 -> 1.0.0-beta.2
+//   node tools/release.mjs 1.0.0-beta.1   an exact version (the first beta)
 //   add --no-e2e to skip the browser suite (it needs the local server running: node serve.mjs)
 //
 // It: checks nothing is left uncommitted; runs the unit tests and the browser suite; sets the version in
@@ -30,9 +31,13 @@ if (out('git status --porcelain')) stop('there are uncommitted changes. Commit t
 
 // The new version.
 const pkgPath = join(GAME, 'package.json'), pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
-const [M, m, p] = (pkg.version || '0.0.0').split('.').map(Number);
-const next = /^\d+\.\d+\.\d+$/.test(bump) ? bump : bump === 'major' ? `${M + 1}.0.0` : bump === 'minor' ? `${M}.${m + 1}.0` : bump === 'patch' ? `${M}.${m}.${p + 1}` : null;
-if (!next) stop(`"${bump}" is not patch, minor, major or a version like 1.2.3`);
+// A version is X.Y.Z, or X.Y.Z-beta.N while in beta (Ken, 2026-10-21: the official beta release).
+const cur = pkg.version || '0.0.0', [core, pre] = cur.split('-'), [M, m, p] = core.split('.').map(Number);
+const betaN = pre && /^beta\.(\d+)$/.test(pre) ? Number(pre.split('.')[1]) : null;
+const next = /^\d+\.\d+\.\d+(-beta\.\d+)?$/.test(bump) ? bump
+  : bump === 'beta' ? (betaN !== null ? `${core}-beta.${betaN + 1}` : `${M}.${m}.${p + 1}-beta.1`)
+  : bump === 'major' ? `${M + 1}.0.0` : bump === 'minor' ? `${M}.${m + 1}.0` : bump === 'patch' ? (betaN !== null ? core : `${M}.${m}.${p + 1}`) : null;
+if (!next) stop(`"${bump}" is not beta, patch, minor, major or a version like 1.2.3 or 1.2.3-beta.1`);
 if (out('git tag --list').split('\n').includes(`v${next}`)) stop(`v${next} already exists`);
 
 // The tests: nothing goes out that fails them.
@@ -50,7 +55,7 @@ writeFileSync(logPath, log);
 // GitHub: the release commit and its tag.
 run('git add package.json CHANGELOG.md');
 run(`git commit -m "Release v${next}"`);
-run(`git tag -a v${next} -m "Chomp 3D v${next}"`);
+run(`git tag -a v${next} -m "Chomp 3D v${next}${next.includes('beta') ? ' (beta)' : ''}"`);
 run('git push');
 run(`git push origin v${next}`);
 

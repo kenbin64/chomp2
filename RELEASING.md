@@ -10,7 +10,8 @@ say exactly which version they are playing.
 2. Start the local server in another terminal: `node serve.mjs`
 3. Run one of:
 
-       node tools/release.mjs patch     a fix              1.0.0 -> 1.0.1
+       node tools/release.mjs beta      a beta update      1.0.0-beta.1 -> 1.0.0-beta.2
+       node tools/release.mjs patch     a fix              1.0.0 -> 1.0.1   (from a beta: the final 1.0.0)
        node tools/release.mjs minor     something new      1.0.0 -> 1.1.0
        node tools/release.mjs major     a big change       1.0.0 -> 2.0.0
 
