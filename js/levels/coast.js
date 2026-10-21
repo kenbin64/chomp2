@@ -5,6 +5,7 @@
 // him food, since he is still part human (Ken); the feed-o-meter and Kenny's jar as everywhere.
 // Rules: coast-rules.js (the coast, the boats) and rescue-rules.js (the crocs' line), both tested.
 
+import { installMenu } from '../menu.js';
 import { guideArrow } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, installScore } from '../points.js';
 import * as THREE from 'three';
@@ -311,3 +312,4 @@ if (params.has('play') || params.has('go')) start();   // ?go: arriving in the m
 installBook({ pause: on => { if (game.running) game.paused = on; } });
 installGear({ scene, wally, food, mouth: () => wally.mouthPosition(), hasAir: false, toast: (t, k) => toast(t, k), openBook: () => openBook('wally'), running: () => game.running && !game.paused, pause: on => { if (game.running) game.paused = on; } });   // the carried items work here too (gear.js)
 installScore({ pause: on => { if (game.running) game.paused = on; } });   // the points and the Scoreboard (points.js)
+installMenu();                                                          // Paws, the phone menu, every card closable (menu.js)

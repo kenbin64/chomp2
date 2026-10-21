@@ -576,3 +576,24 @@ body.touch .gear-use { bottom: 224px; }
 .score-tabs { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 10px 0 4px; }
 .score-tab { font: 700 13px var(--font); padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(255,209,102,0.5); background: transparent; color: #eaf4f2; cursor: pointer; }
 .score-tab.on { background: #ffd166; color: #102030; }
+
+/* Paws (menu.js): Wally's pause, in the second row left of the Sceptre. */
+.paws-button { position: fixed; z-index: 40; top: calc(max(10px, env(safe-area-inset-top)) + 46px); left: 50%; transform: translateX(calc(-100% - 70px)); font: 800 16px var(--font); padding: 8px 14px; border-radius: 999px; border: 2px solid rgba(255,209,102,0.7); background: rgba(10, 30, 44, 0.75); color: #ffd166; cursor: pointer; }
+.paws-button:hover { background: rgba(255,209,102,0.25); }
+#paused .sub { margin-top: -4px; }
+/* Phones (menu.js): every top button folds into the menu behind the burger, clear of the game. */
+.menu-burger { position: fixed; z-index: 45; top: max(10px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: 48px; height: 44px; border-radius: 14px; border: 2px solid rgba(255,209,102,0.7); background: rgba(10, 30, 44, 0.8); color: #ffd166; font: 800 24px var(--font); cursor: pointer; }
+.menu-panel { position: fixed; z-index: 44; top: calc(max(10px, env(safe-area-inset-top)) + 52px); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 18px; background: rgba(10, 30, 44, 0.94); border: 2px solid rgba(255,209,102,0.5); min-width: 210px; max-height: calc(100vh - 80px); overflow: auto; }
+.menu-panel[hidden] { display: none; }
+.menu-panel > * { position: static !important; transform: none !important; left: auto !important; right: auto !important; top: auto !important; width: 100%; justify-content: center; text-align: center; }
+/* With the top buttons folded away on phones: the meter back at the top, the arrow and tips below the objective panel. */
+body.phone-menu .energy { top: max(10px, env(safe-area-inset-top)); width: min(320px, 36vw); }
+body.phone-menu .guide-arrow { top: calc(max(10px, env(safe-area-inset-top)) + 150px); }
+body.phone-menu .tip-card { top: calc(max(10px, env(safe-area-inset-top)) + 210px); }
+/* Free to play, at the top of the title screen (Ken, 2026-10-21). */
+.free-banner { position: absolute; z-index: 2; top: calc(max(10px, env(safe-area-inset-top)) + 96px);   /* under both rows of buttons */ left: 50%; transform: translateX(-50%); margin: 0; padding: 6px 14px; border-radius: 999px; background: rgba(10, 30, 44, 0.8); border: 1px solid rgba(255, 209, 102, 0.6); color: #fff; font: 700 14px var(--font); white-space: nowrap; max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; }
+.free-banner a { color: #ffd166; }
+@media (max-width: 560px) { .free-banner { white-space: normal; text-align: center; font-size: 13px; border-radius: 14px; } }
+body.phone-menu .free-banner { top: calc(max(10px, env(safe-area-inset-top)) + 54px); }
+/* The gear badge waits until play starts: on the title screen it sat on the credit line. */
+#title:not([hidden]) ~ .gear-badge, #title:not([hidden]) ~ .gear-use { display: none; }

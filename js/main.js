@@ -970,10 +970,20 @@ let attempt = null;                                 // this go at the park (trip
 addEventListener(PROGRESS_CHANGED, () => { progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); });   // the book, trades and shops write it too
 const PARK_STARS = [40, 70, 100];               // park score for one, two and three stars
 
+// The map over the park before any play (index.html?map, 'Back to the map'). Closed without picking a
+// place (the X, outside it, Back to the game), what it covered comes back: the title screen to press
+// Play on (Ken, 2026-10-21: closing it with the X left the camera circling and no Wally).
+let underMap = [];
 function showMap() {
+  underMap = ['title', 'win', 'over'].filter(id => !$(id).hidden);
   $('title').hidden = true; $('win').hidden = true; $('over').hidden = true;
   openMap();
 }
+window.chompMapClosed = () => {
+  if (game.running) return;
+  for (const id of underMap.length ? underMap : ['title']) $(id).hidden = false;
+  underMap = [];
+};
 
 // The opener: How to play opens the instructions over the art; Got it closes them.
 $('how').onclick = () => { $('how-card').hidden = false; };

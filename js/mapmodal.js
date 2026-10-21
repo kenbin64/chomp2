@@ -7,6 +7,7 @@
 // shown, greyed, with what it takes to get there. ?all opens everything, for
 // testing.
 
+import { installMenu } from './menu.js';
 import { areaForPath } from './area-path.js';
 import { installScore, clearTrip } from './points.js';
 import { AREAS } from './quests.js';
@@ -250,6 +251,7 @@ export function closeMap() {
   if (!modal || modal.hidden) return;
   modal.hidden = true;
   if (onPause) onPause(false);
+  if (window.chompMapClosed) window.chompMapClosed();          // the page puts back what the map covered (main.js)
 }
 
 // Put the Map button on the page. pause(on): the page's own pause, used while the map is open.
@@ -258,6 +260,7 @@ export function installMap({ pause = null } = {}) {
   addNextStop();
   installSceptre({ pause });                                    // the sceptre card, beside the map, in every area
   installScore({ pause });                                      // the points and the Scoreboard (points.js)
+  installMenu();                                                // Paws, the phone menu, every card closable (menu.js)
   const b = el('button', 'map-button', '🗺 Map'); b.type = 'button'; b.title = 'The map (Tab)';
   b.onclick = () => (modal && !modal.hidden ? closeMap() : openMap());
   document.body.append(b);

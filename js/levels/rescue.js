@@ -6,6 +6,7 @@
 // (Ken). Then, next to build: up the coast to the Daintree, and the push.
 // The rules are rescue-rules.js (tested); the park is world.js's.
 
+import { installMenu } from '../menu.js';
 import { guideArrow, nearest } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, installScore } from '../points.js';
 import * as THREE from 'three';
@@ -291,3 +292,4 @@ requestAnimationFrame(frame);
 window.chomp = { game, wally, crocs, scene, camera, trail, sceptre };
 if (params.has('play') || params.has('go')) start();   // ?go: arriving in the middle of the story, straight in (the fly-over still plays)
 installScore({ pause: on => { if (game.running) game.paused = on; } });   // the points and the Scoreboard (points.js)
+installMenu();                                                          // Paws, the phone menu, every card closable (menu.js)

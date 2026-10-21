@@ -8,6 +8,7 @@
 // The river is the Daintree level's (daintree-rules.js, daintree-scene.js); the push is push-rules.js
 // and the line is rescue-rules.js (all tested).
 
+import { installMenu } from '../menu.js';
 import { guideArrow, nearest } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, installScore } from '../points.js';
 import * as THREE from 'three';
@@ -304,3 +305,4 @@ function frame() {
 requestAnimationFrame(frame);
 if (params.has('play') || params.has('go')) start();   // ?go: arriving in the middle of the story, straight in (the fly-over still plays)
 installScore({ pause: on => { if (game.running) game.paused = on; } });   // the points and the Scoreboard (points.js)
+installMenu();                                                          // Paws, the phone menu, every card closable (menu.js)

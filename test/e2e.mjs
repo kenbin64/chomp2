@@ -39,7 +39,13 @@ async function page({ save = null, points = null, size = [1100, 700], phone = fa
   p.done = () => ctx.close();
   return p;
 }
-const go = async (p, url, ms = 7000) => { await p.goto(BASE + url); await wait(ms); };
+// Open a page and wait for it: until the game has loaded (its models can take a while over the
+// internet), then a moment more for it to settle.
+const go = async (p, url, ms = 7000) => {
+  await p.goto(BASE + url);
+  await p.waitForFunction(() => window.chomp || !document.querySelector('script[src*="js/levels/"], script[src*="js/main.js"]'), { timeout: 90000 }).catch(() => {});
+  await wait(ms);
+};
 const store = (p, key) => p.evaluate(k => JSON.parse(localStorage.getItem(k) || 'null'), key);
 
 const tests = [];
@@ -251,8 +257,22 @@ test('the map names the level on its button and has Back to the game; so do the 
   await p.done();
 });
 
+test('regression: the map that opens on arrival, closed with the X, brings back the title screen', async () => {
+  for (const how of ['X', 'Back to the game', 'outside']) {
+    const p = await page({ save: { unlocked: ['park'], trip: { difficulty: 'easy', completed: [], items: {}, visits: {}, entered: [] } } });
+    await go(p, 'index.html?map', 6000);
+    check(`(${how}) the map is open on arrival`, await p.evaluate(() => [...document.querySelectorAll('.map-modal')].some(m => !m.hidden)));
+    await p.evaluate(how => { const m = [...document.querySelectorAll('.map-modal')].find(m => !m.hidden);
+      if (how === 'X') m.querySelector('.map-close').click(); else if (how === 'outside') m.click(); else [...m.querySelectorAll('button')].find(b => b.textContent === 'Back to the game').click(); }, how);
+    await wait(800);
+    check(`(${how}) closed: the title screen is back, ready for Play`, await p.evaluate(() => !document.getElementById('title').hidden));
+    await p.done();
+  }
+});
+
 // ---- The feedback and takedown form ----------------------------------------------------------
 test('the feedback form: sends a message; refuses an empty one, a takedown with no email, and robots', async () => {
+  if (!/localhost|127[.]0[.]0[.]1/.test(BASE)) { console.log('  (skipped on the hosted site: it would email Ken)'); return; }
   const { readFileSync, existsSync } = await import('node:fs');
   const log = new URL('../feedback.log', import.meta.url);
   const before = existsSync(log) ? readFileSync(log, 'utf8').length : 0;
