@@ -14,6 +14,8 @@ import * as THREE from 'three';
 import * as Trip from '../trip-rules.js';
 import { HALF, START_Z, BOAT_START_Z, BOAT_LENGTH, AGROUND_Z, SANDBAR, CROC, riverX, boatX, groundAt, insideRiver, boatStep, aground, inThrowRange, crocSpots, crocsRoundBoat, crocStep, crocBites, afterBite } from './daintree-rules.js';
 import { buildDaintree } from './daintree-scene.js';
+import { vineCourse, forestGround, insideForest } from './daintree-forest.js';
+import { kingScene } from './king-court.js';
 import { Wally } from '../wally.js';
 import { Food, randomKind, useJarModel } from '../food.js';
 import { Input, steering, easeBehind } from '../input.js';
@@ -54,7 +56,7 @@ function inBoat(x, z) {
   const along = dx * ax + dz * az, side = dx * az - dz * ax;
   return Math.abs(along) < BOAT_LENGTH / 2 + 0.4 && Math.abs(side) < 2.2;
 }
-setGround({
+const riverGround = {
   stand(x, z) { const g = groundAt(x, z); return { y: g.y, surface: g.surface === 'water' ? 'water' : 'land' }; },
   move(x, z, nx, nz) {
     const blocked = (px, pz) => !insideRiver(px, pz) || inBoat(px, pz);
@@ -66,7 +68,15 @@ setGround({
   foodAt: (x, z) => { const g = groundAt(x, z); return g.surface === 'water' ? 0 : g.y; },
   isWater: (x, z) => groundAt(x, z).surface === 'water',
   start: () => ({ x: riverX(START_Z) - 2, y: groundAt(riverX(START_Z) - 2, START_Z).y, z: START_Z }),
-});
+};
+setGround(riverGround);
+// The rainforest's ground, once he goes in (daintree-forest.js).
+const forestGroundRules = {
+  stand(x, z) { const g = forestGround(x, z); return { y: g.y, surface: g.surface }; },
+  move(x, z, nx, nz) { return insideForest(nx, nz) ? { x: nx, z: nz } : { x, z }; },
+  foodAt: (x, z) => forestGround(x, z).y, isWater: (x, z) => forestGround(x, z).surface === 'water',
+  start: () => ({ x: 0, y: 1, z: 0 }),
+};
 // The boat's heading along the river at z (radians, 0 = +z, turning toward +x).
 function boatHeading(z) { return Math.atan2(boatX(z + 1) - boatX(z - 1), 2); }
 
@@ -92,7 +102,7 @@ const intro = areaIntro({
   shots: () => courseShots({ from: { x: riverX(SANDBAR.z), z: SANDBAR.z }, to: { x: wally.pos.x, z: wally.pos.z - 10 }, y: 0, height: 40, side: 22 }),
 });
 
-const models = await loadModels([...MODEL_FILES, 'river-boat'], { light: touch || quality.name === 'low' });   // and Ken's riverboat
+const models = await loadModels([...MODEL_FILES, 'river-boat', 'king-croc', 'king-throne'], { light: touch || quality.name === 'low' });   // and Ken's riverboat
 useJarModel(models.get('jar'));
 const realism = await loadRealism(renderer, { light: touch || quality.name === 'low' });
 const world = buildDaintree(scene, quality, realism);
@@ -109,6 +119,10 @@ const kennyMesh = new THREE.Group(); kennyMesh.visible = false; scene.add(kennyM
 let kennyPoser = null;
 { const skin = dress(kennyMesh, models.get('kenny'), { height: 1.3 }); if (skin && skin.clips.size) kennyPoser = new HumanoidPoser(skin.root); }
 const vegemite = kennysJar(jarLabelTexture()); vegemite.visible = false; scene.add(vegemite);
+
+// ---- The rainforest and the King's court (daintree-forest.js, king-court.js) --------------------
+const forest = vineCourse({ scene, models, quality, wally, sound, fx, bubbles, toast: (t, k) => toast_(t, k) });
+const court = kingScene({ scene, camera, wally, models, look: forest.look, caption: (w, t) => caption(w, t), sound });
 
 // A person or croc in a holder: fitting a model lifts its own root so it stands on y = 0,
 // so it is the holder that is placed and turned.
@@ -165,9 +179,10 @@ const ringCrocs = crocsRoundBoat().map(s => { const c = makeCroc(s.x, s.z - 30, 
 const input = new Input(canvas, touch ? { stick: $('stick'), knob: $('knob'), jump: $('t-jump'), fours: $('t-fours'), pause: $('t-pause'), cam: $('t-cam') } : null);
 input.onPause = () => setPaused(!game.paused);
 input.onMute = () => toast_('Sound ' + (sound.toggleMute() ? 'off' : 'on'), 'info');
-const game = { running: false, paused: false, done: false, time: 0, energy: ENERGY_MAX, lives: LIVES, faint: 0, points: 0, caught: 0, streak: 0, behind: 0, scene: null, stun: 0, bites: 0, stolen: 0, crocTip: false };
+const game = { running: false, paused: false, done: false, time: 0, energy: ENERGY_MAX, lives: LIVES, faint: 0, points: 0, caught: 0, streak: 0, behind: 0, scene: null, stun: 0, bites: 0, stolen: 0, crocTip: false, phase: 'river' };
 game.tripDrain = Trip.drainFactor(progress.trip, 'daintree', Trip.attemptLevel(progress.trip, 'daintree').level);
-window.chomp = { game, wally, scene, camera, boat, passengers };
+window.chomp = { game, wally, scene, camera, boat, passengers, forest, court };
+window.chomp.toForest = () => { game.running = true; $('title').hidden = true; game.scene = { over: true }; fade(() => enterForest()); };   // testing: straight to the rainforest
 
 function toast_(text, kind = 'good') {
   const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
@@ -283,6 +298,20 @@ function crocsStep(dt) {
   }
 }
 
+// One frame in the rainforest: the swing, the camera from the side, the sun on him.
+function forestStep(dt, t) {
+  const k = input.read();
+  forest.update(dt, t, k);
+  if (forest.state === 'bank') wally.update(dt, { forward: 0, right: 0, jump: false, fours: false }, 0, 1);
+  world.sun.target.position.copy(wally.pos); world.sun.position.copy(wally.pos).add(new THREE.Vector3(-30, 60, -20));
+  drawHud();
+}
+function forestCamera(dt) {
+  const at = forest.cameraTarget();
+  camera.position.lerp(forest.cameraFrom(at), Math.min(1, dt * 3));
+  camTarget.lerp(at, Math.min(1, dt * 5)); camera.lookAt(camTarget);
+}
+
 function outOfPuff(why) {
   game.lives--; sound.play.lose();
   if (game.lives <= 0) { finish(false); return; }
@@ -345,14 +374,37 @@ function sandbarStep(dt) {
 function endSandbar() {
   if (!game.scene || game.scene.over) return;
   game.scene.over = true; caption('', ''); $('scene-skip').hidden = true;
-  finish(true);
+  fade(() => enterForest());
 }
+// A fade through black between parts.
+function fade(then) { $('fade').classList.add('on'); setTimeout(() => { then(); setTimeout(() => $('fade').classList.remove('on'), 120); }, 850); }
+
+// ---- The rainforest: the vine swing (played) ---------------------------------------------------
+function enterForest() {
+  game.phase = 'forest'; game.scene = null; game.done = false;
+  setGround(forestGroundRules);
+  forest.start(() => enterCourt());
+  $('hud').hidden = false;
+  bubbles.say(wally.root, "Into the rainforest. Hang on, everyone. I'm coming, your Majesty!", 3.4);
+  toast_('Space: leap for the vine, and let go. Hold forward to swing higher. Let go on the way up!', 'info');
+}
+
+// ---- The King's court: a cinematic ----------------------------------------------------------------
+function enterCourt() {
+  game.phase = 'court';
+  fade(() => { $('hud').hidden = true; $('scene-skip').hidden = false; court.start(forest.gathered, () => { $('scene-skip').hidden = true; finish(true); }); });
+}
+
 function caption(who, text) {
   const c = $('scene-caption'); c.hidden = !text; if (!text) return;
   c.querySelector('b').textContent = `${who}:`; c.querySelector('span').textContent = text;
 }
-$('scene-skip').onclick = e => { e.stopPropagation(); endSandbar(); };
-addEventListener('keydown', e => { if (game.scene && !game.scene.over && ['Enter', 'Escape', ' '].includes(e.key) && !e.repeat) { e.preventDefault(); endSandbar(); } });
+$('scene-skip').onclick = e => { e.stopPropagation(); if (court.active) court.skip(); else endSandbar(); };
+addEventListener('keydown', e => {
+  if (e.repeat || !['Enter', 'Escape', ' '].includes(e.key)) return;
+  if (court.active) { e.preventDefault(); court.skip(); }
+  else if (game.scene && !game.scene.over) { e.preventDefault(); endSandbar(); }
+});
 
 // ---- Camera: behind him, low over the water -------------------------------------------------------
 const camTarget = new THREE.Vector3();
@@ -378,7 +430,8 @@ function drawHud() {
   $('feed').classList.toggle('red', inRedZone(game.energy));
   $('lives').textContent = '●'.repeat(Math.max(0, game.lives)) + '○'.repeat(Math.max(0, LIVES - game.lives));
   const togo = Math.max(0, Math.round(AGROUND_Z - boat.z));
-  $('job').textContent = `Swim with the tour boat and catch what they throw (${togo} m down the river)`;
+  $('job').textContent = game.phase === 'forest' ? `Swing to the King's court. Paw paws for the King: ${forest.gathered} of ${forest.total}`
+    : `Swim with the tour boat and catch what they throw (${togo} m down the river)`;
 }
 
 function start() {
@@ -398,11 +451,11 @@ function setPaused(p) { if (!game.running) return; game.paused = p; $('paused').
 function finish(won) {
   game.running = false;
   $('hud').hidden = true; $('touch').hidden = true;
-  $('result-title').textContent = won ? 'Into the rainforest!' : 'Out of puff';
-  $('result-why').textContent = won ? 'The boat is stuck and the crocs are all round it. Wally has to take the sceptre to the King. (The rainforest and the King: next to build.)' : 'Kenny can only bring his jar three times in a place.';
+  $('result-title').textContent = won ? 'The King will grant the wish' : 'Out of puff';
+  $('result-why').textContent = won ? "The sceptre is whole again, and the King has heard Wally's wish. Next: the crocs of the park come to the rescue. (The rescue: next to build.)" : 'Kenny can only bring his jar three times in a place.';
   markRetry(won, 'the Daintree River');
   $('result-lines').innerHTML = '';
-  for (const [label, v] of [['Food caught', game.caught], ['Croc bites', game.bites], ['Snapped up by crocs', game.stolen], ['Points', game.points]]) {
+  for (const [label, v] of [['Food caught', game.caught], ['Croc bites', game.bites], ['Snapped up by crocs', game.stolen], ['Paw paws for the King', `${forest.gathered} of ${forest.total}`], ['Points', game.points]]) {
     const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }
   $('result').hidden = false;
@@ -422,14 +475,17 @@ camera.position.set(camTarget.x, camTarget.y + 5, camTarget.z - 10);
 let t = 0, last = performance.now();
 function frame() {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt;
-  if (game.running && !game.paused && !game.scene) step(dt, t);
+  if (game.running && !game.paused && !game.scene && game.phase === 'river') step(dt, t);
+  if (game.running && !game.paused && game.phase === 'forest') forestStep(dt, t);
+  if (court.active && !game.paused) court.update(dt, t);
   if (game.scene && !game.scene.over && !game.paused) sandbarStep(dt);
   if (game.running || game.scene) passengersStep(dt, t);
   else for (const p of passengers) { p.skin.play('idle'); p.skin.update(dt); }
   for (const c of bankCrocs) c.skin.update(dt);                   // their moves are in step (crocsStep)
   bubbles.update(dt); fx.update(dt, t);
   world.update(t, camera);
-  if (!game.scene) followCamera(dt);
+  if (!game.scene && game.phase === 'river') followCamera(dt);
+  else if (game.phase === 'forest') forestCamera(dt);
   intro.update(dt, camera);
   fpsWatch(dt);
   renderer.render(scene, camera);
