@@ -7,6 +7,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 - The first task is clear from the start: a big gold arrow bobs above the pond over the sceptre, and the
   on-screen arrow points to it with the distance, until Wally finds it.
+- As the opening ends: "This is Wally the crocodile, at Croc Park in Cairns, Australia, Far North
+  Queensland. Find the sceptre at the bottom of the pond." The objective and the tip name the sceptre.
 
 ## v1.0.0-beta.2 (2026-10-21)
 

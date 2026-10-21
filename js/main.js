@@ -766,7 +766,7 @@ function openingStep(dt, t) {
   cam.dist = Math.min(22, Math.max(5, cam.dist + k.zoom));
   const steering = opening.step(dt, t);
   // The first task: the on-screen arrow points to the sceptre too, with how far.
-  if (arrow) arrow.update(opening.phase === 'croc' ? { x: opening.sceptreAt.x, z: opening.sceptreAt.z, label: 'Something magical (dive down)' } : null, wally.pos, cam.yaw);
+  if (arrow) arrow.update(opening.phase === 'croc' ? { x: opening.sceptreAt.x, z: opening.sceptreAt.z, label: 'The sceptre (dive down)' } : null, wally.pos, cam.yaw);
   const still = { forward: 0, right: 0, jump: false, fours: false, turn: 0, turnKeys: 0, tilt: 0, zoom: 0 };
   if (steering) diveStep(dt, k); else { game.wantDepth = PARK_TREASURE.surfaceY; diveStep(dt, still); }
   if (opening.phase === 'intro') $('dive-buttons').hidden = true;      // not during the cinematic

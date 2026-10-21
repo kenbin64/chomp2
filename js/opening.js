@@ -38,14 +38,13 @@ const LINE_SECONDS = 2.7;
 // The cinematic (Ken, 2026-10-20): one smooth pan spiralling down over the park to
 // the sign, the sign held a couple of seconds, then a glide to behind Wally and the
 // player has him. The words run over the start of play.
-const SPIRAL = 10, HOLD = 2.5, GLIDE = 2.2, CAPTION_SECONDS = 3;
+const SPIRAL = 10, HOLD = 2.5, GLIDE = 2.2, CAPTION_SECONDS = 4.5;   // long enough to read each line
 const ease = u => { u = Math.min(1, Math.max(0, u)); return u * u * (3 - 2 * u); };
 const lerp = (a, b, u) => a + (b - a) * u;
+// The words as play begins (Ken, 2026-10-21): who and where Wally is, and the first thing to do.
 const INTRO_LINES = [
-  'This is an ordinary crocodile. The park calls him Wally.',
-  "He's no different from any other croc. Except he is.",
-  'You and Wally are off on an adventure around Cairns.',
-  'To begin, swim the pond and find something magical.',
+  'This is Wally the crocodile, at Croc Park in Cairns, Australia, Far North Queensland.',
+  'Find the sceptre at the bottom of the pond.',
   'Let the adventure begin!',
 ];
 
@@ -178,9 +177,9 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
       captionAt = 0; line = -1;
       document.getElementById('hud').hidden = false;
       if (matchMedia('(pointer: coarse)').matches) document.getElementById('touch').hidden = false;
-      document.getElementById('quest-title').textContent = 'Find something magical in the pond';
+      document.getElementById('quest-title').textContent = 'Find the sceptre at the bottom of the pond';
       document.getElementById('goals').innerHTML = '';
-      if (!showTip('opening-dive', 'Swim the pond and find something magical on the bottom. W A S D (or the stick) to swim; Shift (or Dive) to go under; Space (or Up) to come back up.')) toast('Find something magical in the pond. Shift to dive', 'info');
+      if (!showTip('opening-dive', 'Find the sceptre at the bottom of the pond: follow the gold arrow. W A S D (or the stick) to swim; Shift (or Dive) to go under; Space (or Up) to come back up.')) toast('Find the sceptre at the bottom of the pond. Shift to dive', 'info');
     }
     if (p === 'change') {
       captionAt = -1; say(null);                               // the words stop if he finds it quickly
