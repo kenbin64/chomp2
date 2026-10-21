@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to Play · Chomp 3D: Wally's Cairns Adventure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  /* The guide: a plain scrolling page in the game's colours (the same look as about.html). */
+  :root { --ink: #eaf4f2; --soft: #b9d3cf; --gold: #ffd166; --red: #c0392b; --green: #9be38f; --panel: rgba(12, 40, 56, 0.92); --line: rgba(255, 209, 102, 0.35); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0b1d27 linear-gradient(180deg, #0f3346, #0b1d27 420px); color: var(--ink); font: 17px/1.6 'Baloo 2', system-ui, sans-serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 16px 64px; }
+  a { color: var(--gold); }
+  .back { display: inline-block; margin-bottom: 18px; font-weight: 800; text-decoration: none; }
+  h1 { margin: 0; font-size: clamp(40px, 9vw, 72px); line-height: 1.05; color: var(--gold); text-shadow: 0 4px 0 var(--red), 0 8px 18px rgba(0, 0, 0, 0.4); }
+  .lede { font-size: 20px; color: var(--soft); margin: 10px 0 20px; }
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+  nav.toc a { padding: 4px 12px; border: 2px solid var(--line); border-radius: 999px; text-decoration: none; font-weight: 700; font-size: 15px; }
+  section { background: var(--panel); border: 2px solid var(--line); border-radius: 20px; padding: 20px 24px; margin: 18px 0; }
+  h2 { margin: 0 0 8px; font-size: 28px; color: var(--gold); line-height: 1.2; }
+  h3 { margin: 16px 0 2px; font-size: 20px; color: var(--green); }
+  p { margin: 8px 0; }
+  ul { margin: 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 8px 0; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); vertical-align: top; }
+  th { color: var(--gold); font-weight: 800; }
+  kbd { display: inline-block; min-width: 1.6em; padding: 0 6px; border: 2px solid var(--soft); border-bottom-width: 4px; border-radius: 6px; font: 700 14px/1.4 system-ui, sans-serif; text-align: center; color: #fff; background: rgba(255, 255, 255, 0.06); }
+  .place { display: grid; grid-template-columns: 340px 1fr; gap: 16px; align-items: start; margin: 14px 0; }
+  .place img, .wide img { width: 100%; border-radius: 12px; display: block; border: 2px solid var(--line); }
+  .place h3 { margin-top: 0; }
+  .wide { margin: 12px 0; }
+  .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0; }
+  .trio img { width: 100%; border-radius: 10px; border: 2px solid var(--line); display: block; }
+  figcaption { font-size: 14px; color: var(--soft); margin-top: 4px; }
+  figure { margin: 0; }
+  .talismans { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin: 12px 0; }
+  .talismans figure { background: radial-gradient(circle at 50% 40%, rgba(255, 209, 102, 0.18), rgba(0, 0, 0, 0) 70%); border: 2px solid var(--line); border-radius: 16px; padding: 8px; text-align: center; }
+  .talismans img { width: 100%; aspect-ratio: 1; object-fit: contain; display: block; }
+  .talismans b { display: block; color: var(--gold); font-size: 18px; }
+  .note { font-size: 14px; color: var(--soft); }
+  .tip { background: rgba(155, 227, 143, 0.1); border-left: 5px solid var(--green); border-radius: 0 12px 12px 0; padding: 8px 14px; margin: 10px 0; }
+  .safety { border-color: rgba(255, 140, 100, 0.7); }
+  .safety h2 { color: #ffb38a; }
+  .big-warning { font-size: clamp(26px, 5vw, 38px); font-weight: 800; color: #ffb38a; line-height: 1.15; margin: 6px 0 10px; }
+  .cloud { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; padding: 0; list-style: none; }
+  .cloud li { margin: 0; padding: 4px 12px; border-radius: 999px; background: rgba(255, 209, 102, 0.12); border: 1px solid var(--line); font-weight: 700; }
+  .credit { font-size: 15px; color: var(--soft); text-align: center; margin-top: 28px; }
+  @media (max-width: 700px) { .place { grid-template-columns: 1fr; } .trio { grid-template-columns: 1fr; } section { padding: 16px 16px; } }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="index.html">‹ Back to the game</a>
+  <h1>How to Play</h1>
+  <p class="lede">Everything you need for Wally's big trip round Cairns and Far North Queensland: the story so far, every way to control him, the places, the talismans, and a few tips from Kenny.</p>
+  <nav class="toc" aria-label="On this page">
+    <a href="#story">The story</a><a href="#basics">The basics</a><a href="#controls">Controls</a><a href="#places">The places</a>
+    <a href="#talismans">The talismans</a><a href="#tips">Tips</a><a href="#country">Country</a><a href="#cairns">Cairns</a><a href="#crocwise">Be Crocwise</a>
+  </nav>
+
+  <section id="story">
+    <h2>The story</h2>
+    <figure class="wide"><img src="screens/guide/opening.jpg" alt="Croc Park, with the sign that says Do NOT feed the crocodile" loading="lazy"><figcaption>Croc Park, where it all begins.</figcaption></figure>
+    <p>In Croc Park, an ordinary crocodile swimming in the pond touches something at the bottom: the sceptre of the Croc King. In a flash he changes. He stands up, he can talk, and he is part human. Meet <b>Wally</b>.</p>
+    <p>Being part human comes with a catch: Wally now needs people food. Lucky for him, his new mate <b>Kenny</b> the koala knows the rules: keep your distance and people will throw you their lunch.</p>
+    <p>The sceptre has lost its six <b>talismans</b>. Find them all across the Cairns region, carry the sceptre to the Croc King, and he will grant Wally one wish. What happens then, you find out when Wally does.</p>
+  </section>
+
+  <section id="basics">
+    <h2>The basics</h2>
+    <h3>Stay fed</h3>
+    <p>The <b>feed-o-meter</b> (top right) runs down as Wally moves. Catch the food people throw to fill it up. Catch it in the air or with a leap for more points, and keep a streak going.</p>
+    <h3>Keep your distance</h3>
+    <p>People throw food when Wally is near, but not too near. A ring on the ground shows the sweet spot round each group. Come too close and they get scared and run off with their snacks.</p>
+    <h3>Kenny's jar</h3>
+    <p>If the feed-o-meter empties, Kenny runs in with his jar of Vegemite toast to revive Wally. He can do it <b>three times in each place</b> (the dots by the meter). After that, the place starts again.</p>
+    <h3>Keys and chests</h3>
+    <p>Every place has a quest in two parts: find the key, then the chest it opens. The chests hold the talismans.</p>
+    <h3>Map, Book and buttons</h3>
+    <ul>
+      <li><b>Map</b> (<kbd>Tab</kbd>): the whole trip, where Wally has been, and where to next.</li>
+      <li><b>Book</b> (<kbd>B</kbd>): everything Wally has found, his stamps and his items. It opens by itself for the big moments: a talisman, a key, the sceptre.</li>
+      <li><b>Outfits</b> and <b>Gear</b>: dress Wally up, and carry useful things.</li>
+      <li>The <b>first time</b> Wally arrives somewhere, a fly-over shows the place. While it plays, the game checks your device and sets the detail for smooth play. Skip it with <kbd>Space</kbd>.</li>
+    </ul>
+  </section>
+
+  <section id="controls">
+    <h2>Controls</h2>
+    <p>Play with a keyboard, a mouse, a game controller or a touch screen. They all work the same way: <b>forward goes the way Wally is facing, left and right turn him, back turns him round</b>, and the camera follows behind him.</p>
+
+    <h3>Keyboard</h3>
+    <table>
+      <tr><th>Key</th><th>What it does</th></tr>
+      <tr><td><kbd>W</kbd> or <kbd>&uarr;</kbd></td><td>Go forward, the way Wally faces</td></tr>
+      <tr><td><kbd>A</kbd> <kbd>D</kbd> or <kbd>&larr;</kbd> <kbd>&rarr;</kbd></td><td>Turn left and right</td></tr>
+      <tr><td><kbd>S</kbd> or <kbd>&darr;</kbd></td><td>Turn round</td></tr>
+      <tr><td><kbd>Space</kbd></td><td>Jump (leap for food in the air); in the water, swim up</td></tr>
+      <tr><td><kbd>Shift</kbd></td><td>Run on all fours; in deep water, dive under</td></tr>
+      <tr><td><kbd>Q</kbd> <kbd>E</kbd></td><td>Turn the camera</td></tr>
+      <tr><td><kbd>C</kbd></td><td>Swing the camera behind Wally</td></tr>
+      <tr><td>Mouse wheel</td><td>Zoom in and out</td></tr>
+      <tr><td><kbd>Tab</kbd> &middot; <kbd>B</kbd> &middot; <kbd>P</kbd> &middot; <kbd>M</kbd></td><td>Map &middot; Book &middot; Pause &middot; Sound on and off</td></tr>
+    </table>
+
+    <h3>Mouse</h3>
+    <ul>
+      <li><b>Click the game</b> to hand it the cursor. Now moving the mouse turns Wally.</li>
+      <li><b>Hold the left button</b> to run him forward.</li>
+      <li><b>Hold the right button</b> to look around with the camera; let go and the mouse steers Wally again.</li>
+      <li><b>Esc</b> gives the cursor back. Any message box gives it back too, and you get control again when you close it.</li>
+    </ul>
+
+    <h3>Game controller (Xbox, PlayStation, Switch Pro)</h3>
+    <table>
+      <tr><th>Control</th><th>What it does</th></tr>
+      <tr><td>Left stick or d-pad</td><td>Steer Wally: up goes forward, sides turn, down turns round</td></tr>
+      <tr><td>Right stick</td><td>Turn the camera</td></tr>
+      <tr><td>A (cross)</td><td>Jump; in the water, swim up</td></tr>
+      <tr><td>B (circle) or a trigger</td><td>Run on all fours; in deep water, dive</td></tr>
+      <tr><td>Y (triangle)</td><td>Swing the camera behind Wally</td></tr>
+      <tr><td>Start</td><td>Pause</td></tr>
+    </table>
+
+    <h3>Phone and tablet</h3>
+    <ul>
+      <li><b>Left thumb</b> anywhere on the left half: a joystick to steer.</li>
+      <li><b>Drag on the right half</b> to turn the camera.</li>
+      <li>The <b>Jump</b> and <b>Duck</b> buttons; in deep water, <b>Dive</b> and <b>Up</b> buttons appear.</li>
+    </ul>
+
+    <h3>Settings</h3>
+    <p>In the settings you can change the steering to <b>camera-relative</b> (Wally moves toward the camera's view instead of turning), turn tips, music and sound effects on or off, and show the frame rate and detail level.</p>
+
+    <h3>The boomerang throw</h3>
+    <div class="trio">
+      <figure><img src="screens/guide/boomerang-arch.jpg" alt="The Boomerang Throwing archway in Kuranda" loading="lazy"><figcaption>Walk in under the archway.</figcaption></figure>
+      <figure><img src="screens/guide/boomerang-throw.jpg" alt="First person view holding the boomerang, with the angle and force meters" loading="lazy"><figcaption>Set the angle, then the force.</figcaption></figure>
+      <figure><img src="screens/guide/boomerang-flight.jpg" alt="The boomerang flying its loop over the clearing" loading="lazy"><figcaption>Watch it come round, then catch it.</figcaption></figure>
+    </div>
+    <ol>
+      <li><b>Angle:</b> tip the boomerang out with <kbd>&uarr;</kbd> <kbd>&darr;</kbd> (or <kbd>W</kbd> <kbd>S</kbd>, the mouse, or the stick). The meter shows how far it leans from upright. Press <kbd>Space</kbd>, click, or A to set it.</li>
+      <li><b>Force:</b> the force meter swings up and down. Press <kbd>Space</kbd>, click, or A to throw, as hard as it shows.</li>
+      <li><b>Catch:</b> as it comes back, a Catch! ring appears. Press <kbd>Space</kbd>, click, or A.</li>
+    </ol>
+    <p class="tip">The flight is real physics. Too upright and it dives in; too flat or too hard and it climbs over your head; too soft and it falls short. A flatter throw needs less force. For your first two throws, a green zone on the force meter shows what will bring it back.</p>
+  </section>
+
+  <section id="places">
+    <h2>The places</h2>
+    <p>Seven places, from Cairns up to the Daintree, in the order Wally travels.</p>
+
+    <div class="place"><img src="screens/guide/park.jpg" alt="Croc Park" loading="lazy"><div>
+      <h3>1. Croc Park</h3>
+      <p>Where it all begins. Feed out every group of visitors to earn the gate key, and the machete waits at the gate.</p>
+      <p class="note">Win: the machete, for the cane fields.</p></div></div>
+
+    <div class="place"><img src="screens/guide/cane.jpg" alt="The cane fields at dusk, with fire" loading="lazy"><div>
+      <h3>2. The Cane Fields</h3>
+      <p>Dusk south of Cairns, the ranges on the skyline. Cut paths through the sugar cane with the machete and eat the cut cane to keep going. Toads and flying foxes steal it. The cane is burning in rings: the fire can never hurt Wally, but he cannot go through it. Find the way round to the middle.</p>
+      <p class="note">Win: the fire talisman.</p></div></div>
+
+    <div class="place"><img src="screens/guide/esplanade.jpg" alt="The Cairns Esplanade boardwalk" loading="lazy"><div>
+      <h3>3. The Esplanade</h3>
+      <p>The Cairns waterfront: the boardwalk, the lagoon, the pier. Collect the Golden Mangoes along the walk; the chest at the Lagoon opens for enough of them.</p>
+      <p class="note">Win: the sun talisman, and the Big Golden Mango the reef will need.</p></div></div>
+
+    <div class="place"><img src="screens/guide/reef.jpg" alt="The Great Barrier Reef" loading="lazy"><div>
+      <h3>4. The Great Barrier Reef</h3>
+      <p>Out from Cairns. Dive into the coral maze (watch your air). A giant clam in a dead end takes the Big Golden Mango and gives up the pearl key, which opens the pirate chest in the cave.</p>
+      <p class="note">Win: the moon talisman, and the Skyrail pass.</p></div></div>
+
+    <div class="place"><img src="screens/guide/skyrail.jpg" alt="The Skyrail over the rainforest canopy" loading="lazy"><div>
+      <h3>The Skyrail</h3>
+      <p>The ride from the valley station near Cairns, up over the rainforest canopy and the Barron Gorge, onto the Tableland at Kuranda. It plays the first time Wally heads for Kuranda.</p></div></div>
+
+    <div class="place"><img src="screens/guide/kuranda.jpg" alt="The Kuranda markets" loading="lazy"><div>
+      <h3>5. Kuranda</h3>
+      <p>The village in the rainforest. Feed every group along the market street and fill the feed-o-meter. Halfway down, walk in under the Boomerang Throwing archway: a local instructor shows Wally how to throw and catch a boomerang, and the first catch wins a talisman. At the end of the street, the zip line down the Barron Gorge.</p>
+      <p class="note">Win: the air talisman (the boomerang) and the water talisman (the zip line).</p></div></div>
+
+    <div class="place"><img src="screens/guide/mossman.jpg" alt="Mossman Gorge swimming holes" loading="lazy"><div>
+      <h3>6. Mossman Gorge</h3>
+      <p>Clear swimming holes stepping down the gorge over granite, joined by smooth rock slides. Dive (<kbd>Shift</kbd>) to look on the bottom: the key is in one hole, the chest in the last.</p>
+      <p class="note">Win: the opal, the earth talisman: the last of the six.</p></div></div>
+
+    <div class="place"><img src="screens/guide/daintree.jpg" alt="The tour boat on the Daintree River" loading="lazy"><div>
+      <h3>7. The Daintree</h3>
+      <p>The oldest rainforest, the widest river, and the end of the journey. Swim with the tour boat and catch what the passengers throw, but watch out: the wild crocs slide off the banks and come after Wally, and they snap up any food they reach first. Keep moving.</p></div></div>
+  </section>
+
+  <section id="talismans">
+    <h2>The six talismans and the sceptre</h2>
+    <p>Each talisman goes back into its own setting on the Croc King's sceptre: heaven above (sun, moon and air), earth below (earth, water and fire).</p>
+    <div class="talismans">
+      <figure><img src="screens/guide/talisman-sceptre.png" alt="The Croc King's sceptre"><b>The sceptre</b><figcaption>Found at the bottom of the Croc Park pond.</figcaption></figure>
+      <figure><img src="screens/guide/talisman-fire.png" alt="The fire talisman"><b>Fire</b><figcaption>The cane fields</figcaption></figure>
+      <figure><img src="screens/guide/talisman-sun.png" alt="The sun talisman"><b>Sun</b><figcaption>The Esplanade</figcaption></figure>
+      <figure><img src="screens/guide/talisman-moon.png" alt="The moon talisman"><b>Moon</b><figcaption>The reef</figcaption></figure>
+      <figure><img src="screens/guide/talisman-air.png" alt="The air talisman"><b>Air</b><figcaption>Kuranda: the boomerang</figcaption></figure>
+      <figure><img src="screens/guide/talisman-water.png" alt="The water talisman"><b>Water</b><figcaption>Kuranda: the zip line</figcaption></figure>
+      <figure><img src="screens/guide/talisman-earth.png" alt="The earth talisman, an opal"><b>Earth</b><figcaption>Mossman: the opal</figcaption></figure>
+    </div>
+    <p class="note">The sceptre and the fire talisman are the finished artwork. The sun, moon, air, water and earth pictures are stand-ins until their artwork is made.</p>
+  </section>
+
+  <section id="tips">
+    <h2>Tips from Kenny</h2>
+    <ul>
+      <li>Stand in the sweet spot, not on top of people. Scared people run off with their lunch.</li>
+      <li>Food caught in the air, or with a leap, is worth more than food off the ground.</li>
+      <li>Watch the feed-o-meter. When it turns red, go and find a group, fast.</li>
+      <li>In deep water, watch your air too. Come up before it runs out.</li>
+      <li>On the Daintree, never stop for long: the wild crocs are slower than Wally, but they close in on a croc that sits still.</li>
+      <li>Lost? Open the Map (<kbd>Tab</kbd>): it shows the job for each place.</li>
+      <li>Trouble keeping it smooth? The fly-over on the first visit sets the detail for your device. You can see it with "Show frame rate and detail" in the settings.</li>
+    </ul>
+  </section>
+
+  <section id="country">
+    <h2>Acknowledgement of Country</h2>
+    <p>Chomp 3D is set in Far North Queensland. We acknowledge the Traditional Owners of the lands and waters it celebrates, including the Gimuy Walubara Yidinji and Yirrganydji peoples of Cairns, the Djabugay people of Kuranda and the Barron Gorge, and the Eastern Kuku Yalanji people of the Daintree and Mossman Gorge, and pay our respects to Elders past and present. Aboriginal and Torres Strait Islander people are welcome to tell us how they would like to be shown in the game, and to change or add characters.</p>
+    <h3>A home to many</h3>
+    <p>Australia is home to people from all over the world, and it welcomes visitors from everywhere. The people who throw Wally his lunch reflect that: locals and travellers, young and old, from many places and many cultures, all sharing the same beautiful corner of the country.</p>
+  </section>
+
+  <section id="cairns">
+    <h2>For the love of Cairns</h2>
+    <p>Cairns and the Cairns region are among the most beautiful places on Earth. It is awe-inspiring: ancient rainforest running down to the sea, giant waterfalls, vast sugar cane fields, paradise beaches and the Great Barrier Reef, all within reach of one city. If you ever get the chance, go.</p>
+    <ul class="cloud">
+      <li>Rainforests</li><li>Giant waterfalls</li><li>Sugar cane fields</li><li>Paradise beaches</li><li>The Great Barrier Reef</li><li>Green Island</li>
+      <li>Coral reef snorkelling</li><li>Scuba diving</li><li>Cruises</li><li>Swimming</li><li>The Atherton Tablelands</li><li>Skyrail</li>
+      <li>The Kuranda Scenic Railway</li><li>Rainforest river cruises</li><li>River rafting</li><li>Zip lining</li><li>Bungee jumping</li><li>Boomerang throwing</li>
+      <li>Golf courses</li><li>Resorts</li><li>Shopping</li><li>Nightlife</li><li>And lots of crocs</li>
+    </ul>
+    <figure class="wide"><img src="screens/guide/zipline.jpg" alt="The Barron Gorge and the falls from the zip line" loading="lazy"><figcaption>The Barron Gorge, in the game.</figcaption></figure>
+  </section>
+
+  <section id="crocwise" class="safety">
+    <h2>Be Crocwise</h2>
+    <p class="big-warning">And remember: do NOT feed the crocodiles.</p>
+    <p>Wally is a cartoon. Real saltwater crocodiles are wild animals and dangerous. Never feed them, never approach them, keep well back from the water's edge in croc country, and obey the warning signs. Queensland's advice is to <strong>be Crocwise</strong>.</p>
+    <p>Box jellyfish and other marine stingers are dangerous too. In stinger season, swim at patrolled beaches inside the stinger nets, wear a stinger suit, and follow the lifeguards' advice.</p>
+  </section>
+
+  <p class="credit">Chomp 3D: Wally's Cairns Adventure. Created by Ken Bingham. <a href="about.html">About the game</a></p>
+</main>
+</body>
+</html>

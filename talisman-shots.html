@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Talisman stills (a tool)</title>
+<!-- A tool page, not part of the game: renders each talisman and the sceptre on a clear
+     background, one at a time, for the guide's still images (screens/guide/talisman-*.png).
+     window.show(name) draws one; names: sceptre, fire, sun, moon, air, water, earth.
+     Ken's models where they exist (talisman-fire, sceptre-hero); stand-ins for the rest,
+     each a bronze ring holding its element, until his artwork is made. -->
+<style>html, body { margin: 0; background: transparent; } canvas { display: block; }</style>
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+import { loadModels } from './js/models.js';
+
+const W = 640, H = 640;
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H); renderer.setPixelRatio(1); renderer.setClearColor(0x000000, 0);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.append(renderer.domElement);
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+{ // A studio for reflections: a soft grey dome, two bright panels for the metal to catch.
+  const env = new THREE.Scene();
+  env.add(new THREE.Mesh(new THREE.SphereGeometry(10, 32, 16), new THREE.MeshBasicMaterial({ color: 0x4a4f58, side: THREE.BackSide })));
+  for (const [x, y, z, w, h] of [[5, 4, 4, 6, 3], [-6, 2, -3, 3, 6]]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })); p.position.set(x, y, z); p.lookAt(0, 0, 0); env.add(p); }
+  scene.environment = pmrem.fromScene(env, 0.02).texture;
+}
+const key = new THREE.DirectionalLight(0xfff2dd, 2.2); key.position.set(2, 3, 4); scene.add(key);
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+const camera = new THREE.PerspectiveCamera(30, W / H, 0.01, 100);
+
+const models = await loadModels(['talisman-fire', 'sceptre-hero', 'sceptre']);
+const bronze = new THREE.MeshStandardMaterial({ color: 0xb08a4a, metalness: 0.9, roughness: 0.3 });
+const glow = (color, emissive, k = 0.9) => new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity: k, roughness: 0.25, metalness: 0.2 });
+
+// A stand-in: a bronze ring frame, its element in the middle.
+function ringed(inner) {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.06, 20, 80), bronze));
+  const bail = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.025, 12, 30), bronze); bail.position.y = 0.6; g.add(bail);
+  g.add(inner); return g;
+}
+const BUILD = {
+  sun() {
+    const g = new THREE.Group(), m = glow(0xffd24a, 0xffa21a, 1.1);
+    g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.06, 48).rotateX(Math.PI / 2), m));
+    for (let i = 0; i < 12; i++) { const r = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.16, 12), m); const a = i / 12 * Math.PI * 2; r.position.set(Math.cos(a) * 0.32, Math.sin(a) * 0.32, 0); r.rotation.z = a - Math.PI / 2; g.add(r); }
+    return ringed(g);
+  },
+  moon() {                                                    // a full moon (Ken: no crescents)
+    const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
+    x.fillStyle = '#e8ecf2'; x.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 26; i++) { x.fillStyle = `rgba(150,160,175,${0.25 + Math.random() * 0.35})`; x.beginPath(); x.arc(Math.random() * 256, Math.random() * 256, 6 + Math.random() * 26, 0, Math.PI * 2); x.fill(); }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    return ringed(new THREE.Mesh(new THREE.SphereGeometry(0.36, 48, 32), new THREE.MeshStandardMaterial({ map: t, emissive: 0x9fb4d8, emissiveIntensity: 0.35, roughness: 0.8 })));
+  },
+  air() {
+    const g = new THREE.Group(), m = glow(0xd8f1ff, 0x9fd8ff);
+    for (let i = 0; i < 3; i++) { const s = new THREE.Mesh(new THREE.TorusGeometry(0.14 + i * 0.09, 0.02, 10, 60, Math.PI * 1.4), m); s.rotation.z = i * 2.1; g.add(s); }
+    return ringed(g);
+  },
+  water() {                                                   // a drop of water
+    const pts = []; for (let i = 0; i <= 32; i++) { const t = i / 32, r = Math.sin(t * Math.PI) * (t < 0.5 ? 0.6 : 1) * 0.24 * Math.pow(t, 0.6); pts.push(new THREE.Vector2(r, 0.36 - t * 0.66)); }
+    return ringed(new THREE.Mesh(new THREE.LatheGeometry(pts, 48), new THREE.MeshPhysicalMaterial({ color: 0x3fa7ff, emissive: 0x0b4a8a, emissiveIntensity: 0.6, roughness: 0.05, transmission: 0.3, thickness: 0.4, clearcoat: 1 })));
+  },
+  earth() {                                                   // the opal (as in Mossman)
+    // Play of colour: dense, tiny flashes of green, blue, orange and pink in a dark blue stone.
+    const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
+    x.fillStyle = '#16304f'; x.fillRect(0, 0, 512, 512);
+    const flash = ['#2fe08a', '#2a7dff', '#ff8a2a', '#ff4fae', '#7bf2ff', '#c6ff3a'];
+    for (let i = 0; i < 2600; i++) { x.fillStyle = flash[Math.floor(Math.random() * flash.length)]; x.globalAlpha = 0.5 + Math.random() * 0.5; x.beginPath(); x.ellipse(Math.random() * 512, Math.random() * 512, 1.5 + Math.random() * 6, 1 + Math.random() * 3, Math.random() * 3, 0, Math.PI * 2); x.fill(); }   // dense, tiny flashes, like boulder opal
+    const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.26, 48, 32), new THREE.MeshPhysicalMaterial({ map: tex, emissiveMap: tex, emissive: 0xffffff, emissiveIntensity: 0.55, roughness: 0.08, clearcoat: 1, iridescence: 0.6, iridescenceIOR: 1.6 }));
+    m.scale.set(1.3, 1, 0.75); return ringed(m);
+  },
+  fire() { const t = models.get('talisman-fire'); return t ? t.scene.clone(true) : null; },
+  sceptre() { const t = models.get('sceptre-hero') || models.get('sceptre'); return t ? t.scene.clone(true) : null; },
+};
+
+let shown = null;
+window.show = name => {
+  if (shown) scene.remove(shown);
+  shown = BUILD[name]();
+  if (!shown) return false;
+  scene.add(shown);
+  // Frame it: centred, filling most of the picture, turned a little so it reads as solid.
+  shown.rotation.y = name === 'sceptre' ? 0.5 : -0.35;
+  const box = new THREE.Box3().setFromObject(shown), size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
+  shown.position.sub(mid);
+  const r = Math.max(size.x, size.y, size.z) * 0.5;
+  camera.position.set(0, r * 0.15, r / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 1.25);
+  camera.lookAt(0, 0, 0);
+  renderer.render(scene, camera);
+  return true;
+};
+window.ready = true;
+</script>
+</body>
+</html>
