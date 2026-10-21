@@ -484,3 +484,8 @@ body.touch .gear-use { bottom: 224px; }
               display: grid; place-items: center; font-size: 26px; font-weight: 800; color: #ffd166; text-shadow: 0 2px 8px #000; animation: boompulse 0.5s ease-in-out infinite alternate; }
 @keyframes boompulse { from { transform: translate(-50%, -50%) scale(0.92); } to { transform: translate(-50%, -50%) scale(1.06); } }
 @media (max-width: 640px) { .boom-meters { right: 12px; bottom: 150px; gap: 10px; } .boom-angle svg { width: 110px; height: 66px; } .boom-force-bar { height: 110px; } .boom-caption { bottom: 210px; font-size: 16px; } }
+
+/* Story captions in a level's cutscenes (the Daintree sandbar) */
+.scene-caption { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 6; max-width: min(760px, 88vw); margin: 0; padding: 12px 18px;
+                 border-radius: 14px; background: rgba(8, 30, 44, 0.82); color: #fff; font: 600 19px/1.35 var(--font); text-align: center; pointer-events: none; }
+.scene-caption b { color: #ffd166; }

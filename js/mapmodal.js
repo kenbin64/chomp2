@@ -12,7 +12,7 @@ import { resetAreaIntros } from './area-intro.js';
 import { readProgress, isOpen, entryNeeds, ACTIVITIES, totalStars, activityOpen } from './progress.js';
 import { mapSvg, pinXY, markerXY, MARKERS } from './tripmap.js';
 
-const PAGES = { park: 'index.html?play', cane: 'cane.html', esplanade: 'esplanade.html', reef: 'reef.html', kuranda: 'kuranda.html', mossman: 'mossman.html' };
+const PAGES = { park: 'index.html?play', cane: 'cane.html', esplanade: 'esplanade.html', reef: 'reef.html', kuranda: 'kuranda.html', mossman: 'mossman.html', daintree: 'daintree.html' };
 // The page that takes Wally to an area. The first time he heads for Kuranda he rides the
 // Skyrail up the range (skyrail.html, which goes on to the village), as in the real trip.
 export function pageFor(id) {
