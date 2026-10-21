@@ -91,6 +91,7 @@ export class ModelSkin {
   // 'Running', 'Jump_Run' and 'Swim_Forward' answer to 'run', 'jump' and 'swim'.
   // Rest-pose clips (a few frames long) never count.
   find(name) {
+    name = name.toLowerCase();                       // clip names are kept in lower case
     if (this.clips.has(name)) return this.clips.get(name);
     for (const [key, clip] of this.clips) if (key.includes(name) && clip.duration > 0.2) return clip;
     return null;

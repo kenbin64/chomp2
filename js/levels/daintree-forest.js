@@ -13,6 +13,7 @@
 
 import * as THREE from 'three';
 import { Trees } from '../trees.js';
+import { ModelSkin } from '../models.js';
 import { COURSE, ANCHOR_Y, VINE_LENGTH, SWAMP_Y, START, VINES, END, PAWPAW_REACH, DT,
   handAt, swingStep, release, flyStep, catches, grab, landed, inSwamp, firstSwing, pawpawSpots } from './vine-rules.js';
 
@@ -128,13 +129,24 @@ function buildForest(scene, q, models) {
   const mound = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ map: litter, color: 0x8c9a6a, roughness: 1 }));
   mound.scale.set(5, 1.1, 4); mound.position.set(X, START.y - 0.1, COURT.throneZ); mound.receiveShadow = true; scene.add(mound);
   const fit = (gltf, h) => { if (!gltf) return null; const m = gltf.scene.clone(true), b = new THREE.Box3().setFromObject(m); m.scale.setScalar(h / b.getSize(new THREE.Vector3()).y); const b2 = new THREE.Box3().setFromObject(m); m.position.y = -b2.min.y; m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); const g = new THREE.Group(); g.add(m); scene.add(g); return g; };
-  const throne = fit(models.get('king-throne'), 4.2), king = fit(models.get('king-croc'), 3.6);
+  const throne = fit(models.get('king-throne'), 4.2);
+  // The King: rigged and seated (tools/blender-pose-king.py: Sit, Speak, Raise). 3.6 m tall standing;
+  // seated, his hips on the throne's seat. KING_SEAT and KING_BACK are tuned by eye on renders.
+  const KING_SEAT = 0.6, KING_BACK = 0.35;
+  const kingGltf = models.get('king-croc');
+  const kingSkin = kingGltf ? new ModelSkin(kingGltf, { height: 3.6 }) : null;
+  let king = null;
+  if (kingSkin) {
+    king = new THREE.Group(); king.add(kingSkin.root); scene.add(king);
+    kingSkin.root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } if (o.isSkinnedMesh) o.frustumCulled = false; });
+    kingSkin.play('Sit');
+  }
   const top = START.y + 1.0;
   if (throne) { throne.position.set(X, top, COURT.throneZ); throne.rotation.y = Math.PI; }
-  if (king) { king.position.set(X, top + 0.15, COURT.throneZ - 0.6); king.rotation.y = Math.PI; }
+  if (king) { king.position.set(X, top + KING_SEAT, COURT.throneZ - KING_BACK); king.rotation.y = Math.PI; }   // on the seat, which is toward Wally (-z)
   // Shafts of light through the canopy onto the throne.
   const shaft = new THREE.SpotLight(0xfff0c8, 120, 40, 0.35, 0.6, 1.2); shaft.position.set(X + 3, 26, COURT.throneZ - 4); shaft.target.position.set(X, top, COURT.throneZ); scene.add(shaft, shaft.target);
-  return { trees, king, throne, top };
+  return { trees, king, kingSkin, throne, top };
 }
 
 // ---- The play ---------------------------------------------------------------------------------

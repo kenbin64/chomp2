@@ -220,8 +220,9 @@ it. Look for lettering, logos and brand names on every generated image, and rege
 leaves and flowers, vines bound round arms and legs, a green stone pendant, a sash and a fringed skirt, a
 crown with branch antlers. T-pose, no rig yet. 5.4 million triangles from Meshy, baked to 90k with 4096
 textures (`king-croc.glb` 1.18 MB with 2048 textures, phone 768 KB): he is seen close in the cinematics
-and only once, so he gets more than the cast. **Open:** rigging and his moves (stand, speak, raise the
-sceptre, the transformation).
+and only once, so he gets more than the cast. **Rigged and seated (2026-10-21):** rigged with `tools/blender-rig-human.py`, posed with
+`tools/blender-pose-king.py` (clips Sit, Speak, Raise), seated on the throne in the King's court
+(`king-croc.glb` 1.5 MB, phone 1.1 MB). **Open:** the transformation.
 
 ## The King Crocodile's sceptre (the whole trip, Ken 2026-10-19)
 

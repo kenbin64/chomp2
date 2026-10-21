@@ -87,7 +87,8 @@ export function kingScene({ scene, camera, wally, models, look, caption, sound }
       sceptre.rotation.y += dt * 0.6;
       if (cue === 'glow') s.glow = Math.min(1, s.glow + dt * 0.5);
       sceptre.userData.light.intensity = 2 + s.glow * 22 + Math.sin(t * 3) * 0.5;   // bright, but the King still reads
-      if (look.king) look.king.scale.setScalar(1 + Math.sin(t * 1.4) * 0.006);   // the King breathes
+      // The King: seated, talking when he speaks, raising the sceptre at the end.
+      if (look.kingSkin) { look.kingSkin.play(cue === 'glow' ? 'Raise' : who === 'king' ? 'Speak' : 'Sit', { once: cue === 'glow', alternatives: ['Sit'] }); look.kingSkin.update(dt); }
     },
   };
 }
