@@ -201,6 +201,7 @@ export const CAST = [
   // avoid: food this person would not carry, out of respect for their faith (Ken):
   // no pork (hot dogs, pepperoni pizza, a ham hoagie).
   { file: 'tourist-27', who: 'Arab Australian woman in a hijab', tall: [1.58, 1.70], avoid: ['hotdog', 'pizza', 'hoagie'] },
+  { file: 'tourist-28', who: 'Queensland university professor', tall: [1.75, 1.86] },
 ];
 // The people models that loaded, each carrying its height range.
 export function peopleModels(models) {
