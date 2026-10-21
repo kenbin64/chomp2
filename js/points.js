@@ -6,7 +6,7 @@
 //                                       one begun on another page: { carry: true })
 //   addPoints('air')                    as he does things; shows on the score pill
 //   bankRun({ stars })                  when the area is completed: the area's best and the trip
-//   failRun()                           when a run ends without finishing: its points still count
+//   failRun()                           when a run ends without finishing: its points go
 //   installScore()                      the score pill (second row, beside the Sceptre) and the
 //                                       Scoreboard card it opens: this trip by area, the
 //                                       personal best, and the leaderboard for the whole game
@@ -30,7 +30,9 @@ function difficulty() { try { return JSON.parse(localStorage.getItem('chomp-prog
 
 export function startRun(area, { carry = false } = {}) {
   let old = null; try { old = JSON.parse(sessionStorage.getItem(RUN_KEY)); } catch { /* none */ }
-  run = carry && old && old.area === area && Number.isInteger(old.pts) ? old : R.freshRun(area);
+  const keep = carry && old && old.area === area && Number.isInteger(old.pts);
+  if (old && !keep && Number.isInteger(old.pts)) { run = old; settleRevisit(); }   // a revisit left unfinished on another page: it still counts
+  run = keep ? old : R.freshRun(area);
   saveRun(); draw();
   return run;
 }
@@ -44,9 +46,13 @@ export function addPoints(kind, n = 1) {
 }
 export function runPoints() { return run ? run.pts : 0; }
 
-export function bankRun({ stars = 0, finished = true } = {}) {
+export function bankRun({ stars = 0 } = {}) {
   if (!run) return null;
-  const area = run.area, r = R.bank(readBook(), run, { stars, difficulty: difficulty(), finished });
+  if (R.completed(readBook(), run.area)) {                         // completed before: a better run still raises its best
+    const b = R.bank(readBook(), run, { stars, difficulty: difficulty() });
+    if (!b.newAreaBest) return settleRevisit();                    // otherwise what he picked up counts as a revisit
+  }
+  const area = run.area, r = R.bank(readBook(), run, { stars, difficulty: difficulty() });
   saveBook(r.book);
   run = null; try { sessionStorage.removeItem(RUN_KEY); } catch { /* none */ }
   draw();
@@ -56,8 +62,24 @@ export function bankRun({ stars = 0, finished = true } = {}) {
   if (r.newBest) postBest(r.book.best);                // on the leaderboard straight away (a name saved on this device)
   return r;
 }
-// A run that ends without finishing the area: its points still count (no completion bonus).
-export function failRun() { return bankRun({ finished: false }); }
+// A run that ends without finishing the area: its points go (Ken: an area's points are kept only by
+// completing it). The personal best and the board keep what earlier completions earned.
+export function failRun() {
+  if (run && R.completed(readBook(), run.area)) { settleRevisit(); return; }   // a revisit: what he picked up still counts (Ken)
+  run = null; try { sessionStorage.removeItem(RUN_KEY); } catch { /* none */ } draw();
+}
+
+// A revisit's points banked (points-rules.js bankExtra), and the run closed.
+function settleRevisit() {
+  if (!run) return null;
+  const r = R.bankExtra(readBook(), run, { difficulty: difficulty() });
+  saveBook(r.book); run = null; try { sessionStorage.removeItem(RUN_KEY); } catch { /* none */ }
+  draw();
+  if (r.newBest) { celebrate(`New personal best: ${r.trip.toLocaleString()} points!`); postBest(r.book.best); }
+  return r;
+}
+// Leaving a page partway through a revisit (the map, closing the tab): what he picked up counts.
+addEventListener('pagehide', () => { if (run && R.completed(readBook(), run.area)) settleRevisit(); });
 
 // A new game (mapmodal.js newTrip): this trip's points cleared, the personal best kept.
 export function clearTrip() { saveBook(R.newTripBook(readBook())); try { sessionStorage.removeItem(RUN_KEY); } catch { /* none */ } }
@@ -99,11 +121,12 @@ export function openScore() {
   const table = el('table', 'score-areas');
   for (const a of R.AREAS) {
     const tr = el('tr', book.areas[a] != null ? '' : 'todo');
-    tr.append(el('td', null, NAMES[a]), el('td', null, book.areas[a] != null ? String(book.areas[a]) : '...'));
+    const extra = (book.extras || {})[a] || 0;
+    tr.append(el('td', null, NAMES[a]), el('td', null, book.areas[a] != null ? String(book.areas[a] + extra) + (extra ? ` (+${extra} going back)` : '') : '...'));
     table.append(tr);
   }
   card.append(table);
-  card.append(el('p', 'fine', `Each area keeps its best run of this trip, so playing an area again and doing better raises your trip score. ${d === 'easy' ? 'Easy trips count as they are' : d === 'hard' ? 'Hard trips count double' : 'Intermediate trips count one and a half times'}.`));
+  card.append(el('p', 'fine', `Each area keeps its best completed run of this trip. Going back to an area you have completed, what you pick up counts too, up to that area's own score; it does not have to be completed again. ${d === 'easy' ? 'Easy trips count as they are' : d === 'hard' ? 'Hard trips count double' : 'Intermediate trips count one and a half times'}.`));
   const how = el('details', 'score-how'); how.append(el('summary', null, 'How points are won'));
   const ul = el('ul');
   for (const [k, t] of [['ground', 'Food caught off the ground'], ['air', 'Food caught in the air'], ['leap', 'Food caught in a leap'], ['pickup', 'Anything picked up'], ['talisman', 'A talisman'], ['catch', 'The boomerang caught'], ['croc', 'A croc that joins Wally'], ['heave', 'A heave on the beat'], ['star', 'Each star'], ['area', 'An area completed']])

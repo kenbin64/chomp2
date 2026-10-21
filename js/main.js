@@ -934,7 +934,7 @@ function finish(won, why = '') {
   } else {
     sound.play.lose();
     progress.trip = Trip.failAttempt(progress.trip, attempt).trip;       // nothing from this attempt is kept (trip-rules.js)
-    failRun();                                                         // the points still count (points.js)
+    failRun();                                                         // nothing from this run is kept, points included (points.js)
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
     if (why === 'hungry') {
       $('over').querySelector('h1').textContent = 'Still peckish!';

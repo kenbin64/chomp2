@@ -34,9 +34,18 @@ check("Ken's values: ground 1, air 2, a pickup 1, a talisman 3", P.POINTS.ground
   check('a new game clears the trip but keeps the personal best', Object.keys(fresh.areas).length === 0 && fresh.best === two.book.best && fresh.trips === 1);
   const low = P.bank(fresh, { ...P.freshRun('park'), pts: 1 }, { difficulty: 'easy' });
   check('a lower trip score is not a new personal best', !low.newBest && low.book.best === two.book.best);
-  const tried = P.bank(P.freshBook(), { ...P.freshRun('reef'), pts: 12 }, { finished: false, stars: 3, difficulty: 'easy' });
-  check('a run that does not finish still counts its points, without the bonus', tried.total === 12 && tried.book.areas.reef === 12 && tried.newBest);
-  check('so the personal best never needs anything completed', tried.book.best === 12);
+  const one = P.bank(P.freshBook(), { ...P.freshRun('park'), pts: 12 }, { difficulty: 'easy' });
+  check('one area completed is already a personal best (the game need not be finished)', one.newBest && one.book.best === one.trip && one.trip > 0);
+  {
+    const done = P.bank(P.freshBook(), { ...P.freshRun('reef'), pts: 20 }, { difficulty: 'easy' }).book;   // the reef completed: 25
+    const back = P.bankExtra(done, { ...P.freshRun('reef'), pts: 6 }, { difficulty: 'easy' });
+    check('going back to a completed area, what he picks up counts without completing it again', back.gained === 6 && back.trip === P.tripScore(done, 'easy') + 6 && back.newBest);
+    let b = back.book; for (let i = 0; i < 20; i++) b = P.bankExtra(b, { ...P.freshRun('reef'), pts: 6 }, { difficulty: 'easy' }).book;
+    check('but going back can at most double an area (no farming for ever)', b.extras.reef === b.areas.reef);
+    check('an area never completed gets no revisit points', P.bankExtra(P.freshBook(), { ...P.freshRun('cane'), pts: 9 }).gained === 0);
+    check('a new game clears the extras too', Object.keys(P.newTripBook(b).extras).length === 0);
+    check('saved extras are kept, never past the cap', P.readBook({ areas: { reef: 25 }, extras: { reef: 99, cane: 5 } }).extras.reef === 25 && !('cane' in P.readBook({ areas: { reef: 25 }, extras: { cane: 5 } }).extras));
+  }
   check('an unknown area banks nothing', P.bank(fresh, { ...P.freshRun('moon'), pts: 99 }).total === 0);
 }
 {

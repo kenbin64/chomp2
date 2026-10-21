@@ -675,7 +675,7 @@ function finish(won, why = '') {
       const done = Trip.completeAttempt(progress.trip, Trip.gain(Trip.gain(attempt, 'pearl', game.found), 'seashell', game.shells), { objectiveMet: true });
       if (done.ok) { progress.trip = done.trip; bankRun({ stars }); }
       progress = completeArea(progress, 'reef', { score: s.total, stars, mangoes: game.mangoes, pearls: game.found, shells: game.shells });
-    } else { progress.trip = Trip.failAttempt(progress.trip, attempt).trip; failRun(); }   // the items go, the points still count (points.js)
+    } else { progress.trip = Trip.failAttempt(progress.trip, attempt).trip; failRun(); }   // nothing from this run is kept, points included (points.js)
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
   }
   $('result-title').textContent = won ? 'Found the pirate treasure!' : why === 'air' ? 'Out of air!' : 'Not this time';

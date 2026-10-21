@@ -363,7 +363,7 @@ function finish(won) {
     const done = Trip.completeAttempt(progress.trip, attempt, { objectiveMet: true });
     if (done.ok) { progress.trip = done.trip; bankRun({ stars }); }
     progress = completeArea(progress, 'mossman', { score: total, stars });
-  } else { progress.trip = Trip.failAttempt(progress.trip, attempt).trip; failRun(); }   // the items go, the points still count (points.js)
+  } else { progress.trip = Trip.failAttempt(progress.trip, attempt).trip; failRun(); }   // nothing from this run is kept, points included (points.js)
   saveProgress(progress);
   $('result-title').textContent = won ? 'The opal!' : 'Out of puff';
   $('result-why').textContent = won ? 'The earth talisman for the sceptre. On to the Daintree.' : 'Kenny can only bring his jar three times in a place.';

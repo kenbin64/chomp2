@@ -10,10 +10,13 @@
 //   A run is one go at an area. Its points count up as he plays (award).
 //   Completing the area banks the run (bank). Each area keeps its BEST run of this trip, so
 //   redoing an area to play it better raises the trip score, but farming it does not: a worse
-//   run changes nothing. A run that does not finish still counts what it earned (Ken, 2026-10-21:
-//   the score must never need the game, or even the area, completed; many sittings, many tries),
-//   just without the completion and star bonus.
-//   The trip score is the sum of the areas' bests, times the difficulty bonus.
+//   run changes nothing. A failed run banks nothing: an area's points are kept only by completing
+//   it. The whole game never has to be finished for the personal best or the leaderboard (Ken,
+//   2026-10-21: many sittings, many tries); each area completed counts at once.
+//   Going back to an area already completed (Ken, 2026-10-21): what he picks up there counts, and the
+//   area need not be completed again (bankExtra). So it cannot be farmed for ever, an area's extra
+//   points stop at its own completed score: going back can at most double it.
+//   The trip score is the sum of the areas' bests and extras, times the difficulty bonus.
 //   The personal best (best) is the highest trip score ever, kept through a new game.
 
 export const POINTS = {
@@ -40,7 +43,7 @@ export function award(run, kind, n = 1) {
   return { run: { ...run, pts: run.pts + gained, counts: { ...run.counts, [kind]: (run.counts[kind] || 0) + n } }, gained };
 }
 
-export function freshBook() { return { areas: {}, best: 0, trips: 0 }; }
+export function freshBook() { return { areas: {}, extras: {}, best: 0, trips: 0 }; }
 
 // A saved points book, keeping only what makes sense.
 export function readBook(b) {
@@ -48,20 +51,22 @@ export function readBook(b) {
   if (!b || typeof b !== 'object') return f;
   const areas = {};
   for (const a of AREAS) if (Number.isInteger(b.areas?.[a]) && b.areas[a] >= 0) areas[a] = b.areas[a];
-  return { areas, best: Number.isInteger(b.best) && b.best >= 0 ? b.best : 0, trips: Number.isInteger(b.trips) && b.trips >= 0 ? b.trips : 0 };
+  const extras = {};
+  for (const a of Object.keys(areas)) if (Number.isInteger(b.extras?.[a]) && b.extras[a] > 0) extras[a] = Math.min(b.extras[a], areas[a]);
+  return { areas, extras, best: Number.isInteger(b.best) && b.best >= 0 ? b.best : 0, trips: Number.isInteger(b.trips) && b.trips >= 0 ? b.trips : 0 };
 }
 
-// The trip score: every area's best, times the difficulty bonus, rounded.
+// The trip score: every area's best and its extras, times the difficulty bonus, rounded.
 export function tripScore(book, difficulty = 'intermediate') {
-  const sum = Object.values(book.areas).reduce((s, v) => s + v, 0);
+  const sum = Object.values(book.areas).reduce((s, v) => s + v, 0) + Object.values(book.extras || {}).reduce((s, v) => s + v, 0);
   return Math.round(sum * (DIFFICULTY_BONUS[difficulty] || 1));
 }
 
 // An area completed: the run's points, plus the completion and its stars, banked as the area's
 // best if it beats the old one. Returns { book, total, areaBest, newAreaBest, trip, newBest }.
-export function bank(book, run, { stars = 0, difficulty = 'intermediate', finished = true } = {}) {
+export function bank(book, run, { stars = 0, difficulty = 'intermediate' } = {}) {
   if (!run || !AREAS.includes(run.area)) return { book, total: 0, areaBest: 0, newAreaBest: false, trip: tripScore(book, difficulty), newBest: false };
-  const total = run.pts + (finished ? POINTS.area + POINTS.star * Math.max(0, Math.min(3, stars | 0)) : 0);
+  const total = run.pts + POINTS.area + POINTS.star * Math.max(0, Math.min(3, stars | 0));
   const old = book.areas[run.area] || 0, newAreaBest = total > old;
   const areas = newAreaBest ? { ...book.areas, [run.area]: total } : book.areas;
   const next = { ...book, areas };
@@ -70,5 +75,19 @@ export function bank(book, run, { stars = 0, difficulty = 'intermediate', finish
   return { book: next, total, areaBest: Math.max(old, total), newAreaBest, trip, newBest };
 }
 
+// Has this area been completed on this trip? (Then going back is a revisit.)
+export const completed = (book, area) => book.areas[area] != null;
+
+// A revisit's points (the area completed before; this time it need not be): added to the area's
+// extras, up to the area's completed score. Returns { book, gained, trip, newBest }.
+export function bankExtra(book, run, { difficulty = 'intermediate' } = {}) {
+  if (!run || !completed(book, run.area) || !(run.pts > 0)) return { book, gained: 0, trip: tripScore(book, difficulty), newBest: false };
+  const have = (book.extras || {})[run.area] || 0, gained = Math.max(0, Math.min(run.pts, book.areas[run.area] - have));
+  const next = { ...book, extras: { ...(book.extras || {}), [run.area]: have + gained } };
+  const trip = tripScore(next, difficulty), newBest = trip > book.best;
+  if (newBest) next.best = trip;
+  return { book: next, gained, trip, newBest };
+}
+
 // A new game: this trip's areas are cleared; the personal best is kept.
-export function newTripBook(book) { return { ...book, areas: {}, trips: (book.trips || 0) + 1 }; }
+export function newTripBook(book) { return { ...book, areas: {}, extras: {}, trips: (book.trips || 0) + 1 }; }

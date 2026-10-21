@@ -781,7 +781,7 @@ function finish(won, why = '') {
     if (done.ok) { progress.trip = done.trip; bankRun({ stars }); }
     if (game.pierOpen && !progress.pier) progress = openPier(progress, pierPrice).progress;   // the pier is paid for now
     progress = completeArea(progress, 'esplanade', { score: s.total, stars, mangoes: game.mangoes, pearls: game.pearls });
-  } else { progress.trip = Trip.failAttempt(progress.trip, attempt).trip; failRun(); }   // the items go, the points still count (points.js)   // nothing from this attempt is kept (trip-rules.js)
+  } else { progress.trip = Trip.failAttempt(progress.trip, attempt).trip; failRun(); }   // nothing from this run is kept, points included (points.js)   // nothing from this attempt is kept (trip-rules.js)
   try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
   $('result-title').textContent = won ? 'Made it to the Lagoon!' : why === 'hungry' ? 'Still peckish!' : why === 'air' ? 'Out of air!' : 'Out of puff';
   $('result-why').textContent = why === 'hungry' ? `Wally made it, but his feed-o-meter isn't full. He needs a full tank (${FULL}%) to head on.` : '';
