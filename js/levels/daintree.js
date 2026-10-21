@@ -6,7 +6,7 @@
 //   2. A cutscene: the boat runs aground on a sandbar. Wild crocs come up round it; the
 //      passengers call "Help us, Wally!" Wally remembers that the King lives in the
 //      Daintree rainforest, and that he must take the sceptre to him.
-//   3. Next to build: the rainforest (vines, paw paws), the King, the rescue, the ending.
+//   3. Next to build: the rainforest (vines, pawpaws), the King, the rescue, the ending.
 //
 // The river's rules are in daintree-rules.js (tested), the look in daintree-scene.js.
 
@@ -430,7 +430,7 @@ function drawHud() {
   $('feed').classList.toggle('red', inRedZone(game.energy));
   $('lives').textContent = '●'.repeat(Math.max(0, game.lives)) + '○'.repeat(Math.max(0, LIVES - game.lives));
   const togo = Math.max(0, Math.round(AGROUND_Z - boat.z));
-  $('job').textContent = game.phase === 'forest' ? `Swing to the King's court. Paw paws for the King: ${forest.gathered} of ${forest.total}`
+  $('job').textContent = game.phase === 'forest' ? `Swing to the King's court. Pawpaws for the King: ${forest.gathered} of ${forest.total}`
     : `Swim with the tour boat and catch what they throw (${togo} m down the river)`;
 }
 
@@ -463,7 +463,7 @@ function finish(won) {
   $('result-why').textContent = won ? "The sceptre is whole again, and the King has heard Wally's wish. Next: down the range on the Kuranda train to Croc Park, to bring out the crocs." : 'Kenny can only bring his jar three times in a place.';
   markRetry(won, 'the Daintree River');
   $('result-lines').innerHTML = '';
-  for (const [label, v] of [['Food caught', game.caught], ['Croc bites', game.bites], ['Snapped up by crocs', game.stolen], ['Paw paws for the King', `${forest.gathered} of ${forest.total}`], ['Points', game.points]]) {
+  for (const [label, v] of [['Food caught', game.caught], ['Croc bites', game.bites], ['Snapped up by crocs', game.stolen], ['Pawpaws for the King', `${forest.gathered} of ${forest.total}`], ['Points', game.points]]) {
     const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }
   $('result').hidden = false;
@@ -473,7 +473,8 @@ function finish(won) {
   window.chomp.result = { won, points: game.points };
 }
 
-$('play').onclick = start;
+// ?vines: straight to the rainforest and the vine swing (to see that part on its own).
+$('play').onclick = params.has('vines') ? () => { sound.start(); window.chomp.toForest(); } : start;
 $('resume').onclick = () => setPaused(false);
 $('again').onclick = () => location.reload();
 addEventListener('visibilitychange', () => { if (document.hidden && game.running) setPaused(true); });

@@ -34,7 +34,7 @@ function canvasTexture(size, paint, repeat = 1) {
   return t;
 }
 
-// A paw paw (papaya): long, yellow going orange, a little green at the stalk.
+// A pawpaw (papaya): long, yellow going orange, a little green at the stalk.
 function pawpaw() {
   const pts = []; for (let i = 0; i <= 20; i++) { const t = i / 20; pts.push(new THREE.Vector2(Math.sin(t * Math.PI) * (0.11 + 0.05 * t), -0.22 + t * 0.44)); }
   const geo = new THREE.LatheGeometry(pts, 20);
@@ -209,13 +209,13 @@ export function vineCourse({ scene, models, quality, wally, sound, fx, bubbles, 
         }
         if (st.state === 'fly') { wally.pos.set(X, st.f.y - HANG, st.f.z); wally.root.position.copy(wally.pos); wally.root.rotation.set(-0.3, 0, 0); armsUp(t); }
       }
-      // Paw paws: swing or fly through them to gather them.
+      // Pawpaws: swing or fly through them to gather them.
       if (st.state === 'swing' || st.state === 'fly') {
         const hy = wally.pos.y + HANG * 0.6;
         for (const p of fruit) if (!p.got && Math.hypot(p.s.z - wally.pos.z, p.s.y - hy) < PAWPAW_REACH) {
           p.got = true; p.m.visible = false; st.gathered++; sound.play.powerup();
-          toast(`A paw paw for the King! ${st.gathered} of ${fruit.length}`, 'good');
-          if (st.gathered === 1) bubbles.say(wally.root, 'A ripe paw paw! The King might like these.', 3);
+          toast(`A pawpaw for the King! ${st.gathered} of ${fruit.length}`, 'good');
+          if (st.gathered === 1) bubbles.say(wally.root, 'A ripe pawpaw! The King might like these.', 3);
         }
       }
     },

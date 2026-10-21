@@ -20,8 +20,8 @@ function linesFor(pawpaws) {
     [null, '', 3.2],
     ['wally', "Your Majesty. I've brought your sceptre. All six talismans, back where they belong.", 4.4],
     ...(pawpaws > 0 ? [
-      ['wally', `And ${pawpaws === 1 ? 'a paw paw' : `${pawpaws} paw paws`}, picked on the way here. A gift for you.`, 3.6],
-      ['king', 'Paw paws. How thoughtful.', 2.6],
+      ['wally', `And ${pawpaws === 1 ? 'a pawpaw' : `${pawpaws} pawpaws`}, picked on the way here. A gift for you.`, 3.6],
+      ['king', 'Pawpaws. How thoughtful.', 2.6],
     ] : []),
     ['king', 'You have done well, young croc. I will grant you one wish. What is your wish?', 4.4],
     ['wally', 'My wish is to save the people on the tour boat.', 3.4],

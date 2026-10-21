@@ -1,7 +1,7 @@
 // vine-rules.js
 // The vine swing into the Daintree rainforest (Ken, 2026-10-20; MASTER.md section 6, the
 // finale's fourth version, step 3): Wally swings from vine to vine over a swamp, gathering
-// paw paws for the King, to the King's court. Plain JavaScript, no three.js; tested in
+// pawpaws for the King, to the King's court. Plain JavaScript, no three.js; tested in
 // test/vines.test.mjs.
 //
 // The course runs along +z in its own patch of forest (COURSE.x0, COURSE.z0). Each vine
@@ -72,7 +72,7 @@ export const landed = f => f.z >= END.z - LAND && f.y <= END.y + 2.2;
 // Fallen into the swamp (his hands at the water: his feet went in well before).
 export const inSwamp = f => f.y <= SWAMP_Y + 3;
 
-// A whole flight from letting go, for tests and for drawing the paw paws on good paths:
+// A whole flight from letting go, for tests and for drawing the pawpaws on good paths:
 // 'vine' (caught the next one), 'bank' (landed on the far bank), or 'swamp'.
 export function flight(fromVine, s, maxT = 4) {
   let f = release(VINES[fromVine], s);
@@ -98,7 +98,7 @@ export function fullSwingAt(angle) {
 }
 export const GOOD_RELEASE = 0.6;                          // about here, on the forward swing, is a good time to let go
 
-// Paw paws: one on the flight path between each pair of vines (and on to the far bank), on a
+// Pawpaws: one on the flight path between each pair of vines (and on to the far bank), on a
 // good throw, so a well-timed swing gathers them.
 export function pawpawSpots() {
   const out = [];
