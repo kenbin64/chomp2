@@ -136,22 +136,33 @@ def swim(t):
     p['Head'] = [(Z, 2.5 * sn(t, 0.1))]            # and the head is held on line
     return p
 
+WALK_DOWN, KNEE_DOWN = 58, 32         # the high walk: upper leg turned down under the body, lower leg on down to the ground
+WALK_LIFT = 0.17                      # how far the body rises onto its legs (model units; the body is about 0.24 high)
+
 def walk(t):
+    # The "high walk" a crocodile uses on land (Ken, 2026-10-21: not the legs flat out to the
+    # sides, which read as a T-pose): the legs turned down under the body so it stands clear of
+    # the ground on them, diagonal pairs stepping together (front left with back right), each
+    # foot lifted as it swings forward, the spine curving side to side, the tail dragging.
+    # Y rolls a leg down (positive for the left side); Z swings it toward the head.
     p = {}
-    # Diagonal pairs: front left with back right, then front right with back left.
     for name, sg, ph in (('Left', 1, 0.0), ('Right', -1, 0.5)):
         fwd = sn(t, ph)                                    # +1: swung forward (toward the head)
         lift = max(0.0, cs(t, ph))                         # lifted while it swings forward
-        p[name + 'Arm'] = [(Z, -sg * 28 * fwd), (Y, -sg * 18 * lift)]
-        p[name + 'ForeArm'] = [(Y, sg * 10 * lift)]
+        p[name + 'Arm'] = [(Y, sg * (WALK_DOWN - 18 * lift)), (Z, -sg * 24 * fwd)]
+        p[name + 'ForeArm'] = [(Y, sg * (KNEE_DOWN - 6 * lift))]
+        p[name + 'Hand'] = [(Y, -sg * 30)]                 # the foot flat on the ground
         back = sn(t, ph + 0.5)                             # the hind leg of the other pair moves with it
         lift2 = max(0.0, cs(t, ph + 0.5))
-        p[name + 'UpLeg'] = [(Z, -sg * 26 * back), (Y, -sg * 16 * lift2)]
-        p[name + 'Leg'] = [(Y, sg * 10 * lift2)]
-    p['Spine'] = [(Z, 6 * sn(t))]                          # the spine bends toward the forward leg
-    p['Chest'] = [(Z, 4 * sn(t))]
-    p['Head'] = [(Z, -6 * sn(t))]                          # the head keeps looking ahead
-    tail_wave(p, t, 4, lag=0.15, grow=1.0)
+        p[name + 'UpLeg'] = [(Y, sg * (WALK_DOWN - 18 * lift2)), (Z, -sg * 22 * back)]
+        p[name + 'Leg'] = [(Y, sg * (KNEE_DOWN - 6 * lift2))]
+        p[name + 'Foot'] = [(Y, -sg * 30)]
+    p['Spine'] = [(Z, 7 * sn(t))]                          # the spine bends toward the forward leg
+    p['Chest'] = [(Z, 5 * sn(t))]
+    p['Head'] = [(Z, -7 * sn(t)), (X, -4)]                 # the head keeps looking ahead, a little up
+    tail_wave(p, t, 5, lag=0.15, grow=1.0)
+    p['Tail1'] = p.get('Tail1', []) + [(X, -8)]            # the tail angles down from the raised hips to drag
+    p['_lift'] = WALK_LIFT + 0.01 * abs(sn(t * 2))         # the body up on its legs, a little bob each step
     return p
 
 def legs_resting(p):
@@ -196,6 +207,9 @@ for name, (fn, length) in MOVES.items():
             last[pb.name] = q
             pb.rotation_quaternion = q
             pb.keyframe_insert('rotation_quaternion', frame=f + 1)
+        # The body raised onto its legs (the walk): the hips moved up, in the bone's own frame.
+        P['Hips'].location = REST['Hips'].inverted() @ Vector((0, 0, pose.get('_lift', 0.0)))
+        P['Hips'].keyframe_insert('location', frame=f + 1)
     act.frame_range = (1, length + 1)
     tr = rig.animation_data.nla_tracks.new(); tr.name = name; tr.strips.new(name, 1, act)
     rig.animation_data.action = None
@@ -216,7 +230,9 @@ if preview:
     scene.world = bpy.data.worlds.new('w'); rig.hide_render = True
     cd = bpy.data.cameras.new('c'); cd.type = 'ORTHO'; cd.ortho_scale = 2.2
     cam = bpy.data.objects.new('c', cd); scene.collection.objects.link(cam); scene.camera = cam
-    cam.location = Vector((0, 0, 4)); cam.rotation_euler = (0, 0, 0)       # straight down from above
+    side_view = '--side' in sys.argv
+    if side_view: cam.location = Vector((4, 0, 0.1)); cam.rotation_euler = (math.pi / 2, 0, math.pi / 2)   # from the side, to see the legs under it
+    else: cam.location = Vector((0, 0, 4)); cam.rotation_euler = (0, 0, 0)       # straight down from above
     for tr in rig.animation_data.nla_tracks: tr.mute = True
     for name, (fn, length) in MOVES.items():
         rig.animation_data.action = bpy.data.actions[name]

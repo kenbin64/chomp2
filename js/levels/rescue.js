@@ -22,6 +22,7 @@ import { peopleModels } from '../tourists.js';
 import { readProgress, outfitModel, wearing } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
 import * as sound from '../sound.js';
+import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
 import { LAGOON, terrainHeight, isWater, WATER_Y, BOARDWALK, deckHeight } from '../rules.js';
 import { CALL, GAP, FENCE, SEA_Z, startingCrocs, fenceDistance, inGap, onShore, inSea, addToTrail, placeInLine, follow, allCalled, SPACING } from './rescue-rules.js';
 
@@ -41,6 +42,9 @@ const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 900);
 function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.fov = camera.aspect < 0.8 ? 68 : 55; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 const fpsWatch = watchFrameRate(quality, lower => { quality = lower; renderer.setPixelRatio(pixelRatioFor(lower)); resize(); });
+// Entering: a fly-over of the park with its name (Ken: every area labelled as you enter).
+const intro = areaIntro({ id: 'rescue', name: 'Croc Park', place: 'Back where it all began', focus: on => fpsWatch.focus(on),
+  shots: () => orbitShots({ centre: { x: 0, y: 0, z: 0 }, radius: 70, height: 45, low: 18, a0: -Math.PI * 0.4, a1: Math.PI * 0.95 }) });
 
 const models = await loadModels([...MODEL_FILES, 'sceptre-hero'], { light: touch || quality.name === 'low' });
 const realism = params.get('real') === '0' ? null : await loadRealism(renderer, { light: touch || quality.name === 'low' });
@@ -101,6 +105,7 @@ function holdSceptre(t) {
 }
 
 // ---- The crocs -------------------------------------------------------------------------------
+const WALK_LIFT = 0.42;                                   // metres the high walk raises a croc (tuned on a close-up)
 const NAMES = ['Big Kev', 'Dazza', 'Mick', 'Trev', 'Shane', 'Gazza', 'Robbo', 'Davo', 'Bluey', 'Macca'];
 const crocGltf = models.get('croc-regular') || models.get('croc');
 const crocs = startingCrocs().map((s, i) => {
@@ -197,8 +202,11 @@ function step(dt, t) {
       c.wander += dt * 0.15; const tx = Math.cos(c.wander) * LAGOON.rx * 0.5, tz = Math.sin(c.wander * 1.3) * LAGOON.rz * 0.45;
       const f = follow(c, { x: c.x + (tx - c.x) * 0.02, z: c.z + (tz - c.z) * 0.02 }, dt * 0.2); c.x = f.x; c.z = f.z; c.heading = f.heading; moving = true;
     }
-    c.holder.position.set(c.x, groundY(c.x, c.z), c.z); c.holder.rotation.y = c.heading;
-    if (c.skin) { c.skin.play(wet(c.x, c.z) ? 'swim' : moving ? 'walk' : 'idle', { alternatives: ['swim', 'idle'] }); c.skin.update(dt); }
+    // Walking on land, up on its legs (the high walk lifts the body clear of the ground).
+    const walking = !wet(c.x, c.z) && moving;
+    c.lift = (c.lift || 0) + ((walking ? WALK_LIFT : 0) - (c.lift || 0)) * Math.min(1, dt * 6);
+    c.holder.position.set(c.x, groundY(c.x, c.z) + c.lift, c.z); c.holder.rotation.y = c.heading;
+    if (c.skin) { c.skin.play(wet(c.x, c.z) ? 'swim' : walking ? 'walk' : 'idle', { alternatives: ['swim', 'idle'] }); c.skin.update(dt); }
   }
   // The gate swings open; the people cheer as the line heads out (Ken).
   if (game.open && gate.open < 1) { gate.open = Math.min(1, gate.open + dt * 0.8); for (const l of gate.leaves) l.hinge.rotation.y = l.s * gate.open * 1.9; }
@@ -237,8 +245,16 @@ function drawHud() {
   $('job').textContent = !game.open ? 'Walk up to each croc: the sceptre calls it to follow you'
     : game.finale ? 'Up the coast to the Daintree!' : 'Lead them out through the gate, over the sand and into the sea';
 }
+// On to the next stage of the journey by itself: a fade to black, its name, and it carries on.
+function carryOn(page, title) {
+  const f = document.getElementById('fade'), c = document.getElementById('cine-caption');
+  if (c) { c.textContent = title; c.hidden = false; }
+  if (f) f.classList.add('on');
+  setTimeout(() => { location.href = page; }, 2200);
+}
 function finish() {
   game.done = true; game.running = false; $('hud').hidden = true; $('touch').hidden = true;
+  if (!params.has('stay')) { carryOn('coast.html', 'Up the coast to the Daintree'); return; }   // ?stay: the result card, for testing
   $('result-title').textContent = 'The crocs of Croc Park are free';
   $('result-why').textContent = 'Every croc followed the sceptre out to the sea. Next: up the coast to the Daintree, and the boat on the sandbar. ';
   $('result').hidden = false;
@@ -247,6 +263,10 @@ function finish() {
 }
 
 function start() {
+  if (intro.due()) { $('title').hidden = true; sound.start(); intro.play(camera, begin); return; }
+  begin();
+}
+function begin() {
   sound.start(); sound.startMusic('park');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true;
@@ -266,6 +286,7 @@ function frame() {
   bubbles.update(dt); fx.update(dt, t);
   if (world.update) world.update(t, dt, false, camera);
   followCamera(dt);
+  intro.update(dt, camera);
   fpsWatch(dt);
   post.render();
   requestAnimationFrame(frame);

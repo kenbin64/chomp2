@@ -25,6 +25,7 @@ import { readProgress, outfitModel, wearing } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
 import { loadRealism } from '../realism.js';
 import * as sound from '../sound.js';
+import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -42,6 +43,9 @@ const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 1400);
 function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.fov = camera.aspect < 0.8 ? 72 : 58; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 const fpsWatch = watchFrameRate(quality_, lower => { quality_ = lower; renderer.setPixelRatio(pixelRatioFor(lower)); resize(); });
+// Entering: round the stuck boat with the stage's name (Ken).
+const intro = areaIntro({ id: 'push', name: 'The Great Push', place: 'The Daintree River', focus: on => fpsWatch.focus(on),
+  shots: () => orbitShots({ centre: { x: boatX(AGROUND_Z), y: 0, z: AGROUND_Z }, radius: 40, height: 28, low: 12, a0: Math.PI * 0.6, a1: Math.PI * 1.25 }) });
 
 const models = await loadModels([...MODEL_FILES, 'river-boat'], { light: touch || quality_.name === 'low' });
 const realism = await loadRealism(renderer, { light: touch || quality_.name === 'low' });
@@ -276,7 +280,8 @@ function frameCamera(dt) {
   if (window.chomp.camHold) window.chomp.camHold(camera);
 }
 
-function start() { sound.start(); sound.startMusic('esplanade'); $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch; game.running = true; $('job').textContent = 'Touch the wild crocs round the boat with the sceptre, then lead everyone to the stern'; bubbles.say(wally.root, 'There she is, stuck fast. Follow me, everyone!', 3.2, 2); }
+function start() { if (intro.due()) { $('title').hidden = true; sound.start(); intro.play(camera, begin); return; } begin(); }
+function begin() { sound.start(); sound.startMusic('esplanade'); $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch; game.running = true; $('job').textContent = 'Touch the wild crocs round the boat with the sceptre, then lead everyone to the stern'; bubbles.say(wally.root, 'There she is, stuck fast. Follow me, everyone!', 3.2, 2); }
 $('play').onclick = start;
 $('again').onclick = () => location.reload();
 
@@ -287,7 +292,7 @@ function frame() {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt;
   if (game.running) step(dt, t); else { holdSceptre(t); placeBoat(t); for (const c of [...parkCrocs, ...wild]) { c.holder.position.set(c.x, -0.25, c.z); if (c.skin) c.skin.update(dt); } for (const p of passengers) { p.skin.play('nervous', { alternatives: ['idle'] }); p.skin.update(dt); } }
   bubbles.update(dt); fx.update(dt, t); world.update(t, camera);
-  frameCamera(dt); fpsWatch(dt);
+  frameCamera(dt); intro.update(dt, camera); fpsWatch(dt);
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }

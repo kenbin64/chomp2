@@ -26,6 +26,7 @@ import { jarLabelTexture } from '../textures.js';
 import { readProgress, outfitModel, wearing } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
 import * as sound from '../sound.js';
+import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone, aimOffset } from '../rules.js';
 
 const $ = id => document.getElementById(id);
@@ -44,6 +45,9 @@ const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 1600);
 function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.fov = camera.aspect < 0.8 ? 72 : 58; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 const fpsWatch = watchFrameRate(quality, lower => { quality = lower; renderer.setPixelRatio(pixelRatioFor(lower)); resize(); });
+// Entering: a fly-over down the coast with its name (Ken).
+const intro = areaIntro({ id: 'coast', name: 'Up the Coast', place: 'Cairns to the Daintree', focus: on => fpsWatch.focus(on),
+  shots: () => courseShots({ from: { x: shoreX(260) - 14, z: 260 }, to: { x: wally.pos.x, z: wally.pos.z - 12 }, y: 0, height: 45, side: -26 }) });
 
 const models = await loadModels([...MODEL_FILES, 'river-boat'], { light: touch || quality.name === 'low' });
 useJarModel(models.get('jar'));
@@ -268,14 +272,23 @@ function drawHud() {
   $('lives').textContent = '●'.repeat(Math.max(0, game.lives)) + '○'.repeat(Math.max(0, LIVES - game.lives));
   $('job').textContent = `Lead the crocs up the coast to the Daintree (${Math.max(0, Math.round(MOUTH_Z - wally.pos.z))} m to go)`;
 }
+// On to the next stage of the journey by itself: a fade to black, its name, and it carries on.
+function carryOn(page, title) {
+  const f = document.getElementById('fade'), c = document.getElementById('cine-caption');
+  if (c) { c.textContent = title; c.hidden = false; }
+  if (f) f.classList.add('on');
+  setTimeout(() => { location.href = page; }, 2200);
+}
 function finish(won = true) {
   game.running = false; $('hud').hidden = true; $('touch').hidden = true; caption('');
+  if (won && !params.has('stay')) { carryOn('push.html', 'The Great Push'); return; }
   $('result-title').textContent = won ? 'The mouth of the Daintree River' : 'Out of puff';
   $('result-why').textContent = won ? 'All ten crocs made it up the coast. Next: up the river to the boat on the sandbar, and the push.' : 'Kenny can only bring his jar three times. Try the swim again.';
   $('result').hidden = false; window.chomp.result = { won };
   if (won) { $('again').textContent = 'The Great Push'; $('again').onclick = () => { location.href = 'push.html'; }; }
 }
-function start() { sound.start(); sound.startMusic('reef'); $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch; game.running = true; bubbles.say(wally.root, 'North to the Daintree, fellas! Follow the sceptre!', 3.4, 2); }
+function start() { if (intro.due()) { $('title').hidden = true; sound.start(); intro.play(camera, begin); return; } begin(); }
+function begin() { sound.start(); sound.startMusic('reef'); $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch; game.running = true; bubbles.say(wally.root, 'North to the Daintree, fellas! Follow the sceptre!', 3.4, 2); }
 function setPaused(p) { if (!game.running) return; game.paused = p; $('paused').hidden = !p; }
 $('play').onclick = start; $('resume').onclick = () => setPaused(false); $('again').onclick = () => location.reload();
 
@@ -289,7 +302,7 @@ function frame() {
   ripple.offset.set(t * 0.004, t * 0.009);
   if (ranges && ranges.userData.follow) ranges.userData.follow(camera);
   sun.position.copy(wally.pos).add(new THREE.Vector3(-60, 120, -50)); sun.target.position.copy(wally.pos);
-  followCamera(dt); fpsWatch(dt);
+  followCamera(dt); intro.update(dt, camera); fpsWatch(dt);
   post.render(); requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

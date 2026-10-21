@@ -448,8 +448,16 @@ function begin() {
 }
 function setPaused(p) { if (!game.running) return; game.paused = p; $('paused').hidden = !p; }
 
+// On to the next stage of the journey by itself: a fade to black, its name, and it carries on.
+function carryOn(page, title) {
+  const f = document.getElementById('fade'), c = document.getElementById('cine-caption');
+  if (c) { c.textContent = title; c.hidden = false; }
+  if (f) f.classList.add('on');
+  setTimeout(() => { location.href = page; }, 2200);
+}
 function finish(won) {
   game.running = false;
+  if (won && game.phase === 'court' && !params.has('stay')) { $('hud').hidden = true; carryOn('train.html', 'Down the range on the Kuranda train'); return; }
   $('hud').hidden = true; $('touch').hidden = true;
   $('result-title').textContent = won ? 'The King will grant the wish' : 'Out of puff';
   $('result-why').textContent = won ? "The sceptre is whole again, and the King has heard Wally's wish. Next: down the range on the Kuranda train to Croc Park, to bring out the crocs." : 'Kenny can only bring his jar three times in a place.';
