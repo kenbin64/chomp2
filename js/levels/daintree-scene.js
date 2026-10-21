@@ -57,11 +57,12 @@ function water(scene, rnd) {
 }
 
 // Mangroves: a dark, dense crown on a fan of arching prop roots, in two bands along each bank.
-function mangroves(scene, rnd) {
+function mangroves(scene, rnd, clear) {
   const spots = [];
   for (const side of [-1, 1]) for (let z = Z0; z < Z1; z += 3.2 + rnd() * 2.6) {
     const d = HALF - 1.5 + rnd() * (MUD + 1);
-    spots.push({ x: riverX(z) + side * d, z: z + rnd() * 2, s: 0.8 + rnd() * 0.7 });
+    const sx = riverX(z) + side * d, sz = z + rnd() * 2;
+    if (!clear(sx, sz)) spots.push({ x: sx, z: sz, s: 0.8 + rnd() * 0.7 });
   }
   const ROOTS = 7, n = spots.length;
   const rootGeo = new THREE.TorusGeometry(1, 0.05, 5, 10, Math.PI);      // a half ring: one arching root
@@ -108,7 +109,8 @@ function sandbar(scene, rnd) {
   }
 }
 
-export function buildDaintree(scene, q, realism = null) {
+// clear(x, z): true where a scene needs the bank open (the ending's places); no mangroves or trees there.
+export function buildDaintree(scene, q, realism = null, clear = () => false) {
   let seed = 41; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   addSky(scene);
   const sun = addLights(scene, q);
@@ -124,7 +126,7 @@ export function buildDaintree(scene, q, realism = null) {
 
   ground(scene, rnd);
   const ripple = water(scene, rnd);
-  mangroves(scene, rnd);
+  mangroves(scene, rnd, clear);
   sandbar(scene, rnd);
 
   // The rainforest: Ken's rainforest tiles in a thick band behind the mangroves on both banks,
@@ -133,7 +135,7 @@ export function buildDaintree(scene, q, realism = null) {
   const TILE = 14;
   for (const side of [-1, 1]) for (let z = Z0; z < Z1; z += TILE * 0.85) for (let k = 0; k < 2; k++) {
     const d = FOREST + 4 + k * TILE * 0.9 + rnd() * 2;
-    trees.add('rainforest', riverX(z) + side * d, -0.4 + groundAt(riverX(z) + side * d, z).y, z + rnd() * 3, 15 + rnd() * 3);
+    if (!clear(riverX(z) + side * d, z)) trees.add('rainforest', riverX(z) + side * d, -0.4 + groundAt(riverX(z) + side * d, z).y, z + rnd() * 3, 15 + rnd() * 3);
   }
   const far = q.name === 'high' ? 220 : q.name === 'medium' ? 150 : 90;
   for (let i = 0; i < far; i++) {

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>html,body{background:#0b1d27}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#132a20">
+<title>The End · Chomp 3D: Wally's Cairns Adventure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="fade" class="fade-screen"></div>
+<p id="scene-caption" class="scene-caption" hidden><b></b> <span></span></p>
+<button id="skip" class="skip-scene" type="button" hidden>Skip &#9654;&#9654; <small>Enter</small></button>
+
+<section id="title" class="overlay live-view">
+  <div class="card">
+    <p class="area">The Daintree River</p>
+    <h1>The Wish</h1>
+    <p>The boat is free, and the crocs of Croc Park are home in the Daintree. One last thing remains: the King keeps his promise.</p>
+    <button id="play" class="go" type="button">Watch the ending</button>
+  </div>
+</section>
+
+<section id="credits" class="overlay credits-roll" hidden>
+  <div class="card">
+    <h1>Chomp 3D</h1>
+    <p class="area">Wally's Cairns Adventure</p>
+    <p>Created by Ken Bingham.<br>Story, characters, world, art direction and every decision: Ken Bingham.<br>Code, scenes, physics and testing: Claude, an AI by Anthropic, working with Ken every step of the way.</p>
+    <h2>A word about how this game was made</h2>
+    <p>AI did not make this game. Neither did I, alone.</p>
+    <p>The first thing the AI produced when I asked for this game looked like an Atari 2600 cartridge: blocky shapes and a croc you had to squint to see. What you just played took hundreds of hours of me pushing and correcting, adding a croc's swagger, a cane fire at dusk, a boomerang that flies true. And the AI turned each idea into working code and tested it, often the same day.</p>
+    <p>I brought the imagination: Wally, Kenny, the King, the Cairns I love. The AI brought the technical side I couldn't do alone. Neither of us could have made this on our own.</p>
+    <p><b>And yet we did.</b></p>
+    <p>If you think AI can make things like this without people, remember that Atari croc. It took a human with an imagination, and an AI to build what he imagined.</p>
+    <p>Made the old way, a game like this would have needed a studio team, a year or more, and a big budget.</p>
+    <h2>Acknowledgement of Country</h2>
+    <p>We acknowledge the Traditional Owners of the lands and waters this game celebrates, including the Gimuy Walubara Yidinji and Yirrganydji peoples of Cairns, the Djabugay people of Kuranda, and the Eastern Kuku Yalanji people of the Daintree and Mossman Gorge, and pay our respects to Elders past and present.</p>
+    <p class="big-warning">And remember: do NOT feed the crocodiles.</p>
+    <div class="end-buttons"><a class="go" href="index.html">Back to the start</a><a class="go map-btn" href="about.html">About the game</a></div>
+  </div>
+</section>
+
+<script type="module" src="js/levels/ending.js"></script>
+</body>
+</html>

@@ -501,3 +501,9 @@ body.touch .gear-use { bottom: 224px; }
 .push-word.perfect { color: #7be36b; } .push-word.good { color: #ffd166; } .push-word.miss { color: #ff8a7a; }
 .push-progress { height: 10px; border-radius: 5px; background: rgba(255, 255, 255, 0.2); overflow: hidden; }
 .push-progress i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #ffd166, #7be36b); transition: width 0.3s; }
+
+/* The credits after the ending (ending.html) */
+.credits-roll .card { max-width: 760px; max-height: 86vh; overflow-y: auto; text-align: center; }
+.credits-roll h2 { color: #ffd166; margin: 22px 0 6px; font-size: 24px; }
+.credits-roll p { line-height: 1.5; }
+.credits-roll .big-warning { font-size: 26px; font-weight: 800; color: #ffb38a; margin: 22px 0 10px; }

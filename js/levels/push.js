@@ -255,7 +255,9 @@ function afloatStep(dt) {
   if (game.afloatT > 7 && !game.done) finish();
 }
 function finish() {
-  game.done = true; game.running = false; $('hud').hidden = true; caption('');
+  game.done = true; game.running = false; $('hud').hidden = true;
+  if (!params.has('stay')) { caption('The Wish'); $('fade').classList.add('on'); setTimeout(() => { location.href = 'ending.html?play'; }, 2200); return; }   // on to the ending by itself
+  caption('');
   $('result-title').textContent = 'The boat is free!';
   $('result-why').textContent = `The crocs of Croc Park and the wild crocs of the Daintree pushed the tour boat off the sandbar together: ${game.heaves} heaves, ${game.perfect} perfect. Everyone is safe. Next: the ending. (The ending: next to build.)`;
   $('result').hidden = false; window.chomp.result = { heaves: game.heaves, perfect: game.perfect };

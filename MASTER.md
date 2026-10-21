@@ -534,9 +534,15 @@ and keeps its ending where Ken has not changed it):**
      each heave moves it) until the boat floats free and the passengers cheer. The park's crocs are free in
      the Daintree.
    (This brings back the run back to Croc Park and the Kuranda train, dropped on 2026-10-19.)
-6. **The ending (Ken, 2026-10-20: keep, but change):** the third version's ending (Wally's choice to become a
+6. **The ending, built 2026-10-21 (`ending.html`; Ken: "build it just as listed", it ends with Kenny):** the
+   boat free and the passengers cheering; the King on his throne at the river's edge, the truth and Wally's
+   choice, the sceptre changes him back to a croc; Kenny's secret; the celebration on the bank; Wally carries
+   Kenny across to the gum trees, the Vegemite offered and nudged back, Kenny climbs his gum, croc eyes
+   surface below and Kenny says the last line; then the credits (Ken's words on how the game was made, the
+   Acknowledgement of Country, "do NOT feed the crocodiles"). The Great Push carries on into it.
+   (Was: the third version's ending (Wally's choice to become a
    normal croc, Kenny sent by the King, the passengers' cheer, the celebration, Kenny's farewell and the last
-   line) stays, with changes. **Open:** what changes.
+   line) stays, with changes. **Open:** what changes.)
 
 **The third version (Ken 2026-10-19; steps 1 to 5 replaced by the fourth version above):**
 1. **The river:** the Daintree, a river with crocs in it and rainforest on both banks. The tour boat, full
