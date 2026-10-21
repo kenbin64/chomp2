@@ -507,3 +507,4 @@ body.touch .gear-use { bottom: 224px; }
 .credits-roll h2 { color: #ffd166; margin: 22px 0 6px; font-size: 24px; }
 .credits-roll p { line-height: 1.5; }
 .credits-roll .big-warning { font-size: 26px; font-weight: 800; color: #ffb38a; margin: 22px 0 10px; }
+.the-end { position: fixed; inset: 0; z-index: 8; margin: 0; display: grid; place-items: center; font: 800 clamp(48px, 10vw, 110px) var(--font); color: #ffd166; text-shadow: 0 4px 0 #c0392b, 0 10px 30px rgba(0,0,0,0.6); pointer-events: none; animation: areafade 1.6s ease-out; }

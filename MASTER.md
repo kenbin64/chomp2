@@ -537,8 +537,9 @@ and keeps its ending where Ken has not changed it):**
 6. **The ending, built 2026-10-21 (`ending.html`; Ken: "build it just as listed", it ends with Kenny):** the
    boat free and the passengers cheering; the King on his throne at the river's edge, the truth and Wally's
    choice, the sceptre changes him back to a croc; Kenny's secret; the celebration on the bank; Wally carries
-   Kenny across to the gum trees, the Vegemite offered and nudged back, Kenny climbs his gum, croc eyes
-   surface below and Kenny says the last line; then the credits (Ken's words on how the game was made, the
+   Kenny across to the gum trees, Kenny offers his own jar and Wally nudges it back, Kenny climbs his gum like a
+   koala (hugging the trunk, in bounds), Kenny says the last line with croc eyes in the water below; **the last
+   scene is Wally's eyes above the water, going down, and The End (Ken, 2026-10-21)**; then the credits (Ken's words on how the game was made, the
    Acknowledgement of Country, "do NOT feed the crocodiles"). The Great Push carries on into it.
    (Was: the third version's ending (Wally's choice to become a
    normal croc, Kenny sent by the King, the passengers' cheer, the celebration, Kenny's farewell and the last

@@ -127,9 +127,10 @@ const LINES = [
   [78, null, '', 'climb'],
   [86, null, '', 'eyes'],
   [90, 'Kenny', 'If you see a croc in the Daintree, give it room. It might be Wally.', 'eyes'],
-  [99, null, '', 'end'],
+  [97, null, '', 'sink'],                                       // Ken: the last scene is Wally's eyes above the water, going down
+  [103, null, '', 'end'],                                       // and The End
 ];
-const END_T = 100;
+const END_T = 107;
 let t = 0, playing = false, line = -1;
 function caption(who, text) { const c = $('scene-caption'); c.hidden = !text; if (!text) return; c.querySelector('b').textContent = who ? `${who}:` : ''; c.querySelector('span').textContent = text; }
 function lineAt(time) { let i = 0; while (i < LINES.length - 1 && time >= LINES[i + 1][0]) i++; return i; }
@@ -147,30 +148,44 @@ function stage(dt, time) {
   sceptre.position.set(kingX + 0.4, yAt(kingX, kingZ) + (shot === 'raise' || shot === 'change' ? 5.6 : 3.4), kingZ - 0.9);
   sceptre.userData.light.intensity = shot === 'change' ? 40 + Math.sin(into * 20) * 20 : 5;
   // The change: a flash, and Wally is a croc again.
-  if (shot === 'change' && into > 2.6 && wally.visible) { wally.visible = false; if (croc) croc.g.visible = true; sceptre.userData.light.intensity = 120; }
+  // After the change (34 s + 2.6) he is a croc, however we got here (played through, or skipped to).
+  const changed = time >= 36.6; wally.visible = !changed; if (croc) croc.g.visible = changed;
+  if (shot === 'change' && into > 2.6 && into < 2.8) sceptre.userData.light.intensity = 120;
   if (shot === 'change') { const s = 1 + Math.sin(Math.min(1, into / 2.6) * Math.PI) * 0.15; wally.scale.setScalar(s); }
   if (wallySkin) wallySkin.play(shot === 'wally' ? 'Idle' : 'Idle');
-  if (kennySkin) kennySkin.play(shot === 'kenny' ? 'Wave' : shot === 'party' ? 'Celebrate' : shot === 'jar' ? 'Offer' : shot === 'climb' ? 'Walk' : 'Idle', { alternatives: ['Idle'] });
+  // Climbing and up the tree: arms raised round the trunk (the Celebrate move's raised arms, facing the trunk).
+  if (kennySkin) kennySkin.play(shot === 'kenny' ? 'Wave' : shot === 'party' ? 'Celebrate' : shot === 'jar' ? 'Offer' : (shot === 'climb' || shot === 'eyes' || shot === 'sink' || shot === 'end') ? 'Celebrate' : 'Idle', { speed: shot === 'climb' ? 1 : 0.15, alternatives: ['Idle'] });
   for (const c of crowd) { c.g.visible = shot === 'party'; c.s.play('cheer', { alternatives: ['idle'] }); }
   // The farewell: across the river, Kenny on Wally's back.
   if (croc) {
     const cg = croc.g;
-    if (shot === 'carry' || shot === 'jar' || shot === 'climb' || shot === 'eyes' || shot === 'end') {
+    if (['carry', 'jar', 'climb', 'eyes', 'sink', 'end'].includes(shot)) {
       const u = shot === 'carry' ? ease(into / 10) : 1;
       const x0 = wallyX, z0 = wallyZ, x1 = farX - 1.5, z1 = gumZ - 1;
       cg.position.set(x0 + (x1 - x0) * u, shot === 'carry' && u < 0.95 ? -0.2 : yAt(x1, z1), z0 + (z1 - z0) * u);
       cg.rotation.y = Math.atan2(x1 - x0, z1 - z0);
       croc.s.play(shot === 'carry' && u < 0.95 ? 'swim' : 'idle', { alternatives: ['idle'] });
       if (shot === 'carry') kenny.position.set(cg.position.x, cg.position.y + 0.55, cg.position.z);   // riding on his back
-      if (shot === 'jar') { kenny.position.set(x1 + 1.4, yAt(x1 + 1.4, z1 + 1), z1 + 1); kenny.rotation.y = Math.atan2(cg.position.x - kenny.position.x, cg.position.z - kenny.position.z); jar.visible = true; jar.position.set(kenny.position.x - 0.35, kenny.position.y + 0.8 - (into > 4 ? (into - 4) * 0.3 : 0), kenny.position.z - 0.2); }
-      if (shot === 'jar' && into > 4) { croc.s.play('walk', { alternatives: ['idle'] }); }                     // he nudges it back to Kenny
-      if (shot === 'climb' || shot === 'eyes' || shot === 'end') {
+      if (shot === 'jar') {
+        // Kenny a few steps in front of Wally's snout, holding out his own jar (the Offer move); after a moment
+        // Wally nudges it gently back toward him: a step forward and back.
+        const fx = Math.sin(cg.rotation.y), fz = Math.cos(cg.rotation.y);
+        const kx = x1 + fx * 3.4, kz = z1 + fz * 3.4;
+        kenny.position.set(kx, yAt(kx, kz), kz); kenny.rotation.y = cg.rotation.y + Math.PI;
+        const nudge = into > 3.5 && into < 5.5 ? Math.sin((into - 3.5) / 2 * Math.PI) * 0.7 : 0;
+        cg.position.x += fx * nudge; cg.position.z += fz * nudge;
+        if (nudge > 0) croc.s.play('walk', { alternatives: ['idle'] });
+      }
+      if (['climb', 'eyes', 'sink', 'end'].includes(shot)) {
         jar.visible = false;
-        const cu = shot === 'climb' ? ease(into / 7) : 1;
-        kenny.position.set(gumX - 0.55, yAt(gumX, gumZ) + 0.1 + cu * 5.5, gumZ); kenny.rotation.y = -Math.PI / 2;   // on the river side of the trunk, facing the water
+        // A koala climbs in bounds: a quick reach and push up, then a pause, holding on.
+        const BOUNDS = 6, k = shot === 'climb' ? Math.min(BOUNDS, (into / 6.5) * BOUNDS) : BOUNDS;
+        const cu = (Math.floor(k) + ease(Math.min(1, (k % 1) * 2.2))) / BOUNDS;
+        kenny.position.set(gumX - 0.62, yAt(gumX, gumZ) + 0.1 + Math.min(1, cu) * 5.5, gumZ); kenny.rotation.y = Math.PI / 2;   // facing the trunk, hugging it
         // Wally slides back into the river; then only his eyes show.
         const su = shot === 'climb' ? ease((into - 3) / 4) : 1;
-        cg.position.set(x1 - 3 - su * 7, -0.2 - su * 0.12, z1 + 1 - su * 0.5); cg.rotation.y = Math.PI / 2;   // back in the water below Kenny's tree, eyes and snout showing, looking up at him
+        const down = shot === 'sink' ? ease((into - 1.8) / 3.4) * 0.8 : shot === 'end' ? 0.8 : 0;   // the last scene: the eyes go under
+        cg.position.set(x1 - 3 - su * 7, -0.1 - su * 0.04 - down, z1 + 1 - su * 0.5); cg.rotation.y = Math.PI / 2;   // back in the water below Kenny's tree, eyes and snout showing, looking up at him
       }
     }
   }
@@ -183,12 +198,15 @@ function stage(dt, time) {
     case 'kenny': kenny.rotation.y = Math.atan2(camera.position.x - kp.x, camera.position.z - kp.z); pos.set(kp.x + 2.8, kp.y + 1.3, kp.z + 1.2); look.set(kp.x, kp.y + 0.8, kp.z); break;   // turned to us for his secret
     case 'party': pos.set(nearX + 16 - into * 0.6, 6, Z - 12 + into * 1.2); look.set(nearX - 2, 1.5, Z); break;
     case 'carry': { const c = croc ? croc.g.position : wp; pos.set(c.x - 6, 3.5, c.z - 9); look.set(c.x, 0.5, c.z); break; }
-    case 'jar': pos.set(kp.x + 3.5, kp.y + 1.3, kp.z - 2.5); look.set(kp.x, kp.y + 0.7, kp.z - 0.3); break;
+    case 'jar': { const c = croc ? croc.g.position : wp, mx = (kp.x + c.x) / 2, mz = (kp.z + c.z) / 2, dx = kp.x - c.x, dz = kp.z - c.z, d = Math.hypot(dx, dz) || 1;   // side on: Kenny and Wally both
+      pos.set(mx - dz / d * 6.5, 1.6, mz + dx / d * 6.5); look.set(mx, 0.6, mz); break; }
     case 'climb': pos.set(gumX - 9, yAt(gumX, gumZ) + 2.5 + into * 0.3, gumZ + 1); look.set(gumX, yAt(gumX, gumZ) + 2 + into * 0.6, gumZ); break;
-    case 'eyes': case 'end': pos.set(farX - 20, 1.4, gumZ + 0.5); look.set(gumX - 2, 3.2, gumZ); break;   // low over the water: the eyes in front, Kenny in his gum tree behind
+    case 'sink': case 'end': { const c = croc ? croc.g.position : V(farX - 10, 0, gumZ), hx = c.x + 1.6; pos.set(hx + 2.6, 0.35, c.z + 0.3); look.set(hx, 0.05, c.z); break; }   // close on his eyes, just above the water
+    case 'eyes': pos.set(farX - 20, 1.4, gumZ + 0.5); look.set(gumX - 2, 3.2, gumZ); break;   // low over the water: the eyes in front, Kenny in his gum tree behind
   }
   camera.position.lerp(pos, line === i && into < 0.05 ? 1 : Math.min(1, dt * 2.5)); camera.lookAt(look);
   $('fade').classList.toggle('on', shot === 'end' || (shot === 'change' && into > 2.3 && into < 2.9));
+  $('the-end').hidden = shot !== 'end';
   for (const s of [kingSkin, wallySkin, kennySkin, croc && croc.s, ...passengers.map(p => p.s), ...crowd.map(c => c.s), ...crocs.map(c => c.s)]) if (s) s.update(dt);
 }
 
