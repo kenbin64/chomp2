@@ -25,7 +25,7 @@ import { readProgress, outfitModel, wearing } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
 import { loadRealism } from '../realism.js';
 import * as sound from '../sound.js';
-import { makeSceptre, ALL_TALISMANS } from '../sceptre-model.js';
+import { makeSceptre, ALL_TALISMANS, holdHigh } from '../sceptre-model.js';
 import { say as forDevice } from '../device.js';
 import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
 
@@ -107,10 +107,8 @@ const sceptreSet = makeSceptre(models, { height: 1.5, held: ALL_TALISMANS });   
 const sceptre = (() => { const g = new THREE.Group(); sceptreSet.group.position.y = 0.45; g.add(sceptreSet.group); g.userData.light = new THREE.PointLight(0xffe2a0, 0, 1);   /* kept for old code that sets it; not added to the scene: the sceptre lights itself */ scene.add(g); return g; })();
 let hand = null; if (wally.skin) wally.skin.root.traverse(o => { if (o.isBone && /RightHand$/.test(o.name)) hand = o; });
 function holdSceptre(t) {
-  if (wally.poser && wally.poser.ok) { wally.poser.tilt('RightArm', 0, 0, -1.25); wally.poser.tilt('RightForeArm', 0, 0, -0.3); }
-  if (wally.skin) wally.skin.root.updateMatrixWorld(true);
-  if (hand) hand.getWorldPosition(sceptre.position); else sceptre.position.copy(wally.pos).add(new THREE.Vector3(0.5, 2.4, 0));
-  sceptre.rotation.y = wally.facing; sceptre.userData.light.intensity = 5 + Math.sin(t * 3) + (game.flash || 0) * 40; game.flash = Math.max(0, (game.flash || 0) - 0.04);
+  holdHigh(wally, sceptre);                                          // high in his right hand, steady (sceptre-model.js)
+  game.flash = Math.max(0, (game.flash || 0) - 0.03); if (game.flash > 0) sceptreSet.flare(game.flash * 0.3);
 }
 const crocGltf = models.get('croc-regular') || models.get('croc');
 function croc(x, z, heading) {

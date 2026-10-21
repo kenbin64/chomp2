@@ -25,7 +25,6 @@ export const SETTINGS = {
 // On the card's picture (640 x 640, sceptre-head.png): where each setting is, as fractions.
 export const CARD = Object.fromEntries(Object.entries(SETTINGS).map(([k, s]) => [k, { left: (s.x / 0.4 + 0.5), top: (0.53 - s.y) / 0.4, size: s.size * 2.5 }]));
 
-const waterTex = (() => { if (typeof document === 'undefined') return null; const t = new THREE.TextureLoader().load('assets/talismans/talisman-water.png'); t.colorSpace = THREE.SRGBColorSpace; return t; })();
 
 export function makeSceptre(models, { height = 1.6, held = [] } = {}) {
   const group = new THREE.Group();
@@ -37,28 +36,19 @@ export function makeSceptre(models, { height = 1.6, held = [] } = {}) {
     m.traverse(o => { if (o.isMesh) o.castShadow = true; });
     group.add(m);
   }
-  // Each talisman in its setting: Ken's model (the water one is his picture), its own materials
-  // copied so they can shine.
+  // Each setting won glows in the sceptre's own warm colour (Ken, 2026-10-21: no need to draw the
+  // talismans in the scenes; the holes glow). A soft disc of light in each, front and back, since the
+  // settings go right through the head. (The sceptre card shows the talismans themselves.)
+  const glowTex = (() => { if (typeof document === 'undefined') return null; const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), r = g.createRadialGradient(32, 32, 2, 32, 32, 32); r.addColorStop(0, 'rgba(255,240,200,0.75)'); r.addColorStop(0.5, 'rgba(240,200,110,0.35)'); r.addColorStop(1, 'rgba(200,170,80,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
   const pieces = [];
-  const rim = (() => { if (typeof document === 'undefined') return null; const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), r = g.createRadialGradient(32, 32, 14, 32, 32, 32); r.addColorStop(0, 'rgba(255,240,190,0.9)'); r.addColorStop(1, 'rgba(255,240,190,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
   for (const [id, s] of Object.entries(SETTINGS)) {
-    let piece;
-    if (id === 'talisman-water' || !models.get(id)) {
-      const mat = new THREE.SpriteMaterial({ map: id === 'talisman-water' ? waterTex : null, color: id === 'talisman-water' ? 0xffffff : 0xffd166, transparent: true, depthWrite: false });
-      piece = new THREE.Sprite(mat); piece.scale.setScalar(s.size * height * 1.15);
-    } else {
-      piece = models.get(id).scene.clone(true);
-      const b = new THREE.Box3().setFromObject(piece), sz = b.getSize(new THREE.Vector3());
-      piece.scale.setScalar(s.size * height / Math.max(sz.x, sz.y));
-      const c = new THREE.Box3().setFromObject(piece).getCenter(new THREE.Vector3()); piece.position.sub(c);
-      const holder = new THREE.Group(); holder.add(piece);
-      piece = holder;
+    for (const z of [0.045, -0.045]) {                              // just out past the face of the head, front and back
+      const piece = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffc860, transparent: true, depthWrite: false, opacity: 1, toneMapped: false }));
+      piece.scale.setScalar(s.size * height * 0.72);
+      piece.position.set(s.x * height, s.y * height, z * height);
+      piece.visible = held.includes(id);
+      group.add(piece); pieces.push({ id, piece });
     }
-    // No glow of their own (Ken, 2026-10-21: the talismans are shiny by themselves); the rim is off.
-    if (false && rim) { const r = new THREE.Sprite(new THREE.SpriteMaterial({ map: rim, transparent: true, depthWrite: false, opacity: 0.3, toneMapped: false })); r.scale.setScalar(s.size * height * 1.7); r.position.z = -0.01 * height; r.userData.rim = true; piece.add(r); }
-    piece.position.set(s.x * height, s.y * height, 0.012 * height);
-    piece.visible = held.includes(id);
-    group.add(piece); pieces.push({ id, piece });
   }
   // The glow when all six are in place: a warm light and a soft halo round the head.
   const light = new THREE.PointLight(0xffe2a0, 0, 10 * height); light.position.set(0, 0.33 * height, 0.15 * height); group.add(light);
@@ -80,7 +70,7 @@ export function makeSceptre(models, { height = 1.6, held = [] } = {}) {
       // Each talisman in place shines, gently, out of step with the others.
       pieces.forEach((p, i) => {
         if (!p.piece.visible) return;
-        // As they are: shiny by themselves (Ken), no glow added.
+        p.piece.material.opacity = 0.6 + 0.2 * Math.sin(t * 2 + i * 0.7);   // a gentle pulse
       });
       // All six in place: the sceptre glows.
       light.intensity = all ? 0.6 + Math.sin(t * 1.6) * 0.2 + boost * 40 : 0;
@@ -89,3 +79,18 @@ export function makeSceptre(models, { height = 1.6, held = [] } = {}) {
   };
 }
 export const ALL_TALISMANS = Object.keys(SETTINGS);
+
+// Wally holding the sceptre high in his right hand (Ken), steady. The arm is set to a fixed raised pose
+// each frame (an absolute turn from its rest, so it can never add up and spin), and the sceptre follows
+// the hand smoothly, standing upright. Call after wally.update each frame.
+const _hand = new THREE.Vector3();
+export function holdHigh(wally, sceptre, dt = 1 / 60) {
+  const P = wally.poser;
+  if (P && P.ok) { const k = P.side.Right; P.turn('RightArm', -0.2, 0, k * 1.25); P.turn('RightForeArm', 0, 0, k * 0.15); }
+  if (!wally._handBone && wally.skin) wally.skin.root.traverse(o => { if (o.isBone && /RightHand$/.test(o.name)) wally._handBone = o; });
+  if (wally.skin) wally.skin.root.updateMatrixWorld(true);
+  if (wally._handBone) wally._handBone.getWorldPosition(_hand); else _hand.copy(wally.pos).add(new THREE.Vector3(0.5, 2.6, 0));
+  if (!sceptre.userData.held) { sceptre.position.copy(_hand); sceptre.userData.held = true; }
+  sceptre.position.lerp(_hand, Math.min(1, dt * 14));
+  sceptre.rotation.set(0, wally.facing, 0);
+}

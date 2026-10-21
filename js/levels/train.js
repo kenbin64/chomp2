@@ -206,9 +206,9 @@ function station(i, big) {
   const p = line[i], n = side(i), g = new THREE.Group(), y = p.y;
   // Red corrugated iron (Ken's photo): fine light and dark ridges.
   const ridges = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 8; const r = c.getContext('2d');
-    for (let x = 0; x < 64; x++) { const k = 0.5 + 0.5 * Math.sin(x / 64 * Math.PI * 2 * 4); r.fillStyle = `rgb(${150 + k * 50},${46 + k * 18},${38 + k * 12})`; r.fillRect(x, 0, 1, 8); }
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(30, 1); return t; })();
-  const red = new THREE.MeshStandardMaterial({ map: ridges, roughness: 0.5, metalness: 0.3 });
+    for (let x = 0; x < 64; x++) { const k = 0.5 + 0.5 * Math.sin(x / 64 * Math.PI * 2 * 4); r.fillStyle = `rgb(${140 + k * 55},${36 + k * 20},${30 + k * 14})`; r.fillRect(x, 0, 1, 8); }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(60, 1); return t; })();   // finer ridges, like real corrugated iron
+  const red = new THREE.MeshStandardMaterial({ map: ridges, color: 0xc8a8a0, roughness: 0.62, metalness: 0.25 });   // a deeper, weathered tin red
   const cream = new THREE.MeshStandardMaterial({ color: 0xefe6cf, roughness: 0.85 });
   const white = new THREE.MeshStandardMaterial({ color: 0xf6f3ea, roughness: 0.7 });
   const len = big ? 56 : 30;
@@ -241,6 +241,61 @@ function station(i, big) {
     sg.fillStyle = '#f6f3ea'; sg.fillRect(0, 0, 512, 80); sg.fillStyle = '#1d1d1d'; sg.font = 'bold 40px "Trebuchet MS", sans-serif'; sg.textAlign = 'center'; sg.fillText('KURANDA RAILWAY STATION', 256, 54);
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.1), new THREE.MeshStandardMaterial({ map: t })); sign.position.set(6.95, 4.3, 14); sign.rotation.y = -Math.PI / 2; g.add(sign);
+    // Ken: a very pretty station. Hanging baskets all along the eaves, ferns and flowers trailing
+    // down from them; a lacy timber valance under the awning; gardens, benches and lamps.
+    const leaf = new THREE.MeshStandardMaterial({ color: 0x3f7d2a, roughness: 0.8, side: THREE.DoubleSide });
+    const leaf2 = new THREE.MeshStandardMaterial({ color: 0x5c9a34, roughness: 0.8, side: THREE.DoubleSide });
+    const bloom = ['#e84a8a', '#f5d23a', '#ff7a3a', '#ffffff', '#c25ad8'].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6 }));
+    const wicker = new THREE.MeshStandardMaterial({ color: 0x8a6a3e, roughness: 0.9 });
+    const chain = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, metalness: 0.6, roughness: 0.5 });
+    let seed = 13; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    // A trailing fern frond: a stem with paired leaflets getting smaller to the tip, on a clear background.
+    const frondTex = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 256; const x = c.getContext('2d');
+      x.strokeStyle = '#2f5a1e'; x.lineWidth = 3; x.beginPath(); x.moveTo(32, 0); x.quadraticCurveTo(36, 128, 30, 256); x.stroke();
+      for (let k = 0; k < 22; k++) { const yy = 8 + k * 11, w = 26 * (1 - k / 24), g2 = 70 + (k % 3) * 18;
+        x.fillStyle = `rgb(${50 + k},${110 + g2 / 3},${38})`;
+        for (const sgn of [-1, 1]) { x.beginPath(); x.ellipse(32 + sgn * w * 0.55, yy, w * 0.55, 4.2, sgn * 0.5, 0, Math.PI * 2); x.fill(); } }
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+    const frond = new THREE.MeshStandardMaterial({ map: frondTex, transparent: true, alphaTest: 0.35, side: THREE.DoubleSide, roughness: 0.8 });
+    function basket(x, y, z) {
+      const b = new THREE.Group();
+      const pot = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), wicker); pot.rotation.x = Math.PI; b.add(pot);
+      const line = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.7, 4), chain); line.position.y = 0.38; b.add(line);
+      const top = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), rnd() < 0.5 ? leaf : leaf2); top.scale.set(1, 0.45, 1); top.position.y = 0.05; b.add(top);
+      for (let k = 0; k < 14; k++) {                             // fern fronds spilling over the rim and trailing down
+        const a = k / 14 * Math.PI * 2 + rnd() * 0.3, len = 0.7 + rnd() * 1.1;
+        const f = new THREE.Mesh(new THREE.PlaneGeometry(0.32, len), frond);
+        f.geometry.translate(0, -len / 2, 0);
+        f.position.set(Math.cos(a) * 0.26, 0.1, Math.sin(a) * 0.26); f.rotation.order = 'YXZ'; f.rotation.y = -a + Math.PI / 2; f.rotation.x = -0.35 - rnd() * 0.3;   // out over the rim, then down
+        b.add(f);
+      }
+      for (let k = 0; k < 6; k++) { const fl = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), bloom[Math.floor(rnd() * bloom.length)]); const a = rnd() * 6.3; fl.position.set(Math.cos(a) * 0.3, 0.1 - rnd() * 0.5, Math.sin(a) * 0.3); b.add(fl); }
+      b.position.set(x, y, z); g.add(b);
+    }
+    for (let z = -len / 2 + 4; z < len / 2 - 3; z += 3) basket(3.0, 3.35, z);            // under the awning's edge, along the platform
+    for (let z = -17; z < 18; z += 3.2) basket(6.85, 4.0, z);                            // along the building's eaves
+    // The valance: a lacy timber fringe hanging from the awning's edge.
+    const lace = (() => { const c = document.createElement('canvas'); c.width = 256; c.height = 64; const x = c.getContext('2d'); x.fillStyle = '#f6f3ea';
+      for (let i = 0; i < 8; i++) { x.beginPath(); x.moveTo(i * 32, 0); x.lineTo(i * 32 + 32, 0); x.lineTo(i * 32 + 32, 20); x.arc(i * 32 + 16, 20, 16, 0, Math.PI, false); x.closePath(); x.fill(); x.clearRect(i * 32 + 12, 6, 8, 8); }
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; t.repeat.set((len - 6) / 2, 1); return t; })();
+    const val = new THREE.Mesh(new THREE.PlaneGeometry(len - 6, 0.5), new THREE.MeshStandardMaterial({ map: lace, transparent: true, alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.7 }));
+    val.rotation.y = Math.PI / 2; val.position.set(2.7, 3.75, 0); g.add(val);
+    // Garden beds of ferns and flowers along the building, benches and lamps on the platform.
+    for (let z = -16; z < 17; z += 4) {
+      const bed = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.35, 3), new THREE.MeshStandardMaterial({ color: 0x5a3e28, roughness: 1 })); bed.position.set(6.6, 1.05, z); g.add(bed);
+      for (let k = 0; k < 6; k++) { const bush = new THREE.Mesh(new THREE.SphereGeometry(0.3 + rnd() * 0.2, 8, 6), rnd() < 0.5 ? leaf : leaf2); bush.position.set(6.5 + (rnd() - 0.5) * 0.6, 1.4, z + (k - 2.5) * 0.5); g.add(bush); }
+      for (let k = 0; k < 5; k++) { const fl = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 5), bloom[Math.floor(rnd() * bloom.length)]); fl.position.set(6.4 + (rnd() - 0.5) * 0.7, 1.65, z + (rnd() - 0.5) * 2.6); g.add(fl); }
+    }
+    const benchWood = new THREE.MeshStandardMaterial({ color: 0x6e4a2c, roughness: 0.8 }), iron = new THREE.MeshStandardMaterial({ color: 0x1f3a2a, metalness: 0.5, roughness: 0.5 });
+    for (const z of [-12, 0, 12]) {
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 1.8), benchWood); seat.position.set(5.6, 1.35, z); g.add(seat);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 1.8), benchWood); back.position.set(5.85, 1.65, z); g.add(back);
+      for (const dz of [-0.8, 0.8]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.45, 0.06), iron); leg.position.set(5.6, 1.12, z + dz); g.add(leg); }
+    }
+    for (const z of [-20, -6, 6, 20]) {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 3.2, 8), iron); post.position.set(4.6, 2.5, z); g.add(post);
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshStandardMaterial({ color: 0xfff1c8, emissive: 0xffd88a, emissiveIntensity: 0.6 })); lamp.position.set(4.6, 4.2, z); g.add(lamp);
+    }
     const fern = new THREE.MeshStandardMaterial({ color: 0x4f8a2c, roughness: 0.8, side: THREE.DoubleSide });
     for (let z = -len / 2 + 3; z < len / 2; z += 3.2) for (let k = 0; k < 7; k++) {
       const f = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 1.6), fern); f.position.set(6.6, 1.5, z + (k - 3) * 0.12); f.rotation.set(0.7, k * 0.9, 0); g.add(f);
@@ -251,6 +306,7 @@ function station(i, big) {
   }
   g.position.set(p.x, y - 0.45, p.z); g.rotation.y = heading(i);
   if (n.x * Math.cos(heading(i)) - n.z * Math.sin(heading(i)) < 0) g.scale.x = -1;   // the platform on the line's right
+  if (big) window.__platSide = g.scale.x < 0 ? -1 : 1;            // the platform's side, for the camera (local +x is the platform; flipped or not)
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   scene.add(g);
 }
@@ -320,7 +376,10 @@ const SPEED = 9;                                     // metres a second through 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const SHOTS = [
   { at: 0, s0: sAt(STATION_I) + 20, speed: 0.6, caption: 'Kuranda Railway Station',
-    cam: (h, i) => { const p = line[STATION_I], n = side(STATION_I); return { pos: V(p.x - n.x * 14 + 4, p.y + 13, p.z - n.z * 14 - 6), look: V(p.x + n.x * 6, p.y + 2, p.z) }; } },
+    // Low and close across the line, along the platform: the hanging baskets, the awning, the roof.
+    cam: (h, i) => { const p = line[STATION_I], n = side(STATION_I), a = line[Math.min(line.length - 1, STATION_I + 14)], dx = a.x - p.x, dz = a.z - p.z, d = Math.hypot(dx, dz) || 1;
+      const ps = window.__platSide ?? 1;                         // which side of the line the platform is on (set below)
+      return { pos: V(p.x + n.x * ps * 3.3 - dx / d * 26, p.y + 3.0, p.z + n.z * ps * 3.3 - dz / d * 26), look: V(p.x + n.x * ps * 6.5 - dx / d * 4, p.y + 3.2, p.z + n.z * ps * 6.5 - dz / d * 4) }; } },   // on the platform, looking along it
   { at: 6.5, s0: sAt(fallsI) - 30, caption: 'Barron Falls',
     // Above the train at the Barron Falls stop, looking down the gorge to the falls and their mist.
     // High over the canopy beside the line, looking straight down the gorge at the cascade (where the

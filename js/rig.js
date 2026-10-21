@@ -356,6 +356,22 @@ export class HumanoidPoser {
     this.tilt('Head', -amount * 0.5, 0, 0);
   }
 
+  // Hanging from a vine (Ken, 2026-10-21): both arms up above his head and in, the hands together
+  // gripping it, the elbows a little bent; the legs hanging, swaying with the swing. swing: the
+  // vine's angle, so his legs trail as it swings.
+  grip(swing = 0, t = 0) {
+    for (const sideName of ['Left', 'Right']) {
+      const k = this.side[sideName];
+      this.turn(`${sideName}Arm`, 0.15, 0, k * 1.45);              // up, nearly straight above his shoulder
+      this.turn(`${sideName}ForeArm`, 0, 0, k * 0.55);             // bent in, so the hands meet over his head
+      this.turn(`${sideName}Hand`, 0, 0, k * 0.3);
+    }
+    const trail = -swing * 0.35;
+    for (const n of ['LeftUpLeg', 'RightUpLeg']) this.turn(n, trail + Math.sin(t * 3) * 0.05, 0, 0);
+    for (const n of ['LeftLeg', 'RightLeg']) this.turn(n, 0.25, 0, 0);
+    this.turn('Spine', 0, 0, 0); this.turn('Head', -0.15, 0, 0);
+  }
+
   // s: { time, cheer, napping, look }
   pose(s) {
     const t = s.time, up = s.cheer > 0;

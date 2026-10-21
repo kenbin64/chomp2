@@ -162,12 +162,24 @@ export function vineCourse({ scene, models, quality, wally, sound, fx, bubbles, 
 
   function hangWally() {
     const h = handAt(VINES[st.vine], st.swing.theta);
-    wally.pos.set(X, h.y - HANG, h.z); wally.root.position.copy(wally.pos);
     wally.root.rotation.set(-st.swing.theta * 0.8, 0, 0);              // his body follows the vine
+    placeByHands(h.y, h.z);
   }
-  function armsUp(t) {                                                // hanging by his hands
+  // Gripping the vine (Ken): the grip pose, then his body moved so his actual hands are on the vine.
+  let hands = null;
+  function armsUp(t) {
     if (wally.skin && wally.skin.currentClip) wally.skin.stop(0);   // the clips start again by themselves when he lands
-    if (wally.poser && wally.poser.ok) wally.poser.pose({ time: t, cheer: 1, napping: false });
+    if (wally.poser && wally.poser.ok) wally.poser.grip(st.swing ? st.swing.theta : 0, t);
+  }
+  const mid = new THREE.Vector3(), tmp = new THREE.Vector3();
+  function placeByHands(y, z) {
+    wally.pos.set(X, y - HANG, z); wally.root.position.copy(wally.pos);
+    if (!hands && wally.skin) { hands = []; wally.skin.root.traverse(o => { if (o.isBone && /(Left|Right)Hand$/.test(o.name)) hands.push(o); }); }
+    if (!hands || hands.length < 2) return;
+    wally.root.updateMatrixWorld(true);
+    mid.set(0, 0, 0); for (const b of hands) mid.add(b.getWorldPosition(tmp)); mid.multiplyScalar(1 / hands.length);
+    wally.root.position.x += X - mid.x; wally.root.position.y += y - mid.y; wally.root.position.z += z - mid.z;   // hands on the vine's end
+    wally.pos.copy(wally.root.position);
   }
   function onVine(i, swing) { st.state = 'swing'; st.vine = i; st.last = i; st.swing = swing; sound.play.jump(); }
 
@@ -193,7 +205,7 @@ export function vineCourse({ scene, models, quality, wally, sound, fx, bubbles, 
       if (st.state === 'bank' && k.jump) onVine(0, firstSwing());
       else if (st.state === 'swing') {
         for (let a = 0; a < dt; a += DT) st.swing = swingStep(st.swing, k.forward > 0.3 ? 1 : 0, Math.min(DT, dt - a));
-        hangWally(); armsUp(t);
+        armsUp(t); hangWally();
         if (k.jump) { st.f = release(VINES[st.vine], st.swing); st.state = 'fly'; sound.play.leap(); }
       } else if (st.state === 'fly') {
         for (let a = 0; a < dt; a += DT) {
@@ -209,7 +221,7 @@ export function vineCourse({ scene, models, quality, wally, sound, fx, bubbles, 
             toast('Splash! Back up the vine', 'bad'); st.vine = st.last; st.swing = { theta: -0.3, omega: 0 }; break;
           }
         }
-        if (st.state === 'fly') { wally.pos.set(X, st.f.y - HANG, st.f.z); wally.root.position.copy(wally.pos); wally.root.rotation.set(-0.3, 0, 0); armsUp(t); }
+        if (st.state === 'fly') { wally.root.rotation.set(-0.3, 0, 0); armsUp(t); placeByHands(st.f.y, st.f.z); }
       }
       // Pawpaws: swing or fly through them to gather them.
       if (st.state === 'swing' || st.state === 'fly') {

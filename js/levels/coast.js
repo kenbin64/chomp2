@@ -26,7 +26,7 @@ import { jarLabelTexture } from '../textures.js';
 import { readProgress, outfitModel, wearing } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
 import * as sound from '../sound.js';
-import { makeSceptre, ALL_TALISMANS } from '../sceptre-model.js';
+import { makeSceptre, ALL_TALISMANS, holdHigh } from '../sceptre-model.js';
 import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone, aimOffset } from '../rules.js';
 
@@ -123,11 +123,8 @@ wally.pos.set(shoreX(0) - 10, -SURFACE_DROP, 0); wally.facing = 0; wally.root.po
 const sceptreSet = makeSceptre(models, { height: 1.5, held: ALL_TALISMANS });   // all six talismans in place, shining; the sceptre glows (sceptre-model.js)
 const sceptre = (() => { const g = new THREE.Group(); sceptreSet.group.position.y = 0.45; g.add(sceptreSet.group); g.userData.light = new THREE.PointLight(0xffe2a0, 0, 1);   /* kept for old code that sets it; not added to the scene: the sceptre lights itself */ scene.add(g); return g; })();
 let hand = null; if (wally.skin) wally.skin.root.traverse(o => { if (o.isBone && /RightHand$/.test(o.name)) hand = o; });
-function holdSceptre() {
-  if (wally.poser && wally.poser.ok) { wally.poser.tilt('RightArm', 0, 0, -1.25); wally.poser.tilt('RightForeArm', 0, 0, -0.3); }
-  if (wally.skin) wally.skin.root.updateMatrixWorld(true);
-  if (hand) hand.getWorldPosition(sceptre.position); else sceptre.position.copy(wally.pos).add(new THREE.Vector3(0.5, 2.4, 0));
-  sceptre.rotation.y = wally.facing;
+function holdSceptre(t) {
+  holdHigh(wally, sceptre);                                          // high in his right hand, steady (sceptre-model.js)
 }
 const food = new Food(scene); food.useModels(models);
 const bubbles = new Bubbles(scene, touch ? 3 : 4);

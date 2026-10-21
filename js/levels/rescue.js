@@ -22,7 +22,7 @@ import { peopleModels } from '../tourists.js';
 import { readProgress, outfitModel, wearing } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
 import * as sound from '../sound.js';
-import { makeSceptre, ALL_TALISMANS } from '../sceptre-model.js';
+import { makeSceptre, ALL_TALISMANS, holdHigh } from '../sceptre-model.js';
 import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
 import { LAGOON, terrainHeight, isWater, WATER_Y, BOARDWALK, deckHeight } from '../rules.js';
 import { CALL, GAP, FENCE, SEA_Z, startingCrocs, fenceDistance, inGap, onShore, inSea, addToTrail, placeInLine, follow, allCalled, SPACING } from './rescue-rules.js';
@@ -91,14 +91,8 @@ let hand = null;
 if (wally.skin) wally.skin.root.traverse(o => { if (o.isBone && /RightHand$/.test(o.name)) hand = o; });
 const handPos = new THREE.Vector3();
 function holdSceptre(t) {
-  // His right arm raised (on top of whatever move is playing), the sceptre upright in his hand.
-  if (wally.poser && wally.poser.ok) { wally.poser.tilt('RightArm', 0, 0, -1.25); wally.poser.tilt('RightForeArm', 0, 0, -0.3); }
-  wally.skin && wally.skin.root.updateMatrixWorld(true);
-  if (hand) hand.getWorldPosition(handPos); else handPos.copy(wally.pos).add(new THREE.Vector3(0.5, 2.4, 0));
-  sceptre.position.copy(handPos); sceptre.rotation.set(0, wally.facing, 0);
-  const flash = Math.max(0, game.flash || 0);
-  sceptre.userData.light.intensity = 5 + Math.sin(t * 3) * 1.2 + flash * 60;
-  game.flash = flash - 0.03;
+  holdHigh(wally, sceptre);                                          // high in his right hand, steady (sceptre-model.js)
+  game.flash = Math.max(0, (game.flash || 0) - 0.03); if (game.flash > 0) sceptreSet.flare(game.flash * 0.3);
 }
 
 // ---- The crocs -------------------------------------------------------------------------------
@@ -290,5 +284,5 @@ function frame() {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.chomp = { game, wally, crocs, scene, camera, trail };
+window.chomp = { game, wally, crocs, scene, camera, trail, sceptre };
 if (params.has('play')) start();
