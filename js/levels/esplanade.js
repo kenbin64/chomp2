@@ -22,7 +22,7 @@ import { Food, randomKind, kindFor, kennysToast, useJarModel, useToastModel } fr
 import { Input, steering, easeBehind } from '../input.js';
 import { Bubbles, reaction, pickLine, chatty } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
-import { loadModels, dress } from '../models.js';
+import { loadModels, dress, ModelSkin } from '../models.js';
 import { usePalmCrown } from '../palms.js';
 import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
@@ -173,6 +173,20 @@ const obstacles = course.obstacles.map(o => {
   scene.add(mesh);
   return { ...o, mesh, hit: false, phase: Math.random() * 6 };
 });
+// The joggers are Ken's people, running (Ken, 2026-10-21: they were the early stand-in figures). Adults
+// only, each at a height in their own range; the simple figure stays only if no people models loaded.
+{
+  const runners = peopleModels(models).filter(g => (g.userData.tall || [1.6])[0] >= 1.5);
+  obstacles.filter(o => o.kind === 'jogger').forEach((o, i) => {
+    if (!runners.length) return;
+    const gltf = runners[(i * 7 + 3) % runners.length], [lo, hi] = gltf.userData.tall || [1.65, 1.8];
+    const skin = new ModelSkin(gltf, { height: lo + Math.random() * (hi - lo) });
+    if (!skin.has('run') && !skin.has('walk')) return;
+    const P = o.mesh.userData.person; if (P) o.mesh.remove(P.g);
+    o.mesh.userData.person = null; o.mesh.userData.skin = skin; o.mesh.add(skin.root);
+    skin.play('run', { alternatives: ['walk'] });
+  });
+}
 const mangoes = course.mangoes.map(m => {
   const mesh = mangoModel(); mesh.position.set(m.x, m.y, m.z); scene.add(mesh);
   return { ...m, mesh, taken: false };
@@ -545,6 +559,7 @@ function step(dt, t) {
       o.z += o.dir * 2.6 * dt;
       if (o.z < -5 || o.z > PATH.finish - 5) { o.dir *= -1; o.mesh.rotation.y = o.dir > 0 ? 0 : Math.PI; o.hit = false; }
       o.mesh.position.z = o.z;
+      if (o.mesh.userData.skin) o.mesh.userData.skin.update(dt);       // Ken's people, running
       const P = o.mesh.userData.person; o.phase += dt * 9;
       if (P) { P.legs[0].rotation.x = Math.sin(o.phase) * 0.8; P.legs[1].rotation.x = -Math.sin(o.phase) * 0.8; P.arms[0].rotation.x = -Math.sin(o.phase) * 0.7; P.arms[1].rotation.x = Math.sin(o.phase) * 0.7; }
     }

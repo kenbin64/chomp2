@@ -445,7 +445,7 @@ body.touch .gear-use { bottom: 224px; }
 
 /* The book (book.js): the X stays in view while the page scrolls; small news is a note, not the whole book. */
 .book-modal .map-close { position: fixed; top: max(14px, env(safe-area-inset-top)); right: 14px; z-index: 3; width: 48px; height: 48px; font-size: 24px; background: rgba(8, 30, 44, 0.85); border: 2px solid rgba(255, 255, 255, 0.6); }
-.book-note { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); padding: 8px 16px; border-radius: 12px; background: rgba(8, 30, 44, 0.85); color: #fff; font: 700 15px var(--font); z-index: 4; pointer-events: none; transition: opacity 0.5s; }
+.book-note { position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 156px); left: 50%; transform: translateX(-50%); padding: 8px 16px; border-radius: 12px; background: rgba(8, 30, 44, 0.85); color: #fff; font: 700 15px var(--font); z-index: 4; pointer-events: none; transition: opacity 0.5s; }
 .book-note.fade { opacity: 0; }
 .book-button.news { box-shadow: 0 0 0 3px #ffd36a, 0 0 18px #ffd36a; animation: book-news 1.2s ease-in-out infinite alternate; }
 @keyframes book-news { to { box-shadow: 0 0 0 3px #ffd36a, 0 0 4px #ffd36a; } }
@@ -640,7 +640,7 @@ body.touch .gear-use { bottom: calc(max(24px, env(safe-area-inset-bottom)) + 66p
 .pick-level button { font: 700 14px var(--font); padding: 6px 12px; border-radius: 999px; border: 0; background: transparent; color: #eaf4f2; cursor: pointer; }
 .pick-level button.on { background: #ffd166; color: #102030; }
 /* Small screens (Ken, 2026-10-21): the field of play kept free. Tips and finds are slim lines that fade; the HUD is compact. */
-.tip-line, .found-line { position: fixed; z-index: 30; left: 50%; top: calc(max(8px, env(safe-area-inset-top)) + 56px); transform: translateX(-50%); max-width: min(520px, calc(100% - 200px)); min-width: 220px; padding: 6px 12px; border-radius: 12px; background: rgba(10, 30, 44, 0.85); border: 1px solid rgba(255, 209, 102, 0.5); color: #fff; font: 700 13px/1.3 var(--font); text-align: center; animation: tip-in 0.3s ease-out; }
+.tip-line, .found-line { position: fixed; z-index: 30; left: 50%; top: calc(max(8px, env(safe-area-inset-top)) + 156px);   /* under both rows of buttons and the arrow */ transform: translateX(-50%); max-width: min(520px, calc(100% - 200px)); min-width: 220px; padding: 6px 12px; border-radius: 12px; background: rgba(10, 30, 44, 0.85); border: 1px solid rgba(255, 209, 102, 0.5); color: #fff; font: 700 13px/1.3 var(--font); text-align: center; animation: tip-in 0.3s ease-out; }
 .found-line { color: #ffd166; border-color: #ffd166; }
 body.phone-menu .energy { width: min(220px, 30vw); padding: 4px 10px; }
 body.phone-menu .energy .label { font-size: 11px; }
@@ -680,3 +680,5 @@ body.as-app #trailer, body.as-app .trailer-peek, body.as-app .free-banner { disp
 .landing-buttons [hidden] { display: none !important; }
 .opener-bar .title-version { margin: 0; font: 700 12px var(--font); color: rgba(255,255,255,0.75); text-shadow: 0 1px 4px #000; }
 .opener-bar .title-version:empty { display: none; }
+/* Phones: the buttons are folded away, so notes sit just under the menu button. */
+body.phone-menu :is(.tip-line, .found-line, .book-note) { top: calc(max(8px, env(safe-area-inset-top)) + 56px); }

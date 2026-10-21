@@ -5,6 +5,10 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- The Esplanade's joggers are real people now (they were the early stand-in figures), running at their
+  own heights.
+- Tips and notes sit below the buttons on a computer, never over them.
+
 ## v1.0.0-beta.3 (2026-10-21)
 
 - The first task is clear from the start: a big gold arrow bobs above the pond over the sceptre, and the
