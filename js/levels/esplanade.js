@@ -25,6 +25,7 @@ import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
+import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
 import { installMap, recordVisit, markRetry } from '../mapmodal.js';
 import { installShop, openShop } from '../shopmodal.js';
 import { showLeaderboard } from '../leaderboard.js';
@@ -145,6 +146,11 @@ function wallyModelName() {
   return outfitModel(readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()));
 }
 const wally = new Wally(scene);
+// The first visit: back along the boardwalk from past the pier, down to Wally at the start.
+const intro = areaIntro({
+  id: 'esplanade', name: 'The Esplanade', place: 'Cairns, on the waterfront', focus: on => fpsWatch.focus(on),
+  shots: () => courseShots({ from: { x: 0, z: 280 }, to: { x: wally.pos.x, z: wally.pos.z - 10 }, y: PATH.ground, height: 44, side: 26 }),
+});
 wally.facing = 0;                                     // facing down the boardwalk
 wally.useModel(models.get(wallyModelName()) || models.get('wally'));   // a garment outfit has its own fitted Wally model
 { const p0 = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
@@ -742,6 +748,12 @@ function drawHud() {
 function start() {
   if (!entry.ok && !testingAll) { toast_('The Esplanade opens with the gate key from Croc Park', 'bad'); return; }
   recordVisit('esplanade');
+  // The first time here: the fly-over first, with the frame-rate check running
+  // (quality.js) so the detail is right before he moves. Then play begins.
+  if (intro.due()) { $('title').hidden = true; sound.start(); intro.play(camera, begin); return; }
+  begin();
+}
+function begin() {
   showTip('big-mango', `Collect Golden Mangoes along the walk. The chest at the Lagoon opens for ${mangoTarget} of them, and holds the Big Golden Mango the reef will need.`);
   sound.start(); sound.startMusic('esplanade');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
@@ -823,6 +835,7 @@ function frame() {
   if (world.trees) world.trees.update(t);          // the breeze in the trees
   world.sea.userData.ripple(t); world.sea.userData.grass.update(t);   // waves, and the breeze in the grass
   followCamera(dt);
+  intro.update(dt, camera);                       // the first-visit fly-over, when it plays
   { const night = daynight.update(game.paused ? 0 : dt, camera); lamps.update(dt, night, wally.pos); }
   fpsWatch(dt);
   post.render();

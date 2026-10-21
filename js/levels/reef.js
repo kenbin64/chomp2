@@ -23,6 +23,7 @@ import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
+import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
 import { installMap, recordVisit, markRetry } from '../mapmodal.js';
 import { installShop, openShop } from '../shopmodal.js';
 import { showLeaderboard } from '../leaderboard.js';
@@ -75,6 +76,12 @@ function resize() {
 }
 addEventListener('resize', resize); resize();
 const fpsWatch = watchFrameRate(quality, lower => { quality = lower; renderer.setPixelRatio(pixelRatioFor(lower)); resize(); });
+// The first visit: round the reef from high up, the island and the maze below, down to the jetty.
+const intro = areaIntro({
+  id: 'reef', name: 'The Great Barrier Reef', place: 'Out from Cairns', focus: on => fpsWatch.focus(on),
+  shots: () => { const c = { x: (BOUNDS.x0 + BOUNDS.x1) / 2, z: (BOUNDS.z0 + BOUNDS.z1) / 2 }, end = Math.atan2(wally.pos.x - c.x, wally.pos.z - c.z);
+    return orbitShots({ centre: { x: c.x, y: 0, z: c.z }, radius: 75, height: 50, low: 16, a0: end - Math.PI * 1.3, a1: end }); },
+});
 
 const light = touch || quality.name === 'low';
 const models = await loadModels([...MODEL_FILES, 'clam-top', 'clam-bottom', 'pearl-key'], { light });
@@ -634,6 +641,12 @@ function drawHud() {
 function start() {
   if (!entry.ok && !testingAll) { toast_('The reef opens with the Big Golden Mango from the Esplanade', 'bad'); return; }
   recordVisit('reef');
+  // The first time here: the fly-over first, with the frame-rate check running
+  // (quality.js) so the detail is right before he moves. Then play begins.
+  if (intro.due()) { $('title').hidden = true; sound.start(); intro.play(camera, begin); return; }
+  begin();
+}
+function begin() {
   showTip('clam', 'A giant clam waits in a dead end of the coral maze. Bring it the Big Golden Mango and it gives up the pearl key; the key opens the pirate chest in the cave.');
   sound.start(); sound.startMusic('reef');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
@@ -689,6 +702,7 @@ function frame() {
   bubbles.update(dt); fx.update(dt, t);
   islandTrees.update(t);                            // the breeze in the palms
   followCamera(dt);
+  intro.update(dt, camera);                       // the first-visit fly-over, when it plays
   { const night = daynight.update(game.paused ? 0 : dt, camera); lamps.update(dt, night, wally.pos); }
   fpsWatch(dt);
   post.render();

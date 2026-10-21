@@ -21,6 +21,7 @@ import { loadModels, dress } from '../models.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
+import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
 import { installMap, recordVisit, markRetry } from '../mapmodal.js';
 import { showTip } from '../tips.js';
 import { chestModel } from '../chest.js';
@@ -87,6 +88,12 @@ function resize() {
 }
 addEventListener('resize', resize); resize();
 const fpsWatch = watchFrameRate(quality, lower => { quality = lower; renderer.setPixelRatio(pixelRatioFor(lower)); resize(); });
+// The first visit: up the gorge from the last hole, over the slides, down to Wally at the top.
+const intro = areaIntro({
+  id: 'mossman', name: 'Mossman Gorge', place: 'Swimming holes and rock slides', focus: on => fpsWatch.focus(on),
+  shots: () => { const last = POOLS[POOLS.length - 1];
+    return courseShots({ from: { x: riverX(last.z), z: last.z }, to: { x: wally.pos.x, z: wally.pos.z + 8 }, y: (x, z) => groundAt(x, z).y, height: 34, side: 12 }); },
+});
 
 const models = await loadModels(undefined, { light: touch || quality.name === 'low' });
 useJarModel(models.get('jar'));
@@ -316,6 +323,12 @@ function drawHud() {
 function start() {
   if (!entry.ok && !testingAll) { toast_('Mossman Gorge opens with the air and water talismans from Kuranda', 'bad'); return; }
   recordVisit('mossman');
+  // The first time here: the fly-over first, with the frame-rate check running
+  // (quality.js) so the detail is right before he moves. Then play begins.
+  if (intro.due()) { $('title').hidden = true; sound.start(); intro.play(camera, begin); return; }
+  begin();
+}
+function begin() {
   sound.start(); sound.startMusic('esplanade');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true;
@@ -366,6 +379,7 @@ function frame() {
   bubbles.update(dt); fx.update(dt, t);
   world.update(t, camera);
   followCamera(dt);
+  intro.update(dt, camera);                       // the first-visit fly-over, when it plays
   fpsWatch(dt);
   renderer.render(scene, camera);
   requestAnimationFrame(frame);

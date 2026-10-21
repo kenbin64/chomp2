@@ -18,6 +18,7 @@ import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
+import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
 import { installMap, recordVisit, markRetry } from '../mapmodal.js';
 import { installShop, openShop } from '../shopmodal.js';
 import { showLeaderboard } from '../leaderboard.js';
@@ -109,6 +110,11 @@ function wallyModelName() {
   return outfitModel(readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()));
 }
 const wally = new Wally(scene);
+// The first visit: back down the village street from the far end, to Wally at the start.
+const intro = areaIntro({
+  id: 'kuranda', name: 'Kuranda', place: 'The village in the rainforest', focus: on => fpsWatch.focus(on),
+  shots: () => courseShots({ from: { x: 0, z: STREET.z1 }, to: { x: wally.pos.x, z: wally.pos.z - 10 }, y: STREET.ground, height: 36, side: 16 }),
+});
 wally.facing = 0;
 wally.useModel(models.get(wallyModelName()) || models.get('wally'));   // a garment outfit has its own fitted Wally model
 const food = new Food(scene); food.useModels(models);
@@ -384,6 +390,12 @@ function drawHud() {
 
 function start() {
   recordVisit('kuranda');
+  // The first time here: the fly-over first, with the frame-rate check running
+  // (quality.js) so the detail is right before he moves. Then play begins.
+  if (intro.due()) { $('title').hidden = true; sound.start(); intro.play(camera, begin); return; }
+  begin();
+}
+function begin() {
   sound.start(); sound.startMusic('park');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true; cam.yaw = Math.PI;
@@ -451,6 +463,7 @@ function frame() {
   bubbles.update(dt); fx.update(dt, t);
   world.update(t);
   followCamera(dt);
+  intro.update(dt, camera);                       // the first-visit fly-over, when it plays
   { const night = daynight.update(game.paused ? 0 : dt, camera); lamps.update(dt, night, wally.pos); world.night(night); }
   fpsWatch(dt);
   post.render();

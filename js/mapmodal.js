@@ -8,6 +8,7 @@
 // testing.
 
 import { AREAS } from './quests.js';
+import { resetAreaIntros } from './area-intro.js';
 import { readProgress, isOpen, entryNeeds, ACTIVITIES, totalStars, activityOpen } from './progress.js';
 import { mapSvg, pinXY, markerXY, MARKERS } from './tripmap.js';
 
@@ -91,6 +92,7 @@ export function askNewTrip() {
 export function newTrip() {
   // (Kept: the best score, the leaderboard name, the settings and which tips were seen.)
   for (const k of ['chomp-progress', 'chomp-visited', 'chomp-opening-done', 'chomp-skyrail-seen', 'chomp-zipline-intro']) { try { localStorage.removeItem(k); } catch { /* nothing kept */ } }
+  resetAreaIntros();                       // every area's fly-over plays again
   location.href = 'index.html';
 }
 

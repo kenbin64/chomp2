@@ -45,6 +45,14 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #0d2a38; col
 #intro-place { margin: 6px 0 0; font-size: clamp(20px, 3.5vw, 32px); color: #9be38f; text-shadow: 0 2px 8px #000; }
 .intro-skip { position: absolute; bottom: 3%; left: 0; right: 0; margin: 0; font-size: 14px; opacity: 0.75; }
 @keyframes introfade { 0% { opacity: 0; } 12% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
+/* An area's first-visit fly-over (area-intro.js): the same letterbox and title, the title fading before the camera lands */
+.area-intro { position: fixed; inset: 0; z-index: 5; pointer-events: none; display: grid; place-items: center; align-content: center; text-align: center;
+              background: linear-gradient(#000 0 11%, transparent 11% 89%, #000 89%); animation: areafade 1.2s ease-out; transition: opacity 1.4s ease-in; }
+.area-intro.fade { opacity: 0; }
+.area-intro h2 { margin: 0; font-size: clamp(44px, 9vw, 96px); line-height: 1; color: #ffd166; text-shadow: 0 4px 0 #c0392b, 0 10px 30px rgba(0, 0, 0, 0.6); }
+.area-intro-eyebrow { margin: 0; font-size: 22px; letter-spacing: 0.2em; text-transform: uppercase; color: #fffaf0; text-shadow: 0 2px 8px #000; }
+.area-intro-place { margin: 6px 0 0; font-size: clamp(20px, 3.5vw, 32px); color: #9be38f; text-shadow: 0 2px 8px #000; }
+@keyframes areafade { from { opacity: 0; } to { opacity: 1; } }
 
 /* Touch controls */
 #touch { position: fixed; inset: 0; pointer-events: none; }

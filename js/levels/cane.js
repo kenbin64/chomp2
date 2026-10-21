@@ -23,6 +23,7 @@ import { loadModels, dress } from '../models.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
+import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
 import { installMap, recordVisit, markRetry } from '../mapmodal.js';
 import { showTip } from '../tips.js';
 import { chestModel } from '../chest.js';
@@ -88,6 +89,12 @@ function resize() {
 }
 addEventListener('resize', resize); resize();
 const fpsWatch = watchFrameRate(quality, lower => { quality = lower; renderer.setPixelRatio(pixelRatioFor(lower)); resize(); });
+// The first visit: round the burning field from high up, down to Wally at its edge.
+const intro = areaIntro({
+  id: 'cane', name: 'The Cane Fields', place: 'Dusk, south of Cairns', focus: on => fpsWatch.focus(on),
+  shots: () => { const c = cellToWorld(middle(), middle()), end = Math.atan2(wally.pos.x - c.x, wally.pos.z - c.z);
+    return orbitShots({ centre: { x: c.x, y: 0, z: c.z }, radius: 62, height: 46, low: 20, a0: end - Math.PI * 1.4, a1: end }); },
+});
 
 const models = await loadModels(['wally', 'wally-explorer', 'kenny', 'toad', 'flyingfox', 'jar',
   'cane-tile', 'cane-ground', 'cane-piece', 'machete', 'talisman-fire'], { light: touch || quality.name === 'low' });
@@ -413,6 +420,12 @@ function drawHud() {
 function start() {
   if (!entry.ok && !testingAll) { toast_('The cane fields need the machete from the Croc Park gate', 'bad'); return; }
   recordVisit('cane');
+  // The first time here: the fly-over first, with the frame-rate check running
+  // (quality.js) so the detail is right before he moves. Then play begins.
+  if (intro.due()) { $('title').hidden = true; sound.start(); intro.play(camera, begin); return; }
+  begin();
+}
+function begin() {
   sound.start(); sound.startMusic('cane');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true;
@@ -468,6 +481,7 @@ function frame() {
   world.update(t, wally.pos);
   poseMachete(game.chop || 0);
   followCamera(dt);
+  intro.update(dt, camera);                       // the first-visit fly-over, when it plays
   fpsWatch(dt);
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
