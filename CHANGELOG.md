@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.5 (2026-10-21)
+
 - Green Island at the reef: a long rainforest island with a white beach behind the jetty, and "Green
   Island, Great Barrier Reef" as Wally steps onto the pier.
 - The guide (every level, talisman and screenshot) is a Guide button at the top in play, on the title
