@@ -23,7 +23,7 @@ import { ROUTE, FALLS_STOP, buildLine, runs, stoneyCreek, at } from './train-rul
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
-const NEXT = params.get('next') || 'index.html?rescue';     // Croc Park, to bring out the crocs
+const NEXT = params.get('next') || 'rescue.html';           // Croc Park, to bring out the crocs
 const touch = isTouchDevice();
 const quality = pickQuality();
 const light = touch || quality.name === 'low';

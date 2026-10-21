@@ -519,8 +519,11 @@ and keeps its ending where Ken has not changed it):**
      winds down the range past Barron Falls, over the Stoney Creek Falls bridge and through the tunnels,
      the coast opening out below, down to Cairns. (Geography: the railway runs between Kuranda and Cairns,
      not to the Daintree; hence the journey to Kuranda first.)
-   - **Croc Park:** Wally, with the sceptre at full power, brings out all the crocs of the park (the King's
-     real quest). (**Open:** played or a cinematic.)
+   - **Croc Park, played (built 2026-10-21, `rescue.html`):** Wally holds the sceptre high (Ken); walking up
+     to each croc, the sceptre calls it into the line following him. With all ten called the fence opens on
+     the harbour side; he leads them over the sand into the sea while the people in the park cheer (Ken).
+   - **Boats follow them up the coast (Ken, 2026-10-21):** boats come alongside and throw Wally food, since he
+     is still part human.
    - **Up the coast, played:** Wally leads the crocs out to sea and north along the coast to the mouth of
      the Daintree River, up the river to the sandbar (saltwater crocs do travel the coast).
    - **The push, played:** Wally leads them and they push the boat off the sandbar. The park's crocs are free

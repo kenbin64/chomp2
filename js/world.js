@@ -161,7 +161,7 @@ export function addRanges(scene, horizon, sunDir, { sink = 1, turn = 0 } = {}) {
 
 // Height used for drawing. Inside the park it is exactly the game's terrain;
 // past SEA_START_Z it drops away into the harbour.
-function drawnHeight(x, z) {
+export function drawnHeight(x, z) {
   if (z < SEA_START_Z) return Math.max(-2, BANK_Y - (SEA_START_Z - z) * 0.25);
   return terrainHeight(x, z);
 }
@@ -339,19 +339,20 @@ function mergeByMaterial(group, scene) {
   }
 }
 
-function addFence(scene) {
+// gap: half the angle of an opening on the harbour side (the rescue, where Wally leads the crocs
+// out to the sea); 0 for none. The opening is at the fence's north point (-z).
+function addFence(scene, gap = 0) {
   const post = new THREE.CylinderGeometry(0.12, 0.14, 1.3, 12);
   const wood = scanned('planks', 0.5, 1.5, { color: 0xa58466 }) || mat(0x7a5532);
-  const n = 90, pts = [];
-  for (let i = 0; i <= n; i++) {
-    const a = (i / n) * Math.PI * 2;
-    pts.push(new THREE.Vector3(Math.cos(a) * LAGOON.rx * 1.42, BANK_Y, Math.sin(a) * LAGOON.rz * 1.42));
-  }
-  for (const p of pts.slice(0, n)) {
+  const n = 90, pts = [], north = -Math.PI / 2;
+  const at = a => new THREE.Vector3(Math.cos(a) * LAGOON.rx * 1.42, BANK_Y, Math.sin(a) * LAGOON.rz * 1.42);
+  if (!gap) for (let i = 0; i <= n; i++) pts.push(at((i / n) * Math.PI * 2));
+  else for (let i = 0; i <= n; i++) pts.push(at(north + gap + (i / n) * (Math.PI * 2 - 2 * gap)));   // all the way round, the gap left open
+  for (const p of (gap ? pts : pts.slice(0, n))) {
     const m = shadowed(new THREE.Mesh(post, wood)); m.position.set(p.x, p.y + 0.65, p.z); scene.add(m);
   }
   for (const h of [0.55, 1.1]) {
-    const rail = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 300, 0.05, 5, true), wood);
+    const rail = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, !gap), 300, 0.05, 5, !gap), wood);
     rail.position.y = h; scene.add(rail);
   }
 }
@@ -564,7 +565,8 @@ function addHarbour(scene, models) {
 }
 
 // Builds everything and returns the bits that move.
-export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism = null) {
+// opts.fenceGap: leave an opening in the fence on the harbour side (half its angle, radians).
+export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism = null, opts = {}) {
   useRealism(realism);
   const sky = addSky(scene, backdrops.sky);
   const ring = addHorizon(scene, backdrops.ring);
@@ -596,7 +598,7 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
     },
   });
   const wave = addWater(scene, q, sun);
-  { const statics = new THREE.Group(); addFence(statics); addBoardwalk(statics); mergeByMaterial(statics, scene); }
+  { const statics = new THREE.Group(); addFence(statics, opts.fenceGap || 0); addBoardwalk(statics); mergeByMaterial(statics, scene); }
   const sign = addSign(scene);
   addPalmsAndRocks(scene, q, models, trees);
   trees.build();
