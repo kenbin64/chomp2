@@ -64,6 +64,23 @@
   .sceptre-map .pos-earth { grid-column: 2; grid-row: 6; }
   .talismans.one { grid-template-columns: minmax(150px, 220px); }
   .credit { font-size: 15px; color: var(--soft); text-align: center; margin-top: 28px; }
+  .levels { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 15px; }
+  .levels th { text-align: left; padding: 8px; border-bottom: 2px solid var(--line); }
+  .levels td { vertical-align: top; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+  .levels .lv-n { font-weight: 800; font-size: 20px; color: #ffd166; width: 28px; }
+  .levels .lv-obj { display: block; margin-top: 4px; }
+  .levels .lv-shot { width: 190px; }
+  .levels .lv-shot img { width: 190px; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 10px; border: 2px solid var(--line); display: block; }
+  .lv-tal { display: inline-flex; align-items: center; gap: 6px; margin: 0 10px 6px 0; font-weight: 700; white-space: nowrap; }
+  .lv-tal img { width: 40px; height: 40px; object-fit: contain; }
+  .lv-none { opacity: 0.75; }
+  @media (max-width: 700px) {
+    .levels thead { display: none; }
+    .levels tr { display: grid; grid-template-columns: 28px 1fr; gap: 4px 8px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .levels td { border: 0; padding: 2px 0; }
+    .levels td:nth-child(n+3) { grid-column: 2; }
+    .levels .lv-shot, .levels .lv-shot img { width: 100%; }
+  }
   @media (max-width: 700px) { .place { grid-template-columns: 1fr; } .trio { grid-template-columns: 1fr; } section { padding: 16px 16px; } }
 </style>
 </head>
@@ -73,7 +90,7 @@
   <h1>How to Play</h1>
   <p class="lede">Everything you need for Wally's big trip round Cairns and Far North Queensland: the story so far, every way to control him, the places, the talismans, and a few tips from Kenny.</p>
   <nav class="toc" aria-label="On this page">
-    <a href="#story">The story</a><a href="#basics">The basics</a><a href="#controls">Controls</a><a href="#places">The places</a>
+    <a href="#story">The story</a><a href="#basics">The basics</a><a href="#controls">Controls</a><a href="#levels">The levels</a><a href="#places">The places</a>
     <a href="#talismans">The talismans</a><a href="#tips">Tips</a><a href="#country">Country</a><a href="#cairns">Cairns</a><a href="#crocwise">Be Crocwise</a>
   </nav>
 
@@ -163,6 +180,23 @@
       <li><b>Catch:</b> as it comes back, a Catch! ring appears. Press <kbd>Space</kbd>, click, or A.</li>
     </ol>
     <p class="tip">The flight is real physics. Too upright and it dives in; too flat or too hard and it climbs over your head; too soft and it falls short. A flatter throw needs less force. For your first two throws, a green zone on the force meter shows what will bring it back.</p>
+  </section>
+
+  <section id="levels">
+    <h2>The levels at a glance</h2>
+    <p>In the order Wally travels: what to do in each, the keys and things found there, and its talisman. Completing a level always opens the next one. Going back to a level puts it up a difficulty (easy, then intermediate, then hard), and a harder go is worth more points.</p>
+    <table class="levels">
+      <thead><tr><th>#</th><th>The level</th><th>Objective</th><th>Keys and things to find</th><th>Talisman</th></tr></thead>
+      <tbody>
+      <tr><td class="lv-n">1</td><td class="lv-shot"><img src="screens/guide/park.jpg" alt="Croc Park" loading="lazy"></td><td><b>Croc Park</b><span class="lv-obj">Feed out every group of visitors around the lagoon, beating the pelicans, flying foxes, toads and crocs to the food. Then reach the gate.</span></td><td>The gate key (for feeding every group). The machete waits at the gate. Golden Mangoes along the way (a bonus).</td><td><span class="lv-none">None here</span></td></tr>
+      <tr><td class="lv-n">2</td><td class="lv-shot"><img src="screens/guide/cane.jpg" alt="The cane fields" loading="lazy"></td><td><b>The Cane Fields</b><span class="lv-obj">Cut a path through the burning cane to the middle. Eat the cut cane to keep going before the toads and flying foxes take it.</span></td><td>Needs the machete from Croc Park.</td><td><span class="lv-tal"><img src="screens/guide/talisman-fire.png" alt="">Fire</span></td></tr>
+      <tr><td class="lv-n">3</td><td class="lv-shot"><img src="screens/guide/esplanade.jpg" alt="The Esplanade" loading="lazy"></td><td><b>The Esplanade</b><span class="lv-obj">Feed the picnic groups along the boardwalk, collect the Golden Mangoes, and open the chest at the Lagoon.</span></td><td>No key needed. Golden Mangoes, pearls, and the Big Golden Mango from the chest (the reef needs it).</td><td><span class="lv-tal"><img src="screens/guide/talisman-sun.png" alt="">Sun</span></td></tr>
+      <tr><td class="lv-n">4</td><td class="lv-shot"><img src="screens/guide/reef.jpg" alt="The reef" loading="lazy"></td><td><b>The Great Barrier Reef</b><span class="lv-obj">Dive the coral maze before your air runs out. Give the giant clam the Big Golden Mango for the pearl key, then open the pirate chest in the cave.</span></td><td>The pearl key (from the clam). Pearls, seashells, and the Skyrail pass to Kuranda.</td><td><span class="lv-tal"><img src="screens/guide/talisman-moon.png" alt="">Moon</span></td></tr>
+      <tr><td class="lv-n">5</td><td class="lv-shot"><img src="screens/guide/kuranda.jpg" alt="Kuranda" loading="lazy"></td><td><b>Kuranda and the zip line</b><span class="lv-obj">Feed the market street and fill the feed-o-meter. Catch the boomerang at the Boomerang Throwing archway, then ride the zip line down Barron Falls.</span></td><td>Reached by the Skyrail (the pass from the reef). Gold pieces from the markets.</td><td><span class="lv-tal"><img src="screens/guide/talisman-air.png" alt="">Air</span><span class="lv-tal"><img src="screens/guide/talisman-water.png" alt="">Water</span></td></tr>
+      <tr><td class="lv-n">6</td><td class="lv-shot"><img src="screens/guide/mossman.jpg" alt="Mossman Gorge" loading="lazy"></td><td><b>Mossman Gorge</b><span class="lv-obj">Swim down the holes and rock slides. Dive to find the key on the bottom of one hole, and open the chest in the last.</span></td><td>The Mossman key (in one of the holes).</td><td><span class="lv-tal"><img src="screens/guide/talisman-earth.png" alt="">Earth: the opal</span></td></tr>
+      <tr><td class="lv-n">7</td><td class="lv-shot"><img src="screens/guide/daintree.jpg" alt="The Daintree" loading="lazy"></td><td><b>The Daintree and the rescue</b><span class="lv-obj">Swim with the tour boat and keep fed while the wild crocs give chase, swing through the rainforest on the vines gathering pawpaws, and bring the sceptre to the King. Then the train to Croc Park, lead the crocs to the sea, swim up the coast and push the boat free.</span></td><td>Needs all six talismans set in the sceptre.</td><td><span class="lv-none">The sceptre, whole</span></td></tr>
+      </tbody>
+    </table>
   </section>
 
   <section id="places">
