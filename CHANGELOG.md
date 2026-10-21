@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.4 (2026-10-21)
+
 - No landing page: the game opens straight on the Wally title screen, whose one Play button starts the
   game. Install the app sits beside Play where the device can install it.
 
