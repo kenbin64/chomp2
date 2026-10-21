@@ -100,8 +100,8 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
 6. **Mossman: the opal talisman** (earth), after Kuranda. He bungees down and grabs the opal. (The opal is
    Australia's national gemstone; Queensland's boulder opal comes from the outback, not Mossman, but a
    talisman can come from anywhere.)
-7. **The Daintree:** the King. **The seventh talisman** (Ken, 2026-10-20), found on the vines in the
-   rainforest: the heart of the sceptre. (Was: no talisman here. **Open:** its name, element and look.)
+7. **The Daintree:** the King. **Six talismans only** (Ken, 2026-10-20). **Open:** the fourth version of the finale
+   has Wally get "the final talisman" on the vines; which of the six that is, if any.
 
 **Mangoes, pearls, shells and paw paws are not talismans (Ken, 2026-10-19):** they are things to trade, or
 things required to get items or talismans. (This replaces the mango, pearl and paw paw talismans.)
@@ -494,9 +494,9 @@ and keeps its ending where Ken has not changed it):**
    round it; the passengers call out "Help us, Wally!" Wally remembers: the King lives in the Daintree
    rainforest. He must bring the sceptre to the King to help the people. (Nobody is harmed.)
 3. **The rainforest, played:** Wally swings on vines into the rainforest, where he gets **the final
-   talisman**: **a seventh talisman** (Ken, 2026-10-20), new, the heart of the sceptre, found on the vines.
-   (**Open:** its name, element and look, and its setting on the sceptre.) He also gathers **paw paws** on
-   the vines, a gift for the King (Ken, 2026-10-20: kept).
+   talisman** (Ken's words). **There are only six talismans (Ken, 2026-10-20; a seventh was considered and
+   dropped).** **Open:** which of the six is found here, if any (all six are won before the Daintree in the
+   list above). He also gathers **paw paws** on the vines, a gift for the King (Ken, 2026-10-20: kept).
 4. **The King, a cinematic:** Wally finds himself face to face with the King Croc on his throne. The King
    asks what his wish is. Ken's lines, close to his words:
    - **Wally:** "My wish is to save the people on the tour boat."
