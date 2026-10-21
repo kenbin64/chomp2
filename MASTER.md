@@ -431,8 +431,9 @@ going back to earlier areas. **Open:** how this sits with rule 6 (going back) an
 
 **Where:** the gorge in the rainforest above Mossman, north of Cairns. **Not built.**
 
-**Decided (Ken, 2026-10-20):** Mossman Gorge is the **bungee**: Wally bungees down the gorge and grabs the
-**opal**, the earth talisman. The river with the riverboat is the **Daintree River** (section 6), not
+**Decided (Ken, 2026-10-20, revised):** no bungee at Mossman. Wally swims the gorge, **slides down the
+smooth rock slicks** from one swimming hole to the next, and finds the **opal**, the earth talisman, in a
+water hole. (Key then chest, as everywhere: the key in one hole, the chest with the opal in the last.) The river with the riverboat is the **Daintree River** (section 6), not
 Mossman. The riverboat is the same boat all the way: its passengers are seen on the trip north, so when it
 runs aground in the Daintree the player already knows it (foreshadowing, Ken). (Ken checked, 2026-10-20: the
 real bungee near Cairns is at Lot 2 McGregor Road, Smithfield, about 20 minutes north of Cairns, near the
