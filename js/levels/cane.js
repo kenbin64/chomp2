@@ -11,7 +11,7 @@
 //
 // The field's rules are in cane-rules.js (tested), the look in cane-scene.js.
 
-import { startRun, addPoints, bankRun } from '../points.js';
+import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { foundTalisman } from '../revisit.js';
 import { installGear, snorkelling, drainFactor } from '../gear.js';
 import { installBook, openBook } from '../book.js';
@@ -453,7 +453,7 @@ function finish(won) {
     const done = Trip.completeAttempt(progress.trip, attempt, { objectiveMet: true });
     if (done.ok) { progress.trip = done.trip; bankRun({ stars }); }
     progress = completeArea(progress, 'cane', { score: total, stars });
-  } else progress.trip = Trip.failAttempt(progress.trip, attempt).trip;   // nothing from this attempt is kept
+  } else { progress.trip = Trip.failAttempt(progress.trip, attempt).trip; failRun(); }   // the items go, the points still count (points.js)   // nothing from this attempt is kept
   saveProgress(progress);
   $('result-title').textContent = won ? 'The fire talisman!' : 'Out of puff';
   $('result-why').textContent = won ? 'One talisman for the sceptre. On to the Esplanade.' : 'Kenny can only bring his jar three times in a place. Try the field again.';

@@ -6,7 +6,7 @@
 // the end of the street. The clothes stall sells new gear for Wally and Kenny
 // for Golden Mangoes, and the river-boat ticket for the Daintree.
 
-import { startRun, addPoints, bankRun } from '../points.js';
+import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { foundTalisman, givePrize } from '../revisit.js';
 import { installGear, snorkelling, drainFactor } from '../gear.js';
 import * as THREE from 'three';
@@ -458,7 +458,7 @@ function finish(won, why = '') {
     if (done.ok) { progress.trip = done.trip; bankRun({ stars }); }
     else try { addPoints('star', stars);   // not done until the zip line: its stars go with the run (points.js)
       localStorage.setItem('chomp-kuranda-run', JSON.stringify(attempt)); } catch { /* the zip line starts a fresh run */ }
-  } else progress.trip = Trip.failAttempt(progress.trip, attempt).trip;   // nothing from this run is kept
+  } else { progress.trip = Trip.failAttempt(progress.trip, attempt).trip; failRun(); }   // the items go, the points still count (points.js)   // nothing from this run is kept
   save();
   $('result-title').textContent = won ? 'Off to Barron Falls!' : why === 'hungry' ? 'Still peckish!' : 'Out of puff';
   $('result-why').textContent = why === 'hungry' ? `Every group's fed, but Wally needs a full tank (${FULL}%) for the trail.` : '';

@@ -34,6 +34,9 @@ check("Ken's values: ground 1, air 2, a pickup 1, a talisman 3", P.POINTS.ground
   check('a new game clears the trip but keeps the personal best', Object.keys(fresh.areas).length === 0 && fresh.best === two.book.best && fresh.trips === 1);
   const low = P.bank(fresh, { ...P.freshRun('park'), pts: 1 }, { difficulty: 'easy' });
   check('a lower trip score is not a new personal best', !low.newBest && low.book.best === two.book.best);
+  const tried = P.bank(P.freshBook(), { ...P.freshRun('reef'), pts: 12 }, { finished: false, stars: 3, difficulty: 'easy' });
+  check('a run that does not finish still counts its points, without the bonus', tried.total === 12 && tried.book.areas.reef === 12 && tried.newBest);
+  check('so the personal best never needs anything completed', tried.book.best === 12);
   check('an unknown area banks nothing', P.bank(fresh, { ...P.freshRun('moon'), pts: 99 }).total === 0);
 }
 {

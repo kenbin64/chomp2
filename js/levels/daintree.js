@@ -10,7 +10,7 @@
 //
 // The river's rules are in daintree-rules.js (tested), the look in daintree-scene.js.
 
-import { startRun, addPoints, bankRun } from '../points.js';
+import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import * as THREE from 'three';
 import * as Trip from '../trip-rules.js';
 import { HALF, START_Z, BOAT_START_Z, BOAT_LENGTH, AGROUND_Z, SANDBAR, CROC, riverX, boatX, groundAt, insideRiver, boatStep, aground, inThrowRange, crocSpots, crocsRoundBoat, crocStep, crocBites, afterBite } from './daintree-rules.js';
@@ -507,6 +507,7 @@ function finish(won) {
   $('result-title').textContent = won ? 'The King will grant the wish' : 'Out of puff';
   $('result-why').textContent = won ? "The sceptre is whole again, and the King has heard Wally's wish. Next: down the range on the Kuranda train to Croc Park, to bring out the crocs." : 'Kenny can only bring his jar three times in a place.';
   markRetry(won, 'the Daintree River');
+  if (!won) failRun();                                               // out of puff: the points still count (points.js)
   $('result-lines').innerHTML = '';
   for (const [label, v] of [['Food caught', game.caught], ['Croc bites', game.bites], ['Snapped up by crocs', game.stolen], ['Pawpaws for the King', `${forest.gathered} of ${forest.total}`], ['Points', game.points]]) {
     const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);

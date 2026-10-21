@@ -26,6 +26,14 @@ function drawBoard(box, board, me) {
   box.append(list);
 }
 
+// Quietly post a new best to a board, if the player has given a name on this device (Ken: the score
+// should be on the board without having to finish anything). Nothing is shown; failures are ignored.
+export function postBest(score, level = 'trip') {
+  const name = cleanName(savedName());
+  if (!name || !(score > 0)) return;
+  fetch(`${API}?level=${level}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, score, stars: 0 }) }).catch(() => { /* offline: posted next time */ });
+}
+
 export async function showLeaderboard(container, level, score, stars = 0) {
   if (!container) return;
   container.innerHTML = '';

@@ -10,7 +10,9 @@
 //   A run is one go at an area. Its points count up as he plays (award).
 //   Completing the area banks the run (bank). Each area keeps its BEST run of this trip, so
 //   redoing an area to play it better raises the trip score, but farming it does not: a worse
-//   run changes nothing. A failed run banks nothing.
+//   run changes nothing. A run that does not finish still counts what it earned (Ken, 2026-10-21:
+//   the score must never need the game, or even the area, completed; many sittings, many tries),
+//   just without the completion and star bonus.
 //   The trip score is the sum of the areas' bests, times the difficulty bonus.
 //   The personal best (best) is the highest trip score ever, kept through a new game.
 
@@ -57,9 +59,9 @@ export function tripScore(book, difficulty = 'intermediate') {
 
 // An area completed: the run's points, plus the completion and its stars, banked as the area's
 // best if it beats the old one. Returns { book, total, areaBest, newAreaBest, trip, newBest }.
-export function bank(book, run, { stars = 0, difficulty = 'intermediate' } = {}) {
+export function bank(book, run, { stars = 0, difficulty = 'intermediate', finished = true } = {}) {
   if (!run || !AREAS.includes(run.area)) return { book, total: 0, areaBest: 0, newAreaBest: false, trip: tripScore(book, difficulty), newBest: false };
-  const total = run.pts + POINTS.area + POINTS.star * Math.max(0, Math.min(3, stars | 0));
+  const total = run.pts + (finished ? POINTS.area + POINTS.star * Math.max(0, Math.min(3, stars | 0)) : 0);
   const old = book.areas[run.area] || 0, newAreaBest = total > old;
   const areas = newAreaBest ? { ...book.areas, [run.area]: total } : book.areas;
   const next = { ...book, areas };

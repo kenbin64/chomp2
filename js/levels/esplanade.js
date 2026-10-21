@@ -8,7 +8,7 @@
 // leave pearls, which carry on to the Great Barrier Reef. In the sea he can
 // swim under water (air meter) and crawl back up onto the boardwalk.
 
-import { startRun, addPoints, bankRun } from '../points.js';
+import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { foundTalisman } from '../revisit.js';
 import { fitText } from '../signtext.js';
 import { installGear, snorkelling, drainFactor } from '../gear.js';
@@ -781,7 +781,7 @@ function finish(won, why = '') {
     if (done.ok) { progress.trip = done.trip; bankRun({ stars }); }
     if (game.pierOpen && !progress.pier) progress = openPier(progress, pierPrice).progress;   // the pier is paid for now
     progress = completeArea(progress, 'esplanade', { score: s.total, stars, mangoes: game.mangoes, pearls: game.pearls });
-  } else progress.trip = Trip.failAttempt(progress.trip, attempt).trip;   // nothing from this attempt is kept (trip-rules.js)
+  } else { progress.trip = Trip.failAttempt(progress.trip, attempt).trip; failRun(); }   // the items go, the points still count (points.js)   // nothing from this attempt is kept (trip-rules.js)
   try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
   $('result-title').textContent = won ? 'Made it to the Lagoon!' : why === 'hungry' ? 'Still peckish!' : why === 'air' ? 'Out of air!' : 'Out of puff';
   $('result-why').textContent = why === 'hungry' ? `Wally made it, but his feed-o-meter isn't full. He needs a full tank (${FULL}%) to head on.` : '';

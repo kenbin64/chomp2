@@ -3,7 +3,7 @@
 // controls, moves Wally, has the tourists throw, flies the food, checks what
 // was caught, missed or stolen, and keeps the quest and the screen up to date.
 
-import { startRun, addPoints, bankRun } from './points.js';
+import { startRun, addPoints, bankRun, failRun } from './points.js';
 import { installGear, snorkelling, drainFactor } from './gear.js';
 import { showTip } from './tips.js';
 import * as THREE from 'three';
@@ -934,6 +934,7 @@ function finish(won, why = '') {
   } else {
     sound.play.lose();
     progress.trip = Trip.failAttempt(progress.trip, attempt).trip;       // nothing from this attempt is kept (trip-rules.js)
+    failRun();                                                         // the points still count (points.js)
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
     if (why === 'hungry') {
       $('over').querySelector('h1').textContent = 'Still peckish!';

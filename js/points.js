@@ -5,7 +5,8 @@
 //   startRun('cane')                    at the start of an area (a new run, unless carrying on
 //                                       one begun on another page: { carry: true })
 //   addPoints('air')                    as he does things; shows on the score pill
-//   bankRun({ stars, difficulty })      when the area is completed: the area's best and the trip
+//   bankRun({ stars })                  when the area is completed: the area's best and the trip
+//   failRun()                           when a run ends without finishing: its points still count
 //   installScore()                      the score pill (second row, beside the Sceptre) and the
 //                                       Scoreboard card it opens: this trip by area, the
 //                                       personal best, and the leaderboard for the whole game
@@ -16,7 +17,7 @@
 // counts as one run.
 
 import * as R from './points-rules.js';
-import { showLeaderboard } from './leaderboard.js';
+import { showLeaderboard, postBest } from './leaderboard.js';
 
 const BOOK_KEY = 'chomp-points', RUN_KEY = 'chomp-points-run';
 const NAMES = { park: 'Croc Park', cane: 'The cane fields', esplanade: 'The Esplanade', reef: 'The reef', kuranda: 'Kuranda and the zip line', mossman: 'Mossman Gorge', finale: 'The Daintree and the rescue' };
@@ -43,17 +44,20 @@ export function addPoints(kind, n = 1) {
 }
 export function runPoints() { return run ? run.pts : 0; }
 
-export function bankRun({ stars = 0 } = {}) {
+export function bankRun({ stars = 0, finished = true } = {}) {
   if (!run) return null;
-  const area = run.area, r = R.bank(readBook(), run, { stars, difficulty: difficulty() });
+  const area = run.area, r = R.bank(readBook(), run, { stars, difficulty: difficulty(), finished });
   saveBook(r.book);
   run = null; try { sessionStorage.removeItem(RUN_KEY); } catch { /* none */ }
   draw();
   if (pill) pill.title = r.newBest ? 'A new personal best!' : 'Your points';
   if (r.newBest) celebrate(`New personal best: ${r.trip.toLocaleString()} points!`);
   else if (r.newAreaBest) celebrate(`New best for ${NAMES[area] || 'this area'}: ${r.areaBest} points!`);
+  if (r.newBest) postBest(r.book.best);                // on the leaderboard straight away (a name saved on this device)
   return r;
 }
+// A run that ends without finishing the area: its points still count (no completion bonus).
+export function failRun() { return bankRun({ finished: false }); }
 
 // A new game (mapmodal.js newTrip): this trip's points cleared, the personal best kept.
 export function clearTrip() { saveBook(R.newTripBook(readBook())); try { sessionStorage.removeItem(RUN_KEY); } catch { /* none */ } }
