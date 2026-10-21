@@ -8,7 +8,7 @@
 //
 // The gorge's rules are in mossman-rules.js (tested), the look in mossman-scene.js.
 
-import { openSceptre } from '../sceptre-card.js';
+import { foundTalisman } from '../revisit.js';
 import * as THREE from 'three';
 import * as Trip from '../trip-rules.js';
 import { POOLS, KEY_POOL, CHEST_POOL, SLIDE_HALF, SLIDE_SPEED, START, FINISH_Z, riverX, groundAt, insideGorge, bottomSpot, canReach, groupSpots, slideAt } from './mossman-rules.js';
@@ -155,6 +155,7 @@ const game = {
   air: AIR.max, points: 0, caught: 0, streak: 0, hasKey: false, talisman: false, foursWas: false, diveQueued: false, upQueued: false, hint: 0, slides: 0,
 };
 game.hasKey = Trip.have(progress.trip, 'mossman-key');
+game.talisman = game.hadOpal = Trip.have(progress.trip, 'talisman-earth');   // back again: the opal is sealed already (the way out is open); the chest gives a prize
 game.tripDrain = Trip.drainFactor(progress.trip, 'mossman', attempt.level);
 window.chomp = { game, wally, scene, camera, clusters, keySpot, chestSpot, dive };
 
@@ -251,15 +252,16 @@ function step(dt, t) {
     game.hasKey = true; key.visible = false; attempt = Trip.gain(attempt, 'mossman-key');
     game.points += 100; sound.play.powerup(); toast_('A key! Now find what it opens', 'good'); bubbles.say(wally.root, "A key, right on the bottom! What's it for?", 3.4);
   }
-  if (!game.talisman && canReach(wally.pos.x, wally.pos.z, dive.depth > 1.2, chestSpot.x, chestSpot.z)) {
+  if (!game.chestOpen && canReach(wally.pos.x, wally.pos.z, dive.depth > 1.2, chestSpot.x, chestSpot.z)) {
     if (game.hasKey) {
-      game.talisman = true; attempt = Trip.gain(attempt, 'talisman-earth'); game.points += 300;
-      setTimeout(() => openSceptre('talisman-earth'), 1600);                  // the sceptre card, the new talisman set in its place (Ken)
+      game.chestOpen = true; game.talisman = true; attempt = Trip.gain(attempt, 'talisman-earth'); game.points += 300;
+      setTimeout(() => foundTalisman('talisman-earth', toast_), 1600);          // new: the sceptre card; already sealed: a random useful prize (revisit.js)
       sound.play.powerup(); wally.cheer = 1.2; fx.burst(new THREE.Vector3(chestSpot.x, chestSpot.y + 1, chestSpot.z), [0xb8e6ff, 0xff9ad8, 0xffffff], 40);
-      toast_('The opal, the earth talisman!', 'good'); bubbles.say(wally.root, 'Crikey, the opal! Earth for the sceptre!', 3.6);
+      if (!game.hadOpal) { toast_('The opal, the earth talisman!', 'good'); bubbles.say(wally.root, 'Crikey, the opal! Earth for the sceptre!', 3.6); }
+      else bubbles.say(wally.root, 'Something new in the chest this time!', 3);
     } else if ((game.hint -= dt) <= 0) { game.hint = 5; toast_('Locked. The key is somewhere on the bottom of another hole', 'info'); }
   }
-  if (game.talisman && chest.open < 1) chest.open = Math.min(1, chest.open + dt * 1.2);
+  if (game.chestOpen && chest.open < 1) chest.open = Math.min(1, chest.open + dt * 1.2);
   chest.lid.rotation.x = -chest.open * 1.9; chest.glow.intensity = chest.open * 8 + 1;
   if (chest.mango) { chest.mango.visible = true; chest.mango.rotation.y += dt * 1.5; chest.mango.position.y = 0.9 + chest.open * 0.8; }
 

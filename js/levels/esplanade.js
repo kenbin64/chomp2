@@ -8,7 +8,7 @@
 // leave pearls, which carry on to the Great Barrier Reef. In the sea he can
 // swim under water (air meter) and crawl back up onto the boardwalk.
 
-import { openSceptre } from '../sceptre-card.js';
+import { foundTalisman } from '../revisit.js';
 import { fitText } from '../signtext.js';
 import { installGear, snorkelling, drainFactor } from '../gear.js';
 import { showTip } from '../tips.js';
@@ -454,7 +454,7 @@ function bigMangoChest(dt) {
       // Until the Esplanade's own key and chest are built (Ken, 2026-10-20: key, then the chest with the
       // talisman), this chest holds the sun talisman as well as the Big Golden Mango (a trade item).
       attempt = Trip.gain(Trip.gain(attempt, 'big-golden-mango'), 'talisman-sun'); game.hasBigMango = true;    // kept when the Esplanade is completed
-      setTimeout(() => openSceptre('talisman-sun'), 1600);                  // the sceptre card, the new talisman set in its place (Ken)
+      setTimeout(() => foundTalisman('talisman-sun', toast_), 1600);          // new: the sceptre card; already sealed: a random useful prize (revisit.js)
       game.points += 150; sound.play.powerup(); fx.burst(c.group.position, [0xffb51f, 0xffe066, 0xffffff], 34);
       toast_('The Big Golden Mango! The reef will need it', 'good'); bubbles.say(wally.root, 'Crikey, look at the size of it!', 3.4);
     } else if ((c.hint -= dt) <= 0) {

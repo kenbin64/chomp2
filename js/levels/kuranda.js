@@ -6,7 +6,7 @@
 // the end of the street. The clothes stall sells new gear for Wally and Kenny
 // for Golden Mangoes, and the river-boat ticket for the Daintree.
 
-import { openSceptre } from '../sceptre-card.js';
+import { foundTalisman, givePrize } from '../revisit.js';
 import { installGear, snorkelling, drainFactor } from '../gear.js';
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
@@ -180,7 +180,10 @@ const station = boomerangThrow({ scene, camera, wally, sound, models, people: pe
   onTalisman: () => { game.hasAir = true; attempt = Trip.gain(attempt, 'talisman-air'); game.points += 300; wally.cheer = 1.2; },
   // Back at the archway, facing the street, ready to walk on (he has to step out before it starts again).
   onDone: caught => {
-    $('hud').hidden = false; if (caught && game.hasAir) setTimeout(() => openSceptre('talisman-air'), 400);   // the sceptre card, air set in its place (Ken)
+    $('hud').hidden = false;
+    // The first catch: the air talisman. Back again with it sealed: a random useful prize for a catch (Ken).
+    if (caught && game.airBefore) setTimeout(() => givePrize(toast_, 'A catch! The instructor gives you'), 400);
+    else if (caught && game.hasAir) setTimeout(() => foundTalisman('talisman-air', toast_), 400);
     wally.pos.set(CLEARING.x0 + 0.5, G, ENTRY.z); wally.root.position.copy(wally.pos); wally.facing = Math.PI * 1.5; cam.yaw = Math.PI / 2;
   },
 });
@@ -297,7 +300,7 @@ function step(dt, t) {
     if ((e.type === 'flee' || e.type === 'empty') && !e.cluster.counted) { e.cluster.counted = true; game.groupsDone++; }
   }
   // The boomerang clearing (Ken): walking in under the archway starts the throw, in first person.
-  if (enteredClearing(wally.pos.x, wally.pos.z)) { if (game.stationAway && !game.done) { game.stationAway = false; $('hud').hidden = true; station.begin(game.hasAir); return; } }
+  if (enteredClearing(wally.pos.x, wally.pos.z)) { if (game.stationAway && !game.done) { game.stationAway = false; $('hud').hidden = true; game.airBefore = game.hasAir; station.begin(game.hasAir); return; } }
   else if (!inClearing(wally.pos.x, wally.pos.z)) game.stationAway = true;
 
   // Every group fed, then a full tank, then the trail opens (Ken's rule for every level).

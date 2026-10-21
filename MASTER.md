@@ -651,3 +651,9 @@ Then Mossman and the Daintree, once their point and goal are decided.
 6. Return challenges: add one condition per visit (Proposed), and do rewards grow with the challenge?
 7. Difficulty: also how close people let him come and the number of thieves?
 8. Mossman and the Daintree: the point and the goal of each.
+
+**Going back to an area (Ken, 2026-10-21; built, `js/revisit.js`):** a talisman already sealed in the sceptre is
+never needed again (the way on stays open), but redoing things is still worth it: where the talisman or an
+activity's prize would be, a random useful prize is given instead (a gear item or Tourist Tokens). The
+boomerang throw gives one for each catch once the air talisman is sealed. A talisman found on a run is
+sealed only when the area is completed; a failed run loses that run's finds, never earlier ones.
