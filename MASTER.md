@@ -441,6 +441,16 @@ Skyrail's base station; not at Mossman Gorge. **Open:** keep the bungee at the g
 move it.) Mossman Gorge is Eastern Kuku
 Yalanji country; show it truly and respectfully (for the cultural review).
 
+**The look (Ken's reference photos, 2026-10-20):** Josephine Falls, south of Cairns near Babinda, where the
+real natural rock slide is: pale water-polished granite, tiers of white water, clear dark-green pools,
+rainforest overhead. The level is set at Mossman Gorge with that look. **Open:** keep the name Mossman Gorge,
+or say where the slide really is (as with the bungee).
+
+**Built (2026-10-20):** `mossman.html`, `js/levels/mossman*.js` (41 tests): five swimming holes stepping
+down the river, rock slides between them, visitors on the granite, the key on the bottom of the third hole,
+the chest with the opal in the last, out by the track. The opal is a stand-in until Ken's earth talisman
+model exists.
+
 **The point:** **Open.**
 
 **What is here (notes so far):** river rafts, climbing vines and cliffs, a vine-swinging challenge, a line

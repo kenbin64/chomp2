@@ -73,7 +73,7 @@ check('not full with nothing left to eat is hungry', h.checkFull(FULL - 1, 0) ==
 check('a hungry park cannot be left', !h.leave());
 check('full means 95 or more', FULL === 95);
 check('seven areas, park first (Ken: seven is the limit)', AREAS.length === 7 && AREAS[0].id === 'park');
-check('the park, the cane fields, the Esplanade, the reef and Kuranda are playable so far', AREAS.filter(a => a.ready).map(a => a.id).join() === 'park,cane,esplanade,reef,kuranda');
+check('every area but the Daintree is playable so far', AREAS.filter(a => a.ready).map(a => a.id).join() === 'park,cane,esplanade,reef,kuranda,mossman');
 check('the reef is fourth, after the cane fields and the Esplanade', AREAS[3].id === 'reef' && AREAS[3].name === 'The Great Barrier Reef');
 check("the map areas run in the trip's order", AREAS.map(a => a.id).join() === 'park,cane,esplanade,reef,kuranda,mossman,daintree');
 check('after the Esplanade comes the reef', nextArea('esplanade').id === 'reef');

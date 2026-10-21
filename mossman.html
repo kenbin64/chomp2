@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>html,body{background:#0f2a24}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1f5a4a">
+<title>Mossman Gorge · Chomp 3D: Wally's Cairns Adventure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" media="print" onload="this.media='all'">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "./js/three.module.js", "three/addons/": "./js/addons/" } }</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" hidden>
+  <div class="panel score"><b id="score">0</b><span class="mango-count" title="Food caught">&#x1F354; <span id="caught">0</span></span></div>
+  <div class="panel quest"><h2>Mossman Gorge</h2><p id="job" style="margin:0"></p></div>
+  <div class="panel energy" id="feed">
+    <div class="feed-head"><span class="label" id="meter-label">Feed-o-meter</span><span id="lives" aria-label="Lives"></span></div>
+    <div class="bar"><div class="red-zone"></div><div id="energy-fill"></div></div>
+    <span class="red-note" id="red-note">In the red! Catch some food, or Kenny brings his jar</span>
+  </div>
+  <div id="count"></div>
+  <div id="toasts" aria-live="polite"></div>
+</div>
+
+<div id="touch" hidden>
+  <div id="stick"><div id="knob"></div></div>
+  <button id="t-fours" type="button">Duck</button>
+  <button id="t-jump" type="button">Jump</button>
+  <button id="t-pause" type="button" aria-label="Pause">II</button>
+  <button id="t-cam" type="button">Cam</button>
+</div>
+<div id="dive-buttons" class="dive-buttons" hidden>
+  <button id="b-dive" type="button">Dive<small>Shift</small></button>
+  <button id="b-up" type="button">Up<small>Space</small></button>
+</div>
+
+<section id="title" class="overlay live-view">
+  <div class="card">
+    <p class="area">Mossman Gorge</p>
+    <h1>The Swimming Holes</h1>
+    <p>The Mossman River runs clear over granite through the rainforest. Work your way down it: swim the holes, slide down the smooth rock slicks from one hole to the next, and keep fed from the visitors on the rocks. The key lies on the bottom of one hole, and the chest with the opal, the earth talisman, on the bottom of the last.</p>
+    <button id="play" class="go" type="button">Play</button>
+    <div class="keys pc">
+      <span><kbd>W</kbd> or up: go the way you face</span><span><kbd>A D</kbd> turn</span><span><kbd>Shift</kbd> dive, <kbd>Space</kbd> up (and jump)</span><span><kbd>P</kbd> pause</span>
+    </div>
+    <div class="keys phone"><span>Left thumb: steer</span><span>Dive and Up buttons in the water</span></div>
+    <p class="fine"><a href="index.html?map">Back to the map</a></p>
+  </div>
+</section>
+
+<section id="paused" class="overlay" hidden>
+  <div class="card"><h1>Paused</h1><button id="resume" class="go" type="button">Keep going</button>
+  <p class="fine"><a href="index.html?map">Back to the map</a></p></div>
+</section>
+
+<section id="result" class="overlay" hidden>
+  <div class="card">
+    <h1 id="result-title"></h1>
+    <p class="stars" id="result-stars"></p>
+    <p id="result-why"></p>
+    <ul class="result-lines" id="result-lines"></ul>
+    <div class="end-buttons"><button id="again" class="go" type="button">Run it again</button><a class="go map-btn" href="index.html?map">Back to the map</a></div>
+  </div>
+</section>
+
+<script type="module" src="js/levels/mossman.js"></script>
+</body>
+</html>

@@ -32,13 +32,14 @@ check('Kuranda opens two talismans, air and water', T.CHAIN.kuranda.opens.join()
 check('every talisman comes from exactly one area', T.TALISMANS.every(t => T.ORDER.filter(a => T.CHAIN[a].opens.includes(t)).length === 1));
 check('no key is a talisman (keys are just keys)', T.ORDER.every(a => !T.TALISMANS.includes(T.CHAIN[a].key)));
 check('the Daintree needs all six talismans', T.CHAIN.daintree.needsAll.join() === T.TALISMANS.join());
-check('open questions are marked undecided', !T.CHAIN.esplanade.decided && !T.CHAIN.kuranda.decided && !T.CHAIN.mossman.decided && T.CHAIN.park.decided);
+check('open questions are marked undecided', !T.CHAIN.esplanade.decided && !T.CHAIN.kuranda.decided && T.CHAIN.mossman.decided && T.CHAIN.park.decided);
+check('Mossman: the key, then the opal (the earth talisman)', T.CHAIN.mossman.key === 'mossman-key' && T.CHAIN.mossman.opens.join() === 'talisman-earth');
 check('the Fibonacci small thing: golden mangoes from the park', T.CHAIN.park.small === 'golden-mango');
 
 // ---- Areas not built yet are passed over -------------------------------------------------
 check('the cane fields are built: on the trip', !T.NOT_BUILT.includes('cane'));
 check('...so the Esplanade asks the cane fields', T.areaBefore('esplanade') === 'cane');
-check('Mossman and the Daintree are not built yet: Kuranda is the last stop for now', T.NOT_BUILT.includes('mossman') && T.NOT_BUILT.includes('daintree'));
+check('only the Daintree is not built yet: Mossman is the last stop for now', !T.NOT_BUILT.includes('mossman') && T.NOT_BUILT.includes('daintree'));
 check('the reef asks the Esplanade', T.areaBefore('reef') === 'esplanade');
 check('the first area has nothing before it', T.areaBefore('park') === null);
 {

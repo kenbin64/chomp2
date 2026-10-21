@@ -21,7 +21,7 @@ export const KEY_POOL = 2, CHEST_POOL = 4;
 export const POOL_DEPTH = 3.4;             // surface to bottom
 export const SURFACE_DROP = 0.45;          // where he floats, below the water's surface
 export const DIVE_DROP = 2.6;              // where he swims when he has dived (clear of the bottom)
-export const SLIDE_HALF = 1.6;             // half the width of a rock slide
+export const SLIDE_HALF = 3.2;             // half the width of a rock slide: the whole riverbed, as at a real rock slide
 export const SLIDE_SPEED = 8;              // how fast a slide carries him down (metres a second)
 export const BANK_WIDTH = 9;               // flat-ish rock beside the river, where people sit
 export const WALL = 24;                    // past this from the river's line, the gorge walls: no way on

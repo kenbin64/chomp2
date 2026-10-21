@@ -54,14 +54,14 @@ export const CHAIN = {
   esplanade: { key: null,        opens: ['talisman-sun'],                 small: null,           decided: false },  // its key: open
   reef:      { key: 'pearl-key', opens: ['talisman-moon'],                small: null,           decided: true },
   kuranda:   { key: null,        opens: ['talisman-air', 'talisman-water'], small: null,         decided: false },  // the boomerang and the zip line
-  mossman:   { key: null,        opens: ['talisman-earth'],               small: null,           decided: false },  // the opal, from the bungee
+  mossman:   { key: 'mossman-key', opens: ['talisman-earth'],             small: null,           decided: true },   // the opal, in the last swimming hole
   daintree:  { key: null,        opens: [],                               small: null,           decided: true, needsAll: TALISMANS },  // the King
 };
 
 // Areas not built yet are passed over, so the game stays playable while they are
 // made: the area after one asks the area before it instead. Remove an area from
 // this list the day its level is playable.
-export const NOT_BUILT = ['mossman', 'daintree'];
+export const NOT_BUILT = ['daintree'];
 
 export const LEVELS = ['easy', 'intermediate', 'hard'];
 export const SHARE = { easy: 0.5, intermediate: 0.7, hard: 0.9 };       // of what an area holds, for "collect enough"
