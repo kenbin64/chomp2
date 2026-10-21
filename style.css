@@ -591,9 +591,17 @@ body.phone-menu .energy { top: max(10px, env(safe-area-inset-top)); width: min(3
 body.phone-menu .guide-arrow { top: calc(max(10px, env(safe-area-inset-top)) + 150px); }
 body.phone-menu .tip-card { top: calc(max(10px, env(safe-area-inset-top)) + 210px); }
 /* Free to play, at the top of the title screen (Ken, 2026-10-21). */
-.free-banner { position: absolute; z-index: 2; top: calc(max(10px, env(safe-area-inset-top)) + 96px);   /* under both rows of buttons */ left: 50%; transform: translateX(-50%); margin: 0; padding: 6px 14px; border-radius: 999px; background: rgba(10, 30, 44, 0.8); border: 1px solid rgba(255, 209, 102, 0.6); color: #fff; font: 700 14px var(--font); white-space: nowrap; max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; }
+.free-banner { position: absolute; z-index: 2; top: calc(max(10px, env(safe-area-inset-top)) + 96px); left: 50%; transform: translateX(-50%); margin: 0; padding: 4px 34px 4px 12px; border-radius: 999px; background: rgba(10, 30, 44, 0.72); border: 1px solid rgba(255, 209, 102, 0.5); color: #fff; font: 700 12px var(--font); white-space: nowrap; max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; }   /* small, under the buttons, and closable (menu.js) */
 .free-banner a { color: #ffd166; }
-@media (max-width: 560px) { .free-banner { white-space: normal; text-align: center; font-size: 13px; border-radius: 14px; } }
+@media (max-width: 560px) { .free-banner { white-space: normal; text-align: center; font-size: 11px; border-radius: 14px; } }
 body.phone-menu .free-banner { top: calc(max(10px, env(safe-area-inset-top)) + 54px); }
 /* The gear badge waits until play starts: on the title screen it sat on the credit line. */
 #title:not([hidden]) ~ .gear-badge, #title:not([hidden]) ~ .gear-use { display: none; }
+/* Wally's hand on the Paws button, the touch pause and the Paws card (menu.js). */
+.croc-hand { width: 1.6em; height: 1.6em; vertical-align: -0.45em; }
+#paused h1 .croc-hand { width: 1em; height: 1em; vertical-align: -0.1em; }
+#t-pause .croc-hand { width: 26px; height: 26px; vertical-align: middle; }
+.menu-burger[hidden] { display: none; }
+.note-x { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(255,255,255,0.15); color: #fff; font: 700 12px/24px var(--font); cursor: pointer; padding: 0; }
+.landscape-hint { position: fixed; z-index: 70; left: 50%; top: calc(max(10px, env(safe-area-inset-top)) + 160px); transform: translateX(-50%); width: min(340px, calc(100% - 32px)); padding: 10px 40px 10px 14px; border-radius: 14px; background: rgba(10, 30, 44, 0.92); border: 2px solid rgba(255, 209, 102, 0.6); color: #fff; font: 700 14px var(--font); text-align: center; }
+.landscape-hint .turn { display: inline-block; font-size: 20px; color: #ffd166; vertical-align: -2px; margin-right: 4px; }
