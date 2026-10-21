@@ -434,8 +434,10 @@ going back to earlier areas. **Open:** how this sits with rule 6 (going back) an
 **Decided (Ken, 2026-10-20):** Mossman Gorge is the **bungee**: Wally bungees down the gorge and grabs the
 **opal**, the earth talisman. The river with the riverboat is the **Daintree River** (section 6), not
 Mossman. The riverboat is the same boat all the way: its passengers are seen on the trip north, so when it
-runs aground in the Daintree the player already knows it (foreshadowing, Ken). (Ken is checking where
-bungee jumping is really done near Cairns; in the game it is at the gorge.) Mossman Gorge is Eastern Kuku
+runs aground in the Daintree the player already knows it (foreshadowing, Ken). (Ken checked, 2026-10-20: the
+real bungee near Cairns is at Lot 2 McGregor Road, Smithfield, about 20 minutes north of Cairns, near the
+Skyrail's base station; not at Mossman Gorge. **Open:** keep the bungee at the gorge as the game's own, or
+move it.) Mossman Gorge is Eastern Kuku
 Yalanji country; show it truly and respectfully (for the cultural review).
 
 **The point:** **Open.**
