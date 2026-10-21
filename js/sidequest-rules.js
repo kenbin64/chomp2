@@ -43,7 +43,7 @@ export function nextStage(stage, happened) {
   return stage;
 }
 
-// The reward: Tourist Tokens, and a count of quests done for Wally's page.
+// The reward: Golden Mangoes, and a count of quests done for Wally's page.
 export function questReward(progress) {
-  return { ...progress, tokens: (progress.tokens || 0) + QUEST_TOKENS, sidequests: (progress.sidequests || 0) + 1 };
+  return { ...progress, mangoes: (progress.mangoes || 0) + QUEST_TOKENS, sidequests: (progress.sidequests || 0) + 1 };
 }

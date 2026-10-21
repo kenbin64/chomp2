@@ -56,7 +56,9 @@ export function findTreasure(progress, id, reward = { first: 10, again: 2 }) {
 }
 
 // Keep what was collected, finished or not (Ken: go back for more of something).
+// One currency (Ken, 2026-10-21): Golden Mangoes buy everything. Gold pieces found count as mangoes.
 export function bankFinds(progress, { mangoes = 0, pearls = 0, coins = 0, shells = 0 } = {}) {
+  mangoes += Math.max(0, coins); coins = 0;
   return { ...progress, mangoes: (progress.mangoes || 0) + Math.max(0, mangoes),
            pearls: (progress.pearls || 0) + Math.max(0, pearls), coins: (progress.coins || 0) + Math.max(0, coins),
            shells: (progress.shells || 0) + Math.max(0, shells) };
@@ -71,8 +73,8 @@ export function bankFinds(progress, { mangoes = 0, pearls = 0, coins = 0, shells
 //   Daintree   -> a river-boat ticket, bought with gold
 // "coins" in the save are the gold pieces.
 export const PIER_PRICE = 8;
-export const VENDOR_PAYS = { mangoes: 1, shells: 2 };      // gold pieces for each one sold
-export const BOAT_TICKET_PRICE = 20;                       // gold pieces
+export const VENDOR_PAYS = { shells: 2 };                  // Golden Mangoes for each seashell
+export const BOAT_TICKET_PRICE = 20;                       // Golden Mangoes
 // Kept for older pages: the Skyrail no longer has a fare.
 export const SKYRAIL_FARE = 0;
 
@@ -100,7 +102,7 @@ export function entryNeeds(progress, id) {
   if (id === 'esplanade' && !progress.badge) return { what: 'badge', text: 'a Croc Park ranger badge: finish Croc Park' };
   if (id === 'reef' && (progress.pearls || 0) < 1) return { what: 'pearls', text: 'a pearl for the giant clam: find pearls on the Esplanade and out on its pier' };
   if (id === 'kuranda' && !progress.skyrail) return { what: 'skyrail', text: 'the Skyrail pass: clear the reef' };
-  if (id === 'daintree' && !progress.boatTicket) return { what: 'ticket', text: `a river-boat ticket: ${BOAT_TICKET_PRICE} gold pieces at the Kuranda markets` };
+  if (id === 'daintree' && !progress.boatTicket) return { what: 'ticket', text: `a river-boat ticket: ${BOAT_TICKET_PRICE} Golden Mangoes at the Kuranda markets` };
   return null;
 }
 // Nothing to pay at the gate any more (the Skyrail pass is earned); kept for the pages that call it.
@@ -114,25 +116,25 @@ export function openPier(progress, price = PIER_PRICE) {
   return { ok: true, progress: { ...progress, mangoes: progress.mangoes - price, pier: true } };
 }
 
-// The Kuranda market vendor buys Golden Mangoes and seashells for gold pieces.
-export function sellToVendor(progress, { mangoes = 0, shells = 0 } = {}) {
-  const m = Math.max(0, Math.min(mangoes, progress.mangoes || 0)), sh = Math.max(0, Math.min(shells, progress.shells || 0));
-  const gold = m * VENDOR_PAYS.mangoes + sh * VENDOR_PAYS.shells;
-  return { gold, progress: { ...progress, mangoes: (progress.mangoes || 0) - m, shells: (progress.shells || 0) - sh, coins: (progress.coins || 0) + gold } };
+// The Kuranda market vendor buys seashells for Golden Mangoes (one currency: Ken, 2026-10-21).
+export function sellToVendor(progress, { shells = 0 } = {}) {
+  const sh = Math.max(0, Math.min(shells, progress.shells || 0));
+  const gold = sh * VENDOR_PAYS.shells;                               // (named gold for the callers: it is mangoes)
+  return { gold, progress: { ...progress, shells: (progress.shells || 0) - sh, mangoes: (progress.mangoes || 0) + gold } };
 }
 
-// Vitamins from the Kuranda trader, for gold (Ken).
+// Vitamins from the Kuranda trader, for Golden Mangoes (Ken).
 export const VITAMIN_PRICE = 3;
 export function buyVitamins(progress) {
-  if ((progress.coins || 0) < VITAMIN_PRICE) return { progress, ok: false, why: 'gold' };
-  return { ok: true, progress: { ...progress, coins: progress.coins - VITAMIN_PRICE, gear: { ...(progress.gear || {}), vitamins: ((progress.gear || {}).vitamins || 0) + 1 } } };
+  if ((progress.mangoes || 0) < VITAMIN_PRICE) return { progress, ok: false, why: 'mangoes' };
+  return { ok: true, progress: { ...progress, mangoes: progress.mangoes - VITAMIN_PRICE, gear: { ...(progress.gear || {}), vitamins: ((progress.gear || {}).vitamins || 0) + 1 } } };
 }
 
-// The river-boat ticket, from the Kuranda markets, in gold.
+// The river-boat ticket, from the Kuranda markets, for Golden Mangoes.
 export function buyBoatTicket(progress) {
   if (progress.boatTicket) return { progress, ok: false, why: 'owned' };
-  if ((progress.coins || 0) < BOAT_TICKET_PRICE) return { progress, ok: false, why: 'gold' };
-  return { ok: true, progress: { ...progress, coins: progress.coins - BOAT_TICKET_PRICE, boatTicket: true } };
+  if ((progress.mangoes || 0) < BOAT_TICKET_PRICE) return { progress, ok: false, why: 'mangoes' };
+  return { ok: true, progress: { ...progress, mangoes: progress.mangoes - BOAT_TICKET_PRICE, boatTicket: true } };
 }
 
 // What stars are for (Ken, 2026-10-17): they open the adventure activities.
@@ -278,7 +280,7 @@ export const EXTRAS = [
   { id: 'boomerang',       kind: 'gear',   name: 'Boomerang',          price: 60, ready: false, about: 'Thrown and caught again: handy in later levels.' },
   { id: 'ticket-zipline',  kind: 'ticket', name: 'Zip line ticket',    price: 25, ready: true, activity: 'zipline', about: 'One ride down the Barron Gorge on the zip line (Barron Falls, at the end of the Kuranda markets).' },
   { id: 'ticket-bungee',   kind: 'ticket', name: 'Bungee jump ticket', price: 35, ready: false, activity: 'bungee', about: 'A leap over Barron Falls.' },
-  { id: 'ticket-cruise',   kind: 'ticket', name: 'River cruise ticket', price: BOAT_TICKET_PRICE, pay: 'coins', ready: true, about: 'On the Daintree, the boat passengers know Wally and throw him tucker more often.' },
+  { id: 'ticket-cruise',   kind: 'ticket', name: 'River cruise ticket', price: BOAT_TICKET_PRICE, pay: 'mangoes', ready: true, about: 'On the Daintree, the boat passengers know Wally and throw him tucker more often.' },
   { id: 'ticket-rapids',   kind: 'ticket', name: 'River rapids ticket', price: 30, ready: false, activity: 'rapids', about: 'A raft down the white water at Mossman Gorge.' },
 ];
 export function hasExtra(progress, id) {
@@ -300,7 +302,7 @@ export function buyExtra(progress, id) {
   if (!x.ready) return { progress, ok: false, why: 'soon' };
   if (!x.activity && hasExtra(progress, id)) return { progress, ok: false, why: 'owned' };
   const pay = x.pay || 'mangoes';
-  if ((progress[pay] || 0) < x.price) return { progress, ok: false, why: pay === 'coins' ? 'gold' : 'mangoes' };
+  if ((progress[pay] || 0) < x.price) return { progress, ok: false, why: 'mangoes' };
   const p = { ...progress, [pay]: progress[pay] - x.price };
   if (id === 'ticket-cruise') p.boatTicket = true;
   else if (x.activity) p.tickets = { ...(progress.tickets || {}), [x.activity]: ticketsFor(progress, x.activity) + 1 };
@@ -327,9 +329,9 @@ export function readProgress(text) {
       stars: p.stars && typeof p.stars === 'object' ? p.stars : {},
       best: p.best && typeof p.best === 'object' ? p.best : {},
       postcards: Array.isArray(p.postcards) ? p.postcards : [],
-      mangoes: Number.isFinite(p.mangoes) ? p.mangoes : 0,
+      mangoes: (Number.isFinite(p.mangoes) ? p.mangoes : 0) + (Number.isFinite(p.tokens) ? Math.max(0, p.tokens) : 0) + (Number.isFinite(p.coins) ? Math.max(0, p.coins) : 0),   // one currency: old tokens and gold come across one for one
       pearls: Number.isFinite(p.pearls) ? p.pearls : 0,
-      coins: Number.isFinite(p.coins) ? p.coins : 0,
+      coins: 0,                                                     // gold pieces are Golden Mangoes now (below)
       shells: Number.isFinite(p.shells) ? p.shells : 0,
       pier: p.pier === true,
       badge: p.badge === true || (p.stars && p.stars.park > 0) || (Array.isArray(p.postcards) && p.postcards.includes('park')),
@@ -340,7 +342,7 @@ export function readProgress(text) {
       treasures: Array.isArray(p.treasures) ? p.treasures.filter(id => typeof id === 'string') : [],
       // Wally's Tourist Book (book-rules.js): stamps, tokens, abilities and visits.
       stamps: Array.isArray(p.stamps) ? p.stamps.filter(id => typeof id === 'string') : [],
-      tokens: Number.isFinite(p.tokens) ? p.tokens : 0,
+      tokens: 0,                                                    // Tourist Tokens are Golden Mangoes now (below)
       abilities: p.abilities && typeof p.abilities === 'object' ? Object.fromEntries(Object.entries(p.abilities).filter(([k, v]) => ['swisher', 'net', 'snorkel', 'spring', 'vitamins'].includes(k) && Number.isFinite(v))) : {},
       visits: p.visits && typeof p.visits === 'object' ? Object.fromEntries(Object.entries(p.visits).filter(([, v]) => Number.isFinite(v))) : {},
       souvenirs: Array.isArray(p.souvenirs) ? p.souvenirs.filter(id => typeof id === 'string') : [],

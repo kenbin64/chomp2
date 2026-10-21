@@ -27,7 +27,7 @@ check('bringing it back finishes it', nextStage('carrying', 'returned') === 'don
 check('out of order changes nothing', nextStage('hidden', 'found') === 'hidden' && nextStage('asked', 'returned') === 'asked');
 
 const r = questReward(p);
-check('a quest done pays tokens and is counted', r.tokens === QUEST_TOKENS && r.sidequests === 1);
+check('a quest done pays Golden Mangoes and is counted', r.mangoes === QUEST_TOKENS && r.sidequests === 1);
 check('quests done are saved', readProgress(JSON.stringify(r)).sidequests === 1);
 
 console.log(`${pass} passed, ${fail} failed`);

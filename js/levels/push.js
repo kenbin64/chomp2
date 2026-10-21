@@ -8,6 +8,7 @@
 // The river is the Daintree level's (daintree-rules.js, daintree-scene.js); the push is push-rules.js
 // and the line is rescue-rules.js (all tested).
 
+import { guideArrow, nearest } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, installScore } from '../points.js';
 import * as THREE from 'three';
 import { AGROUND_Z, BOAT_LENGTH, riverX, boatX, groundAt, insideRiver, crocsRoundBoat } from './daintree-rules.js';
@@ -136,8 +137,9 @@ function pushPlace(i) {
 
 // ---- The beat meter ------------------------------------------------------------------------------
 const meter = document.createElement('div'); meter.className = 'push-meter'; meter.hidden = true;
-meter.innerHTML = '<div class="push-track"><i class="push-zone"></i><i class="push-needle"></i></div><p class="push-word"></p><div class="push-progress"><i></i></div>';
+meter.innerHTML = '<div class="push-track"><b class="push-arrow" aria-hidden="true">&#x25BC;</b><i class="push-zone"></i><i class="push-needle"></i></div><p class="push-word"></p><div class="push-progress"><i></i></div>';
 document.body.append(meter);
+const pushArrow = meter.querySelector('.push-arrow');   // the down arrow over the middle (Ken): press when the marker is under it
 const needle = meter.querySelector('.push-needle'), word = meter.querySelector('.push-word'), bar = meter.querySelector('.push-progress i');
 
 // ---- State and controls ----------------------------------------------------------------------------
@@ -175,9 +177,11 @@ function padPress() { const p = navigator.getGamepads ? [...navigator.getGamepad
 
 // ---- One frame -----------------------------------------------------------------------------------
 const cam = { yaw: Math.PI, pitch: 0.42, dist: 14, manual: 0 };
+const arrow = guideArrow({ show: true });                     // where to go next (guide-arrow.js): the finale is played once, so always
 function step(dt, t) {
   game.time += dt;
   const k = input.read();
+  arrow.update(game.phase !== 'swim' ? null : (w => w ? { x: w.x, z: w.z, label: 'A wild croc' } : { ...stern(), label: 'The stern' })(nearest(wild.filter(w => !w.called), wally.pos)), wally.pos, cam.yaw);
   if (game.phase === 'swim') {
     if (k.turn !== 0 || k.turnKeys !== 0 || k.tilt !== 0) cam.manual = 1.2;
     cam.yaw += k.turn + k.turnKeys * dt * 2; cam.pitch = Math.min(1.35, Math.max(0.05, cam.pitch + k.tilt));
@@ -218,6 +222,7 @@ function step(dt, t) {
     game.beatT += dt; padPress();
     const e = offBeat(game.beatT);
     needle.style.left = `${50 + (e / (BEAT / 2)) * 50}%`;
+    pushArrow.classList.toggle('now', Math.abs(e) < BEAT * 0.08);   // it lights up as the marker reaches the middle
     const b = beatOf(game.beatT);
     if (b !== game.lastBeat && e > 0.35) {                           // a beat just went by
       if (game.pressed !== b && game.lastBeat >= 0) { boat.moved = settle(boat.moved); word.textContent = 'Missed the beat'; word.className = 'push-word miss'; }

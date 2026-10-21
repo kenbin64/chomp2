@@ -16,6 +16,14 @@ export const LINES = {
   wallyHungry:  ['Running on empty here...', 'Could murder a feed.'],
   wallyHello:   ['G\'day, mate!', 'Crikey, what a day for it!', 'G\'day, g\'day!'],
   wallyBump:    ['Whoops!', 'Strewth!', 'Ow, me shins!', 'Didn\'t see that one!'],
+  wallyToad:    ['Strewth, a cane toad!', 'Get off, ya warty thing!', 'Ow! Flamin\' toads!'],
+  wallyBite:    ['Oi! Watch the teeth!', 'Crikey, he bit me!', 'Back off, ya big lizard!'],
+  wallyFlee:    ['Aw, come back! I only wanted lunch!', 'Sorry! Didn\'t mean to scare ya!', 'Too close, my bad.'],
+  wallyBird:    ['Oi, ya big beak!', 'Cheeky pelican!', 'Fair go, that was mine!'],
+  wallyBat:     ['Cheeky fruit bat!', 'Oi, come back with that!'],
+  wallyCroc:    ['Oi! That was mine, ya scaly thief!', 'Beat me to it, mate.'],
+  wallyTired:   ['Crikey... I\'m knackered...', 'Need... a... feed...'],
+  wallyAir:     ['Need... air...', 'Up! Up!'],
   touristNervous: ['Easy, big fella...', 'That\'s close enough, mate!', 'Whoa, back up a bit!', 'Steady on, Wally!'],
   touristFlee:  ['Righto, we\'re off!', 'Too close! Run!', 'Strewth, leg it!', 'Not today, croc!'],
   kennyJar:     ['Here, mate, have a scoop!', 'Get some of this into ya!', 'She\'ll be right now!'],
@@ -35,12 +43,23 @@ export function pickLine(kind) {
   return line;
 }
 
+// Wally reacting to something that happens to him (Ken, 2026-10-21: whenever something happens, like
+// a jellyfish sting, but sparingly: never a sudden mass of bubbles). One reaction at most every few
+// seconds, and it holds back the catch chatter too, so lines never pile up.
+let lastReaction = -1e9;
+export function reaction(gapMs = 6000) {
+  const now = performance.now();
+  if (now - lastReaction < gapMs) return false;
+  lastReaction = now; lastCatchLine = now;
+  return true;
+}
+
 // Should Wally say something about this catch? Often, but with a few seconds'
 // rest between lines, so the slang stays fun and never becomes a constant stream.
 let lastCatchLine = -1e9;
 export function chatty(chance = 0.6, gapMs = 3500) {
   const now = performance.now();
-  if (now - lastCatchLine < gapMs || Math.random() > chance) return false;
+  if (now - lastCatchLine < gapMs || now - lastReaction < gapMs || Math.random() > chance) return false;
   lastCatchLine = now;
   return true;
 }

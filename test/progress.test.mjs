@@ -129,16 +129,17 @@ check('every area has a postcard', AREAS.every(a => typeof POSTCARDS[a.id] === '
   check('a failed reef dive keeps its shells but not the pass', p.shells === 5 && P.entryNeeds(p, 'kuranda').what === 'skyrail');
   p = P.completeArea(p, 'reef', { score: 80, stars: 1, shells: 4 });
   check('clearing the reef earns the Skyrail pass', p.skyrail && p.shells === 9 && P.entryNeeds(p, 'kuranda') === null);
-  // Kuranda: the vendor buys mangoes and shells for gold; gold buys the boat ticket.
-  const sold = P.sellToVendor(p, { mangoes: 4, shells: 9 });
-  check('the vendor pays gold for mangoes and shells', sold.gold === 4 * P.VENDOR_PAYS.mangoes + 9 * P.VENDOR_PAYS.shells && sold.progress.mangoes === 2 && sold.progress.shells === 0 && sold.progress.coins === sold.gold);
+  // Kuranda: one currency (Ken, 2026-10-21): the vendor buys shells for Golden Mangoes; mangoes buy the boat ticket.
+  const sold = P.sellToVendor(p, { shells: 9 });
+  check('the vendor pays Golden Mangoes for shells', sold.gold === 9 * P.VENDOR_PAYS.shells && sold.progress.mangoes === p.mangoes + sold.gold && sold.progress.shells === 0);
   check('you cannot sell what you do not have', P.sellToVendor(p, { shells: 99 }).progress.shells === 0 && P.sellToVendor(p, { shells: 99 }).gold === 9 * P.VENDOR_PAYS.shells);
   check('the Daintree needs a river-boat ticket', P.entryNeeds(sold.progress, 'daintree').what === 'ticket');
-  check('the ticket needs enough gold', P.buyBoatTicket({ ...sold.progress, coins: 3 }).why === 'gold');
-  const t = P.buyBoatTicket({ ...sold.progress, coins: P.BOAT_TICKET_PRICE + 5 });
-  check('buying the ticket with gold opens the Daintree', t.ok && t.progress.coins === 5 && P.entryNeeds(t.progress, 'daintree') === null);
+  check('the ticket needs enough Golden Mangoes', P.buyBoatTicket({ ...sold.progress, mangoes: 3 }).why === 'mangoes');
+  const t = P.buyBoatTicket({ ...sold.progress, mangoes: P.BOAT_TICKET_PRICE + 5 });
+  check('buying the ticket with Golden Mangoes opens the Daintree', t.ok && t.progress.mangoes === 5 && P.entryNeeds(t.progress, 'daintree') === null);
   const back = P.readProgress(JSON.stringify(t.progress));
-  check('badge, pier, shells, gold, Skyrail pass and ticket are saved', back.badge && back.pier && back.shells === 0 && back.coins === 5 && back.skyrail && back.boatTicket);
+  check('badge, pier, shells, mangoes, Skyrail pass and ticket are saved', back.badge && back.pier && back.shells === 0 && back.mangoes === 5 && back.skyrail && back.boatTicket);
+  check('an old save: its tokens and gold come across as Golden Mangoes, one for one', P.readProgress(JSON.stringify({ ...P.freshProgress(), mangoes: 2, tokens: 3, coins: 4 })).mangoes === 9);
   check('an older save that finished the park still has its badge', P.readProgress(JSON.stringify({ unlocked: ['park', 'esplanade'], stars: { park: 2 } })).badge);
 }
 
@@ -150,8 +151,8 @@ check('every area has a postcard', AREAS.every(a => typeof POSTCARDS[a.id] === '
   check('the river cruise ticket is the Daintree boat ticket', c.ok && c.progress.boatTicket && P.entryNeeds(c.progress, 'daintree') === null && P.hasExtra(c.progress, 'ticket-cruise'));
   check('cannot buy it twice', P.buyExtra(c.progress, 'ticket-cruise').why === 'owned');
   check('gear still to come cannot be bought yet', P.buyExtra(p0, 'boomerang').why === 'soon');
-  check('the cruise ticket is paid in gold', c.progress.coins === 100 - P.BOAT_TICKET_PRICE && c.progress.mangoes === 100);
-  check('not enough gold', P.buyExtra({ ...p0, coins: 5 }, 'ticket-cruise').why === 'gold');
+  check('the cruise ticket is paid in Golden Mangoes', c.progress.mangoes === p0.mangoes - P.BOAT_TICKET_PRICE);
+  check('not enough Golden Mangoes', P.buyExtra({ ...p0, mangoes: 5 }, 'ticket-cruise').why === 'mangoes');
   check('owned extras are saved', P.readProgress(JSON.stringify({ ...p0, extras: ['boomerang', 'nonsense'] })).extras.join() === 'boomerang');
 }
 

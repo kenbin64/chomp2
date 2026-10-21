@@ -469,7 +469,7 @@ function finish() {
   const pts = score(game.got, game.branchesHit, game.land);
   let p = bankFinds(load(), { mangoes: game.got.mango, coins: game.got.gold });
   const tokens = game.got.token + (game.land === 'perfect' ? 2 : 0);
-  p = { ...p, tokens: (p.tokens || 0) + tokens, ziplineBest: { ...(p.ziplineBest || {}), [game.chosen]: Math.max((p.ziplineBest || {})[game.chosen] || 0, pts) } };
+  p = { ...p, mangoes: (p.mangoes || 0) + tokens, ziplineBest: { ...(p.ziplineBest || {}), [game.chosen]: Math.max((p.ziplineBest || {})[game.chosen] || 0, pts) } };
   const gearWon = [];
   for (let i = 0; i < game.got.gear; i++) { const a = ABILITIES[Math.floor(Math.random() * ABILITIES.length)]; p = giveGear(p, a.id); gearWon.push(a); }
   saveProgress(p);
@@ -478,7 +478,7 @@ function finish() {
   sound.fanfare();
   $('result-title').textContent = game.land === 'perfect' ? 'Nailed the landing!' : game.land === 'pad' ? 'Whump! Into the pad' : 'Made it, hand over hand!';
   $('result-lines').innerHTML = '';
-  for (const [label, v] of [['Golden Mangoes', game.got.mango], ['Gold pieces', game.got.gold], ['Tourist Tokens', tokens], ['Gear found', gearWon.map(a => a.name).join(', ') || 'none'],
+  for (const [label, v] of [['Golden Mangoes', game.got.mango + game.got.gold + tokens], ['Gear found', gearWon.map(a => a.name).join(', ') || 'none'],
                             ['Branches hit', game.branchesHit], ['Landing', { perfect: 'Perfect (+100)', pad: 'Safety pad (+20)', short: 'Short' }[game.land]], ['Score', pts], ['Best on this line', p.ziplineBest[game.chosen]]]) {
     const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }

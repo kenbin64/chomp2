@@ -6,6 +6,7 @@
 // the end of the street. The clothes stall sells new gear for Wally and Kenny
 // for Golden Mangoes, and the river-boat ticket for the Daintree.
 
+import { guideArrow, nearest } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { foundTalisman, givePrize } from '../revisit.js';
 import { installGear, snorkelling, drainFactor } from '../gear.js';
@@ -13,7 +14,7 @@ import * as THREE from 'three';
 import { Wally } from '../wally.js';
 import { Food, randomKind, kindFor, useJarModel } from '../food.js';
 import { Input, steering, easeBehind } from '../input.js';
-import { Bubbles, pickLine, chatty } from '../bubbles.js';
+import { Bubbles, reaction, pickLine, chatty } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
 import { loadModels, dress, MODEL_FILES } from '../models.js';
 import { createPost } from '../post.js';
@@ -40,7 +41,7 @@ import { startQuest, questStep } from '../sidequest.js';
 import { DayNight } from '../daynight.js';
 import { StreetLamps } from '../lamps.js';
 import { buildKuranda, STREET, STALLS, SHOP, VENDOR, TRAIL_Z } from './kuranda-scene.js';
-import { inClearing, enteredClearing, CLEARING, ENTRY } from './kuranda-rules.js';
+import { inClearing, enteredClearing, CLEARING, ENTRY, THROW_SPOT } from './kuranda-rules.js';
 import { boomerangThrow } from './boomerang-throw.js';
 import * as Trip from '../trip-rules.js';
 import { installVendor, openVendor } from '../vendormodal.js';
@@ -172,6 +173,7 @@ window.chomp = { game, wally, food, scene };
 // ---- The trip: this run's gains (the air talisman here; the water at the zip line) ----------
 if (!progress.trip) { progress.trip = Trip.tripFor(progress); save(); }
 let attempt = Trip.startAttempt(progress.trip, 'kuranda', { force: true }); startRun('kuranda', { level: attempt.level });
+const arrow = guideArrow({ show: attempt.visit === 1 });
 game.hasAir = Trip.have(progress.trip, 'talisman-air');
 game.stationAway = true;                                         // he has to step off the mark before it starts again
 
@@ -279,9 +281,9 @@ function step(dt, t) {
 
   // Gold pieces visitors have dropped along the street (Ken): banked as soon as he has them.
   for (const g of streetGold.update(dt, t, wally.pos)) {
-    game.gold++; addPoints('pickup'); progress = { ...progress, coins: (progress.coins || 0) + 1 }; save(); bookEvent('gold');
+    game.gold++; addPoints('pickup'); progress = { ...progress, mangoes: (progress.mangoes || 0) + 1 };   // one currency: a gold piece is a Golden Mango save(); bookEvent('gold');
     sound.play.goal(); fx.burst(g.mesh.position, [0xffd24a, 0xffffff], 10);
-    toast_(`A gold piece someone dropped! ${streetGold.found}/${streetGold.total}`, 'good');
+    toast_(`A gold piece someone dropped: a Golden Mango! ${streetGold.found}/${streetGold.total}`, 'good');
   }
 
   for (const f of hiddenFinds.update(dt, t, wally.pos)) { toast_(f.text, 'good'); sound.play.powerup(); }
@@ -297,7 +299,7 @@ function step(dt, t) {
   questStep(dt, t, clusterEvents, wally.pos);
   for (const e of clusterEvents) {
     if (e.type === 'throw' && Math.random() < 0.35) bubbles.say(e.thrower.g, pickLine('touristThrow'), 2.3);
-    if (e.type === 'flee') { game.scared++; toast_('Too close! They ran off with their snacks', 'bad'); }
+    if (e.type === 'flee') { game.scared++; toast_('Too close! They ran off with their snacks', 'bad'); if (reaction()) bubbles.say(wally.root, pickLine('wallyFlee'), 3.4); }
     if ((e.type === 'flee' || e.type === 'empty') && !e.cluster.counted) { e.cluster.counted = true; game.groupsDone++; }
   }
   // The boomerang clearing (Ken): walking in under the archway starts the throw, in first person.
@@ -346,7 +348,7 @@ function step(dt, t) {
     game.lives--; sound.play.lose();
     if (game.lives <= 0) { finish(false); return; }
     game.faint = 3.2; wally.setNapping(true); kennyIn("Hang on, Wally! Comin'!");
-    toast_(`Out of puff! ${game.lives} left. Here comes Kenny`, 'bad');
+    toast_(`Out of puff! ${game.lives} left. Here comes Kenny`, 'bad'); if (reaction()) bubbles.say(wally.root, pickLine('wallyTired'), 3);
   }
   if (game.redVisit > 0) {                                  // the red-zone visit: Kenny hands it over while Wally keeps going
     game.redVisit -= dt; game.faint = 0;
@@ -376,6 +378,15 @@ function step(dt, t) {
     setTimeout(() => finish(true), 2200);
   } else if (!(game.ready && game.hasAir) && wally.pos.z > TRAIL_Z - 2 && game.hintCool <= 0) {
     game.hintCool = 6; toast_(!game.ready ? 'Not yet! Feed out every group and fill up first' : 'Not yet! The boomerang guide in the clearing halfway down has something for you', 'info');
+  }
+  {                                                                // where to go next, first visit (guide-arrow.js)
+    const group = nearest(clusters.active.filter(c => !c.fled && c.food > 0).map(c => c.root.position), wally.pos);
+    const inside = inClearing(wally.pos.x, wally.pos.z, 0);
+    arrow.update(game.done || station.active ? null
+      : game.ready && game.hasAir ? { x: 0, z: TRAIL_Z + 2, label: 'Barron Falls trail' }
+      : group && !inside ? { x: group.x, z: group.z, label: 'Hungry visitors' }
+      : !game.hasAir ? (inside ? { x: THROW_SPOT.x, z: THROW_SPOT.z, label: 'The throwing mark' } : { x: CLEARING.x0, z: ENTRY.z, label: 'Boomerang archway' })
+      : null, wally.pos, cam.yaw);
   }
   drawHud();
 }
@@ -416,7 +427,6 @@ function followCamera(dt) {
 function drawHud() {
   $('score').textContent = game.points.toLocaleString();
   $('mangoes').textContent = progress.mangoes || 0;
-  $('coins').textContent = progress.coins || 0;
   $('shells').textContent = progress.shells || 0;
   $('energy-fill').style.width = `${Math.max(0, game.energy)}%`;
   $('feed').classList.toggle('red', inRedZone(game.energy));

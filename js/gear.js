@@ -126,7 +126,7 @@ export function installGear(options) {
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function drawGear() {
   const p = load(), body = modal.querySelector('.gear-body'); body.innerHTML = '';
-  body.append(el('p', 'book-tokens', `Tourist Tokens: ${p.tokens || 0}`), el('p', 'fine', 'Carry one item at a time. It shows on Wally, and F uses it; the number counts down with each use.'));
+  body.append(el('p', 'book-tokens', `Golden Mangoes: ${p.mangoes || 0}`), el('p', 'fine', 'Carry one item at a time. It shows on Wally, and F uses it; the number counts down with each use.'));
   for (const a of ABILITIES) {
     const stock = gearStock(p, a.id), part = (p.partial || {})[a.id] || 0, on = p.equipped === a.id;
     const row = el('div', `book-ability${on ? ' equipped' : ''}`);
@@ -138,7 +138,7 @@ function drawGear() {
     eq.onclick = () => { const q = load(); saveProgress(on ? unequip(q) : equip(q, a.id).progress); };
     btns.append(eq);
     if (on) { const use = el('button', 'buy', 'Use it now'); use.type = 'button'; use.onclick = () => { closeGear(); useItem(); }; btns.append(use); }
-    const buy = el('button', 'buy alt', `Buy one: ${GEAR_PRICE} tokens`); buy.type = 'button'; buy.disabled = (p.tokens || 0) < GEAR_PRICE;
+    const buy = el('button', 'buy alt', `Buy one: ${GEAR_PRICE} Golden Mangoes`); buy.type = 'button'; buy.disabled = (p.mangoes || 0) < GEAR_PRICE;
     buy.onclick = () => { const r = buyGear(load(), a.id); if (r.ok) saveProgress(r.progress); };
     btns.append(buy); row.append(btns); body.append(row);
   }

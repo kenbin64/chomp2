@@ -200,13 +200,13 @@ function step(dt) {
 
 function end() {
   game.running = false; $('hud').hidden = true;
-  const tokens = game.catches + Math.floor(game.hits / 2);
+  const tokens = game.catches + Math.floor(game.hits / 2);   // Golden Mangoes won
   const p = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
-  saveProgress({ ...p, tokens: (p.tokens || 0) + tokens, boomerangBest: Math.max(p.boomerangBest || 0, game.score) });
+  saveProgress({ ...p, mangoes: (p.mangoes || 0) + tokens, boomerangBest: Math.max(p.boomerangBest || 0, game.score) });
   sound.fanfare();
   $('result-title').textContent = game.catches >= 3 ? 'A natural, mate!' : game.catches ? 'Getting the hang of it!' : 'Keep practising!';
   $('result-lines').innerHTML = '';
-  for (const [label, v] of [['Targets knocked over', game.hits], ['Catches', `${game.catches} of ${THROWS}`], ['Score', game.score], ['Tourist Tokens earned', tokens]]) {
+  for (const [label, v] of [['Targets knocked over', game.hits], ['Catches', `${game.catches} of ${THROWS}`], ['Score', game.score], ['Golden Mangoes earned', tokens]]) {
     const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }
   $('result').hidden = false;

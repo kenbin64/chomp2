@@ -11,6 +11,7 @@
 //
 // The field's rules are in cane-rules.js (tested), the look in cane-scene.js.
 
+import { guideArrow } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { foundTalisman } from '../revisit.js';
 import { installGear, snorkelling, drainFactor } from '../gear.js';
@@ -21,7 +22,7 @@ import { CANE, makeField, cellToWorld, worldToCell, walkable, cuttable, cut, sta
 import { buildCane } from './cane-scene.js';
 import { Wally } from '../wally.js';
 import { Input, steering, easeBehind } from '../input.js';
-import { Bubbles, pickLine } from '../bubbles.js';
+import { Bubbles, reaction, pickLine } from '../bubbles.js';
 import { Effects } from '../fx.js';
 import { loadModels, dress } from '../models.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
@@ -50,6 +51,7 @@ let progress = loadSave();
 if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progress); }
 const entry = Trip.canEnter(progress.trip, 'cane'), testingAll = params.has('all');
 let attempt = Trip.startAttempt(progress.trip, 'cane', { force: true }); startRun('cane', { level: attempt.level });
+const arrow = guideArrow({ show: attempt.visit === 1 });
 
 // ---- The field --------------------------------------------------------------------
 // A new field every visit; ?seed=N gives a fixed one, for testing.
@@ -115,9 +117,9 @@ const machete = (() => {
   const blade = gltf ? gltf.scene.clone(true) : new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.6, 0.02), new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.8 }));
   if (gltf) {
     const box = new THREE.Box3().setFromObject(blade), size = box.getSize(new THREE.Vector3());
-    blade.scale.setScalar(1.05 / Math.max(size.x, size.y, size.z));     // a cane knife is about 60 cm; bigger here, to read at dusk
+    blade.scale.setScalar(1.5 / Math.max(size.x, size.y, size.z));      // a cane knife is about 60 cm; much bigger here, to read at dusk from the high camera (Ken: it looked tiny)
     blade.rotation.z = -Math.PI / 4;                                     // the model lies on the diagonal: hook up, handle down
-    blade.position.y = 0.38;                                             // the handle at the holder (his hand)
+    blade.position.y = 0.54;                                             // the handle at the holder (his hand)
     blade.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.emissive = new THREE.Color(0x6a5030); } });   // catches the firelight
   }
   holder.add(blade);
@@ -323,9 +325,9 @@ function step(dt, t) {
   }
 
   // The thieves.
-  for (const it of toads.update(dt, looseCane)) { takePiece(it); game.lost++; sound.play.stolen(); toast_('A cane toad got it!', 'bad'); }
+  for (const it of toads.update(dt, looseCane)) { takePiece(it); game.lost++; sound.play.stolen(); toast_('A cane toad got it!', 'bad'); if (reaction()) bubbles.say(wally.root, pickLine('wallyStolen'), 3.4); }
   for (const it of bats.update(dt, t, looseCane, attempt.level === 'hard' ? 0.5 : 0.3, wally.pos)) {
-    it.taken = true; game.lost++; sound.play.stolen(); toast_('A fruit bat nicked it!', 'bad');
+    it.taken = true; game.lost++; sound.play.stolen(); toast_('A fruit bat nicked it!', 'bad'); if (reaction()) bubbles.say(wally.root, pickLine('wallyBat'), 3.4);
     if (Math.random() < 0.5) bubbles.say(wally.root, pickLine('wallyStolen'), 3);
   }
   // Toads have poison skin: touching one costs him (never more than that).
@@ -334,7 +336,7 @@ function step(dt, t) {
     if (game.toadCool > 0 || game.faint > 0) break;
     if (Math.hypot(td.pos.x - wally.pos.x, td.pos.z - wally.pos.z) < 0.8) {
       game.toadCool = 1.5; game.stings++; game.energy -= 10; game.stun = 0.6;
-      wally.knock(td.pos.x, td.pos.z); fx.shake(0.3, 0.25); sound.play.sting();
+      wally.knock(td.pos.x, td.pos.z); fx.shake(0.3, 0.25); sound.play.sting(); if (reaction()) bubbles.say(wally.root, pickLine('wallyToad'), 3.4);
       toast_('Cane toad! Poison skin, ouch!', 'bad'); bubbles.say(wally.root, 'Yuck! Keep away from me, toad!', 3);
       showTip('cane-toad', 'Cane toads have poison skin: touching one costs you energy. Go round them.');
     }
@@ -346,7 +348,7 @@ function step(dt, t) {
     game.lives--; sound.play.lose();
     if (game.lives <= 0) { finish(false); return; }
     game.faint = 3.2; wally.setNapping(true); kennyMesh.visible = vegemite.visible = true;
-    toast_(`Out of puff! ${game.lives} left. Here comes Kenny`, 'bad');
+    toast_(`Out of puff! ${game.lives} left. Here comes Kenny`, 'bad'); if (reaction()) bubbles.say(wally.root, pickLine('wallyTired'), 3);
     bubbles.say(kennyMesh, "Hang on, Wally! Comin'!", 2.6);
   }
 
@@ -359,6 +361,7 @@ function step(dt, t) {
     game.done = true; setTimeout(() => finish(true), 3000);
   }
   if (game.talisman && chest.open < 1) chest.open = Math.min(1, chest.open + dt * 1.2);
+  arrow.update(game.talisman ? null : { x: chest.x, z: chest.z, label: 'Fire talisman' }, wally.pos, cam.yaw);   // a compass to the middle, first visit (guide-arrow.js); the way round the fire is his to find
   chest.lid.rotation.x = -chest.open * 1.9; chest.glow.intensity = chest.open * 8 + 1.5;
   if (chest.mango) { chest.mango.visible = true; chest.mango.rotation.y += dt * 1.5; chest.mango.position.y = 1.0 + chest.open * 0.9; }
 

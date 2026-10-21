@@ -1,7 +1,7 @@
 // book-rules.js
 // Wally's Tourist Book (Ken, 2026-10-18): a stamp album of milestones across the
 // trip, and Wally's page of what he has gathered: abilities that grow in levels,
-// and the Tourist Tokens that pay for them. Plain JavaScript, no three.js, so
+// and the Golden Mangoes that pay for them. Plain JavaScript, no three.js, so
 // it can be tested (test/book.test.mjs).
 //
 // Going back to a land is never just the same again: each land has three tiers
@@ -58,7 +58,7 @@ export const STAMPS = [
 
 // ---- Abilities (Ken: levels that make it easier to pick things up) -----------------
 // Items Wally carries and uses (see Gear below); each also has a level from 0 to 3,
-// bought with Tourist Tokens, that gives it more uses.
+// bought with Golden Mangoes, that gives it more uses.
 export const ABILITIES = [
   { id: 'swisher', name: 'Tail Swisher', icon: '🦎', about: 'Equip it and press F: a sweep of the tail pulls in mangoes, gold and lost things all round him. A few sweeps each.', value: () => 1 },
   { id: 'net',     name: 'Big Net',      icon: '🥅', about: 'Equip it and press F: he swings the net round and scoops up all the tucker near him, in the air or on the ground. A few swings each.', value: () => 1 },
@@ -67,7 +67,7 @@ export const ABILITIES = [
   { id: 'spring',  name: 'Spring Step',  icon: '🦘', about: 'Equip it and press F: his next jump goes much higher, for the things up high. A few jumps each.', value: () => 1 },
 ];
 export const MAX_LEVEL = 3;
-export const UPGRADE_COST = [3, 5, 8];              // Tourist Tokens for levels 1, 2 and 3
+export const UPGRADE_COST = [3, 5, 8];              // Golden Mangoes for levels 1, 2 and 3
 
 export function abilityLevel(progress, id) { return Math.min(MAX_LEVEL, Math.max(0, (progress.abilities || {})[id] || 0)); }
 export function abilityValue(progress, id) { const a = ABILITIES.find(x => x.id === id); return a ? a.value(abilityLevel(progress, id)) : 1; }
@@ -77,8 +77,8 @@ export function upgradeAbility(progress, id) {
   if (!ABILITIES.some(a => a.id === id)) return { progress, ok: false, why: 'unknown' };
   const cost = upgradeCost(progress, id);
   if (cost === null) return { progress, ok: false, why: 'max' };
-  if ((progress.tokens || 0) < cost) return { progress, ok: false, why: 'tokens' };
-  return { ok: true, progress: { ...progress, tokens: progress.tokens - cost, abilities: { ...(progress.abilities || {}), [id]: abilityLevel(progress, id) + 1 } } };
+  if ((progress.mangoes || 0) < cost) return { progress, ok: false, why: 'mangoes' };
+  return { ok: true, progress: { ...progress, mangoes: progress.mangoes - cost, abilities: { ...(progress.abilities || {}), [id]: abilityLevel(progress, id) + 1 } } };
 }
 
 // ---- Visits and tiers ---------------------------------------------------------------
@@ -95,7 +95,7 @@ export function openStamps(progress, land) {
 // A stamp, and the Tourist Token that comes with it.
 export function award(progress, id) {
   if ((progress.stamps || []).includes(id) || !STAMPS.some(s => s.id === id)) return progress;
-  return { ...progress, stamps: [...(progress.stamps || []), id], tokens: (progress.tokens || 0) + 1 };
+  return { ...progress, stamps: [...(progress.stamps || []), id], mangoes: (progress.mangoes || 0) + 1 };
 }
 
 // ---- One visit: counting what happens and noticing stamps earned ------------------------
@@ -112,10 +112,10 @@ export class StampRun {
 // Owning an item is not using it: he carries one at a time (equipped), uses it
 // with a key, and it wears out (the snorkel after one dive, the net after a few
 // swings). Used-up items turn up again in hidden finds, from traders and quests,
-// or a fresh one costs a few Tourist Tokens. An item's level (bought with
+// or a fresh one costs a few Golden Mangoes. An item's level (bought with
 // tokens, as before) gives it more uses.
 export const GEAR_USES = { swisher: L => 5 + L, net: L => 5 + 2 * L, snorkel: () => 1, spring: L => 4 + L, vitamins: L => 3 + L };
-export const GEAR_PRICE = 4;                          // Tourist Tokens for a fresh one
+export const GEAR_PRICE = 4;                          // Golden Mangoes for a fresh one
 export function gearStock(progress, id) { return Math.max(0, (progress.gear || {})[id] || 0); }
 export function giveGear(progress, id, n = 1) { return { ...progress, gear: { ...(progress.gear || {}), [id]: gearStock(progress, id) + n } }; }
 export function fullUses(progress, id) { return GEAR_USES[id](abilityLevel(progress, id)); }
@@ -151,19 +151,19 @@ export function useGear(progress) {
 }
 export function buyGear(progress, id) {
   if (!GEAR_USES[id]) return { progress, ok: false, why: 'unknown' };
-  if ((progress.tokens || 0) < GEAR_PRICE) return { progress, ok: false, why: 'tokens' };
-  return { ok: true, progress: { ...giveGear(progress, id), tokens: progress.tokens - GEAR_PRICE } };
+  if ((progress.mangoes || 0) < GEAR_PRICE) return { progress, ok: false, why: 'mangoes' };
+  return { ok: true, progress: { ...giveGear(progress, id), mangoes: progress.mangoes - GEAR_PRICE } };
 }
 
 // ---- Hidden finds ----------------------------------------------------------------------
-// What one holds: Tourist Tokens, or an item to use.
+// What one holds: Golden Mangoes, or an item to use.
 export function hiddenReward(rnd, progress) {
   if (rnd() < 0.45) return { kind: 'item', id: ABILITIES[Math.floor(rnd() * ABILITIES.length)].id };
   return { kind: 'tokens', n: 1 + Math.floor(rnd() * 3) };
 }
 export function applyReward(progress, r) {
   if (r.kind === 'item') return giveGear(progress, r.id);
-  return { ...progress, tokens: (progress.tokens || 0) + r.n };
+  return { ...progress, mangoes: (progress.mangoes || 0) + r.n };
 }
 
 // ---- Things found (Ken, 2026-10-18) ---------------------------------------------------------
@@ -177,7 +177,7 @@ export const ITEMS = [
   { id: 'shell',     icon: '🐚', name: 'Seashell',        is: 'Cowries and conch shells from the Great Barrier Reef.', does: 'The Kuranda shell and mango trader pays 2 gold for each one.' },
   { id: 'gold',      icon: '🪙', name: 'Gold piece',      is: 'Gold, from the Kuranda trader or dropped by visitors along the market street.', does: 'Buys the river-boat ticket to the Daintree. Kuranda traders take it too.' },
   { id: 'token',     icon: '🎟️', name: 'Tourist Token',   is: 'A token for every stamp, hidden find and favour done.', does: "Spend them on Wally's page to grow his abilities." },
-  { id: 'hidden',    icon: '📦', name: 'Hidden find',     is: 'A crate tucked away somewhere; it only shows when Wally is close.', does: 'Holds Tourist Tokens or a level of one of his abilities.' },
+  { id: 'hidden',    icon: '📦', name: 'Hidden find',     is: 'A crate tucked away somewhere; it only shows when Wally is close.', does: 'Holds Golden Mangoes or a level of one of his abilities.' },
   { id: 'souvenir',  icon: '🎁', name: 'Souvenir',        is: 'A keepsake from a friendly trader.', does: "Kept on the souvenir shelf on Wally's page: collect them all." },
   ...ABILITIES.map(a => ({ id: a.id, icon: a.icon, name: a.name, is: 'An item Wally can carry: equip it on his page in the book. It wears out, and more can be found.', does: a.about })),
 ];

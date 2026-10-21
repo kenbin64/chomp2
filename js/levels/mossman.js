@@ -8,6 +8,7 @@
 //
 // The gorge's rules are in mossman-rules.js (tested), the look in mossman-scene.js.
 
+import { guideArrow } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { foundTalisman } from '../revisit.js';
 import { installGear, snorkelling, drainFactor } from '../gear.js';
@@ -19,7 +20,7 @@ import { buildMossman } from './mossman-scene.js';
 import { Wally } from '../wally.js';
 import { Food, kindFor, useJarModel } from '../food.js';
 import { Input, steering, easeBehind } from '../input.js';
-import { Bubbles, pickLine, chatty } from '../bubbles.js';
+import { Bubbles, reaction, pickLine, chatty } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
 import { loadModels, dress, MODEL_FILES } from '../models.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
@@ -52,6 +53,7 @@ let progress = loadSave();
 if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progress); }
 const entry = Trip.canEnter(progress.trip, 'mossman'), testingAll = params.has('all');
 let attempt = Trip.startAttempt(progress.trip, 'mossman', { force: true }); startRun('mossman', { level: attempt.level });
+const arrow = guideArrow({ show: attempt.visit === 1 });
 
 // ---- The ground: the gorge's rules, plus boulders that stop him ----------------------
 const dive = { under: false, depth: 0 };     // depth: how far below the floating line he is (0 floating)
@@ -239,7 +241,7 @@ function step(dt, t) {
   const events = game.done ? [] : clusters.update(dt, t, wally.pos, throwFrom);
   for (const e of events) {
     if (e.type === 'throw' && Math.random() < 0.3) bubbles.say(e.thrower.g, pickLine('touristThrow'), 2.3);
-    if (e.type === 'flee') toast_('Too close! They ran off with their lunch', 'bad');
+    if (e.type === 'flee') { toast_('Too close! They ran off with their lunch', 'bad'); if (reaction()) bubbles.say(wally.root, pickLine('wallyFlee'), 3.4); }
   }
   const { dissolved } = food.update(dt, t);
   for (const it of dissolved) game.streak = 0;
@@ -276,6 +278,9 @@ function step(dt, t) {
   chest.lid.rotation.x = -chest.open * 1.9; chest.glow.intensity = chest.open * 8 + 1;
   if (chest.mango) { chest.mango.visible = true; chest.mango.rotation.y += dt * 1.5; chest.mango.position.y = 0.9 + chest.open * 0.8; }
 
+  arrow.update(game.done ? null : !game.hasKey ? { x: keySpot.x, z: keySpot.z, label: 'The key (dive down)' }
+    : !game.talisman ? { x: chestSpot.x, z: chestSpot.z, label: 'The chest (dive down)' }
+    : { x: riverX(FINISH_Z), z: FINISH_Z + 1, label: 'The track out' }, wally.pos, cam.yaw);   // where to go next, first visit (guide-arrow.js)
   // Out by the track at the bottom, once the opal is his.
   if (!game.done && wally.pos.z > FINISH_Z) {
     if (game.talisman) { game.done = true; wally.cheer = 1.2; bubbles.say(wally.root, 'Ripper! On to the Daintree!', 3.4); setTimeout(() => finish(true), 2200); }

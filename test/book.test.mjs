@@ -38,19 +38,19 @@ check('the chest stamp is earned even after a sting', chest.includes('park-chest
 check('but not the "without a sting" one', !chest.includes('park-clean'));
 check('without a sting, both are earned', new StampRun('park').record('chest', open).includes('park-clean'));
 const q = award(p, 'park-chest');
-check('a stamp goes in the book with a Tourist Token', q.stamps.includes('park-chest') && q.tokens === 1);
-check('the same stamp only once', award(q, 'park-chest').tokens === 1);
+check('a stamp goes in the book with a Golden Mango', q.stamps.includes('park-chest') && q.mangoes === 1);
+check('the same stamp only once', award(q, 'park-chest').mangoes === 1);
 check('a stamped challenge is no longer open', !openStamps(q, 'park').some(s => s.id === 'park-chest'));
 
 // Abilities.
-let a = { ...freshProgress(), tokens: 20 };
+let a = { ...freshProgress(), mangoes: 20 };
 check('abilities start at level 0, plain', ABILITIES.every(x => abilityLevel(a, x.id) === 0 && abilityValue(a, x.id) === 1));
 const up = upgradeAbility(a, 'swisher');
-check('tokens buy the next level', up.ok && abilityLevel(up.progress, 'swisher') === 1 && up.progress.tokens === 20 - UPGRADE_COST[0]);
+check('Golden Mangoes buy the next level', up.ok && abilityLevel(up.progress, 'swisher') === 1 && up.progress.mangoes === 20 - UPGRADE_COST[0]);
 check('each level gives an item more uses', fullUses(up.progress, 'swisher') > fullUses(a, 'swisher'));
-let top = a; for (let i = 0; i < MAX_LEVEL; i++) top = upgradeAbility({ ...top, tokens: 99 }, 'net').progress;
-check('no further than the top level', upgradeAbility({ ...top, tokens: 99 }, 'net').why === 'max' && upgradeCost(top, 'net') === null);
-check('not without enough tokens', upgradeAbility({ ...a, tokens: 1 }, 'spring').why === 'tokens');
+let top = a; for (let i = 0; i < MAX_LEVEL; i++) top = upgradeAbility({ ...top, mangoes: 99 }, 'net').progress;
+check('no further than the top level', upgradeAbility({ ...top, mangoes: 99 }, 'net').why === 'max' && upgradeCost(top, 'net') === null);
+check('not without enough Golden Mangoes', upgradeAbility({ ...a, mangoes: 1 }, 'spring').why === 'mangoes');
 
 // Hidden finds.
 const seq = v => () => v;
@@ -79,14 +79,14 @@ check('one item at a time: equipping another puts the first away', sw.equipped =
 sw = equip(sw, 'swisher').progress;
 check('a part-used item keeps its uses for next time', sw.equipped === 'swisher' && sw.uses === left && gearStock(sw, 'swisher') === 0);
 check('putting it away keeps it too', unequip(sw).partial.swisher === left);
-const bought = buyGear({ ...freshProgress(), tokens: GEAR_PRICE }, 'snorkel');
-check('a fresh one costs Tourist Tokens', bought.ok && gearStock(bought.progress, 'snorkel') === 1 && bought.progress.tokens === 0);
-check('not without enough tokens', buyGear({ ...freshProgress(), tokens: 1 }, 'net').why === 'tokens');
+const bought = buyGear({ ...freshProgress(), mangoes: GEAR_PRICE }, 'snorkel');
+check('a fresh one costs Golden Mangoes', bought.ok && gearStock(bought.progress, 'snorkel') === 1 && bought.progress.mangoes === 0);
+check('not without enough Golden Mangoes', buyGear({ ...freshProgress(), mangoes: 1 }, 'net').why === 'mangoes');
 check('gear is saved', (() => { const r = readProgress(JSON.stringify({ ...g, gear: { net: 1, bogus: 3 } })); return r.equipped === 'net' && r.uses === g.uses && r.gear.net === 1 && !('bogus' in r.gear); })());
 
 // Saved.
-const saved = readProgress(JSON.stringify({ ...q, abilities: { swisher: 2, bogus: 9 }, visits: { park: 4 }, tokens: 3 }));
-check('stamps, tokens, abilities and visits are saved', saved.stamps.includes('park-chest') && saved.tokens === 3 && saved.abilities.swisher === 2 && !('bogus' in saved.abilities) && saved.visits.park === 4);
+const saved = readProgress(JSON.stringify({ ...q, abilities: { swisher: 2, bogus: 9 }, visits: { park: 4 }, tokens: 3 }));   // an old save's tokens become mangoes
+check('stamps, mangoes, abilities and visits are saved', saved.stamps.includes('park-chest') && saved.mangoes === q.mangoes + 3 && saved.abilities.swisher === 2 && !('bogus' in saved.abilities) && saved.visits.park === 4);
 check('an older save starts with an empty book', readProgress(JSON.stringify({ unlocked: ['park'] })).stamps.length === 0);
 
 // Things found: the book opens on each the first time only, and lists it after.

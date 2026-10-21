@@ -18,7 +18,7 @@ export const SOUVENIRS = {
 export const PRICES = {
   park:      [{ what: 'mangoes', n: 2, name: 'Golden Mangoes' }],
   esplanade: [{ what: 'pearls', n: 1, name: 'pearl' }, { what: 'mangoes', n: 6, name: 'Golden Mangoes' }],
-  kuranda:   [{ what: 'coins', n: 3, name: 'gold pieces' }, { what: 'shells', n: 2, name: 'seashells' }],
+  kuranda:   [{ what: 'mangoes', n: 3, name: 'Golden Mangoes' }, { what: 'shells', n: 2, name: 'seashells' }],
 };
 
 // Where each thing the traders take comes from (Ken: a button to go back there,
@@ -55,19 +55,19 @@ export function makeOffer(land, rnd, progress) {
 // What the gift is, in words.
 export function giftText(gift) {
   if (gift.kind === 'item') { const a = ABILITIES.find(x => x.id === gift.id); return `a ${a.name}`; }
-  if (gift.kind === 'tokens') return `${gift.n} Tourist Tokens`;
+  if (gift.kind === 'tokens') return `${gift.n} Golden Mangoes`;
   return 'a full feed-o-meter';
 }
 
-// The saved side of a trade: the souvenir, and an ability level or tokens.
+// The saved side of a trade: the souvenir, and an ability level or Golden Mangoes.
 // (Paying, and a full feed-o-meter, belong to the level, which holds what he carries.)
 export function receive(progress, offer) {
   return applyGift({ ...progress, souvenirs: [...new Set([...(progress.souvenirs || []), offer.souvenir.id])] }, offer.gift);
 }
-// The saved side of a gift alone (also a sidequest's thank-you): an ability level or tokens.
+// The saved side of a gift alone (also a sidequest's thank-you): an ability level or Golden Mangoes.
 export function applyGift(progress, g) {
   if (g.kind === 'item') return giveGear(progress, g.id);
-  if (g.kind === 'tokens') return { ...progress, tokens: (progress.tokens || 0) + g.n };
+  if (g.kind === 'tokens') return { ...progress, mangoes: (progress.mangoes || 0) + g.n };
   return progress;
 }
 

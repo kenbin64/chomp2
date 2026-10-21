@@ -10,6 +10,7 @@
 //
 // The river's rules are in daintree-rules.js (tested), the look in daintree-scene.js.
 
+import { guideArrow, nearest } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import * as THREE from 'three';
 import * as Trip from '../trip-rules.js';
@@ -23,7 +24,7 @@ import { device } from '../device.js';
 import { Wally } from '../wally.js';
 import { Food, randomKind, useJarModel } from '../food.js';
 import { Input, steering, easeBehind } from '../input.js';
-import { Bubbles, pickLine } from '../bubbles.js';
+import { Bubbles, reaction, pickLine } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
 import { loadModels, dress, ModelSkin, MODEL_FILES } from '../models.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
@@ -231,9 +232,11 @@ function placeBoat() {
   boat.root.rotation.y = boatHeading(boat.z);
 }
 
+const arrow = guideArrow({ show: true });                     // where to go next (guide-arrow.js): the finale is played once, so always
 function step(dt, t) {
   const k = input.read();
   game.time += dt;
+  arrow.update(game.phase === 'river' && !game.scene && !game.done ? { x: boat.root.position.x, z: boat.root.position.z, label: 'The tour boat' } : null, wally.pos, cam.yaw);
   if (k.turn !== 0 || k.turnKeys !== 0 || k.tilt !== 0) cam.manual = 1.2;
   cam.yaw += k.turn + k.turnKeys * dt * 2;
   cam.pitch = Math.min(1.35, Math.max(0.05, cam.pitch + k.tilt));
@@ -296,12 +299,12 @@ function crocsStep(dt) {
       game.energy = Math.max(1, game.energy - CROC.biteFeed); game.streak = 0;
       const dx = wally.pos.x - c.s.x, dz = wally.pos.z - c.s.z, d = Math.hypot(dx, dz) || 1;
       wally.vel.x = dx / d * 7; wally.vel.z = dz / d * 7;            // knocked away from it
-      sound.play.lose(); fx.shake && fx.shake(0.4);
+      sound.play.lose(); fx.shake && fx.shake(0.4); if (reaction()) bubbles.say(wally.root, pickLine('wallyBite'), 3.4);
       toast_(`Chomped by a wild croc! -${CROC.biteFeed} feed`, 'bad'); bubbles.say(wally.root, 'Oi! Crikey, that one bit me!', 2.6);
     }
     // Food that lands near a croc is gone.
     for (const it of [...food.items]) if (it.landed && Math.hypot(it.mesh.position.x - c.s.x, it.mesh.position.z - c.s.z) < CROC.steal) {
-      food.take(it, 'gone'); game.stolen++; if (game.stolen % 3 === 1) toast_('A croc snapped it up first!', 'info');
+      food.take(it, 'gone'); game.stolen++; if (game.stolen % 3 === 1) { toast_('A croc snapped it up first!', 'info'); if (reaction()) bubbles.say(wally.root, pickLine('wallyCroc'), 3.4); }
     }
   }
 }
@@ -489,6 +492,7 @@ function begin() {
   sound.start(); sound.startMusic('esplanade');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true; startRun('finale');   // the finale's points run on through the rescue to the ending
+  toast_('Be Crocwise: never feed a real crocodile. Only Wally, who is part human!', 'info');
   bubbles.say(wally.root, "The Daintree! The oldest rainforest there is. And a tour boat full of lunch!", 3.8, 2);
 }
 function setPaused(p) { if (!game.running) return; game.paused = p; $('paused').hidden = !p; }

@@ -6,6 +6,7 @@
 // (Ken). Then, next to build: up the coast to the Daintree, and the push.
 // The rules are rescue-rules.js (tested); the park is world.js's.
 
+import { guideArrow, nearest } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, installScore } from '../points.js';
 import * as THREE from 'three';
 import { buildWorld, drawnHeight } from '../world.js';
@@ -165,9 +166,11 @@ function followCamera(dt) {
 }
 
 // ---- One frame -----------------------------------------------------------------------------------
+const arrow = guideArrow({ show: true });                     // where to go next (guide-arrow.js): the finale is played once, so always
 function step(dt, t) {
   const k = input.read();
   game.time += dt;
+  arrow.update(game.finale || game.done ? null : !game.open ? (c => c && { x: c.x, z: c.z, label: 'A croc to call' })(nearest(crocs.filter(c => !c.called), wally.pos)) : { x: GAP.x, z: SEA_Z, label: 'The sea' }, wally.pos, cam.yaw);
   if (k.turn !== 0 || k.turnKeys !== 0 || k.tilt !== 0) cam.manual = 1.2;
   cam.yaw += k.turn + k.turnKeys * dt * 2;
   cam.pitch = Math.min(1.35, Math.max(0.05, cam.pitch + k.tilt));

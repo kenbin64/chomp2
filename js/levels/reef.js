@@ -15,7 +15,7 @@ import * as THREE from 'three';
 import { Water } from 'three/addons/objects/Water.js';
 import { Wally } from '../wally.js';
 import { Input, steering, easeBehind } from '../input.js';
-import { Bubbles } from '../bubbles.js';
+import { Bubbles, reaction, pickLine } from '../bubbles.js';
 import { Effects } from '../fx.js';
 import { loadModels, dress, MODEL_FILES } from '../models.js';
 import { usePalmCrown, buildPalm, palmStand } from '../palms.js';
@@ -410,7 +410,7 @@ function outOfAir() {
   if (game.inCave) wally.pos.set(reef.mouth.x + 4, game.depth, reef.mouth.z);
   game.wantDepth = SURFACE_Y; game.faint = 3.2; wally.setNapping(true);
   kennyFloat.visible = vegemite.visible = true;
-  toast_(`Out of air! ${game.lives} left. Here comes Kenny`, 'bad'); bookEvent('outOfAir');
+  toast_(`Out of air! ${game.lives} left. Here comes Kenny`, 'bad'); bookEvent('outOfAir'); if (reaction()) bubbles.say(wally.root, pickLine('wallyAir'), 3);
   bubbles.say(kennyMesh, "Hang on, Wally! Here's me jar!", 2.6);
   return true;
 }
@@ -455,7 +455,7 @@ function step(dt, t) {
     if (dive) game.wantDepth = nextDepth(game.wantDepth, 1);
     if (up && !atTop) {
       const to = nextDepth(game.wantDepth, -1, !game.inCave);
-      if (to === game.wantDepth && game.inCave) { if (game.hint <= 0) { toast_('Rock overhead! Find a bubble vent or swim out', 'bad'); game.hint = 3; } }
+      if (to === game.wantDepth && game.inCave) { if (game.hint <= 0) { toast_('Rock overhead! Find a bubble vent or swim out', 'bad'); game.hint = 3; if (reaction()) bubbles.say(wally.root, pickLine('wallyBump'), 3.4); } }
       game.wantDepth = to;
     }
   }
@@ -549,7 +549,7 @@ function step(dt, t) {
     if (Math.hypot(wally.pos.x - j.m.position.x, wally.pos.z - j.m.position.z) < 1.5 && Math.abs(game.depth - j.m.position.y) < 1.1) {   // only at its own depth: change depth to slip past
       j.cool = 2; game.air = Math.max(0, game.air - AIR.sting); game.stun = 0.6; bookEvent('hurt');
       wally.knock(j.m.position.x, j.m.position.z); fx.shake(0.4, 0.3); sound.play.sting();
-      toast_('Box jelly! Lost some air', 'bad');
+      toast_('Box jelly! Lost some air', 'bad'); if (reaction()) bubbles.say(wally.root, pickLine('wallySting'), 3.4);
     }
   }
   // The giant clam (Ken): in a dead end of the coral maze. Paid the Big Golden

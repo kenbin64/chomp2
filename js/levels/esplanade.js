@@ -8,6 +8,7 @@
 // leave pearls, which carry on to the Great Barrier Reef. In the sea he can
 // swim under water (air meter) and crawl back up onto the boardwalk.
 
+import { guideArrow, nearest } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { foundTalisman } from '../revisit.js';
 import { fitText } from '../signtext.js';
@@ -19,7 +20,7 @@ import * as THREE from 'three';
 import { Wally } from '../wally.js';
 import { Food, randomKind, kindFor, kennysToast, useJarModel, useToastModel } from '../food.js';
 import { Input, steering, easeBehind } from '../input.js';
-import { Bubbles, pickLine, chatty } from '../bubbles.js';
+import { Bubbles, reaction, pickLine, chatty } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
 import { loadModels, dress } from '../models.js';
 import { usePalmCrown } from '../palms.js';
@@ -231,6 +232,7 @@ let progress = readProgress((() => { try { return localStorage.getItem('chomp-pr
 if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progress); }
 const entry = Trip.canEnter(progress.trip, 'esplanade'), testingAll = params.has('all');
 let attempt = Trip.startAttempt(progress.trip, 'esplanade', { force: true }); startRun('esplanade', { level: attempt.level });
+const arrow = guideArrow({ show: attempt.visit === 1 });
 const PARK_MANGOES = 8;                              // what Croc Park holds (the pier price is a share of it)
 // This go's level: the mango target for the chest (a share of this course's
 // mangoes, rounded up) and the pier price (the same share of Croc Park's eight).
@@ -562,7 +564,7 @@ function step(dt, t) {
     if (wally.surface === 'water' && level && j.cool <= 0 && Math.hypot(wally.pos.x - j.m.position.x, wally.pos.z - j.z) < 1.3) {
       j.cool = 2; game.energy -= 12; game.streak = 0; wally.knock(j.m.position.x, j.z); fx.shake(0.4, 0.3);
       if (seaDive.under) game.air = Math.max(0, game.air - AIR.sting);
-      sound.play.sting(); toast_('Box jelly! Ouch!', 'bad'); bubbles.say(wally.root, pickLine('wallySting'), 3.4);
+      sound.play.sting(); toast_('Box jelly! Ouch!', 'bad'); if (reaction(3000)) bubbles.say(wally.root, pickLine('wallySting'), 3.4);   // a sting always gets a word, unless he has only just spoken
     }
   }
 
@@ -587,7 +589,7 @@ function step(dt, t) {
   for (const e of clusterEvents) {
     if (e.type === 'throw') showTip('sweet-spot', 'Visitors throw food when Wally is close, but not too close. Catch it before it lands: in the air is worth the most.');
     if (e.type === 'throw' && Math.random() < 0.35) bubbles.say(e.thrower.g, pickLine('touristThrow'), 2.3);
-    if (e.type === 'flee') { game.scared++; toast_('Too close! They ran off with their lunch', 'bad'); }
+    if (e.type === 'flee') { game.scared++; toast_('Too close! They ran off with their lunch', 'bad'); if (reaction()) bubbles.say(wally.root, pickLine('wallyFlee'), 3.4); }
     if ((e.type === 'flee' || e.type === 'empty') && !e.cluster.counted) {
       e.cluster.counted = true; game.groupsDone++;
       if (e.type === 'empty') dropPearl(e.cluster);          // fed out to the last bite: a pearl for Wally
@@ -667,11 +669,21 @@ function step(dt, t) {
     game.faint = 3.2; wally.setNapping(true);
     kennyFloat.visible = wally.mode === 'swim';
     vegemite.visible = kennyMesh.visible = true;
-    toast_(`Out of puff! ${game.lives} left. Here comes Kenny`, 'bad');
+    toast_(`Out of puff! ${game.lives} left. Here comes Kenny`, 'bad'); if (reaction()) bubbles.say(wally.root, pickLine('wallyTired'), 3);
     bubbles.say(kennyMesh, "Hang on, Wally! Comin'!", 2.6);
   }
 
   bigMangoChest(dt);
+  {                                                                // where to go next, first visit (guide-arrow.js)
+    const cp = bigChest.group.position, hungry = clusters.active.filter(c => !c.fled && c.food > 0).map(c => c.root.position);
+    const mango = nearest(mangoes.filter(m => !m.taken).map(m => m.mesh.position), wally.pos), group = nearest(hungry, wally.pos);
+    arrow.update(game.done ? null
+      : game.hasBigMango && game.ready ? { x: 0, z: POOL_Z + 2, label: 'The Lagoon' }
+      : !game.hasBigMango && game.mangoes >= mangoTarget ? { x: cp.x, z: cp.z, label: 'The chest' }
+      : group ? { x: group.x, z: group.z, label: 'Hungry visitors' }
+      : !game.hasBigMango && mango ? { x: mango.x, z: mango.z, label: 'Golden Mango' }
+      : { x: cp.x, z: cp.z, label: 'The chest' }, wally.pos, cam.yaw);
+  }
   // The Lagoon: the way on, once the job is done and the Big Golden Mango found.
   if (!game.done && game.ready && !game.hasBigMango && wally.pos.z > POOL_Z - 1 && game.hintCool <= 0) {
     game.hintCool = 6; toast_(`The chest by the Lagoon first: it opens for ${mangoTarget} Golden Mangoes (you have ${game.mangoes})`, 'info');

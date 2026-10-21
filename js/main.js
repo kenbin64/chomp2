@@ -3,6 +3,7 @@
 // controls, moves Wally, has the tourists throw, flies the food, checks what
 // was caught, missed or stolen, and keeps the quest and the screen up to date.
 
+import { guideArrow, nearest } from './guide-arrow.js';
 import { startRun, addPoints, bankRun, failRun } from './points.js';
 import { installGear, snorkelling, drainFactor } from './gear.js';
 import { showTip } from './tips.js';
@@ -29,7 +30,7 @@ import { installBook, bookEvent, ability, HiddenFinds, openBook } from './book.j
 import { startTrading, tradeStep } from './trade.js';
 import { startQuest, questStep } from './sidequest.js';
 import { Input, steering, easeBehind } from './input.js';
-import { Bubbles, pickLine, chatty } from './bubbles.js';
+import { Bubbles, reaction, pickLine, chatty } from './bubbles.js';
 import { Effects, CRUMBS } from './fx.js';
 import { loadModels } from './models.js';
 import { createPost } from './post.js';
@@ -420,7 +421,7 @@ function updateClusters(dt, t) {
     if (e.type === 'throw') showTip('sweet-spot', 'Visitors throw food when Wally is close, but not too close. Catch it before it lands: in the air is worth the most.');
     if (e.type === 'throw' && Math.random() < 0.25) bubbles.say(e.thrower.g, pickLine('touristThrow'), 2.3);
     if (e.type === 'nervous' && !game.warnedOnce) { game.warnedOnce = true; if (!showTip('too-close', 'Too close! The visitors are getting nervous. Back off a little, or they run off with their food.')) toast('Too close! Back off a bit or they will run', 'bad'); }
-    if (e.type === 'flee') { game.scared++; toast(e.cluster.food > 0 ? `They ran off with ${e.cluster.food} bits of tucker!` : 'They ran off!', 'bad'); }
+    if (e.type === 'flee') { game.scared++; toast(e.cluster.food > 0 ? `They ran off with ${e.cluster.food} bits of tucker!` : 'They ran off!', 'bad'); if (reaction()) bubbles.say(wally.root, pickLine('wallyFlee'), 3.4); }
     if (e.type === 'empty') toast('That lot are all out of food', 'info');
     if ((e.type === 'flee' || e.type === 'empty') && !e.cluster.counted) {
       e.cluster.counted = true;                                    // fed out or run off: either way, that group is done
@@ -515,6 +516,12 @@ function updateQuest(dt) {
     game.keyHintAt = game.time + 6; toast("The gate's locked! Feed every group and the key is yours", 'info'); bubbles.say(wally.root, 'Locked! I need that key.', 3);
   }
   if (machete.out && machete.update(dt) && q.leave()) finish(true);
+  // Where to go next, on the first visit (guide-arrow.js): the next hungry group, the key, the gate, the machete.
+  const hungry = clusters.active.filter(c => !c.fled && c.food > 0).map(c => c.root.position);
+  arrow.update(machete.out ? { x: machete.at.x, z: machete.at.z, label: 'The machete' }
+    : game.hasKey ? { x: GATE.x, z: GATE.z, label: 'The gate' }
+    : parkKey.out ? { x: parkKey.at.x, z: parkKey.at.z, label: 'The park key' }
+    : (n => n && { x: n.x, z: n.z, label: 'Hungry visitors' })(nearest(hungry, wally.pos)), wally.pos, cam.yaw);
 }
 
 // The key to the park (models/park-key.glb), glowing on the ground near Wally once
@@ -552,8 +559,10 @@ const machete = (() => {
   const g = new THREE.Group(); g.visible = false; scene.add(g);
   const k = models.get('machete');
   const m = k ? k.scene.clone(true) : new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.7, 0.03), new THREE.MeshStandardMaterial({ color: 0x8a8a8a, metalness: 0.8 }));
-  if (k) { const b = new THREE.Box3().setFromObject(m); m.scale.setScalar(0.9 / Math.max(...b.getSize(new THREE.Vector3()).toArray())); }
-  g.add(m); const glow = new THREE.PointLight(0xfff0c0, 3, 4); glow.position.y = 0.6; g.add(glow);
+  if (k) { const b = new THREE.Box3().setFromObject(m); m.scale.setScalar(1.7 / Math.max(...b.getSize(new THREE.Vector3()).toArray())); }   // big enough to see from the camera (Ken: it was tiny)
+  g.add(m); const glow = new THREE.PointLight(0xfff0c0, 6, 7); glow.position.y = 0.8; g.add(glow);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 6, 20, 1, true), new THREE.MeshBasicMaterial({ color: 0xfff0a0, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }));
+  beam.position.y = 3; beam.userData.noAO = true; g.add(beam);                     // a column of light over it, to spot it from across the park
   return {
     out: false, at: g.position,
     show() {
@@ -572,6 +581,7 @@ const machete = (() => {
 
 // ---- One frame ------------------------------------------------------------------
 
+let arrow = guideArrow({ show: false });                       // set for the attempt when play starts
 const bot = params.has('bot') ? makeBot() : null;
 
 function step(dt, t) {
@@ -612,11 +622,11 @@ function step(dt, t) {
     food.take(it, 'carried'); game.stolen++; game.by.bat++; sound.play.stolen(); thiefTip();
     lost(it, `A flying fox nicked the ${it.name}!`);
     if (Math.random() < 0.5) bubbles.say(wally.root, pickLine('wallyStolen'), 3.6);
-    if (game.streak === 0) toast('Flying fox!', 'bad');
+    if (game.streak === 0) toast('Flying fox!', 'bad'); if (reaction()) bubbles.say(wally.root, pickLine('wallyBat'), 3.4);
   }
   for (const it of pelicans.update(dt, food, wally.pos)) {
     food.take(it, 'eaten'); game.stolen++; game.by.pelican++; sound.play.stolen(); thiefTip();
-    toast(`A pelican scooped the ${it.name}!`, 'bad'); game.streak = 0;
+    toast(`A pelican scooped the ${it.name}!`, 'bad'); game.streak = 0; if (reaction()) bubbles.say(wally.root, pickLine('wallyBird'), 3.4);
   }
   for (const it of toads.update(dt, food)) {
     food.take(it, 'eaten'); game.stolen++; game.by.toad++; sound.play.stolen(); thiefTip();
@@ -628,7 +638,7 @@ function step(dt, t) {
   }
   for (const { croc, item } of crocs.update(dt, food, wally)) {
     food.take(item, 'eaten'); game.stolen++; game.by.croc++; sound.play.stolen();
-    toast(`${croc.name} got the ${item.name}!`, 'bad'); game.streak = 0;
+    toast(`${croc.name} got the ${item.name}!`, 'bad'); game.streak = 0; if (reaction()) bubbles.say(wally.root, pickLine('wallyCroc'), 3.4);
     if (Math.random() < 0.5) bubbles.say(wally.root, pickLine('wallyStolen'), 3.6);
   }
   checkCatches();
@@ -639,7 +649,7 @@ function step(dt, t) {
     game.wantDepth = PARK_TREASURE.surfaceY;                     // stung under water: back up he goes
     wally.knock(sting.pos.x, sting.pos.z);
     fx.shake(0.45, 0.3);
-    sound.play.sting(); toast('Box jelly! Ouch!', 'bad');
+    sound.play.sting(); toast('Box jelly! Ouch!', 'bad'); if (reaction()) bubbles.say(wally.root, pickLine('wallySting'), 3.4);
     bubbles.say(wally.root, pickLine('wallySting'), 3.6);
   }
 
@@ -718,7 +728,7 @@ function treasureStep(dt, t) {
     game.biteCool = 2; biter.lunge = 0.5; bookEvent('hurt');
     game.energy -= 15; game.streak = 0; game.wantDepth = PARK_TREASURE.surfaceY;
     wally.knock(biter.pos.x, biter.pos.z); fx.shake(0.5, 0.3);
-    sound.play.sting(); toast(`${biter.name} snapped at you! Up you go`, 'bad');
+    sound.play.sting(); toast(`${biter.name} snapped at you! Up you go`, 'bad'); if (reaction()) bubbles.say(wally.root, pickLine('wallyBite'), 3.4);
     bubbles.say(wally.root, 'Strewth! Back off, mate!', 3.6);
   }
   for (const e of treasure.update(dt, t, wally.pos.x, wally.pos.z, wally.pos.y)) {
@@ -779,7 +789,7 @@ function loseLife() {
   game.nap = 1;
   wally.setNapping(true);
   kenny.reviveWally();
-  toast(`Wally's knackered! ${game.lives} ${game.lives === 1 ? 'life' : 'lives'} left. Here comes Kenny!`, 'bad');
+  toast(`Wally's knackered! ${game.lives} ${game.lives === 1 ? 'life' : 'lives'} left. Here comes Kenny!`, 'bad'); if (reaction()) bubbles.say(wally.root, pickLine('wallyTired'), 3);
   bubbles.say(wally.root, 'Need a quick kip...', 2.6, 2.8);
   bubbles.say(kenny.mesh, "Hang on, Wally! Comin'!", 2.4);
 }
@@ -884,6 +894,7 @@ function ensureTrip(level = 'intermediate') {
 function start() {
   ensureTrip();
   attempt = Trip.startAttempt(progress.trip, 'park'); startRun('park', { level: attempt.level });
+  arrow = guideArrow({ show: attempt.visit === 1 });          // where to go next, on the first visit
   game.hasKey = Trip.have(progress.trip, 'park-key') || Trip.have(progress.trip, 'gate-key');   // on a return visit he has it already (gate-key: saves from before)
   game.tripDrain = Trip.drainFactor(progress.trip, 'park', attempt.level);
   sound.start(); sound.startMusic('park'); sound.moodMusic('park');

@@ -35,7 +35,7 @@ check('the souvenir is one not yet collected', [1, 2, 3, 4, 5].every(s => makeOf
 // Receiving.
 const ab = receive(p, { gift: { kind: 'item', id: 'net' }, souvenir: { id: 'croc-tooth' } });
 check('an item gift goes in the bag and the souvenir is kept', ab.gear.net === 1 && ab.souvenirs.includes('croc-tooth'));
-check('a tokens gift adds tokens', receive(p, { gift: { kind: 'tokens', n: 3 }, souvenir: { id: 'feather' } }).tokens === 3);
+check('a tokens gift adds Golden Mangoes', receive(p, { gift: { kind: 'tokens', n: 3 }, souvenir: { id: 'feather' } }).mangoes === (p.mangoes || 0) + 3);
 const maxed = { ...p, abilities: Object.fromEntries(ABILITIES.map(a => [a.id, MAX_LEVEL])) };
 check('gifts are items, tokens or a full feed-o-meter', [1, 2, 3, 4, 5, 6, 7, 8].every(s => ['item', 'tokens', 'feed'].includes(makeOffer('park', seeded(s), maxed).gift.kind)));
 check('souvenirs are saved', readProgress(JSON.stringify(ab)).souvenirs.includes('croc-tooth'));

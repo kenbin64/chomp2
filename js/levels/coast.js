@@ -5,6 +5,7 @@
 // him food, since he is still part human (Ken); the feed-o-meter and Kenny's jar as everywhere.
 // Rules: coast-rules.js (the coast, the boats) and rescue-rules.js (the crocs' line), both tested.
 
+import { guideArrow } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, installScore } from '../points.js';
 import * as THREE from 'three';
 import { LENGTH, MOUTH_Z, BEACH, LANE, SURFACE_DROP, PLACES, shoreX, placeAt, swimStep, reachedMouth, END_Z, BOATS, boatTarget, boatStep, inThrowRange } from './coast-rules.js';
@@ -186,8 +187,10 @@ function caption(text) { const el = $('cine-caption'); el.textContent = text; el
 
 // ---- One frame -----------------------------------------------------------------------------------
 const cam = { yaw: Math.PI, pitch: 0.4, dist: 15, manual: 0 };
+const arrow = guideArrow({ show: true });                     // where to go next (guide-arrow.js): the finale is played once, so always
 function step(dt, t) {
   const k = input.read();
+  arrow.update(game.done ? null : { x: shoreX(END_Z) - 12, z: END_Z, label: 'The Daintree River mouth' }, wally.pos, cam.yaw);
   if (k.turn !== 0 || k.turnKeys !== 0 || k.tilt !== 0) cam.manual = 1.2;
   cam.yaw += k.turn + k.turnKeys * dt * 2; cam.pitch = Math.min(1.35, Math.max(0.05, cam.pitch + k.tilt));
   const control = game.faint > 0 || game.done ? { forward: 0, right: 0, jump: false, fours: false, turn: 0, turnKeys: 0, tilt: 0, zoom: 0 } : k;

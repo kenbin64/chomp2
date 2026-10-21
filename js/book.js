@@ -6,11 +6,11 @@
 //
 //   Stamps  one page per land: stamped, still to earn, or "come back" for the
 //           tiers that open on later visits
-//   Wally   his abilities and their levels (upgraded with Tourist Tokens), and
+//   Wally   his abilities and their levels (upgraded with Golden Mangoes), and
 //           everything he has banked on the trip
 //
 // Hidden finds (HiddenFinds) lie about each land, unseen until he is close, and
-// hold Tourist Tokens or an ability level.
+// hold Golden Mangoes or an ability level.
 
 import * as THREE from 'three';
 import { readProgress, OUTFITS, saveProgress } from './progress.js';
@@ -119,7 +119,7 @@ function stampsPage(p, body) {
 }
 
 function wallyPage(p, body) {
-  body.append(el('p', 'book-tokens', `Tourist Tokens: ${p.tokens || 0}`),
+  body.append(el('p', 'book-tokens', `Golden Mangoes: ${p.mangoes || 0}`),
     el('p', 'fine', 'Items: carry one at a time (Equip), press F in the game to use it. They wear out; find more in hidden finds, from traders and favours, or buy one. A level gives an item more uses.'));
   for (const a of ABILITIES) {
     const L = abilityLevel(p, a.id), cost = upgradeCost(p, a.id), stock = gearStock(p, a.id), part = (p.partial || {})[a.id] || 0, on = p.equipped === a.id;
@@ -130,16 +130,16 @@ function wallyPage(p, body) {
     const btns = el('div', 'gear-btns');
     const eq = el('button', 'buy', on ? 'Put away' : 'Equip'); eq.type = 'button'; eq.disabled = !on && !stock && !part;
     eq.onclick = () => { const q = load(); save(on ? unequip(q) : equip(q, a.id).progress); render(); };
-    const buy = el('button', 'buy alt', `Buy one: ${GEAR_PRICE} tokens`); buy.type = 'button'; buy.disabled = (p.tokens || 0) < GEAR_PRICE;
+    const buy = el('button', 'buy alt', `Buy one: ${GEAR_PRICE} Golden Mangoes`); buy.type = 'button'; buy.disabled = (p.mangoes || 0) < GEAR_PRICE;
     buy.onclick = () => { const r = buyGear(load(), a.id); if (r.ok) { save(r.progress); bookFound(a.id); render(); } };
-    const up = el('button', 'buy alt', cost === null ? 'Top level' : `Level ${L + 1}: ${cost} tokens`); up.type = 'button';
-    up.disabled = cost === null || (p.tokens || 0) < cost;
+    const up = el('button', 'buy alt', cost === null ? 'Top level' : `Level ${L + 1}: ${cost} Golden Mangoes`); up.type = 'button';
+    up.disabled = cost === null || (p.mangoes || 0) < cost;
     up.onclick = () => { const r = upgradeAbility(load(), a.id); if (r.ok) { save(r.progress); render(); } };
     btns.append(eq, buy, up); row.append(btns); body.append(row);
   }
   const bank = el('div', 'book-bank');
   const owned = (p.wardrobe && p.wardrobe.owned || []).length;
-  for (const [label, v] of [['Golden Mangoes', p.mangoes || 0], ['Pearls', p.pearls || 0], ['Seashells', p.shells || 0], ['Gold', p.coins || 0],
+  for (const [label, v] of [['Golden Mangoes', p.mangoes || 0], ['Pearls', p.pearls || 0], ['Seashells', p.shells || 0], 
                             ['Treasures found', (p.treasures || []).length], ['Outfits owned', `${owned} of ${OUTFITS.filter(o => !o.needs).length}`]]) {
     const r = el('div'); r.append(el('span', null, label), el('b', null, String(v))); bank.append(r);
   }
