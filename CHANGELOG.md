@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.7 (2026-10-21)
+
 - The guide's reef picture is Ken's own screenshot of Green Island and the jetty at dusk.
 
 ## v1.0.0-beta.6 (2026-10-21)
