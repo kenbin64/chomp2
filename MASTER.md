@@ -100,7 +100,8 @@ through the trip. Keys are just keys: a key opens a gate or a chest; it is not a
 6. **Mossman: the opal talisman** (earth), after Kuranda. He bungees down and grabs the opal. (The opal is
    Australia's national gemstone; Queensland's boulder opal comes from the outback, not Mossman, but a
    talisman can come from anywhere.)
-7. **The Daintree:** the King. No talisman here: the sceptre arrives full.
+7. **The Daintree:** the King. (Was: no talisman here, the sceptre arrives full. **Open since Ken 2026-10-20:** the
+   fourth version of the finale has Wally find the final talisman in the rainforest.)
 
 **Mangoes, pearls, shells and paw paws are not talismans (Ken, 2026-10-19):** they are things to trade, or
 things required to get items or talismans. (This replaces the mango, pearl and paw paw talismans.)
@@ -485,7 +486,35 @@ listed as star-opened activities today (`ACTIVITIES` in `js/progress.js`). **Ope
 **The point (Decided, Ken 2026-10-19):** the end of Wally's story. He set out loving food and wanting
 people to like him; he ends knowing who he is.
 
-**The finale (Decided, Ken 2026-10-19, third version; replaces the mango and paw paw gift versions):**
+**The finale (Decided, Ken 2026-10-20, fourth version; replaces steps 1 to 5 of the third version below,
+and keeps its ending where Ken has not changed it):**
+1. **The river, played:** the Daintree River. The tour boat (the same riverboat seen earlier) cruises with
+   its passengers; Wally swims alongside and they feed him, as in every level.
+2. **The sandbar, a cutscene:** the boat runs aground on a sandbar. Wild Daintree crocs surface and come up
+   round it; the passengers call out "Help us, Wally!" Wally remembers: the King lives in the Daintree
+   rainforest. He must bring the sceptre to the King to help the people. (Nobody is harmed.)
+3. **The rainforest, played:** Wally swings on vines into the rainforest, where he gets **the final
+   talisman** (**Open:** which one; see the talisman list, which has all six before the Daintree).
+4. **The King, a cinematic:** Wally finds himself face to face with the King Croc on his throne. The King
+   asks what his wish is. Ken's lines, close to his words:
+   - **Wally:** "My wish is to save the people on the tour boat."
+   - **King** (frowning): "Hmm. A selfless act. But that was not your real quest. Your quest was to use the
+     talismans to bring out all the crocs in Croc Park and bring them to the Daintree, where they can be
+     wild crocs, as long as yourself."
+   - **Wally:** "No. It was to be granted a wish, and that is it."
+   - **King:** "Because of your selfless act, I will grant your wish. But to fulfil it, it will be the crocs
+     of the park who rescue the boat and push it off the sandbar. And I will reveal why you were made part
+     human, and why you were summoned here to find the lost pieces of my sceptre. I wanted one croc from
+     Croc Park to prove himself, so I used the last magic of the sceptre to turn you into your current
+     self. Now that all the talismans are back on the sceptre, its full power is back, and I can grant your
+     wish."
+5. **The rescue:** the sceptre brings the crocs of the park to the river; they push the boat off the
+   sandbar. (**Open:** played or cinematic.) The park's crocs are free in the Daintree.
+6. **Open (Ken to confirm):** whether the third version's ending stays as it is: Wally's choice to become a
+   normal croc, Kenny sent by the King, the passengers' cheer, the celebration, Kenny's farewell and the last
+   line. And whether the paw paw gift for the King stays.
+
+**The third version (Ken 2026-10-19; steps 1 to 5 replaced by the fourth version above):**
 1. **The river:** the Daintree, a river with crocs in it and rainforest on both banks. The tour boat, full
    of the people who threw food all game, runs aground and is stuck. Nobody is harmed.
 2. **Played (rule 12):** Wally swings on vines through the rainforest and gathers **paw paws**, which he
