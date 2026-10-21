@@ -7,7 +7,7 @@
 //     tap outside it, so nothing can get stuck in the way
 // Loaded by every page that plays (main.js and each level), once.
 
-const TOP = '.map-button, .sceptre-button, .score-button, .sound-btn, .paws-button, .install-button:not(.opener-buttons *), .fullscreen-button:not(.opener-buttons *)';
+const TOP = '.map-button, .sceptre-button, .score-button, .sound-btn, .paws-button, .guide-button, .install-button:not(.opener-buttons *), .fullscreen-button:not(.opener-buttons *)';
 // Folded when the screen is too narrow for the two rows of buttons beside the game (Ken, 2026-10-21:
 // a small window has to fold too), and on every phone and tablet whatever its size (touch first).
 const phone = () => matchMedia('(max-width: 1000px), (pointer: coarse)').matches;
@@ -26,6 +26,14 @@ function paws() {
   b.innerHTML = `${CROC_HAND} <span>Paws</span>`;
   b.onclick = () => { closeMenu(); dispatchEvent(new KeyboardEvent('keydown', { key: 'p' })); dispatchEvent(new KeyboardEvent('keyup', { key: 'p' })); };
   document.body.append(b);
+}
+// The guide, with the other buttons at the top (Ken, 2026-10-21): every level, talisman and screenshot.
+// It opens in a new tab, so the game is not lost.
+function guideButton() {
+  if (document.querySelector('.guide-button')) return;
+  const g = document.createElement('a'); g.className = 'guide-button'; g.href = 'guide.html'; g.target = '_blank'; g.rel = 'noopener';
+  g.textContent = '🧭 Guide'; g.title = 'The guide: every level, talisman and screenshot';
+  document.body.append(g);
 }
 // The pause card says Paws too, and the touch pause button shows a paw.
 function pawsWords() {
@@ -177,7 +185,7 @@ async function checkForUpdate() {
 
 export function installMenu() {
   if (window.__chompMenu) return; window.__chompMenu = true;
-  paws(); pawsWords();
+  paws(); guideButton(); pawsWords();
   closable(document.querySelector('.free-banner'), 'chomp-free-banner');
   landscapeHint();
   questPanel();

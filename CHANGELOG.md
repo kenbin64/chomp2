@@ -5,6 +5,12 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- Green Island at the reef: a long rainforest island with a white beach behind the jetty, and "Green
+  Island, Great Barrier Reef" as Wally steps onto the pier.
+- The guide (every level, talisman and screenshot) is a Guide button at the top in play, on the title
+  screen and at the top of How to play.
+- The trailer preview sits top right on the title screen, clear of the buttons.
+
 ## v1.0.0-beta.4 (2026-10-21)
 
 - No landing page: the game opens straight on the Wally title screen, whose one Play button starts the

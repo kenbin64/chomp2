@@ -80,7 +80,7 @@ addEventListener('resize', resize); resize();
 const fpsWatch = watchFrameRate(quality, lower => { quality = lower; renderer.setPixelRatio(pixelRatioFor(lower)); resize(); });
 // The first visit: round the reef from high up, the island and the maze below, down to the jetty.
 const intro = areaIntro({
-  id: 'reef', name: 'The Great Barrier Reef', place: 'Out from Cairns', focus: on => fpsWatch.focus(on),
+  id: 'reef', name: 'The Great Barrier Reef', place: 'Green Island, out from Cairns', focus: on => fpsWatch.focus(on),
   shots: () => { const c = { x: (BOUNDS.x0 + BOUNDS.x1) / 2, z: (BOUNDS.z0 + BOUNDS.z1) / 2 }, end = Math.atan2(wally.pos.x - c.x, wally.pos.z - c.z);
     return orbitShots({ centre: { x: c.x, y: 0, z: c.z }, radius: 75, height: 50, low: 16, a0: end - Math.PI * 1.3, a1: end }); },
 });
@@ -159,6 +159,32 @@ const islandTrees = new Trees(scene, { light });
     const a = rnd() * Math.PI * 2, d = rnd() * 4;
     const x = ISLAND.x + Math.cos(a) * d, z = ISLAND.z + Math.sin(a) * d;
     if (!onJetty(x, z)) islandTrees.add('umbrella', x, sandHeight(x, z), z, 6 + rnd() * 3);
+  }
+  // The rest of Green Island (Ken, 2026-10-21): a long, low coral cay behind the beach, thick with
+  // rainforest, ringed with white sand, the jetty coming ashore on its west side. Scenery: Wally's ground is
+  // the near beach above; the island runs on east of it.
+  const GI = { x: ISLAND.x + 46, z: ISLAND.z + 4, rx: 52, rz: 30 };
+  const giHeight = (x, z) => { const q = ((x - GI.x) / GI.rx) ** 2 + ((z - GI.z) / GI.rz) ** 2; return q >= 1 ? -0.4 : 1.8 * Math.sqrt(1 - q) - 0.15; };
+  {
+    const beach = new THREE.CircleGeometry(1, 96); beach.rotateX(-Math.PI / 2); beach.scale(GI.rx + 3, 1, GI.rz + 3);
+    const bp = beach.attributes.position; for (let i = 0; i < bp.count; i++) bp.setY(i, Math.max(-0.3, giHeight(bp.getX(i) + GI.x, bp.getZ(i) + GI.z)));
+    beach.computeVertexNormals();
+    const shore = new THREE.Mesh(beach, sand); shore.position.set(GI.x, 0, GI.z); shore.receiveShadow = true; scene.add(shore);
+    const forestFloor = new THREE.CircleGeometry(1, 96); forestFloor.rotateX(-Math.PI / 2); forestFloor.scale(GI.rx * 0.84, 1, GI.rz * 0.8);
+    const fp = forestFloor.attributes.position; for (let i = 0; i < fp.count; i++) fp.setY(i, giHeight(fp.getX(i) + GI.x, fp.getZ(i) + GI.z) + 0.05);
+    forestFloor.computeVertexNormals();
+    const floor = new THREE.Mesh(forestFloor, new THREE.MeshStandardMaterial({ color: 0x3f6b2a, roughness: 1 })); floor.position.set(GI.x, 0, GI.z); floor.receiveShadow = true; scene.add(floor);
+    // The forest: rainforest trees close together, palms along the beach.
+    for (let i = 0; i < 260; i++) {
+      const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd()) * 0.8, x = GI.x + Math.cos(a) * d * GI.rx, z = GI.z + Math.sin(a) * d * GI.rz;
+      if (x < ISLAND.x + ISLAND.r - 2) continue;                                   // leave the near beach open
+      islandTrees.add(rnd() < 0.75 ? 'rainforest' : 'umbrella', x, giHeight(x, z), z, 9 + rnd() * 7);
+    }
+    for (let i = 0; i < 70; i++) {
+      const a = rnd() * Math.PI * 2, x = GI.x + Math.cos(a) * GI.rx * 0.9, z = GI.z + Math.sin(a) * GI.rz * 0.88;
+      if (x < ISLAND.x + ISLAND.r) continue;
+      islandTrees.add('palm', x, Math.max(0, giHeight(x, z)), z, 8 + rnd() * 4);
+    }
   }
   islandTrees.build();
   // The jetty: boards across it, posts and rails, piles down into the water.
@@ -655,7 +681,15 @@ function begin() {
   sound.start(); sound.startMusic('reef');
   $('title').hidden = true; $('hud').hidden = false; $('touch').hidden = !touch;
   game.running = true;
+  placeTitle('Green Island', 'Great Barrier Reef');                   // where he is, as he steps onto the pier (Ken)
   bubbles.say(wally.root, game.hasPearlKey ? "G'day! I've got the pearl key. Let's find that chest!" : "G'day! Somewhere down there is a giant clam...", 3.6, 3);
+}
+
+// The name of the place, large in the middle of the screen for a few seconds, then gone.
+function placeTitle(name, sub) {
+  const t = document.createElement('div'); t.className = 'place-title'; t.setAttribute('role', 'status');
+  t.innerHTML = '<b></b><span></span>'; t.querySelector('b').textContent = name; t.querySelector('span').textContent = sub;
+  document.body.append(t); setTimeout(() => t.classList.add('out'), 3800); setTimeout(() => t.remove(), 4800);
 }
 
 function setPaused(p) { if (!game.running) return; game.paused = p; $('paused').hidden = !p; }

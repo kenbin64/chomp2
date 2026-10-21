@@ -195,7 +195,7 @@ body.touch .dive-buttons button { width: 70px; height: 58px; font-size: 15px; }
 /* The speaker button (audio-ui.js): on every page, always there, in the top row left of Gear (clear of the score and the feed-o-meter). */
 .sound-btn { position: fixed; top: max(10px, env(safe-area-inset-top)); right: 50%; transform: translateX(-168px); z-index: 40; width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255, 209, 102, 0.6); background: rgba(12, 40, 56, 0.85); font-size: 20px; line-height: 1; cursor: pointer; display: grid; place-items: center; }
 /* The trailer playing muted on the opening screen, bottom right; hidden on small screens (the Trailer button stays). */
-.trailer-peek { position: absolute; right: 18px; bottom: 50px; width: clamp(180px, 21vw, 300px); padding: 0; border: 3px solid rgba(255, 209, 102, 0.85); border-radius: 14px; overflow: hidden; background: #000; cursor: pointer; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); }
+.trailer-peek { position: absolute; right: 18px; top: 18px;   /* top right, clear of the buttons along the bottom */ width: clamp(180px, 21vw, 300px); padding: 0; border: 3px solid rgba(255, 209, 102, 0.85); border-radius: 14px; overflow: hidden; background: #000; cursor: pointer; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); }
 .trailer-peek video { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
 .trailer-peek span { position: absolute; left: 0; right: 0; bottom: 0; padding: 6px 10px; background: linear-gradient(transparent, rgba(0, 0, 0, 0.75)); color: #ffd166; font: 800 15px var(--font); text-align: left; }
 .trailer-peek:hover { border-color: #ffd166; transform: scale(1.02); }
@@ -663,8 +663,20 @@ body.touch #t-cam { top: auto; bottom: calc(max(26px, env(safe-area-inset-bottom
 .opener-bar .begin { margin: 8px 0 2px; color: #ffd166; font: 800 16px var(--font); text-shadow: 0 2px 6px #000; }
 body.as-app #trailer, body.as-app .trailer-peek, body.as-app .free-banner { display: none !important; }
 /* The title screen is clear: no in-game buttons over it. */
-#title:not([hidden]) ~ :is(.map-button, .sceptre-button, .score-button, .paws-button, .menu-burger, .menu-panel, .quest-show, .gear-badge, .gear-use) { display: none !important; }
+#title:not([hidden]) ~ :is(.map-button, .sceptre-button, .score-button, .paws-button, .guide-button, .menu-burger, .menu-panel, .quest-show, .gear-badge, .gear-use) { display: none !important; }
 .opener-bar .title-version { margin: 0; font: 700 12px var(--font); color: rgba(255,255,255,0.75); text-shadow: 0 1px 4px #000; }
 .opener-bar .title-version:empty { display: none; }
 /* Phones: the buttons are folded away, so notes sit just under the menu button. */
 body.phone-menu :is(.tip-line, .found-line, .book-note) { top: calc(max(8px, env(safe-area-inset-top)) + 56px); }
+/* A place's name as the player arrives (reef.js: Green Island, Great Barrier Reef). */
+.place-title { position: fixed; z-index: 25; left: 50%; top: 30%; transform: translateX(-50%); text-align: center; pointer-events: none; color: #fff; text-shadow: 0 3px 10px rgba(0,0,0,0.7); animation: place-in 0.8s ease-out; transition: opacity 1s; }
+.place-title b { display: block; font: 800 clamp(34px, 7vw, 64px)/1.05 var(--font); color: #ffd166; }
+.place-title span { display: block; font: 700 clamp(18px, 3.4vw, 28px) var(--font); letter-spacing: 0.04em; }
+.place-title.out { opacity: 0; }
+@keyframes place-in { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+/* The Guide link on the title, looking like the buttons beside it. */
+.opener-buttons a.ghost { display: inline-flex; align-items: center; text-decoration: none; }
+/* The Guide button (menu.js): second row, right of the score. */
+.guide-button { position: fixed; z-index: 40; top: calc(max(10px, env(safe-area-inset-top)) + 46px); left: 50%; transform: translateX(212px); font: 800 16px var(--font); padding: 8px 14px; border-radius: 999px; border: 2px solid rgba(255,209,102,0.7); background: rgba(10, 30, 44, 0.75); color: #ffd166; text-decoration: none; }
+.guide-button:hover { background: rgba(255,209,102,0.25); }
+.menu-panel .guide-button { display: block; font: 800 16px var(--font); padding: 8px 14px; border-radius: 999px; border: 2px solid rgba(255,209,102,0.7); background: rgba(10, 30, 44, 0.75); color: #ffd166; }
