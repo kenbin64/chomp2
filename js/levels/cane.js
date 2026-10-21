@@ -497,7 +497,7 @@ function frame() {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-if (params.has('play')) start();
+if (params.has('play') || params.has('go')) start();   // ?go: Play on the title screen, or the story, brought him here: straight in
 installMap({ pause: on => { if (game.running) game.paused = on; } });
 installBook({ pause: on => { if (game.running) game.paused = on; } });
 installGear({ scene, wally, hasAir: false, toast: (t, k) => toast_(t, k), openBook: () => openBook('wally'), running: () => game.running && !game.paused, pause: on => { if (game.running) game.paused = on; } });   // the carried items work here too (gear.js)

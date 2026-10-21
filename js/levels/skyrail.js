@@ -26,7 +26,7 @@ import { dressOutfit } from '../outfit.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
-const NEXT = params.get('next') || 'kuranda.html';
+const NEXT = params.get('next') || 'kuranda.html?go';
 const touch = isTouchDevice();
 const quality = pickQuality();
 

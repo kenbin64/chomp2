@@ -713,7 +713,7 @@ function frame() {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-if (params.has('play')) start();
+if (params.has('play') || params.has('go')) start();   // ?go: Play on the title screen, or the story, brought him here: straight in
 
 // The map, from anywhere (mapmodal.js): the Map button or Tab. Play pauses while it is open.
 installMap({ pause: on => { if (game.running) game.paused = on; } });

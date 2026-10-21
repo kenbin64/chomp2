@@ -7,7 +7,7 @@
 //     tap outside it, so nothing can get stuck in the way
 // Loaded by every page that plays (main.js and each level), once.
 
-const TOP = '.map-button, .sceptre-button, .score-button, .sound-btn, .paws-button';
+const TOP = '.map-button, .sceptre-button, .score-button, .sound-btn, .paws-button, .install-button:not(.opener-buttons *), .fullscreen-button:not(.opener-buttons *)';
 // Folded when the screen is too narrow for the two rows of buttons beside the game (Ken, 2026-10-21:
 // a small window has to fold too), and on every phone and tablet whatever its size (touch first).
 const phone = () => matchMedia('(max-width: 1000px), (pointer: coarse)').matches;
@@ -80,17 +80,58 @@ function landscapeHint() {
   matchMedia('(orientation: landscape)').addEventListener('change', e => { if (e.matches) n.remove(); });
 }
 
-// On a touch screen the objective panel folds to its title after a few seconds, and a tap opens or
-// folds it (Ken: panels in the way of play). It opens again by itself when its heading changes.
-function foldQuest() {
-  if (!matchMedia('(pointer: coarse)').matches) return;
-  const q = document.querySelector('.panel.quest'); if (!q || q.dataset.folds) return;
-  q.dataset.folds = '1';
-  let timer = setTimeout(() => q.classList.add('mini'), 6000);
-  q.style.pointerEvents = 'auto';
-  q.addEventListener('click', () => { q.classList.toggle('mini'); clearTimeout(timer); if (!q.classList.contains('mini')) timer = setTimeout(() => q.classList.add('mini'), 6000); });
-  new MutationObserver(() => { if (!q.classList.contains('mini')) return; q.classList.remove('mini'); clearTimeout(timer); timer = setTimeout(() => q.classList.add('mini'), 5000); })
+// The objective panel (Ken, 2026-10-21: in the way): an X puts it away, leaving a small target icon
+// that brings it back. On a touch screen it also tucks itself away after a few seconds; it comes back by
+// itself when the objective's heading changes.
+function questPanel() {
+  const q = document.querySelector('.panel.quest'); if (!q || q.dataset.closable) return;
+  q.dataset.closable = '1'; q.style.pointerEvents = 'auto';
+  const x = document.createElement('button'); x.type = 'button'; x.className = 'quest-x'; x.textContent = '✕'; x.setAttribute('aria-label', 'Hide the objective');
+  const show = document.createElement('button'); show.type = 'button'; show.className = 'quest-show'; show.textContent = '🎯'; show.title = 'Show the objective'; show.setAttribute('aria-label', 'Show the objective'); show.hidden = true;
+  let timer = 0;
+  const hide = () => { q.classList.add('tucked'); show.hidden = false; clearTimeout(timer); };
+  const open = () => { q.classList.remove('tucked'); show.hidden = true; clearTimeout(timer); if (matchMedia('(pointer: coarse)').matches) timer = setTimeout(hide, 8000); };
+  x.onclick = e => { e.stopPropagation(); hide(); };
+  show.onclick = e => { e.stopPropagation(); open(); };
+  q.append(x); document.body.append(show);
+  open();
+  new MutationObserver(() => { if (q.classList.contains('tucked')) open(); })
     .observe(q.querySelector('h2') || q, { childList: true, subtree: true, characterData: true });   // a new objective (its heading), not the distance ticking down
+}
+
+// Native mode (Ken, 2026-10-21): install the game as an app, with its own icon for next time, and play
+// full screen. Chrome and Edge (Android, Windows, Mac) offer the install themselves; iPhones and iPads
+// do it from the Share menu, so there the button shows how. Hidden when already running as the app.
+let installEvent = null;
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvent = e; appButtons(); });
+const isApp = () => matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
+const isApple = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function howToInstall() {
+  let box = document.querySelector('.install-card');
+  if (!box) {
+    box = document.createElement('div'); box.className = 'map-modal install-card'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Install the game');
+    box.innerHTML = '<div class="card"><h1>Play it like an app</h1><ol><li>Tap the <b>Share</b> button (the square with an arrow) at the bottom or top of Safari.</li><li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol><p>Chomp 3D then opens from its own icon, full screen, like any app.</p><button type="button" class="go">Back to the game</button></div>';
+    box.querySelector('button').onclick = () => { box.hidden = true; };
+    box.addEventListener('click', e => { if (e.target === box) box.hidden = true; });
+    document.body.append(box);
+  }
+  box.hidden = false;
+}
+function appButtons() {
+  const where = document.querySelector('.opener-buttons');
+  if (!where && !phone()) return;                                   // in a level on a computer: not needed, kept out of the way
+  const canFull = document.fullscreenEnabled && !isApp();
+  if (!isApp() && (installEvent || isApple()) && !document.querySelector('.install-button')) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'ghost install-button'; b.textContent = '📲 Install the game';
+    b.onclick = async () => { if (installEvent) { installEvent.prompt(); const r = await installEvent.userChoice.catch(() => null); if (r && r.outcome === 'accepted') b.remove(); installEvent = null; } else howToInstall(); };
+    (where || document.body).append(b); fold();
+  }
+  if (canFull && !document.querySelector('.fullscreen-button')) {
+    const f = document.createElement('button'); f.type = 'button'; f.className = 'ghost fullscreen-button'; f.textContent = '⛶ Full screen';
+    f.onclick = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen({ navigationUI: 'hide' })).catch(() => {});
+    document.addEventListener('fullscreenchange', () => { f.textContent = document.fullscreenElement ? '⛶ Leave full screen' : '⛶ Full screen'; });
+    (where || document.body).append(f); fold();
+  }
 }
 
 export function installMenu() {
@@ -98,7 +139,9 @@ export function installMenu() {
   paws(); pawsWords();
   closable(document.querySelector('.free-banner'), 'chomp-free-banner');
   landscapeHint();
-  foldQuest();
+  questPanel();
+  appButtons();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});   // makes the game installable (sw.js)
   fold();
   new MutationObserver(() => { pawsWords(); fold(); }).observe(document.body, { childList: true });   // buttons added later fold in too
   addEventListener('resize', fold);

@@ -51,13 +51,14 @@ function drawBadge() {
   if (!badge) return;
   const p = load(), a = ABILITIES.find(x => x.id === p.equipped);
   badge.innerHTML = '';
-  if (!a) { badge.append(Object.assign(document.createElement('span'), { textContent: 'No item · B to equip' })); badge.classList.add('empty'); return; }
+  // Just an icon to tap (Ken, 2026-10-21): the backpack when he carries nothing, else the item and the
+  // uses left in it. A tap opens the gear; the name is in the tooltip.
+  if (!a) { badge.append(Object.assign(document.createElement('span'), { className: 'icon', textContent: '🎒' })); badge.classList.add('empty'); badge.title = 'Gear: equip an item (G)'; badge.setAttribute('aria-label', 'Gear: no item equipped'); return; }
   badge.classList.remove('empty');
   const big = document.createElement('span'); big.className = 'icon'; big.textContent = a.icon;
   const count = document.createElement('span'); count.className = 'count'; count.textContent = p.uses;      // Ken: a number that counts down with each use
-  const name = document.createElement('b'); name.textContent = a.name;
-  const left = document.createElement('small'); left.textContent = 'F to use';
-  badge.append(big, count, name, left);
+  badge.title = `${a.name}: ${p.uses} uses left (F to use, G to change)`; badge.setAttribute('aria-label', `${a.name}, ${p.uses} uses left`);
+  badge.append(big, count);
   badge.classList.remove('bump'); void badge.offsetWidth; badge.classList.add('bump');
 }
 

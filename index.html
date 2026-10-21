@@ -5,6 +5,11 @@
 <style>html,body{background:#0b1d27}</style>
 <link rel="preload" as="image" href="assets/title/opener.webp">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1d27">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1b6e8c">
 <title>Chomp 3D: Wally's Cairns Adventure</title>
 <meta name="description" content="Wally the Cairns Crocodile catches the food tourists throw. A 3D adventure through Far North Queensland, by Kenneth W. Bingham.">
@@ -74,6 +79,9 @@
   <div class="opener-bar">
     <div class="opener-buttons">
       <button id="play" class="go" type="button">Play</button>
+      <div class="pick-level" id="pick-level" role="radiogroup" aria-label="How hard" hidden>
+        <button type="button" role="radio" data-level="easy">Easy</button><button type="button" role="radio" data-level="intermediate" class="on" aria-checked="true">Intermediate</button><button type="button" role="radio" data-level="hard">Hard</button>
+      </div>
       <button id="how" class="ghost" type="button">How to play</button>
       <button id="trailer" class="ghost" type="button">&#9654; Trailer</button>
     </div>

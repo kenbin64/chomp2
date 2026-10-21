@@ -614,12 +614,26 @@ body.touch #t-fours { right: calc(max(18px, env(safe-area-inset-right)) + 140px)
 body.touch #t-jump { display: none; }   /* a tap on the orb jumps */
 body.touch .gear-badge { bottom: max(24px, env(safe-area-inset-bottom)); left: 12px; padding: 6px 10px; column-gap: 6px; }
 body.touch .gear-badge b, body.touch .gear-badge small { display: none; }
-body.touch .gear-badge.empty { display: none; }
 body.touch .gear-use { bottom: calc(max(24px, env(safe-area-inset-bottom)) + 66px); left: 12px; }
-/* The objective panel folds to its title after a moment on touch screens; a tap opens it again (menu.js). */
-.panel.quest.mini { cursor: pointer; }
-.panel.quest.mini > :not(h2) { display: none; }
-.panel.quest.mini h2::after { content: ' ▸'; color: #ffd166; }
 /* Short landscape screens: tips up at the top, narrower, clear of the controls. */
 @media (max-height: 500px) { .tip-card, body.phone-menu .tip-card { top: calc(max(8px, env(safe-area-inset-top)) + 56px); width: min(400px, calc(100% - 380px)); min-width: 260px; font-size: 14px; padding: 8px 12px; } }
 #t-fours small { display: block; font-size: 10px; font-weight: 700; margin-top: -2px; opacity: 0.8; }
+/* The gear badge: an icon to tap (gear.js). */
+.gear-badge { grid-template-columns: auto auto; padding: 6px 10px; min-width: 52px; justify-content: center; }
+.gear-badge.empty { opacity: 0.85; }
+.gear-badge .icon { grid-row: auto; font-size: 26px; }
+/* The objective panel: an X to put it away, a target icon to bring it back (menu.js). */
+.panel.quest { position: absolute; }
+.panel.quest.tucked { display: none; }
+.quest-x { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(255,255,255,0.14); color: #fff; font: 700 12px/24px var(--font); cursor: pointer; padding: 0; }
+.panel.quest h2 { padding-right: 26px; }
+.quest-show { position: fixed; z-index: 6; left: 14px; top: calc(max(10px, env(safe-area-inset-top)) + 62px); width: 42px; height: 42px; border-radius: 50%; border: 2px solid rgba(255,209,102,0.7); background: rgba(10, 30, 44, 0.8); font-size: 20px; cursor: pointer; }
+.quest-show[hidden] { display: none; }
+/* Install and full screen (menu.js): on the title screen with Play; elsewhere in the phone menu, or top left on a computer. */
+.menu-panel .install-button, .menu-panel .fullscreen-button { font: 800 16px var(--font); padding: 8px 14px; border-radius: 999px; border: 2px solid rgba(255,209,102,0.7); background: rgba(10, 30, 44, 0.75); color: #ffd166; }
+.install-card ol { text-align: left; }
+/* The difficulty, beside Play on the title screen for a new game (main.js). */
+.pick-level { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(10, 30, 44, 0.75); border: 1px solid rgba(255, 209, 102, 0.5); align-self: center; }
+.pick-level[hidden] { display: none; }
+.pick-level button { font: 700 14px var(--font); padding: 6px 12px; border-radius: 999px; border: 0; background: transparent; color: #eaf4f2; cursor: pointer; }
+.pick-level button.on { background: #ffd166; color: #102030; }

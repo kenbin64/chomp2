@@ -19,7 +19,6 @@ import { Clusters } from './clusters.js';
 import { LagoonTreasure, gateKey } from './parktreasure.js';
 import { PARK_TREASURE, swimDepth } from './treasure-rules.js';
 import * as Trip from './trip-rules.js';
-import { chooseDifficulty } from './difficulty-ui.js';
 import { createOpening, openingDue, resetOpening } from './opening.js';
 import { addSwimSway, tickSwim } from './swim.js';
 import { setGround, parkGround, addSolid } from './ground.js';
@@ -41,7 +40,7 @@ import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './
 import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE, outfitModel, findTreasure, bankFinds, PROGRESS_CHANGED, saveProgress } from './progress.js';
 import { dressOutfit } from './outfit.js';
 import { showLeaderboard } from './leaderboard.js';
-import { installMap, openMap, recordVisit, markRetry } from './mapmodal.js';
+import { installMap, openMap, recordVisit, markRetry, mapActive, pageFor } from './mapmodal.js';
 import { installShop, openShop } from './shopmodal.js';
 import * as sound from './sound.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, difficulty,
@@ -1000,10 +999,28 @@ function openTrailer() { peekVideo.pause(); $('trailer-box').hidden = false; con
 $('trailer').onclick = openTrailer; peek.onclick = openTrailer;
 $('trailer-close').onclick = () => { const v = $('trailer-video'); v.pause(); $('trailer-box').hidden = true; if (!stillOnly) peekVideo.play().catch(() => {}); };
 $('credits-close').onclick = () => { $('credits-card').hidden = true; };
-$('play').onclick = async () => {
+// Play goes straight into the game (Ken, 2026-10-21: two or three buttons before play was too many).
+// A new game: the difficulty is chosen beside Play (Intermediate unless changed), then Croc Park
+// begins. A trip under way: on to the next place not yet completed. The map is still on its button.
+const newGame = () => !progress.trip && !progress.postcards.length && !Object.keys(progress.stars).length;
+let pickedLevel = 'intermediate';
+if (newGame()) $('pick-level').hidden = false;
+for (const b of $('pick-level').querySelectorAll('button')) b.onclick = () => {
+  pickedLevel = b.dataset.level;
+  for (const o of $('pick-level').querySelectorAll('button')) { o.classList.toggle('on', o === b); o.setAttribute('aria-checked', String(o === b)); }
+};
+function nextStop() {
+  let visited = []; try { visited = JSON.parse(localStorage.getItem('chomp-visited') || '[]'); } catch { /* none yet */ }
+  const done = (progress.trip && progress.trip.completed) || [];
+  return AREAS.find(a => a.ready && !done.includes(a.id) && mapActive(progress, visited, a.id));
+}
+$('play').onclick = () => {
   sound.start(); sound.startMusic('theme'); sound.moodMusic('theme');
-  if (!progress.trip && !progress.postcards.length && !Object.keys(progress.stars).length) ensureTrip(await chooseDifficulty());
-  showMap();
+  if (newGame()) ensureTrip(pickedLevel);
+  const next = nextStop();
+  if (!next || next.id === 'park') { $('title').hidden = true; start(); return; }
+  const page = pageFor(next.id);
+  location.href = page + (page.includes('?') ? '&go' : '?go');
 };
 $('to-map').onclick = () => location.href = 'index.html?map';
 $('resume').onclick = () => setPaused(false);
