@@ -15,6 +15,9 @@ check('the places come in order: Cairns, Palm Cove, Port Douglas, the river mout
   let p = { x: C.shoreX(0) - 10, z: 0 };
   for (let i = 0; i < 4000; i++) p = C.swimStep(p.x, p.z, C.shoreX(p.z + 0.25) - 10, p.z + 0.25);   // following the coast, as a player steers
   check('swimming north he reaches the river mouth', C.reachedMouth(p.z), p.z.toFixed(0));
+  let n = { x: C.shoreX(0) - 10, z: 0 };
+  for (let i = 0; i < 4000; i++) n = C.swimStep(n.x, n.z, n.x, n.z + 0.25);   // holding straight north, never steering
+  check('swimming straight on he slides round the bends and still gets there', C.reachedMouth(n.z) && C.inWater(n.x, n.z), n.z.toFixed(0));
   let q = { x: C.shoreX(100) - 5, z: 100 };
   for (let i = 0; i < 100; i++) q = C.swimStep(q.x, q.z, q.x + 0.5, q.z);
   check('he cannot swim up onto the land', C.inWater(q.x, q.z));

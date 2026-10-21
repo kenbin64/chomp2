@@ -25,6 +25,10 @@ export const inWater = (x, z) => x < shoreX(z);
 export function swimStep(x, z, nx, nz) {
   const ok = (px, pz) => px < shoreX(pz) - 1 && px > shoreX(pz) - LANE && pz > START_Z - 10 && pz < MOUTH_Z + 30;
   if (ok(nx, nz)) return { x: nx, z: nz };
+  // Against the beach or the edge of the lane he slides along it instead of stopping dead, so
+  // swimming straight on follows the coast round its bends (it pinned him in a bay before).
+  const sx = Math.min(shoreX(nz) - 1.01, Math.max(shoreX(nz) - LANE + 0.01, nx));
+  if (ok(sx, nz)) return { x: sx, z: nz };
   if (ok(nx, z)) return { x: nx, z };
   if (ok(x, nz)) return { x, z: nz };
   return { x, z };

@@ -30,6 +30,9 @@ export function start() {
     sfx = ctx.createGain(); sfx.connect(ctx.destination);
     musicBus = ctx.createGain(); musicBus.connect(ctx.destination);
     sfx.gain.value = settings.sfx ? SFX_LEVEL : 0; musicBus.gain.value = settings.music ? 1 : 0;
+    // Started without a click (a page that carries straight on in the story): the browser holds the
+    // sound until the first key or tap, so wake it then.
+    if (ctx.state === 'suspended') { const wake = () => { ctx.resume(); removeEventListener('pointerdown', wake, true); removeEventListener('keydown', wake, true); }; addEventListener('pointerdown', wake, true); addEventListener('keydown', wake, true); }
   } catch { ctx = null; }
 }
 

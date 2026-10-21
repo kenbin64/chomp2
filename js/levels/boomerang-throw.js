@@ -156,6 +156,9 @@ export function boomerangThrow({ scene, camera, wally, sound, models = new Map()
     if (guide) { guide.root.position.set(GUIDE_SPOT.x, 0, GUIDE_SPOT.z); faceToward(guide.root, THROW_SPOT.x, THROW_SPOT.z); }
     s.demoPath = fly({ x: GUIDE_SPOT.x, y: HAND_Y, z: GUIDE_SPOT.z }, THROW_SPOT.aim, IDEAL_TILT, IDEAL_FORCE);
     if (s.has) { enter('tilt'); say(GUIDE, 'Back for another go? Go on then.'); return; }
+    let seen = false; try { seen = sessionStorage.getItem('chomp-boom-lesson') === '1'; } catch { /* first time */ }
+    if (seen) { enter('tilt'); say(GUIDE, 'Ready again, Wally? Tip it out a little and throw it firm.'); return; }   // the lesson once: after that, straight to the throw
+    try { sessionStorage.setItem('chomp-boom-lesson', '1'); } catch { /* it plays again */ }
     if (guide) { guide.root.position.set(GUIDE_FROM.x, 0, GUIDE_FROM.z); faceToward(guide.root, THROW_SPOT.x, THROW_SPOT.z); }   // across the clearing, to walk up
     throwers.soon();                                               // the visitors throw in the wide shot
     enter('opening'); say(OPENING[0].who, OPENING[0].text);

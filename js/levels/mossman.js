@@ -67,6 +67,14 @@ setGround({
   move(x, z, nx, nz, y) {
     const blocked = (px, pz) => !insideGorge(px, pz) || solids.some(s => Math.hypot(px - s.x, pz - s.z) < s.r + 0.4 && y < s.top - 0.4);
     if (!blocked(nx, nz)) return { x: nx, z: nz };
+    // Against the bank he slides along it, toward the river's line, instead of stopping dead
+    // (holding forward used to pin him on the outside of a bend).
+    const step = Math.hypot(nx - x, nz - z);
+    if (step > 0) {                                                  // toward the river's line first, then the other way (round a boulder)
+      const dx = nx - x, dz = nz - z, px = -dz, pz = dx;             // the sideways direction
+      const k = Math.sign(px * (riverX(nz) - nx)) || 1;
+      for (const sgn of [k, -k]) if (!blocked(x + dx * 0.7 + px * sgn * 0.7, z + dz * 0.7 + pz * sgn * 0.7)) return { x: x + dx * 0.7 + px * sgn * 0.7, z: z + dz * 0.7 + pz * sgn * 0.7 };
+    }
     if (!blocked(nx, z)) return { x: nx, z };
     if (!blocked(x, nz)) return { x, z: nz };
     return { x, z };

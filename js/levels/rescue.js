@@ -246,7 +246,7 @@ function carryOn(page, title) {
 }
 function finish() {
   game.done = true; game.running = false; $('hud').hidden = true; $('touch').hidden = true;
-  if (!params.has('stay')) { carryOn('coast.html', 'Up the coast to the Daintree'); return; }   // ?stay: the result card, for testing
+  if (!params.has('stay')) { carryOn('coast.html?go', 'Up the coast to the Daintree'); return; }   // ?stay: the result card, for testing
   $('result-title').textContent = 'The crocs of Croc Park are free';
   $('result-why').textContent = 'Every croc followed the sceptre out to the sea. Next: up the coast to the Daintree, and the boat on the sandbar. ';
   $('result').hidden = false;
@@ -286,5 +286,5 @@ function frame() {
 }
 requestAnimationFrame(frame);
 window.chomp = { game, wally, crocs, scene, camera, trail, sceptre };
-if (params.has('play')) start();
+if (params.has('play') || params.has('go')) start();   // ?go: arriving in the middle of the story, straight in (the fly-over still plays)
 installScore({ pause: on => { if (game.running) game.paused = on; } });   // the points and the Scoreboard (points.js)

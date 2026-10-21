@@ -279,7 +279,7 @@ function carryOn(page, title) {
 }
 function finish(won = true) {
   game.running = false; $('hud').hidden = true; $('touch').hidden = true; caption('');
-  if (won && !params.has('stay')) { carryOn('push.html', 'The Great Push'); return; }
+  if (won && !params.has('stay')) { carryOn('push.html?go', 'The Great Push'); return; }
   $('result-title').textContent = won ? 'The mouth of the Daintree River' : 'Out of puff';
   $('result-why').textContent = won ? 'All ten crocs made it up the coast. Next: up the river to the boat on the sandbar, and the push.' : 'Kenny can only bring his jar three times. Try the swim again.';
   $('result').hidden = false; window.chomp.result = { won };
@@ -304,7 +304,7 @@ function frame() {
   post.render(); requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-if (params.has('play')) start();
+if (params.has('play') || params.has('go')) start();   // ?go: arriving in the middle of the story, straight in (the fly-over still plays)
 installBook({ pause: on => { if (game.running) game.paused = on; } });
 installGear({ scene, wally, food, mouth: () => wally.mouthPosition(), hasAir: false, toast: (t, k) => toast(t, k), openBook: () => openBook('wally'), running: () => game.running && !game.paused, pause: on => { if (game.running) game.paused = on; } });   // the carried items work here too (gear.js)
 installScore({ pause: on => { if (game.running) game.paused = on; } });   // the points and the Scoreboard (points.js)

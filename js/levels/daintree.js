@@ -65,6 +65,10 @@ const riverGround = {
   move(x, z, nx, nz) {
     const blocked = (px, pz) => !insideRiver(px, pz) || inBoat(px, pz);
     if (!blocked(nx, nz)) return { x: nx, z: nz };
+    // Against the bank he slides along it, toward the river's line, instead of stopping dead
+    // (holding forward used to pin him on the outside of a bend).
+    const step = Math.hypot(nx - x, nz - z), side = Math.sign(riverX(nz) - nx) * step;
+    if (step > 0 && !blocked(nx + side, nz)) return { x: nx + side, z: nz };
     if (!blocked(nx, z)) return { x: nx, z };
     if (!blocked(x, nz)) return { x, z: nz };
     return { x, z };

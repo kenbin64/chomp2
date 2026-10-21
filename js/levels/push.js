@@ -257,7 +257,7 @@ function finish() {
   if (!params.has('stay')) { caption('The Wish'); $('fade').classList.add('on'); setTimeout(() => { location.href = 'ending.html?play'; }, 2200); return; }   // on to the ending by itself
   caption('');
   $('result-title').textContent = 'The boat is free!';
-  $('result-why').textContent = `The crocs of Croc Park and the wild crocs of the Daintree pushed the tour boat off the sandbar together: ${game.heaves} heaves, ${game.perfect} perfect. Everyone is safe. Next: the ending. (The ending: next to build.)`;
+  $('result-why').textContent = `The crocs of Croc Park and the wild crocs of the Daintree pushed the tour boat off the sandbar together: ${game.heaves} heaves, ${game.perfect} perfect. Everyone is safe. Next: the ending.`;
   $('result').hidden = false; window.chomp.result = { heaves: game.heaves, perfect: game.perfect };
 }
 
@@ -297,5 +297,5 @@ function frame() {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-if (params.has('play')) start();
+if (params.has('play') || params.has('go')) start();   // ?go: arriving in the middle of the story, straight in (the fly-over still plays)
 installScore({ pause: on => { if (game.running) game.paused = on; } });   // the points and the Scoreboard (points.js)
