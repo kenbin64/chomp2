@@ -927,6 +927,7 @@ function finish(won, why = '') {
     $('win-stars').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
     $('win-postcard').textContent = POSTCARDS.park;
     $('next-area').textContent = nextArea('park').name;
+    markRetry(true, 'Croc Park', 'win');                         // completed: continue, redo, save, new game
     $('win').hidden = false;
     showLeaderboard($('win-board'), 'park', game.score, stars);   // post the score, show the top ten
   } else {
@@ -983,7 +984,7 @@ $('play').onclick = async () => {
 };
 $('to-map').onclick = () => location.href = 'index.html?map';
 $('resume').onclick = () => setPaused(false);
-$('again').onclick = restart; $('again2').onclick = e => { e.preventDefault(); location.href = 'index.html?play'; };
+$('again').onclick = restart;
 addEventListener('visibilitychange', () => { if (document.hidden && game.running) setPaused(true); });
 
 // ---- Test pilot (?bot) ---------------------------------------------------------------

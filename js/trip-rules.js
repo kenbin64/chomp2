@@ -61,7 +61,7 @@ export const CHAIN = {
 // Areas not built yet are passed over, so the game stays playable while they are
 // made: the area after one asks the area before it instead. Remove an area from
 // this list the day its level is playable.
-export const NOT_BUILT = ['daintree'];
+export const NOT_BUILT = [];                     // every area is built now (the Daintree, 2026-10-21)
 
 export const LEVELS = ['easy', 'intermediate', 'hard'];
 export const SHARE = { easy: 0.5, intermediate: 0.7, hard: 0.9 };       // of what an area holds, for "collect enough"

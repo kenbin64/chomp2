@@ -24,7 +24,8 @@ export const AREAS = [
   { id: 'mossman', name: 'Mossman Gorge', place: 'The Mossman River, in the rainforest', ready: true,
     objective: 'Work your way down the river: swim the holes, slide down the rock slicks, find the key on the bottom of one hole and the chest with the opal in the last.',
     notes: 'River rafts, climbing vines and cliffs, a vine-swinging challenge, line traversing over the gorge catching food along the line. Rainforest over the hills.' },
-  { id: 'daintree', name: 'Daintree River', ready: false,
+  { id: 'daintree', name: 'Daintree River', ready: true,
+    objective: 'Swim with the tour boat and keep fed, then take the sceptre through the rainforest to the King.',
     notes: 'Tourists on river boats. Swim, swing on vines, jump rock to rock, run the beach. Mangroves, rainforest to the water.' },
 ];
 

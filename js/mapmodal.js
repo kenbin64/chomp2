@@ -37,39 +37,70 @@ const LOCK = '<g class="pin-lock" transform="translate(0,-37)"><path d="M-6,-3 v
 // On an area's end screen, once the area is done and the next one is open:
 // "On to <next area>", straight there. Added to every end screen here, so no
 // level repeats it; it updates whenever an end screen is shown.
+let refreshNext = () => {};
 export function addNextStop() {
   const here = HERE; if (!here) return;
   const refresh = buttons => {
     buttons.querySelector('.next-stop')?.remove();
+    if (buttons.dataset.won !== '1') return;                     // only when this run completed the area (Ken)
     const progress = progressNow(), i = AREAS.findIndex(a => a.id === here), next = AREAS[i + 1];
     const done = (progress.stars[here] || 0) > 0 || progress.postcards.includes(here);
     if (!done || !next || !next.ready || !PAGES[next.id] || !mapActive(progress, visitedNow(), next.id)) return;
-    const a = el('a', 'go next-stop', `On to ${next.name} \u203a`); const page = pageFor(next.id); a.href = page + (testing ? (page.includes('?') ? '&all' : '?all') : '');
+    const a = el('a', 'go next-stop', `Continue on to ${next.name} \u203a`); const page = pageFor(next.id); a.href = page + (testing ? (page.includes('?') ? '&all' : '?all') : '');
     buttons.prepend(a);
   };
   for (const buttons of document.querySelectorAll('.end-buttons')) {
     const overlay = buttons.closest('.overlay'); if (!overlay) continue;
     new MutationObserver(() => { if (!overlay.hidden) refresh(buttons); }).observe(overlay, { attributes: true, attributeFilter: ['hidden'] });
   }
+  refreshNext = buttons => refresh(buttons);
 }
 
 // Out of lives (Ken, 2026-10-20): start this area again from its beginning. What was
 // gained here this time is lost; everything from other areas is kept, so the game is
 // never started all over again (trip-rules.js does the keeping). Each level calls this
 // when its end screen comes up; on a win it leaves the button as it was.
-export function markRetry(won, areaName) {
-  const again = document.getElementById('again'); if (!again) return;
+// Completed (Ken, 2026-10-21): the card says so, the area is open on the map from now on, and it
+// offers Continue on to <next area> (added by addNextStop), Redo <area>, Save game and Start a new
+// game. A redo keeps everything gained before; what the redo finds is kept only if it is completed
+// too (trip-rules.js); a redo that fails shows no way on. overlayId: the end screen (default 'result').
+export function markRetry(won, areaName, overlayId = 'result') {
+  const overlay = document.getElementById(overlayId);
+  const again = (overlay && overlay.querySelector('#again')) || document.getElementById('again');
+  const card = overlay ? overlay.querySelector('.card') : again && again.closest('.card');
+  const buttons = card && card.querySelector('.end-buttons'); if (!buttons) return;
+  buttons.dataset.won = won ? '1' : '0';
+  const doneBefore = HERE && (() => { const p = progressNow(); return (p.stars[HERE] || 0) > 0 || p.postcards.includes(HERE); })();
+  let note = card.querySelector('.retry-note');
+  if (!note) { note = el('p', 'fine retry-note'); buttons.before(note); }
+  for (const b of buttons.querySelectorAll('.new-trip, .save-game, .redo-area')) b.remove();
+  if (won) {
+    note.hidden = false; note.className = 'retry-note done-note';
+    note.textContent = `You've completed ${areaName}! It's unlocked on your map now: come back to it any time from the map, if you need what it gives.`;
+    // Redo: the page's own again button, or one added here.
+    let redo = again && buttons.contains(again) ? again : null;
+    if (!redo) { redo = el('button', 'go ghost redo-area'); redo.type = 'button'; redo.onclick = () => { location.href = HERE === 'park' ? 'index.html?play' : location.href; }; buttons.append(redo); }
+    redo.dataset.label = redo.dataset.label || redo.textContent; redo.textContent = `Redo ${areaName}`; redo.classList.add('ghost');
+    const save = el('button', 'go ghost save-game', 'Save game'); save.type = 'button';
+    save.onclick = () => { try { localStorage.setItem('chomp-progress', JSON.stringify(progressNow())); localStorage.setItem('chomp-saved-at', new Date().toISOString()); save.textContent = 'Game saved \u2713'; } catch { save.textContent = 'Could not save here'; } };
+    buttons.append(save);
+    const fresh = el('button', 'go ghost new-trip', 'Start a new game'); fresh.type = 'button'; fresh.onclick = () => askNewTrip();
+    buttons.append(fresh);
+    refreshNext(buttons);
+    return;
+  }
+  if (!again) return;
   again.dataset.label = again.dataset.label || again.textContent;
-  const card = again.closest('.card');
-  let note = card && card.querySelector('.retry-note');
-  if (won) { again.textContent = again.dataset.label; if (note) note.hidden = true; return; }
   again.textContent = `Start ${areaName} again`;
   if (card && !note) { note = el('p', 'fine retry-note'); again.closest('.end-buttons').before(note); }
-  if (note) { note.hidden = false; note.textContent = `Back to the start of ${areaName}. Anything found here this time is lost; everything from the rest of the trip is kept.`; }
+  note.hidden = false; note.className = 'fine retry-note';
+  note.textContent = doneBefore
+    ? `Not this time. You keep everything you gained when you completed ${areaName} before; anything found on this try is lost. Try again, or carry on from the map.`
+    : `Back to the start of ${areaName}. Anything found here this time is lost; everything from the rest of the trip is kept. The next area opens when you complete this one.`;
+  refreshNext(buttons);
   // Or the whole game from the very beginning (Ken: give them that choice too),
   // asked once more first, since it wipes the whole trip.
-  const buttons = again.closest('.end-buttons');
-  if (buttons && !buttons.querySelector('.new-trip')) {
+  if (!buttons.querySelector('.new-trip')) {
     const fresh = el('button', 'go ghost new-trip', 'Start the whole game again'); fresh.type = 'button';
     fresh.onclick = () => askNewTrip();
     buttons.append(fresh);

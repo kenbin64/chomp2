@@ -39,7 +39,7 @@ check('the Fibonacci small thing: golden mangoes from the park', T.CHAIN.park.sm
 // ---- Areas not built yet are passed over -------------------------------------------------
 check('the cane fields are built: on the trip', !T.NOT_BUILT.includes('cane'));
 check('...so the Esplanade asks the cane fields', T.areaBefore('esplanade') === 'cane');
-check('only the Daintree is not built yet: Mossman is the last stop for now', !T.NOT_BUILT.includes('mossman') && T.NOT_BUILT.includes('daintree'));
+check('every area is built now: the Daintree is the last stop', T.NOT_BUILT.length === 0);
 check('the reef asks the Esplanade', T.areaBefore('reef') === 'esplanade');
 check('the first area has nothing before it', T.areaBefore('park') === null);
 {
