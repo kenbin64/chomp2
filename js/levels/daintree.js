@@ -12,7 +12,7 @@
 
 import * as THREE from 'three';
 import * as Trip from '../trip-rules.js';
-import { HALF, START_Z, BOAT_START_Z, BOAT_LENGTH, AGROUND_Z, SANDBAR, riverX, boatX, groundAt, insideRiver, boatStep, aground, inThrowRange, crocSpots, crocsRoundBoat } from './daintree-rules.js';
+import { HALF, START_Z, BOAT_START_Z, BOAT_LENGTH, AGROUND_Z, SANDBAR, CROC, riverX, boatX, groundAt, insideRiver, boatStep, aground, inThrowRange, crocSpots, crocsRoundBoat, crocStep, crocBites, afterBite } from './daintree-rules.js';
 import { buildDaintree } from './daintree-scene.js';
 import { Wally } from '../wally.js';
 import { Food, randomKind, useJarModel } from '../food.js';
@@ -156,14 +156,16 @@ function makeCroc(x, z, facing) {
   c.skin.play('Swim', { alternatives: ['Idle'] });
   return c;
 }
-const bankCrocs = crocSpots().map(s => { const c = makeCroc(s.x, s.z, s.side > 0 ? -Math.PI / 2 : Math.PI / 2); return c && { ...c, home: s, t: Math.random() * 10 }; }).filter(Boolean);
+// The wild crocs wait at the bank; as Wally swims past they slide in and chase him (Ken:
+// added danger). Their moves are crocStep in daintree-rules.js (tested).
+const bankCrocs = crocSpots().map(s => { const c = makeCroc(s.x, s.z, s.side > 0 ? -Math.PI / 2 : Math.PI / 2); return c && { ...c, home: s, sway: Math.random() * 10, s: { x: s.x, z: s.z, state: 'bank', t: 0, heading: s.side > 0 ? -Math.PI / 2 : Math.PI / 2 } }; }).filter(Boolean);
 const ringCrocs = crocsRoundBoat().map(s => { const c = makeCroc(s.x, s.z - 30, 0); if (c) c.g.visible = false; return c && { ...c, to: s }; }).filter(Boolean);
 
 // ---- State -----------------------------------------------------------------------------------
 const input = new Input(canvas, touch ? { stick: $('stick'), knob: $('knob'), jump: $('t-jump'), fours: $('t-fours'), pause: $('t-pause'), cam: $('t-cam') } : null);
 input.onPause = () => setPaused(!game.paused);
 input.onMute = () => toast_('Sound ' + (sound.toggleMute() ? 'off' : 'on'), 'info');
-const game = { running: false, paused: false, done: false, time: 0, energy: ENERGY_MAX, lives: LIVES, faint: 0, points: 0, caught: 0, streak: 0, behind: 0, scene: null };
+const game = { running: false, paused: false, done: false, time: 0, energy: ENERGY_MAX, lives: LIVES, faint: 0, points: 0, caught: 0, streak: 0, behind: 0, scene: null, stun: 0, bites: 0, stolen: 0, crocTip: false };
 game.tripDrain = Trip.drainFactor(progress.trip, 'daintree', Trip.attemptLevel(progress.trip, 'daintree').level);
 window.chomp = { game, wally, scene, camera, boat, passengers };
 
@@ -214,7 +216,8 @@ function step(dt, t) {
   cam.pitch = Math.min(1.35, Math.max(0.05, cam.pitch + k.tilt));
   cam.dist = Math.min(22, Math.max(4, cam.dist + k.zoom));
 
-  const control = game.faint > 0 || game.done ? { forward: 0, right: 0, jump: false, fours: false, turn: 0, turnKeys: 0, tilt: 0, zoom: 0 } : k;
+  game.stun = Math.max(0, game.stun - dt);
+  const control = game.faint > 0 || game.done || game.stun > 0 ? { forward: 0, right: 0, jump: false, fours: false, turn: 0, turnKeys: 0, tilt: 0, zoom: 0 } : k;
   for (const e of wally.update(dt, control, cam.yaw, speedFactor(game.energy))) {
     if (e === 'jump') sound.play.jump(); else if (e === 'land') sound.play.land();
     else if (e === 'splash') { sound.play.splash(); fx.splash(wally.pos, 26); }
@@ -225,6 +228,8 @@ function step(dt, t) {
   boat.z = boatStep(boat.z, lead, dt); placeBoat();
   if (lead > 24 && (game.behind -= dt) <= 0) { game.behind = 6; toast_('Keep up with the boat! That is where the tucker is', 'info'); }
   if (aground(boat.z) && !game.scene) startSandbar();
+
+  crocsStep(dt);
 
   // Energy.
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
@@ -250,6 +255,32 @@ function step(dt, t) {
   wally.jawWant = closest < 4.5 ? 0.75 : 0.12;
   if (game.energy < 25 && (game.hungry = (game.hungry || 0) - dt) <= 0) { bubbles.say(wally.root, pickLine('wallyHungry'), 3); game.hungry = 10; }
   drawHud();
+}
+
+// The wild crocs: chase, lunge, bite, back off; and snap up food that lands near them.
+function crocsStep(dt) {
+  for (const c of bankCrocs) {
+    const was = c.s.state;
+    c.s = crocStep(c.s, wally.pos.x, wally.pos.z, dt);
+    if (was === 'bank' && c.s.state === 'chase') {
+      sound.play.splash(); fx.splash(new THREE.Vector3(c.s.x, 0, c.s.z), 14);
+      if (!game.crocTip) { game.crocTip = true; toast_('A wild croc is after you! Keep moving, and grab the food before they do', 'bad'); bubbles.say(wally.root, 'Uh oh. These fellas are not tame!', 3); }
+    }
+    c.g.position.set(c.s.x, -0.35, c.s.z); c.g.rotation.y = c.s.heading;
+    c.skin.play(c.s.state === 'bank' ? 'Idle' : 'Swim', { speed: c.s.state === 'lunge' ? 2 : 1, alternatives: ['Swim'] });
+    if (game.faint <= 0 && game.stun <= 0 && crocBites(c.s, wally.pos.x, wally.pos.z)) {
+      c.s = afterBite(c.s); game.bites++; game.stun = 1;
+      game.energy = Math.max(1, game.energy - CROC.biteFeed); game.streak = 0;
+      const dx = wally.pos.x - c.s.x, dz = wally.pos.z - c.s.z, d = Math.hypot(dx, dz) || 1;
+      wally.vel.x = dx / d * 7; wally.vel.z = dz / d * 7;            // knocked away from it
+      sound.play.lose(); fx.shake && fx.shake(0.4);
+      toast_(`Chomped by a wild croc! -${CROC.biteFeed} feed`, 'bad'); bubbles.say(wally.root, 'Oi! Crikey, that one bit me!', 2.6);
+    }
+    // Food that lands near a croc is gone.
+    for (const it of [...food.items]) if (it.landed && Math.hypot(it.mesh.position.x - c.s.x, it.mesh.position.z - c.s.z) < CROC.steal) {
+      food.take(it, 'gone'); game.stolen++; if (game.stolen % 3 === 1) toast_('A croc snapped it up first!', 'info');
+    }
+  }
 }
 
 function outOfPuff(why) {
@@ -285,6 +316,7 @@ function startSandbar() {
   $('hud').hidden = true; $('scene-skip').hidden = false;
   fx.shake && fx.shake(0.6); sound.play.land();
   for (const c of ringCrocs) c.g.visible = true;
+  for (const c of bankCrocs) c.g.visible = false;               // the chasers give way to the crocs round the boat
   // Wally, near the boat on the open side, facing it.
   const wx = boatX(AGROUND_Z) - 7, wz = AGROUND_Z - 2;
   wally.pos.set(wx, groundAt(wx, wz).y, wz); wally.root.position.copy(wally.pos); wally.vel.set(0, 0, 0);
@@ -370,7 +402,7 @@ function finish(won) {
   $('result-why').textContent = won ? 'The boat is stuck and the crocs are all round it. Wally has to take the sceptre to the King. (The rainforest and the King: next to build.)' : 'Kenny can only bring his jar three times in a place.';
   markRetry(won, 'the Daintree River');
   $('result-lines').innerHTML = '';
-  for (const [label, v] of [['Food caught', game.caught], ['Points', game.points]]) {
+  for (const [label, v] of [['Food caught', game.caught], ['Croc bites', game.bites], ['Snapped up by crocs', game.stolen], ['Points', game.points]]) {
     const li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = label; li.lastChild.textContent = v; $('result-lines').appendChild(li);
   }
   $('result').hidden = false;
@@ -394,9 +426,7 @@ function frame() {
   if (game.scene && !game.scene.over && !game.paused) sandbarStep(dt);
   if (game.running || game.scene) passengersStep(dt, t);
   else for (const p of passengers) { p.skin.play('idle'); p.skin.update(dt); }
-  for (const c of bankCrocs) {                                    // the bank crocs drift a little, watching
-    c.t += dt; c.g.position.z = c.home.z + Math.sin(c.t * 0.2) * 2; c.skin.update(dt);
-  }
+  for (const c of bankCrocs) c.skin.update(dt);                   // their moves are in step (crocsStep)
   bubbles.update(dt); fx.update(dt, t);
   world.update(t, camera);
   if (!game.scene) followCamera(dt);

@@ -92,3 +92,33 @@ export function crocsRoundBoat(n = 5) {
   }
   return out;
 }
+
+// ---- Wild crocs that chase (Ken, 2026-10-20: for added danger, the crocs follow Wally
+// and the boat, so he has to eat the food and evade the crocs) ------------------------------
+// A croc on the bank slides in when he swims past, then follows him. It swims a little
+// slower than he does (he can always get away), lunges in a short burst when close, then
+// rests; a bite costs him feed and knocks him back, and that croc backs off for a while.
+// It snaps up food that lands near it. It never leaves the water.
+export const CROC = { wake: 24, speed: 3.4, lunge: 6.5, lungeRange: 4, lungeTime: 0.6, rest: 1.5, bite: 1.5, backOff: 3, giveUp: 45, steal: 2.2, biteFeed: 22 };
+
+// One croc's step: c is { x, z, state, t } (state 'bank' | 'chase' | 'lunge' | 'rest' | 'back');
+// returns the new croc. wx, wz: Wally. In the water only.
+export function crocStep(c, wx, wz, dt) {
+  const dx = wx - c.x, dz = wz - c.z, d = Math.hypot(dx, dz) || 1e-6;
+  let { state, t } = c; t -= dt;
+  if (state === 'bank') { if (d < CROC.wake) { state = 'chase'; t = 0; } else return { ...c, t }; }
+  if (state === 'back' && t <= 0) state = 'chase';
+  if (state === 'lunge' && t <= 0) { state = 'rest'; t = CROC.rest; }
+  if (state === 'rest' && t <= 0) state = 'chase';
+  if (state === 'chase' && d < CROC.lungeRange) { state = 'lunge'; t = CROC.lungeTime; }
+  if (state === 'chase' && d > CROC.giveUp) return { ...c, state, t };   // too far behind: it waits where it is
+  const speed = state === 'lunge' ? CROC.lunge : state === 'chase' ? CROC.speed : state === 'back' ? -CROC.speed * 0.6 : CROC.speed * 0.3;
+  const nx = c.x + dx / d * speed * dt, nz = c.z + dz / d * speed * dt;
+  const heading = Math.atan2(dx, dz);
+  if (groundAt(nx, nz).surface !== 'water') return { ...c, state, t, heading };   // never onto the bank or the sand
+  return { x: nx, z: nz, state, t, heading };
+}
+// Does the croc bite him now? Close enough, and not backing off.
+export const crocBites = (c, wx, wz) => (c.state === 'lunge' || c.state === 'chase') && Math.hypot(wx - c.x, wz - c.z) < CROC.bite;
+// After a bite, the croc backs off.
+export const afterBite = c => ({ ...c, state: 'back', t: CROC.backOff });

@@ -42,5 +42,31 @@ check('too far, they cannot reach him', !D.inThrowRange(D.boatX(100) - 30, 100, 
 check('wild crocs along both banks, in the water', (() => { const c = D.crocSpots(); return c.length >= 4 && c.some(s => s.side < 0) && c.some(s => s.side > 0) && c.every(s => D.groundAt(s.x, s.z).surface === 'water'); })());
 check('the crocs come up round the stuck boat, in the water, not on the sand', D.crocsRoundBoat().every(c => D.groundAt(c.x, c.z).surface === 'water' && Math.hypot(c.x - D.boatX(D.AGROUND_Z), c.z - D.AGROUND_Z) > 6));
 
+// ---- The crocs that chase -------------------------------------------------------------------
+{
+  const z = 120, w = { x: D.riverX(z), z };
+  const sleeper = { x: D.riverX(z) - 18, z: z - 30, state: 'bank', t: 0 };
+  check('a bank croc stays put while he is far off', D.crocStep(sleeper, w.x, w.z, 0.1).state === 'bank' && D.crocStep(sleeper, w.x, w.z, 0.1).x === sleeper.x);
+  let c = { x: D.riverX(z) - 10, z: z - 10, state: 'bank', t: 0 };
+  c = D.crocStep(c, w.x, w.z, 0.1);
+  check('when he swims past, it wakes and chases', c.state === 'chase');
+  const d0 = Math.hypot(w.x - c.x, w.z - c.z); for (let i = 0; i < 10; i++) c = D.crocStep(c, w.x, w.z, 0.1);
+  check('it closes on him', Math.hypot(w.x - c.x, w.z - c.z) < d0);
+  check('it swims slower than Wally (he can always get away)', D.CROC.speed < 4.8 && D.CROC.speed > 3);
+  let l = { x: w.x - 3, z: w.z, state: 'chase', t: 0 }; l = D.crocStep(l, w.x, w.z, 0.01);
+  check('close in, it lunges, faster for a moment', l.state === 'lunge' && D.CROC.lunge > 4.8);
+  let r = { ...l, t: 0.001 }; r = D.crocStep(r, w.x + 50, w.z, 0.01);
+  check('after a lunge it rests', r.state === 'rest');
+  check('a bite needs it right on him', D.crocBites({ x: w.x - 1, z: w.z, state: 'lunge' }, w.x, w.z) && !D.crocBites({ x: w.x - 3, z: w.z, state: 'lunge' }, w.x, w.z));
+  const b = D.afterBite({ x: w.x - 1, z: w.z, state: 'lunge', t: 0 });
+  check('after a bite it backs off, and cannot bite again at once', b.state === 'back' && !D.crocBites(b, w.x, w.z));
+  const b2 = D.crocStep(b, w.x, w.z, 0.5);
+  check('backing off, it moves away from him', Math.hypot(w.x - b2.x, w.z - b2.z) > 1);
+  // Chasing him toward the bank, it stops at the water's edge.
+  let e = { x: D.riverX(z) + D.HALF - 2, z, state: 'chase', t: 0 };
+  for (let i = 0; i < 100; i++) e = D.crocStep(e, D.riverX(z) + D.HALF + 6, z, 0.1);
+  check('it never leaves the water, even chasing him up the bank', D.groundAt(e.x, e.z).surface === 'water');
+}
+
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
