@@ -1,0 +1,64 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  :root { --gold: #ffd166; --red: #c0392b; }
+  * { box-sizing: border-box; margin: 0; }
+  body { width: var(--w); height: var(--h); overflow: hidden; font-family: 'Baloo 2', sans-serif; color: #fff; background: #0b1d27; position: relative; }
+  .art { position: absolute; inset: 0; background: url('file:///C:/projects/chomp-3d/assets/title/opener.webp') center 38% / cover; }
+  .shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6,20,28,0) 46%, rgba(6,20,28,0.78) 60%, #06141c 72%); }
+  .strip { position: absolute; left: 0; right: 0; display: grid; gap: 10px; padding: 0 28px; }
+  .strip figure { position: relative; border-radius: 12px; overflow: hidden; border: 3px solid rgba(255,209,102,0.85); box-shadow: 0 8px 22px rgba(0,0,0,0.5); aspect-ratio: 16 / 9; }
+  .strip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .strip figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 8px 4px; font-weight: 800; font-size: 15px; text-align: center; background: linear-gradient(transparent, rgba(0,0,0,0.75)); text-shadow: 0 1px 4px #000; }
+  .tal { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 14px; align-items: center; }
+  .tal img { width: 96px; height: 96px; object-fit: contain; transform: scale(1.15); filter: drop-shadow(0 3px 8px rgba(0,0,0,0.7)); }
+  .tal .sc { width: 70px; height: 120px; transform: scale(2.1); margin: 0 20px; }
+  .tag { position: absolute; left: 0; right: 0; text-align: center; font-weight: 800; color: var(--gold); text-shadow: 0 3px 0 var(--red), 0 6px 16px rgba(0,0,0,0.6); line-height: 1.05; }
+  .sub { position: absolute; left: 0; right: 0; text-align: center; font-weight: 600; text-shadow: 0 2px 8px #000; }
+  .foot { position: absolute; left: 0; right: 0; bottom: 18px; text-align: center; font-weight: 800; }
+  .foot .free { display: inline-block; padding: 6px 18px; border-radius: 999px; background: var(--gold); color: #102030; margin-right: 10px; }
+  .foot .url { color: var(--gold); text-shadow: 0 2px 6px #000; }
+  .credit { position: absolute; right: 22px; bottom: 22px; font-size: 13px; opacity: 0.75; font-weight: 600; }
+  /* wide */
+  body.wide { --w: 1920px; --h: 1080px; }
+  .wide .art { bottom: 230px; }
+  .wide .tag { top: 642px; font-size: 54px; }
+  .wide .sub { top: 708px; font-size: 22px; }
+  .wide .tal { top: 752px; gap: 40px; } .wide .tal img { width: 84px; height: 84px; }
+  .wide .strip { top: 862px; grid-template-columns: repeat(7, 1fr); }
+  .wide .strip figure { aspect-ratio: auto; height: 150px; }
+  .wide .foot { bottom: 14px; font-size: 22px; }
+  .wide .credit { display: none; }
+  /* square */
+  body.square { --w: 1080px; --h: 1080px; }
+  .square .art { bottom: 250px; background-position: 56% 38%; }
+  .square .tag { top: 650px; font-size: 46px; }
+  .square .sub { top: 708px; font-size: 19px; padding: 0 30px; }
+  .square .tal { top: 752px; }
+  .square .tal { gap: 22px; } .square .tal img { width: 70px; height: 70px; } .square .tal .sc { width: 50px; height: 86px; }
+  .square .strip { top: 850px; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 0 20px; }
+  .square .strip figure { aspect-ratio: auto; height: 140px; }
+  .square .strip figcaption { font-size: 12px; }
+  .square .foot { font-size: 19px; bottom: 16px; }
+  .square .credit { display: none; }
+</style></head>
+<body class="wide">
+  <div class="art"></div><div class="shade"></div>
+  <div class="tag">From Croc Park to the Daintree</div>
+  <div class="sub">A 3D adventure across Cairns and Far North Queensland · seven levels · six talismans · one hungry croc</div>
+  <div class="tal">
+    <img src="file:///C:/projects/chomp-3d/screens/guide/talisman-sun.png"><img src="file:///C:/projects/chomp-3d/screens/guide/talisman-moon.png"><img src="file:///C:/projects/chomp-3d/screens/guide/talisman-air.png">
+    <img src="file:///C:/projects/chomp-3d/screens/guide/talisman-fire.png"><img src="file:///C:/projects/chomp-3d/screens/guide/talisman-water.png"><img src="file:///C:/projects/chomp-3d/screens/guide/talisman-earth.png">
+  </div>
+  <div class="strip" id="strip"></div>
+  <div class="foot"><span class="free">FREE TO PLAY</span><span class="url">playbutterflyfx.com/chomp</span></div>
+<script>
+const P = 'file:///C:/projects/chomp-3d/screens/promo/';
+const ALL = [['02-croc-park.png', 'Croc Park'], ['04-esplanade.png', 'The Esplanade'], ['05-green-island-dusk-ken.png', 'Green Island'], ['05b-great-barrier-reef-underwater.png', 'The Reef'], ['07-kuranda.png', 'Kuranda'], ['10-mossman-gorge.png', 'Mossman Gorge'], ['12-daintree-vines.png', 'The Daintree']];
+const SQUARE = [ALL[1], ALL[2], ALL[4], ALL[6]];
+const sq = location.hash === '#square';
+if (sq) document.body.className = 'square';
+document.getElementById('strip').innerHTML = (sq ? SQUARE : ALL).map(([f, n]) => `<figure><img src="${P}${f}"><figcaption>${n}</figcaption></figure>`).join('');
+</script>
+</body></html>
