@@ -5,6 +5,10 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- Every level explains itself: the first time in each, its purpose and the controls for the device show
+  for a few seconds as play begins (no pause; a tap clears it). The touch controls on every level's card
+  now describe the green orb.
+
 ## v1.0.0-beta.7 (2026-10-21)
 
 - The guide's reef picture is Ken's own screenshot of Green Island and the jetty at dusk.

@@ -680,3 +680,14 @@ body.phone-menu :is(.tip-line, .found-line, .book-note) { top: calc(max(8px, env
 .guide-button { position: fixed; z-index: 40; top: calc(max(10px, env(safe-area-inset-top)) + 46px); left: 50%; transform: translateX(212px); font: 800 16px var(--font); padding: 8px 14px; border-radius: 999px; border: 2px solid rgba(255,209,102,0.7); background: rgba(10, 30, 44, 0.75); color: #ffd166; text-decoration: none; }
 .guide-button:hover { background: rgba(255,209,102,0.25); }
 .menu-panel .guide-button { display: block; font: 800 16px var(--font); padding: 8px 14px; border-radius: 999px; border: 2px solid rgba(255,209,102,0.7); background: rgba(10, 30, 44, 0.75); color: #ffd166; }
+/* A level's purpose and controls, the first time in it (menu.js): never pauses, fades, a tap clears it. */
+.level-intro { position: fixed; z-index: 30; left: 50%; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 150px); transform: translateX(-50%); width: min(560px, calc(100% - 180px)); min-width: 260px; padding: 12px 16px; border-radius: 16px; background: rgba(10, 30, 44, 0.9); border: 2px solid rgba(255, 209, 102, 0.6); color: #fff; font: 600 14px/1.4 var(--font); text-align: center; transition: opacity 1s; animation: tip-in 0.3s ease-out; }
+.level-intro b { display: block; font-size: 20px; color: #ffd166; }
+.level-intro p { margin: 4px 0 6px; }
+.level-intro .li-keys { color: #b9d3cf; font-size: 13px; }
+.level-intro small { display: block; margin-top: 4px; opacity: 0.6; font-size: 11px; }
+.level-intro.out { opacity: 0; }
+/* Short screens (a phone held sideways): the intro sits down the left side, clear of Wally in the middle. */
+@media (max-height: 520px) { .level-intro { left: 12px; transform: none; top: calc(max(8px, env(safe-area-inset-top)) + 56px); bottom: auto; width: min(300px, 38vw); min-width: 0; max-height: calc(100% - 150px); overflow: auto; text-align: left; font-size: 12px; padding: 10px 12px; } .level-intro b { font-size: 16px; } .level-intro .li-keys { font-size: 11px; } }
+body.intro-up .panel.quest, body.intro-up .quest-show { visibility: hidden; }
+.level-intro .li-keys { color: #ffd166; font-weight: 700; margin: 4px 0; }

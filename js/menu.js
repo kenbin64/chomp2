@@ -183,12 +183,45 @@ async function checkForUpdate() {
   if (v !== startedWith) updateCard();
 }
 
+// Each level's purpose and controls (Ken, 2026-10-21: every area should explain them at the beginning).
+// Levels now start by themselves, skipping their title card, so the first time in each level its own words
+// (the card's description) and the controls for this device show for a few seconds once play begins. It
+// never pauses the game; a tap clears it. The touch controls on every card describe the green orb.
+const ORB_TOUCH = 'Green orb (bottom right): drag up to go, sideways to turn, the middle to stop; tap it to jump';
+function orbWords() {
+  for (const k of document.querySelectorAll('.keys.phone span')) if (/^\s*Left thumb/i.test(k.textContent)) k.textContent = ORB_TOUCH;
+  for (const k of document.querySelectorAll('.keys.phone span')) if (/^\s*(Jump button|Jump and Duck buttons|Jump and Fours buttons)/i.test(k.textContent)) k.remove();
+}
+function levelIntro() {
+  const card = document.querySelector('#title .card'); if (!card || location.pathname.replace(/\.html$/, '').endsWith('/index') || /\/(chomp\/?)?$/.test(location.pathname)) return;
+  const key = `chomp-intro-${location.pathname.split('/').pop().replace(/\.html$/, '')}`;
+  try { if (localStorage.getItem(key)) return; } catch { /* show it */ }
+  const name = (card.querySelector('h1') || {}).textContent || '';
+  const about = [...card.querySelectorAll('p')].find(p => !p.className && p.textContent.length > 40);
+  const touch = matchMedia('(pointer: coarse)').matches;
+  const keys = card.querySelector(touch ? '.keys.phone' : '.keys.pc');
+  if (!about) return;
+  const wait = setInterval(() => {
+    const g = window.chomp && window.chomp.game; if (!g || !g.running) return;
+    clearInterval(wait);
+    try { localStorage.setItem(key, '1'); } catch { /* fine */ }
+    const box = document.createElement('div'); box.className = 'level-intro'; box.setAttribute('role', 'status');
+    box.innerHTML = '<b></b><div class="li-keys"></div><p></p><small>Tap to close</small>';   // the controls first: they matter most
+    box.querySelector('b').textContent = name; box.querySelector('p').textContent = about.textContent.trim();
+    if (keys) box.querySelector('.li-keys').textContent = [...keys.querySelectorAll('span')].map(s => s.textContent.trim()).join(' · ');
+    const done = () => { box.remove(); document.body.classList.remove('intro-up'); };   // the objective panel steps aside while it shows
+    box.addEventListener('pointerdown', done);
+    document.body.classList.add('intro-up'); document.body.append(box); setTimeout(() => box.classList.add('out'), 9000); setTimeout(done, 10000);
+  }, 400);
+}
+
 export function installMenu() {
   if (window.__chompMenu) return; window.__chompMenu = true;
   paws(); guideButton(); pawsWords();
   closable(document.querySelector('.free-banner'), 'chomp-free-banner');
   landscapeHint();
   questPanel();
+  orbWords(); levelIntro();
   appButtons();
   checkForUpdate(); setInterval(checkForUpdate, 10 * 60 * 1000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });   // a phone app brought back after a while
