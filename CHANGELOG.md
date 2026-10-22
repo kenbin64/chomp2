@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.8 (2026-10-22)
+
 - Every level explains itself: the first time in each, its purpose and the controls for the device show
   for a few seconds as play begins (no pause; a tap clears it). The touch controls on every level's card
   now describe the green orb.
