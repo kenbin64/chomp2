@@ -1,7 +1,7 @@
 {
   "name": "chomp-3d",
   "private": true,
-  "version": "1.0.0-beta.8",
+  "version": "1.0.0-beta.9",
   "type": "module",
   "scripts": {
     "e2e": "node test/e2e.mjs",

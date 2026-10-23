@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.9 (2026-10-23)
+
 - Fixed: pushing forward on the green orb covered it with a big gold disc and made it unusable (its arrow
   picked up the gold button style). Now only the up arrow lights.
 
