@@ -1,7 +1,7 @@
 {
   "name": "Chomp 3D: Wally's Cairns Adventure",
   "short_name": "Chomp 3D",
-  "description": "Wally the crocodile's adventure across Cairns and Far North Queensland. Free to play.",
+  "description": "Wally the crocodile's adventure across Cairns and Far North Queensland. Free to play. Personal portfolio / skills demonstration: not a commercial product.",
   "start_url": "index.html?app",
   "scope": "./",
   "display": "fullscreen",

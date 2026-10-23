@@ -40,7 +40,7 @@ function pawsWords() {
   const h = document.querySelector('#paused h1'); if (h && h.textContent === 'Paused') { h.innerHTML = `${CROC_HAND} Paws`; h.insertAdjacentHTML('afterend', '<p class="sub">Wally\'s having a breather.</p>'); }
   // Beta testers can send feedback from any pause, in a new tab so the game is not lost.
   const card = document.querySelector('#paused .card');
-  if (card && !card.querySelector('.pause-feedback')) card.insertAdjacentHTML('beforeend', '<p class="fine pause-feedback"><a href="feedback.html" target="_blank" rel="noopener">💬 Send feedback or report a problem</a></p>');
+  if (card && !card.querySelector('.pause-feedback')) card.insertAdjacentHTML('beforeend', '<p class="fine pause-feedback"><a href="feedback.html" target="_blank" rel="noopener">💬 Send feedback or report a problem</a></p><p class="fine portfolio-label">Personal portfolio / skills demonstration: not a commercial product.</p>');
   const t = document.getElementById('t-pause'); if (t && t.textContent === 'II') { t.innerHTML = CROC_HAND; t.setAttribute('aria-label', 'Paws'); }
 }
 

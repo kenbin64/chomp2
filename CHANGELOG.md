@@ -5,6 +5,9 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- Every page, the install details, the Paws card, the About page and the playbutterflyfx.com front
+  card now say plainly: "Personal portfolio / skills demonstration: not a commercial product."
+
 ## v1.0.0-beta.13 (2026-10-23)
 
 - VR headsets (WebXR, such as the Meta Quest Browser): a VR button appears when a headset is there.
