@@ -8,6 +8,7 @@
 // with the power bar in the green, C (or a click) to catch.
 
 import * as THREE from 'three';
+import { installVR, inVR } from '../vr.js';
 import { Wally } from '../wally.js';
 import { loadModels } from '../models.js';
 import { createPost } from '../post.js';
@@ -266,7 +267,8 @@ function frame() {
   camera.lookAt(look);
   trees.update(t); grass.update(t);
   post.render();
-  requestAnimationFrame(frame);
+  if (!inVR()) requestAnimationFrame(frame);   // in a VR headset, the headset sets the pace (vr.js)
 }
+installVR({ renderer, scene, camera, frame });   // a VR headset, if there is one (vr.js)
 requestAnimationFrame(frame);
 if (params.has('play')) start();

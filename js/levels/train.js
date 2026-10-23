@@ -11,6 +11,7 @@
 // The train: a blue and yellow locomotive, maroon carriages with a cream window band (Ken's photos).
 
 import * as THREE from 'three';
+import { installVR, inVR } from '../vr.js';
 import { loadModels, ModelSkin } from '../models.js';
 import { createPost } from '../post.js';
 import { pickQuality, isTouchDevice, pixelRatioFor } from '../quality.js';
@@ -483,7 +484,8 @@ function frame() {
   sun.position.set(head.x - 200, head.y + 260, head.z - 120); sun.target.position.set(head.x, head.y, head.z);
   sun.shadow.camera.left = -80; sun.shadow.camera.right = 80; sun.shadow.camera.top = 80; sun.shadow.camera.bottom = -80; sun.shadow.camera.far = 700; sun.shadow.camera.updateProjectionMatrix();
   post.render();
-  requestAnimationFrame(frame);
+  if (!inVR()) requestAnimationFrame(frame);   // in a VR headset, the headset sets the pace (vr.js)
 }
+installVR({ renderer, scene, camera, frame });   // a VR headset, if there is one (vr.js)
 requestAnimationFrame(frame);
 window.chomp = { scene, camera, line, train, SC, shape, FALLS, height, get t() { return t; }, set t(v) { t = v; }, start, SHOTS };

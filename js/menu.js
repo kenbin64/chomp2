@@ -7,7 +7,7 @@
 //     tap outside it, so nothing can get stuck in the way
 // Loaded by every page that plays (main.js and each level), once.
 
-const TOP = '.map-button, .sceptre-button, .score-button, .sound-btn, .paws-button, .guide-button, .install-button:not(.opener-buttons *), .fullscreen-button:not(.opener-buttons *)';
+const TOP = '.vr-button, .map-button, .sceptre-button, .score-button, .sound-btn, .paws-button, .guide-button, .install-button:not(.opener-buttons *), .fullscreen-button:not(.opener-buttons *)';
 // Folded when the screen is too narrow for the two rows of buttons beside the game (Ken, 2026-10-21:
 // a small window has to fold too), and on every phone and tablet whatever its size (touch first).
 const phone = () => matchMedia('(max-width: 1000px), (pointer: coarse)').matches;

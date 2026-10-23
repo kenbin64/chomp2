@@ -78,7 +78,7 @@ export function createPost(renderer, scene, camera, quality) {
   composer.addPass(new OutputPass());                 // tone mapping and colour space, as the plain render had
   composer.addPass(new ShaderPass(GradeShader));
   return {
-    render: measure(() => composer.render()),
+    render: measure(() => (renderer.xr.isPresenting ? renderer.render(scene, camera) : composer.render())),   // a VR headset draws the plain scene (vr.js)
     setSize: (w, h) => composer.setSize(w, h),          // the composer resizes every effect, pixel ratio included
   };
 }

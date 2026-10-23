@@ -9,6 +9,7 @@
 // The gorge's rules are in mossman-rules.js (tested), the look in mossman-scene.js.
 
 import { showLeaderboard } from '../leaderboard.js';
+import { installVR, inVR } from '../vr.js';
 import { guideArrow } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { foundTalisman } from '../revisit.js';
@@ -405,8 +406,9 @@ function frame() {
   intro.update(dt, camera);                       // the first-visit fly-over, when it plays
   fpsWatch(dt);
   renderer.render(scene, camera);
-  requestAnimationFrame(frame);
+  if (!inVR()) requestAnimationFrame(frame);   // in a VR headset, the headset sets the pace (vr.js)
 }
+installVR({ renderer, scene, camera, frame });   // a VR headset, if there is one (vr.js)
 requestAnimationFrame(frame);
 if (params.has('play') || params.has('go')) start();   // ?go: Play on the title screen, or the story, brought him here: straight in
 installMap({ pause: on => { if (game.running) game.paused = on; } });

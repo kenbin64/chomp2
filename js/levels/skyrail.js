@@ -14,6 +14,7 @@
 // Distances are compressed so the ride takes a minute, not the real fifteen or so.
 
 import * as THREE from 'three';
+import { installVR, inVR } from '../vr.js';
 import { loadModels, ModelSkin } from '../models.js';
 import { createPost } from '../post.js';
 import { pickQuality, isTouchDevice, pixelRatioFor } from '../quality.js';
@@ -196,7 +197,8 @@ function frame() {
   sun.position.copy(gp).add(new THREE.Vector3(260, 150, -200)); sun.target.position.copy(gp);   // late afternoon, low over the range
   sun.shadow.camera.left = -90; sun.shadow.camera.right = 90; sun.shadow.camera.top = 90; sun.shadow.camera.bottom = -90; sun.shadow.camera.far = 700; sun.shadow.camera.updateProjectionMatrix();
   post.render();
-  requestAnimationFrame(frame);
+  if (!inVR()) requestAnimationFrame(frame);   // in a VR headset, the headset sets the pace (vr.js)
 }
+installVR({ renderer, scene, camera, frame });   // a VR headset, if there is one (vr.js)
 requestAnimationFrame(frame);
 window.chomp = { scene, camera, cable, height, get t() { return t; }, set t(v) { t = v; }, start };

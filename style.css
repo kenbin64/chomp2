@@ -710,3 +710,8 @@ body.touch .dive-buttons button { width: 62px; height: 62px; border-radius: 50%;
 body.touch .dive-buttons button small { display: none; }
 body.touch #t-fours { left: calc(max(12px, env(safe-area-inset-left)) + 80px); right: auto; bottom: max(24px, env(safe-area-inset-bottom)); width: 62px; height: 62px; font-size: 14px; }
 body.touch:has(#dive-buttons:not([hidden])) #t-fours { display: none; }
+/* VR (vr.js): the button only appears when a headset is there; beside the Guide button, in the menu on a narrow screen. */
+.vr-button { position: fixed; z-index: 40; top: calc(max(10px, env(safe-area-inset-top)) + 46px); left: 50%; transform: translateX(326px); font: 800 16px var(--font); padding: 8px 14px; border-radius: 999px; border: 2px solid rgba(159, 238, 255, 0.8); background: rgba(10, 30, 44, 0.75); color: #9fe8ff; cursor: pointer; }
+.vr-button:hover { background: rgba(159, 238, 255, 0.2); }
+.menu-panel .vr-button { position: static; transform: none; display: block; }
+#title:not([hidden]) ~ .vr-button { display: none !important; }

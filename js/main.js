@@ -4,6 +4,7 @@
 // was caught, missed or stolen, and keeps the quest and the screen up to date.
 
 import { isApp } from './menu.js';
+import { installVR, inVR } from './vr.js';
 import { guideArrow, nearest } from './guide-arrow.js';
 import { startRun, addPoints, bankRun, failRun } from './points.js';
 import { installGear, snorkelling, drainFactor } from './gear.js';
@@ -1131,8 +1132,9 @@ function frame() {
   fpsWatch.focus(opening.phase === 'intro');      // the spiral is the test (Ken): smooth, or the detail comes down
   fpsWatch(dt);
   post.render();
-  requestAnimationFrame(frame);
+  if (!inVR()) requestAnimationFrame(frame);   // in a VR headset, the headset sets the pace (vr.js)
 }
+installVR({ renderer, scene, camera, frame });   // a VR headset, if there is one (vr.js)
 requestAnimationFrame(frame);
 if (params.has('play') || bot) start();
 else if (params.has('map')) showMap();

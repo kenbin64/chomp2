@@ -6,6 +6,7 @@
 // Rules: coast-rules.js (the coast, the boats) and rescue-rules.js (the crocs' line), both tested.
 
 import { installMenu } from '../menu.js';
+import { installVR, inVR } from '../vr.js';
 import { guideArrow } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, installScore } from '../points.js';
 import * as THREE from 'three';
@@ -305,8 +306,9 @@ function frame() {
   if (ranges && ranges.userData.follow) ranges.userData.follow(camera);
   sun.position.copy(wally.pos).add(new THREE.Vector3(-60, 120, -50)); sun.target.position.copy(wally.pos);
   sceptreSet.update(t); followCamera(dt); intro.update(dt, camera); fpsWatch(dt);
-  post.render(); requestAnimationFrame(frame);
+  post.render(); if (!inVR()) requestAnimationFrame(frame);   // in a VR headset, the headset sets the pace (vr.js)
 }
+installVR({ renderer, scene, camera, frame });   // a VR headset, if there is one (vr.js)
 requestAnimationFrame(frame);
 if (params.has('play') || params.has('go')) start();   // ?go: arriving in the middle of the story, straight in (the fly-over still plays)
 installBook({ pause: on => { if (game.running) game.paused = on; } });

@@ -7,6 +7,7 @@
 // for Golden Mangoes, and the river-boat ticket for the Daintree.
 
 import { guideArrow, nearest } from '../guide-arrow.js';
+import { installVR, inVR } from '../vr.js';
 import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { foundTalisman, givePrize } from '../revisit.js';
 import { installGear, snorkelling, drainFactor } from '../gear.js';
@@ -528,8 +529,9 @@ function frame() {
   { const night = daynight.update(game.paused ? 0 : dt, camera); lamps.update(dt, night, wally.pos); world.night(night); }
   fpsWatch(dt);
   post.render();
-  requestAnimationFrame(frame);
+  if (!inVR()) requestAnimationFrame(frame);   // in a VR headset, the headset sets the pace (vr.js)
 }
+installVR({ renderer, scene, camera, frame });   // a VR headset, if there is one (vr.js)
 requestAnimationFrame(frame);
 if (params.has('play') || params.has('go') || bot) start();   // ?go: Play on the title screen, or the story, brought him here: straight in
 

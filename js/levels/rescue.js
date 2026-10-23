@@ -7,6 +7,7 @@
 // The rules are rescue-rules.js (tested); the park is world.js's.
 
 import { installMenu } from '../menu.js';
+import { installVR, inVR } from '../vr.js';
 import { guideArrow, nearest } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, installScore } from '../points.js';
 import * as THREE from 'three';
@@ -286,8 +287,9 @@ function frame() {
   intro.update(dt, camera);
   fpsWatch(dt);
   post.render();
-  requestAnimationFrame(frame);
+  if (!inVR()) requestAnimationFrame(frame);   // in a VR headset, the headset sets the pace (vr.js)
 }
+installVR({ renderer, scene, camera, frame });   // a VR headset, if there is one (vr.js)
 requestAnimationFrame(frame);
 window.chomp = { game, wally, crocs, scene, camera, trail, sceptre };
 if (params.has('play') || params.has('go')) start();   // ?go: arriving in the middle of the story, straight in (the fly-over still plays)

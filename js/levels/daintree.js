@@ -11,6 +11,7 @@
 // The river's rules are in daintree-rules.js (tested), the look in daintree-scene.js.
 
 import { guideArrow, nearest } from '../guide-arrow.js';
+import { installVR, inVR } from '../vr.js';
 import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import * as THREE from 'three';
 import * as Trip from '../trip-rules.js';
@@ -551,8 +552,9 @@ function frame() {
   intro.update(dt, camera);
   fpsWatch(dt);
   renderer.render(scene, camera);
-  requestAnimationFrame(frame);
+  if (!inVR()) requestAnimationFrame(frame);   // in a VR headset, the headset sets the pace (vr.js)
 }
+installVR({ renderer, scene, camera, frame });   // a VR headset, if there is one (vr.js)
 requestAnimationFrame(frame);
 if (params.has('play') || params.has('go')) start();   // ?go: Play on the title screen, or the story, brought him here: straight in
 installMap({ pause: on => { if (game.running) game.paused = on; } });

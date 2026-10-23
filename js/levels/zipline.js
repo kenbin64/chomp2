@@ -5,6 +5,7 @@
 // The ride is in zipline-rules.js (tested). One ticket a ride.
 
 import { startRun, addPoints, bankRun } from '../points.js';
+import { installVR, inVR } from '../vr.js';
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
 import { loadModels } from '../models.js';
@@ -546,7 +547,8 @@ function frame() {
   daynight.update(dt, camera);
   sun.position.set(camera.position.x - 60, 120, camera.position.z - 40); sun.target.position.copy(camera.position);
   post.render();
-  requestAnimationFrame(frame);
+  if (!inVR()) requestAnimationFrame(frame);   // in a VR headset, the headset sets the pace (vr.js)
 }
+installVR({ renderer, scene, camera, frame });   // a VR headset, if there is one (vr.js)
 requestAnimationFrame(frame);
 if (params.has('play')) { game.chosen = params.get('line') || 'practice'; start(); }

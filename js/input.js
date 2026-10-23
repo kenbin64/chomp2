@@ -25,6 +25,7 @@
 
 import { showTip } from './tips.js';
 import { settings } from './settings.js';
+import { xrGamepad } from './vr.js';           // a VR headset's controllers, read as a game controller
 import './device.js';                    // which controls are in use: keyboard, mouse, controller, touch (device.js)
 import { installSettingsUi } from './settings-ui.js';
 
@@ -280,11 +281,12 @@ export class Input {
   // buttons. A, Y and Start count once per press, like the keys.
   readPad() {
     const pads = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : [];
-    const p = pads.find(g => g.mapping === 'standard') || pads[0];
+    const p = xrGamepad() || pads.find(g => g.mapping === 'standard') || pads[0];   // in a VR headset, its controllers (vr.js)
     if (!p) return null;
     const dead = v => Math.abs(v) < 0.18 ? 0 : (v - Math.sign(v) * 0.18) / 0.82;   // a dead zone, so a resting stick is still
     const held = i => !!(p.buttons[i] && p.buttons[i].pressed);
-    const now = { a: held(0), y: held(3), start: held(9) }, was = this.padWas || {};
+    const now = { a: held(0), y: held(3), start: held(9), round: !!p.turnAround }, was = this.padWas || {};
+    if (now.round && !was.round) this.turnQueued = true;           // VR: the right stick pressed turns him round
     if (now.a && !was.a) this.jumpQueued = true;
     if (now.y && !was.y) this.recenterQueued = true;
     if (now.start && !was.start && this.onPause) this.onPause();

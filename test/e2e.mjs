@@ -162,6 +162,32 @@ test('phone: the pad bottom turns Wally round; Duck sits by the backpack; no Cam
   await p.done();
 });
 
+test('VR: the button shows only with a headset, and waits for play to start', async () => {
+  let p = await page({ save: { unlocked: ['park'], trip: trip({ park: 1 }) } });
+  await go(p, 'index.html?noopening', 5000);
+  check('no headset: no VR button', !(await p.$('.vr-button')));
+  await p.done();
+  p = await page({ save: { unlocked: ['park'], trip: trip({ park: 1 }) } });
+  await p.evaluateOnNewDocument(() => {                       // a pretend headset: supported, but no real session
+    Object.defineProperty(navigator, 'xr', { value: { isSessionSupported: async () => true, requestSession: async () => { throw new Error('no headset here'); } } });
+  });
+  await go(p, 'index.html?noopening', 5000);
+  await p.evaluate(() => window.chompStartHere()); await wait(3000);
+  const shown = await p.evaluate(() => { const b = document.querySelector('.vr-button'); return !!b && getComputedStyle(b).display !== 'none'; });
+  check('with a headset: the VR button shows during play', shown);
+  await p.evaluate(() => document.querySelector('.vr-button').click()); await wait(800);
+  const said = await p.evaluate(() => document.getElementById('toasts').textContent);
+  check('a headset that will not start says so, and the game carries on', /VR could not start/.test(said), said.slice(0, 120));
+  check('still playing after the failed start', await p.evaluate(() => window.chomp.game.running && !window.chomp.game.paused));
+  check('no errors', !p.errors.length, p.errors.join(' | '));
+  await p.done();
+  p = await page({ save: { unlocked: ['park'], trip: trip({ kuranda: 0 }) } });
+  await p.evaluateOnNewDocument(() => Object.defineProperty(navigator, 'xr', { value: { isSessionSupported: async () => true, requestSession: async () => { throw new Error('x'); } } }));
+  await go(p, 'cane.html?all&play', 7000);
+  check('a level page gets the VR button too, without errors', !!(await p.$('.vr-button')) && !p.errors.length, p.errors.join(' | '));
+  await p.done();
+});
+
 // ---- A whole area, start to finish (happy) and failing it (unhappy) ------------------------------
 async function playMossman(p) {
   return p.evaluate(async () => {

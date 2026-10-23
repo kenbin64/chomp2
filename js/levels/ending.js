@@ -13,6 +13,7 @@
 // Skippable (Space, Enter, Escape, the Skip button) straight to the credits.
 
 import { startRun, bankRun, readBook, openScore } from '../points.js';
+import { installVR, inVR } from '../vr.js';
 import * as THREE from 'three';
 import { HALF, AGROUND_Z, riverX, boatX, groundAt, crocsRoundBoat } from './daintree-rules.js';
 import { buildDaintree } from './daintree-scene.js';
@@ -247,8 +248,9 @@ function frame() {
   world.update(now / 1000, camera); gums.update(now / 1000);
   boat.position.y = Math.sin(now / 700) * 0.06;
   renderer.render(scene, camera);
-  requestAnimationFrame(frame);
+  if (!inVR()) requestAnimationFrame(frame);   // in a VR headset, the headset sets the pace (vr.js)
 }
+installVR({ renderer, scene, camera, frame });   // a VR headset, if there is one (vr.js)
 requestAnimationFrame(frame);
 window.chomp = { get t() { return t; }, set t(v) { t = v; line = -1; }, start, credits, camera };
 if (params.has('play')) start();
