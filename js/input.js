@@ -29,14 +29,16 @@ import './device.js';                    // which controls are in use: keyboard,
 import { installSettingsUi } from './settings-ui.js';
 
 // The orb: how fast a full push to the side turns him (radians a second).
-const ORB_TURN = 1.7;
+const ORB_TURN = 1.7, ORB_STEER = 0.5;    // ORB_STEER: a full push to the side, as a share of the keys' turning speed (gentler)
 // Which way Wally faces on screen, as an angle from straight up (clockwise), set by wally.js every frame.
 // The orb's arrows turn to it (Ken, 2026-10-21: the orb always at Wally's orientation), and a push is read
 // against them: toward the up arrow is forward for him, whichever way the camera looks.
 let orbAngle = 0;
 export function setOrbHeading(a) { if (Number.isFinite(a)) orbAngle = a; }
 // A push on the orb (screen pixels from its middle) turned into Wally's own frame.
-function toWally(dx, dy) { const c = Math.cos(orbAngle), s = Math.sin(orbAngle); return { x: dx * c + dy * s, y: -dx * s + dy * c }; }
+// (Turning the arrows with Wally made a held push keep changing meaning, so he spun: Ken, 2026-10-22. The
+// orb stays fixed: up is always forward, the sides always turn.)
+function toWally(dx, dy) { return { x: dx, y: dy }; }
 // Arrows inside the orb, so it explains itself: up to go, round arrows left and right to turn.
 const ORB_ARROWS = '<svg class="orb-arrows" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="rgba(255,255,240,0.85)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">'
   + '<g class="a-go"><path d="M36 26 L50 10 L64 26"/><path d="M50 12 L50 36"/></g><g class="a-back" opacity="0.5"><path d="M40 80 L50 90 L60 80"/></g>'
@@ -128,7 +130,7 @@ export class Input {
     });
     canvas.addEventListener('wheel', e => { this.zoom += Math.sign(e.deltaY) * 1.2; e.preventDefault(); }, { passive: false });
 
-    if (touchUi) this.bindTouch(canvas, touchUi);
+    if (touchUi) { this.bindTouch(canvas, touchUi); this.bindPad(touchUi); }
     else this.bindMouseOrb();
     installSettingsUi();
   }
@@ -229,6 +231,51 @@ export class Input {
     orb.addEventListener('click', e => e.stopPropagation());
   }
 
+  // The diamond pad on phones and tablets (Ken, 2026-10-22): five round buttons. Top: go forward. Left and
+  // right: turn. Middle: jump. Bottom: submerge (and duck on land). Hold to keep going; slide the thumb from
+  // one button to the next without lifting it (forward and a turn together: slide between them, or use two
+  // fingers). The orb stays on computers.
+  bindPad(ui) {
+    if (document.getElementById('dpad')) return;
+    const svg = d => `<svg viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">${d}</g></svg>`;
+    const pad = document.createElement('div'); pad.id = 'dpad'; pad.setAttribute('aria-label', 'Controls');
+    pad.innerHTML = [
+      ['up', 'Forward', svg('<path d="M20 31V10"/><path d="M11 18l9-9 9 9"/>')],
+      ['left', 'Turn left', svg('<path d="M28 30a12 12 0 0 1-14-18"/><path d="M8 15l6-4 3 7"/>')],
+      ['jump', 'Jump', svg('<path d="M8 30h24"/><path d="M12 24c2-12 14-12 16 0"/><path d="M24 14l4-2 1 5"/>')],
+      ['right', 'Turn right', svg('<path d="M12 30a12 12 0 0 0 14-18"/><path d="M32 15l-6-4-3 7"/>')],
+      ['down', 'Submerge', svg('<path d="M6 10c3-3 6-3 9 0s6 3 9 0 6-3 9 0"/><path d="M20 15v17"/><path d="M13 25l7 7 7-7"/>')],
+    ].map(([k, label, icon]) => `<button type="button" class="pad-${k}" data-k="${k}" aria-label="${label}">${icon}</button>`).join('');
+    document.getElementById('touch').append(pad);
+    if (ui.stick) ui.stick.classList.add('replaced');                  // the orb gives way to the pad on touch
+    if (ui.fours) ui.fours.classList.add('replaced');                  // the bottom button submerges and ducks
+    if (ui.jump) ui.jump.classList.add('replaced');
+    this.padKeys = new Set();
+    const held = new Map();                                            // touch id -> the button under it
+    // Where the thumb is on the pad: the middle jumps; around it, eight directions, so the gap between
+    // forward and a turn does both (Ken: going forward while turning must be easy, with one thumb).
+    const under = t => {
+      const r = pad.getBoundingClientRect(), dx = t.clientX - (r.left + r.width / 2), dy = t.clientY - (r.top + r.height / 2);
+      if (Math.hypot(dx, dy) < r.width * 0.17) return ['jump'];
+      const a = Math.round(Math.atan2(dx, -dy) / (Math.PI / 4));          // 0 up, 1 up-right, 2 right ... -1 up-left
+      return ({ 0: ['up'], 1: ['up', 'right'], 2: ['right'], 3: ['right'], 4: ['down'], '-4': ['down'], '-3': ['left'], '-2': ['left'], '-1': ['up', 'left'] })[a] || [];
+    };
+    const sync = () => {
+      this.padKeys = new Set([...held.values()].flat());
+      for (const b of pad.children) b.classList.toggle('on', this.padKeys.has(b.dataset.k));
+    };
+    pad.addEventListener('touchstart', e => {
+      for (const t of e.changedTouches) { const k = under(t); held.set(t.identifier, k); if (k.includes('jump')) this.jumpQueued = true; }
+      sync(); e.preventDefault(); e.stopPropagation();
+    }, { passive: false });
+    pad.addEventListener('touchmove', e => {
+      for (const t of e.changedTouches) if (held.has(t.identifier)) { const k = under(t); if (k.includes('jump') && !held.get(t.identifier).includes('jump')) this.jumpQueued = true; held.set(t.identifier, k); }
+      sync(); e.preventDefault(); e.stopPropagation();
+    }, { passive: false });
+    const end = e => { for (const t of e.changedTouches) held.delete(t.identifier); sync(); };
+    pad.addEventListener('touchend', end); pad.addEventListener('touchcancel', end);
+  }
+
   // A game controller, if one is plugged in: this frame's stick, d-pad and
   // buttons. A, Y and Start count once per press, like the keys.
   readPad() {
@@ -268,11 +315,17 @@ export class Input {
       const sx = this.stick.dx, sy = this.stick.dy, ease = v => Math.sign(v) * Math.pow(Math.abs(v), 1.6);
       f = sy < 0 ? ease(-sy) : -ease(sy) * 0.5;                       // backing up is slower
       if (Math.abs(sx) > 0.2 && Math.abs(f) < 0.25) f = 0.25 * Math.abs(sx);   // pushed to the side alone: a slow walk round, so he turns too
-      r = 0;
-      this.turn -= ease(sx) * ORB_TURN * dt;
+      // Classic controls: the sides turn Wally himself and the camera follows behind (turning the camera
+      // instead does nothing in classic, where forward is the way he faces). Otherwise the camera turns.
+      if (settings.controls === 'classic') r = ease(sx) * ORB_STEER; else { r = 0; this.turn -= ease(sx) * ORB_TURN * dt; }
+    }
+    if (this.padKeys && this.padKeys.size) {
+      const k = this.padKeys;
+      if (k.has('up')) f = 1;
+      const tr = (k.has('left') ? 1 : 0) - (k.has('right') ? 1 : 0);
+      if (tr) { if (settings.controls === 'classic') r = -tr * ORB_STEER; else this.turn += tr * ORB_TURN * dt; if (!k.has('up')) f = Math.max(f, 0.25); }   // a turn alone walks him slowly round
     }
     if (this.orbArrows) {
-      this.orbArrows.style.transform = `rotate(${orbAngle}rad)`;
       const s = this.stick || { dx: 0, dy: 0 };
       // The compass lights the way he is going, from the orb or from the mouse (hold left: go; moving it: turn).
       // (orb- names: a plain 'go' class is the site's big gold button style, which covered the orb.)
@@ -289,7 +342,7 @@ export class Input {
       steer: settings.controls === 'classic' && !this.stick,
       aim: this.aim,                   // the mouse's turn of Wally this frame (radians), with the cursor taken
       jump: this.jumpQueued,
-      fours: k.has('shift') || this.foursToggle || !!(pad && pad.fours),
+      fours: k.has('shift') || this.foursToggle || !!(pad && pad.fours) || !!(this.padKeys && this.padKeys.has('down')),
       ctrl: k.has('control'),          // with Shift: come up from a dive (the reef and the sea)
       turn: this.turn, turnKeys, tilt: this.tilt, zoom: this.zoom, recenter: this.recenterQueued,
     };

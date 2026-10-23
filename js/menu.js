@@ -187,7 +187,7 @@ async function checkForUpdate() {
 // Levels now start by themselves, skipping their title card, so the first time in each level its own words
 // (the card's description) and the controls for this device show for a few seconds once play begins. It
 // never pauses the game; a tap clears it. The touch controls on every card describe the green orb.
-const ORB_TOUCH = 'Green orb (bottom right): drag up to go, sideways to turn, the middle to stop; tap it to jump';
+const ORB_TOUCH = 'The buttons (bottom right): top to go, left and right to turn (between them: go and turn), the gold middle to jump, the blue bottom to dive or duck';
 function orbWords() {
   for (const k of document.querySelectorAll('.keys.phone span')) if (/^\s*Left thumb/i.test(k.textContent)) k.textContent = ORB_TOUCH;
   for (const k of document.querySelectorAll('.keys.phone span')) if (/^\s*(Jump button|Jump and Duck buttons|Jump and Fours buttons)/i.test(k.textContent)) k.remove();

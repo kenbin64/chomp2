@@ -691,3 +691,13 @@ body.phone-menu :is(.tip-line, .found-line, .book-note) { top: calc(max(8px, env
 @media (max-height: 520px) { .level-intro { left: 12px; transform: none; top: calc(max(8px, env(safe-area-inset-top)) + 56px); bottom: auto; width: min(300px, 38vw); min-width: 0; max-height: calc(100% - 150px); overflow: auto; text-align: left; font-size: 12px; padding: 10px 12px; } .level-intro b { font-size: 16px; } .level-intro .li-keys { font-size: 11px; } }
 body.intro-up .panel.quest, body.intro-up .quest-show { visibility: hidden; }
 .level-intro .li-keys { color: #ffd166; font-weight: 700; margin: 4px 0; }
+/* The diamond pad (input.js), bottom right on touch screens: forward, turn left, jump, turn right, submerge. */
+#dpad { position: absolute; right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom)); width: 186px; height: 186px; pointer-events: auto; touch-action: none; }
+#dpad button { position: absolute; width: 62px; height: 62px; border-radius: 50%; border: 2px solid rgba(40, 90, 30, 0.8); background: radial-gradient(circle at 40% 35%, rgba(150, 230, 110, 0.85), rgba(55, 140, 45, 0.8)); box-shadow: 0 3px 10px rgba(0,0,0,0.35); padding: 13px; transition: transform 0.06s, box-shadow 0.06s; }
+#dpad button svg { width: 100%; height: 100%; display: block; pointer-events: none; }
+#dpad button.on { border-color: #ffd166; box-shadow: 0 0 0 4px rgba(255, 209, 102, 0.8), 0 0 16px rgba(255, 209, 102, 0.6); transform: scale(0.94); }
+#dpad .pad-up { left: 62px; top: 0; } #dpad .pad-left { left: 0; top: 62px; } #dpad .pad-jump { left: 62px; top: 62px; background: radial-gradient(circle at 40% 35%, #ffe08a, #e0a826); border-color: rgba(120, 80, 10, 0.8); }
+#dpad .pad-right { left: 124px; top: 62px; } #dpad .pad-down { left: 62px; top: 124px; background: radial-gradient(circle at 40% 35%, rgba(130, 200, 255, 0.9), rgba(30, 110, 190, 0.85)); border-color: rgba(10, 60, 120, 0.8); }
+body.touch #stick.replaced, body.touch #t-fours.replaced, body.touch #t-jump.replaced { display: none !important; }
+body.touch #t-cam { right: calc(max(14px, env(safe-area-inset-right)) + 196px); bottom: max(20px, env(safe-area-inset-bottom)); top: auto; }
+body.touch .dive-buttons { right: calc(max(14px, env(safe-area-inset-right)) + 250px); }

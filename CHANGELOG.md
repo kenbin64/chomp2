@@ -5,6 +5,12 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- Phones and tablets: a diamond of round buttons replaces the orb (Ken's design): top forward, left and
+  right turn, between them forward and turn together, the gold middle jumps, the blue bottom (an arrow under a
+  wave) dives or ducks. Hold to keep going; slide between buttons.
+- Steadier steering everywhere: the sides turn Wally himself and the camera follows, at a gentler rate. The
+  orb's arrows no longer turn with Wally, which made a held push spin him.
+
 ## v1.0.0-beta.9 (2026-10-23)
 
 - Fixed: pushing forward on the green orb covered it with a big gold disc and made it unusable (its arrow
