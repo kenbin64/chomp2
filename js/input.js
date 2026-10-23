@@ -275,8 +275,9 @@ export class Input {
       this.orbArrows.style.transform = `rotate(${orbAngle}rad)`;
       const s = this.stick || { dx: 0, dy: 0 };
       // The compass lights the way he is going, from the orb or from the mouse (hold left: go; moving it: turn).
-      this.orbArrows.classList.toggle('go', s.dy < -0.15 || this.mouseRun); this.orbArrows.classList.toggle('back', s.dy > 0.15);
-      this.orbArrows.classList.toggle('left', s.dx < -0.2 || this.aim > 0.004); this.orbArrows.classList.toggle('right', s.dx > 0.2 || this.aim < -0.004);
+      // (orb- names: a plain 'go' class is the site's big gold button style, which covered the orb.)
+      this.orbArrows.classList.toggle('orb-go', s.dy < -0.15 || this.mouseRun); this.orbArrows.classList.toggle('orb-back', s.dy > 0.15);
+      this.orbArrows.classList.toggle('orb-left', s.dx < -0.2 || this.aim > 0.004); this.orbArrows.classList.toggle('orb-right', s.dx > 0.2 || this.aim < -0.004);
     }
     if (pad) { this.turn += pad.turn; this.tilt += pad.tilt; }
     const turnKeys = (k.has('q') ? 1 : 0) - (k.has('e') ? 1 : 0);

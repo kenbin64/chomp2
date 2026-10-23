@@ -657,7 +657,7 @@ body.touch #t-cam { top: auto; bottom: calc(max(26px, env(safe-area-inset-bottom
 /* The orb without its knob: the arrows turn with Wally, and the one being pushed lights gold (input.js). */
 #stick.orb #knob { display: none; }
 #stick.orb .orb-arrows { transition: transform 0.08s linear; }
-#stick.orb .orb-arrows.go .a-go, #stick.orb .orb-arrows.back .a-back, #stick.orb .orb-arrows.left .a-left, #stick.orb .orb-arrows.right .a-right { stroke: #ffd166; opacity: 1; }
+#stick.orb .orb-arrows.orb-go .a-go, #stick.orb .orb-arrows.orb-back .a-back, #stick.orb .orb-arrows.orb-left .a-left, #stick.orb .orb-arrows.orb-right .a-right { stroke: #ffd166; opacity: 1; }
 .trip-map-button[hidden] { display: none !important; }   /* until the first level is complete (mapmodal.js) */
 /* The title screen: where it all begins; installed as an app it is just Play and How to play. */
 .opener-bar .begin { margin: 8px 0 2px; color: #ffd166; font: 800 16px var(--font); text-shadow: 0 2px 6px #000; }
