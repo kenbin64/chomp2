@@ -5,6 +5,9 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- The title screen and credits no longer lead with the AI tools; how the game was made, and with
+  what, is on the About page under How it was made.
+
 - Phones and tablets: the diamond's bottom button now turns Wally right round, quickly. Dive and Up
   (in water) and Duck (on land) moved beside the backpack, out of the way of the diamond, and the Cam
   button is gone (drag the screen to look round).
