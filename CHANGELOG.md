@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.13 (2026-10-23)
+
 - VR headsets (WebXR, such as the Meta Quest Browser): a VR button appears when a headset is there.
   You stand behind Wally and look around with your head; the view turns in steps for comfort. The
   VR controllers work as a game controller (left stick move, A jump, B duck or dive, right stick
