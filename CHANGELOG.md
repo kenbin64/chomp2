@@ -5,6 +5,11 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- Croc Park is gentle the first time through (a tester found level 1 too hard): six groups to feed
+  instead of eight, the feed-o-meter empties at 40% speed, visitors are calmer, the throws ramp up
+  more slowly, and the food thieves arrive one kind at a time as Wally feeds out each group
+  (pelicans, then flying foxes and a croc, then cane toads). A return visit plays as before.
+
 ## v1.0.0-beta.10 (2026-10-23)
 
 - Fixed: Wally could get stuck for good beside a rock in the water (once inside its edge, every way out

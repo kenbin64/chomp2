@@ -37,7 +37,8 @@ import { createPost } from './post.js';
 import { loadRealism } from './realism.js';
 import { usePalmCrown } from './palms.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from './quality.js';
-import { createQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
+import { createQuest, parkQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
+import { parkEase, thievesAllowed, ARRIVAL_LINES } from './park-ease.js';
 import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE, outfitModel, findTreasure, bankFinds, PROGRESS_CHANGED, saveProgress } from './progress.js';
 import { dressOutfit } from './outfit.js';
 import { showLeaderboard } from './leaderboard.js';
@@ -286,7 +287,7 @@ try {
 const game = {
   running: false, paused: false, time: 0, score: 0, energy: ENERGY_MAX, streak: 0,
   boost: 0, throwIn: 2, stingCool: 0, frenzyIn: -1, quest: createQuest(),
-  catches: 0, misses: 0, stolen: 0, hungryCool: 0, lives: LIVES, nap: 0, intro: 0, newGroupIn: 25, groupsArrived: 4, tourGroup: false, scared: 0, warnedOnce: false,
+  catches: 0, misses: 0, stolen: 0, hungryCool: 0, lives: LIVES, nap: 0, intro: 0, newGroupIn: 25, groupsArrived: 4, tourGroup: false, parkGroups: PARK_GROUPS, throwPace: 1, scared: 0, warnedOnce: false,
   by: { bat: 0, pelican: 0, toad: 0, jelly: 0, croc: 0 },      // who took the food, for balancing
   // Diving for the lagoon treasure: how deep he is, where he is heading, and the keys.
   depth: PARK_TREASURE.surfaceY, wantDepth: PARK_TREASURE.surfaceY, clear: 0, foursWas: false, ctrlShiftWas: false,
@@ -380,7 +381,7 @@ function drawHud() {
 // Where to aim: near Wally, a little ahead of him, sometimes high so he has to
 // jump or leap for it. Startled tourists throw straight at him.
 function throwFood(hand, aimed, gentle = false, thrower = null) {
-  const d = difficulty(game.time);
+  const d = difficulty(game.time * game.throwPace);             // slower on the first visit (park-ease.js)
   const frenzy = game.quest.stage === 'challenge';
   const flight = gentle ? 0.75 : d.flight * (aimed ? 0.85 : 1);     // a handout up close is a short lob
   const mouth = wally.mouthPosition();
@@ -417,6 +418,7 @@ function updateClusters(dt, t) {
   const clusterEvents = clusters.update(dt, t, wally.pos, (hand, c, gentle, thrower) => throwFood(hand, true, gentle, thrower));
   tradeStep(clusterEvents, wally.pos);
   questStep(dt, t, clusterEvents, wally.pos);
+  stageThieves();
   for (const e of clusterEvents) {
     if (e.type === 'throw') showTip('sweet-spot', 'Visitors throw food when Wally is close, but not too close. Catch it before it lands: in the air is worth the most.');
     if (e.type === 'throw' && Math.random() < 0.25) bubbles.say(e.thrower.g, pickLine('touristThrow'), 2.3);
@@ -432,10 +434,10 @@ function updateClusters(dt, t) {
   // when all seven are done a tour group arrives on the boardwalk.
   game.newGroupIn -= dt;
   const live = clusters.active.filter(c => !c.counted).length;
-  if (game.groupsArrived < PARK_GROUPS - 1 && (game.newGroupIn <= 0 || live === 0)) {
+  if (game.groupsArrived < game.parkGroups - 1 && (game.newGroupIn <= 0 || live === 0)) {
     if (spawnCluster()) { game.groupsArrived++; toast('More visitors have arrived!', 'info'); }
     game.newGroupIn = 25;
-  } else if (!game.tourGroup && game.groupsArrived >= PARK_GROUPS - 1 && live === 0) {
+  } else if (!game.tourGroup && game.groupsArrived >= game.parkGroups - 1 && live === 0) {
     game.tourGroup = true;
     clusters.add({ x: 0, z: 2, size: 6, food: 16, rate: 0.5 });
     toast("A tour group's here! The last lot for today", 'info'); sound.play.goal();
@@ -444,7 +446,7 @@ function updateClusters(dt, t) {
 
 // Anything left to eat: food in the air or on the ground, groups with food, or groups still to come.
 function foodLeft() {
-  return food.items.length > 0 || clusters.active.some(c => !c.fled && c.food > 0) || game.groupsArrived < PARK_GROUPS - 1 || !game.tourGroup;
+  return food.items.length > 0 || clusters.active.some(c => !c.fled && c.food > 0) || game.groupsArrived < game.parkGroups - 1 || !game.tourGroup;
 }
 
 // ---- Catching and losing food ---------------------------------------------------
@@ -884,6 +886,26 @@ function followCamera(dt) {
 
 // ---- Start, pause, end ------------------------------------------------------------
 
+// The food thieves on the gentle first visit (park-ease.js): each kind's list is cut to how many
+// have turned up, by how many groups Wally has fed out, and the rest wait out of sight. The croc
+// guarding the treasure is always there. On a return visit they are all there from the start.
+let ease = parkEase(2);
+const thiefSets = { pelican: pelicans, bat: bats, toad: toads, croc: crocs };
+const thiefAll = Object.fromEntries(Object.entries(thiefSets).map(([k, s]) => [k, s.list.slice()]));
+const thiefShown = {};
+function stageThieves() {
+  const done = game.quest.goals[0].have;
+  for (const [kind, set] of Object.entries(thiefSets)) {
+    const all = thiefAll[kind].filter(x => !x.guard), guards = thiefAll[kind].filter(x => x.guard);
+    const n = thievesAllowed(kind, done, all.length, ease.first);
+    if (thiefShown[kind] === n) continue;
+    if (thiefShown[kind] !== undefined && n > thiefShown[kind]) toast(ARRIVAL_LINES[kind], 'info');
+    thiefShown[kind] = n;
+    set.list = [...all.slice(0, n), ...guards];
+    for (const x of thiefAll[kind]) (x.mesh || x.parts.g).visible = set.list.includes(x);
+  }
+}
+
 // The trip (trip-rules.js): made when a new trip starts (the difficulty choice),
 // or carried over from a save made before the rules.
 function ensureTrip(level = 'intermediate') {
@@ -899,6 +921,14 @@ function start() {
   arrow = guideArrow({ show: attempt.visit === 1 });          // where to go next, on the first visit
   game.hasKey = Trip.have(progress.trip, 'park-key') || Trip.have(progress.trip, 'gate-key');   // on a return visit he has it already (gate-key: saves from before)
   game.tripDrain = Trip.drainFactor(progress.trip, 'park', attempt.level);
+  // The first visit starts gentle and builds (park-ease.js); a return visit plays as the trip says.
+  ease = parkEase(attempt.visit);
+  if (ease.first) {
+    game.tripDrain = Math.min(game.tripDrain, ease.drain);
+    game.parkGroups = ease.groups; game.quest = createQuest(parkQuest(ease.groups));
+    game.throwPace = ease.throwPace; clusters.calm = ease.calm; clusters.panic = ease.panic;
+  }
+  stageThieves();
   sound.start(); sound.startMusic('park'); sound.moodMusic('park');
   $('title').hidden = true; $('over').hidden = true; $('win').hidden = true;
   $('hud').hidden = false; $('touch').hidden = !touch;

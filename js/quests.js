@@ -36,13 +36,18 @@ export const FULL = 95;
 
 // Croc Park: seven groups of visitors, then a tour group, then fill up.
 export const PARK_GROUPS = 8;
-const PARK = {
-  title: 'Fuel up for the big trip',
-  goals: [
-    { id: 'groups', text: 'Feed out every group of visitors', event: 'groupDone', need: PARK_GROUPS },
-  ],
-  full: FULL,                    // then the feed-o-meter has to be full to open the gate
-};
+const PARK = parkQuest();
+
+// The park quest for a given number of groups (fewer on the gentle first visit: park-ease.js).
+export function parkQuest(groups = PARK_GROUPS) {
+  return {
+    title: 'Fuel up for the big trip',
+    goals: [
+      { id: 'groups', text: 'Feed out every group of visitors', event: 'groupDone', need: groups },
+    ],
+    full: FULL,                  // then the feed-o-meter has to be full to open the gate
+  };
+}
 
 // The older park quest with a timed end challenge, kept for areas that want one.
 export const FRENZY_QUEST = {

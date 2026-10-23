@@ -117,6 +117,29 @@ test('the arrow shows on a first visit and not on a return visit', async () => {
   await p.done();
 });
 
+test('Croc Park first visit is gentle and builds; a return visit is not', async () => {
+  let p = await page({ save: { unlocked: ['park'], trip: trip() } });
+  await go(p, 'index.html?noopening', 5000);
+  await p.evaluate(() => window.chompStartHere()); await wait(1500);
+  const shown = () => p.evaluate(() => ({ pel: window.chomp.pelicans.list.length, toad: window.chomp.toads.list.length,
+    croc: window.chomp.crocs.list.filter(c => !c.guard).length, guard: window.chomp.crocs.list.some(c => c.guard),
+    need: window.chomp.game.quest.goals[0].need, drain: window.chomp.game.tripDrain }));
+  let s = await shown();
+  check('first visit: six groups, slow drain, no thieves yet, the treasure guard still there', s.need === 6 && s.drain <= 0.4 && s.pel === 0 && s.toad === 0 && s.croc === 0 && s.guard, JSON.stringify(s));
+  await p.evaluate(() => { const q = window.chomp.game.quest; q.record('groupDone'); q.record('groupDone'); q.record('groupDone'); });
+  await p.waitForFunction(() => window.chomp.pelicans.list.length > 0, { timeout: 15000 }).catch(() => {}); await wait(500);   // after the start-of-level moment
+  s = await shown();
+  check('after three groups: pelicans, toads and a croc have turned up', s.pel === 2 && s.toad >= 1 && s.croc === 1, JSON.stringify(s));
+  check('no errors on the first visit', !p.errors.length, p.errors.join(' | '));
+  await p.done();
+  p = await page({ save: { unlocked: ['park'], trip: trip({ park: 1 }) } });
+  await go(p, 'index.html?noopening', 5000);
+  await p.evaluate(() => window.chompStartHere()); await wait(1500);
+  s = await shown();
+  check('return visit: all eight groups and every thief from the start', s.need === 8 && s.pel >= 1 && s.toad >= 1 && s.croc === 3, JSON.stringify(s));
+  await p.done();
+});
+
 // ---- A whole area, start to finish (happy) and failing it (unhappy) ------------------------------
 async function playMossman(p) {
   return p.evaluate(async () => {

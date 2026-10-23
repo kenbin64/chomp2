@@ -294,12 +294,15 @@ export const CLUSTER = {
 // a gentle handout straight to him), 'nervous' (up close, between handouts) or 'flee'.
 // Ken: up close the food still comes (more accessible), but stay too long and
 // they get jumpy and bolt; charging right up still makes them bolt at once.
-export function clusterStep(state, dist, dt, foodLeft) {
+// calm stretches their patience and panic sets how close is "right on them" (park-ease.js: a gentler
+// first visit); left out, they are as above.
+export function clusterStep(state, dist, dt, foodLeft, calm = 1, panic = CLUSTER.panic) {
   state.cooldown = Math.max(0, state.cooldown - dt);
-  if (dist <= CLUSTER.panic) { state.nerves = CLUSTER.nerve; return 'flee'; }
+  const nerve = CLUSTER.nerve * calm;
+  if (dist <= panic) { state.nerves = nerve; return 'flee'; }
   if (dist <= CLUSTER.near) {
     state.nerves += dt;
-    if (state.nerves >= CLUSTER.nerve) return 'flee';
+    if (state.nerves >= nerve) return 'flee';
     if (foodLeft > 0 && state.cooldown <= 0) { state.cooldown = CLUSTER.handEvery; return 'hand'; }
     return 'nervous';
   }

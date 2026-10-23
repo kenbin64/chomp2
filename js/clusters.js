@@ -162,7 +162,7 @@ export class Clusters {
           continue;
         }
       }
-      let mood = clusterStep(c.state, dist, dt, c.food);
+      let mood = clusterStep(c.state, dist, dt, c.food, this.calm || 1, this.panic || undefined);   // calm, panic: park-ease.js
       if (c.rate !== 1 && mood === 'throw') c.state.cooldown *= c.rate;
       // Traders (Ken): they never run off. Stepping inside their circle is the
       // only way to find out who they are, and brings their offer (trade.js).
