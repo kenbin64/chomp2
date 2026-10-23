@@ -393,6 +393,7 @@ export class Wally {
       // the spot; with Up held he runs and steers. Up runs ahead the way he
       // faces. Down spins him round once and he runs the other way while held.
       if (input.forward < 0 && !(this.lastForward < 0)) this.turnLeft = (this.turnLeft || 0) + Math.PI;
+      if (input.turnAround) this.turnLeft = (this.turnLeft || 0) + Math.PI;   // the phone pad's turn-around button
       this.lastForward = input.forward;
       if (this.turnLeft) {
         const step = Math.sign(this.turnLeft) * Math.min(Math.abs(this.turnLeft), SPIN * dt);

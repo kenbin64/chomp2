@@ -701,3 +701,12 @@ body.intro-up .panel.quest, body.intro-up .quest-show { visibility: hidden; }
 body.touch #stick.replaced, body.touch #t-fours.replaced, body.touch #t-jump.replaced { display: none !important; }
 body.touch #t-cam { right: calc(max(14px, env(safe-area-inset-right)) + 196px); bottom: max(20px, env(safe-area-inset-bottom)); top: auto; }
 body.touch .dive-buttons { right: calc(max(14px, env(safe-area-inset-right)) + 250px); }
+/* Phones and tablets (Ken, 2026-10-23): the Cam button goes (drag the screen to look round), and diving
+   moves beside the backpack: Dive and Up there in water, and Duck (all fours, or dive where a level has no
+   Dive button) there on land. The pad's bottom button is now a quick turn-around (input.js). */
+body.touch #t-cam { display: none !important; }
+body.touch .dive-buttons { left: calc(max(12px, env(safe-area-inset-left)) + 80px); right: auto; bottom: max(24px, env(safe-area-inset-bottom)); flex-direction: row; gap: 10px; }
+body.touch .dive-buttons button { width: 62px; height: 62px; border-radius: 50%; font-size: 15px; padding: 0; }
+body.touch .dive-buttons button small { display: none; }
+body.touch #t-fours { left: calc(max(12px, env(safe-area-inset-left)) + 80px); right: auto; bottom: max(24px, env(safe-area-inset-bottom)); width: 62px; height: 62px; font-size: 14px; }
+body.touch:has(#dive-buttons:not([hidden])) #t-fours { display: none; }

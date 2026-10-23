@@ -140,6 +140,28 @@ test('Croc Park first visit is gentle and builds; a return visit is not', async 
   await p.done();
 });
 
+test('phone: the pad bottom turns Wally round; Duck sits by the backpack; no Cam button', async () => {
+  const p = await page({ save: { unlocked: ['park'], trip: trip({ park: 1 }) }, size: [844, 390], phone: true });
+  await go(p, 'index.html?noopening', 5000);
+  await p.evaluate(() => window.chompStartHere());
+  await p.waitForFunction(() => window.chomp.game.intro <= 0 && document.querySelector('#dpad .pad-down').getBoundingClientRect().width > 0, { timeout: 20000 }).catch(() => {}); await wait(500);
+  const before = await p.evaluate(() => window.chomp.wally.facing);
+  const r = await p.evaluate(() => { const e = document.querySelector('#dpad .pad-down').getBoundingClientRect(); return { x: e.left + e.width / 2, y: e.top + e.height / 2 }; });
+  await p.touchscreen.tap(r.x, r.y); await wait(1500);
+  const turned = Math.abs(await p.evaluate(() => window.chomp.wally.facing) - before) / Math.PI;
+  check('one tap turns him right round (half a circle)', Math.abs(turned - 1) < 0.1, turned.toFixed(2));
+  const v = await p.evaluate(() => {
+    const box = e => { if (!e) return null; const r = e.getBoundingClientRect(); return getComputedStyle(e).display !== 'none' && !e.hidden && r.width > 0 ? r : null; };
+    const duck = box(document.getElementById('t-fours')), gear = box(document.querySelector('.gear-badge')), pad = box(document.getElementById('dpad'));
+    return { cam: !!box(document.getElementById('t-cam')), duck: !!duck, besideGear: !!(duck && gear && duck.left > gear.left && duck.left < pad.left && Math.abs(duck.bottom - gear.bottom) < 40) };
+  });
+  check('no Cam button on a phone', !v.cam, JSON.stringify(v));
+  check('Duck shows on land, beside the backpack, away from the pad', v.duck && v.besideGear, JSON.stringify(v));
+  if (process.env.SHOT) await p.screenshot({ path: process.env.SHOT });
+  check('no errors', !p.errors.length, p.errors.join(' | '));
+  await p.done();
+});
+
 // ---- A whole area, start to finish (happy) and failing it (unhappy) ------------------------------
 async function playMossman(p) {
   return p.evaluate(async () => {

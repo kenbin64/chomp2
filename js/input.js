@@ -232,9 +232,10 @@ export class Input {
   }
 
   // The diamond pad on phones and tablets (Ken, 2026-10-22): five round buttons. Top: go forward. Left and
-  // right: turn. Middle: jump. Bottom: submerge (and duck on land). Hold to keep going; slide the thumb from
-  // one button to the next without lifting it (forward and a turn together: slide between them, or use two
-  // fingers). The orb stays on computers.
+  // right: turn. Middle: jump. Bottom: turn right round, quickly (Ken, 2026-10-23: diving and ducking moved
+  // to buttons beside the backpack, style.css). Hold to keep going; slide the thumb from one button to the
+  // next without lifting it (forward and a turn together: slide between them, or use two fingers).
+  // The orb stays on computers.
   bindPad(ui) {
     if (document.getElementById('dpad')) return;
     const svg = d => `<svg viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">${d}</g></svg>`;
@@ -244,11 +245,10 @@ export class Input {
       ['left', 'Turn left', svg('<path d="M28 30a12 12 0 0 1-14-18"/><path d="M8 15l6-4 3 7"/>')],
       ['jump', 'Jump', svg('<path d="M8 30h24"/><path d="M12 24c2-12 14-12 16 0"/><path d="M24 14l4-2 1 5"/>')],
       ['right', 'Turn right', svg('<path d="M12 30a12 12 0 0 0 14-18"/><path d="M32 15l-6-4-3 7"/>')],
-      ['down', 'Submerge', svg('<path d="M6 10c3-3 6-3 9 0s6 3 9 0 6-3 9 0"/><path d="M20 15v17"/><path d="M13 25l7 7 7-7"/>')],
+      ['down', 'Turn around', svg('<path d="M12 32V17a8 8 0 0 1 16 0v6"/><path d="M22 18l6 6 6-6"/>')],
     ].map(([k, label, icon]) => `<button type="button" class="pad-${k}" data-k="${k}" aria-label="${label}">${icon}</button>`).join('');
     document.getElementById('touch').append(pad);
     if (ui.stick) ui.stick.classList.add('replaced');                  // the orb gives way to the pad on touch
-    if (ui.fours) ui.fours.classList.add('replaced');                  // the bottom button submerges and ducks
     if (ui.jump) ui.jump.classList.add('replaced');
     this.padKeys = new Set();
     const held = new Map();                                            // touch id -> the button under it
@@ -265,11 +265,11 @@ export class Input {
       for (const b of pad.children) b.classList.toggle('on', this.padKeys.has(b.dataset.k));
     };
     pad.addEventListener('touchstart', e => {
-      for (const t of e.changedTouches) { const k = under(t); held.set(t.identifier, k); if (k.includes('jump')) this.jumpQueued = true; }
+      for (const t of e.changedTouches) { const k = under(t); held.set(t.identifier, k); if (k.includes('jump')) this.jumpQueued = true; if (k.includes('down')) this.turnQueued = true; }
       sync(); e.preventDefault(); e.stopPropagation();
     }, { passive: false });
     pad.addEventListener('touchmove', e => {
-      for (const t of e.changedTouches) if (held.has(t.identifier)) { const k = under(t); if (k.includes('jump') && !held.get(t.identifier).includes('jump')) this.jumpQueued = true; held.set(t.identifier, k); }
+      for (const t of e.changedTouches) if (held.has(t.identifier)) { const k = under(t), was = held.get(t.identifier); if (k.includes('jump') && !was.includes('jump')) this.jumpQueued = true; if (k.includes('down') && !was.includes('down')) this.turnQueued = true; held.set(t.identifier, k); }
       sync(); e.preventDefault(); e.stopPropagation();
     }, { passive: false });
     const end = e => { for (const t of e.changedTouches) held.delete(t.identifier); sync(); };
@@ -334,6 +334,7 @@ export class Input {
     }
     if (pad) { this.turn += pad.turn; this.tilt += pad.tilt; }
     const turnKeys = (k.has('q') ? 1 : 0) - (k.has('e') ? 1 : 0);
+    if (this.turnQueued && settings.controls !== 'classic') this.turn += Math.PI;   // camera-relative: the camera swings round, so up is the other way
     const out = {
       forward: f, right: r,
       // Classic steering (a setting) is for the keyboard only: up runs the way he
@@ -342,11 +343,12 @@ export class Input {
       steer: settings.controls === 'classic' && !this.stick,
       aim: this.aim,                   // the mouse's turn of Wally this frame (radians), with the cursor taken
       jump: this.jumpQueued,
-      fours: k.has('shift') || this.foursToggle || !!(pad && pad.fours) || !!(this.padKeys && this.padKeys.has('down')),
+      fours: k.has('shift') || this.foursToggle || !!(pad && pad.fours),
+      turnAround: !!this.turnQueued,   // the pad's bottom button: Wally spins right round (wally.js)
       ctrl: k.has('control'),          // with Shift: come up from a dive (the reef and the sea)
       turn: this.turn, turnKeys, tilt: this.tilt, zoom: this.zoom, recenter: this.recenterQueued,
     };
-    this.recenterQueued = false;
+    this.recenterQueued = false; this.turnQueued = false;
     this.jumpQueued = false; this.turn = 0; this.tilt = 0; this.zoom = 0; this.aim = 0;
     return out;
   }

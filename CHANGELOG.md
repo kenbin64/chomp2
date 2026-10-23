@@ -5,6 +5,10 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- Phones and tablets: the diamond's bottom button now turns Wally right round, quickly. Dive and Up
+  (in water) and Duck (on land) moved beside the backpack, out of the way of the diamond, and the Cam
+  button is gone (drag the screen to look round).
+
 - Croc Park is gentle the first time through (a tester found level 1 too hard): six groups to feed
   instead of eight, the feed-o-meter empties at 40% speed, visitors are calmer, the throws ramp up
   more slowly, and the food thieves arrive one kind at a time as Wally feeds out each group
