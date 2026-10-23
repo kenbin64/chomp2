@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.12 (2026-10-23)
+
 ## v1.0.0-beta.11 (2026-10-23)
 
 - The title screen and credits no longer lead with the AI tools; how the game was made, and with
