@@ -5,6 +5,9 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- Fixed: Wally could get stuck for good beside a rock in the water (once inside its edge, every way out
+  counted as blocked). A step out of a rock is now always allowed, everywhere.
+
 - Phones and tablets: a diamond of round buttons replaces the orb (Ken's design): top forward, left and
   right turn, between them forward and turn together, the gold middle jumps, the blue bottom (an arrow under a
   wave) dives or ducks. Hold to keep going; slide between buttons.

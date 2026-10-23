@@ -68,7 +68,8 @@ setGround({
     return { y: g.y, surface: 'land' };
   },
   move(x, z, nx, nz, y) {
-    const blocked = (px, pz) => !insideGorge(px, pz) || solids.some(s => Math.hypot(px - s.x, pz - s.z) < s.r + 0.4 && y < s.top - 0.4);
+    // A boulder blocks a step into it, never a step out of it (Ken: stuck by a rock in the water).
+    const blocked = (px, pz) => !insideGorge(px, pz) || solids.some(s => { const d = Math.hypot(px - s.x, pz - s.z); return d < s.r + 0.4 && y < s.top - 0.4 && d <= Math.hypot(x - s.x, z - s.z) + 1e-6; });
     if (!blocked(nx, nz)) return { x: nx, z: nz };
     // Against the bank he slides along it, toward the river's line, instead of stopping dead
     // (holding forward used to pin him on the outside of a bend).

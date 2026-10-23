@@ -21,6 +21,18 @@ function solidAt(x, z, feetY) {
   for (const s of SOLIDS) if (Math.hypot(x - s.x, z - s.z) < s.r + BODY && feetY < s.top - STEP) return s;
   return null;
 }
+// Does a step from (x, z) to (nx, nz) run into a rock or post? Only a step that ends inside one AND does not
+// take him further out of it: once he is inside an edge (dived down beside a rock, knocked against it), any
+// step away is always allowed, so he can never be trapped (Ken, 2026-10-22: stuck by a rock in the water).
+export function solidBlocks(x, z, nx, nz, feetY, list = [...ROCKS, ...SOLIDS]) {
+  for (const s of list) {
+    const reach = s.r + BODY, after = Math.hypot(nx - s.x, nz - s.z);
+    if (after >= reach || feetY >= s.top - STEP) continue;
+    if (after > Math.hypot(x - s.x, z - s.z) + 1e-6) continue;           // moving out of it: always allowed
+    return s;
+  }
+  return null;
+}
 // Onto the boardwalk from the side, where there is no opening: only over the railing.
 function railBlocks(x, z, nx, nz, feetY) {
   return !onDeck(x, z) && onDeck(nx, nz) && !deckOpenAt(nx) && feetY < deckHeight(nx) + RAIL;
@@ -42,7 +54,7 @@ export const parkGround = {
       else { nx = x; tz = z; }
     }
     // Rocks, trunks, posts and the railing are solid: stop at them, sliding along.
-    const blocked = (px, pz) => solidAt(px, pz, y) || railBlocks(x, z, px, pz, y);
+    const blocked = (px, pz) => solidBlocks(x, z, px, pz, y) || railBlocks(x, z, px, pz, y);
     if (blocked(nx, tz)) {
       if (!blocked(nx, z)) tz = z;
       else if (!blocked(x, tz)) nx = x;
