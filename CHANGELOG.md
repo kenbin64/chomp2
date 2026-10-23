@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.14 (2026-10-23)
+
 - Every page, the install details, the Paws card, the About page and the playbutterflyfx.com front
   card now say plainly: "Personal portfolio / skills demonstration: not a commercial product."
 
