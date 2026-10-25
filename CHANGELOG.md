@@ -5,6 +5,9 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- The title banner says it plainly: free for anyone to play, no ads, no cookies, no sign-in, a personal
+  portfolio piece, and a link to butterflyfx.us for employers and recruiters.
+
 ## v1.0.0-beta.14 (2026-10-23)
 
 - Every page, the install details, the Paws card, the About page and the playbutterflyfx.com front
