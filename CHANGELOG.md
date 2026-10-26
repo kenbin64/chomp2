@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.16 (2026-10-26)
+
 - Easier to steer on the keyboard: a tap turns Wally a little and a hold swings him round faster; the turn
   eases as he comes onto food close by, so he stops on it instead of spinning past; and while he runs he
   leans gently toward food landing close ahead. In a controlled test he caught 87.5% of food, up from 64.6%.
