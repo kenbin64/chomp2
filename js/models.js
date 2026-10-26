@@ -207,5 +207,12 @@ export function dress(group, gltf, fit, lift = 0) {
 // Hide the built-from-shapes stand-in but keep it working: its invisible parts
 // still mark positions the game uses, such as where Wally's mouth is.
 export function hideStandIn(group, keep = []) {
-  group.traverse(o => { if (o.isMesh && !keep.includes(o)) o.visible = false; });
+  group.traverse(o => { if (o.isMesh && !keep.includes(o)) { o.visible = false; o.updateMatrixWorld = skipWhileHidden; } });
+}
+// While hidden, a stand-in's place in the world is not worked out every frame (there were about 1,600 of
+// them in Croc Park, measured 2026-10-26). Asking for its place, as the game does (getWorldPosition, for
+// Wally's mouth and the like), still works it out on the spot, and shown again it updates as before.
+function skipWhileHidden(force) {
+  if (this.visible) THREE.Object3D.prototype.updateMatrixWorld.call(this, force);
+  else this.matrixWorldNeedsUpdate = true;
 }

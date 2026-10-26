@@ -107,9 +107,9 @@ export function installGear(options) {
   useBtn = document.createElement('button'); useBtn.type = 'button'; useBtn.className = 'gear-use'; useBtn.hidden = true;
   useBtn.onclick = e => { e.stopPropagation(); useItem(); };
   document.body.append(useBtn);
-  reachRing = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 64), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide }));
+  reachRing = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 64), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true }));
   reachRing.rotation.x = -Math.PI / 2; reachRing.visible = false; reachRing.userData.noAO = true; reachRing.renderOrder = 2;
-  const fill = new THREE.Mesh(new THREE.CircleGeometry(0.94, 64), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0.08, depthWrite: false, side: THREE.DoubleSide }));
+  const fill = new THREE.Mesh(new THREE.CircleGeometry(0.94, 64), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0.08, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true }));
   fill.userData.noAO = true; reachRing.add(fill); reachRing.userData.fill = fill;
   cfg.scene.add(reachRing);
   drawBadge(); showProp();

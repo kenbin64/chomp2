@@ -203,7 +203,7 @@ export class Food {
 
   splash(x, y, z, colour = 0xffffff) {
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.32, 48),
-      new THREE.MeshBasicMaterial({ color: colour, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
+      new THREE.MeshBasicMaterial({ color: colour, transparent: true, opacity: 0.9, side: THREE.DoubleSide, forceSinglePass: true }));
     ring.rotation.x = -Math.PI / 2; ring.position.set(x, y + 0.05, z);
     this.scene.add(ring); this.rings.push({ mesh: ring, life: 0.7 });
   }

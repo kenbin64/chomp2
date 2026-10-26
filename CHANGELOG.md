@@ -5,6 +5,18 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- Easier to steer on the keyboard: a tap turns Wally a little and a hold swings him round faster; the turn
+  eases as he comes onto food close by, so he stops on it instead of spinning past; and while he runs he
+  leans gently toward food landing close ahead. In a controlled test he caught 87.5% of food, up from 64.6%.
+- Down turns Wally round to face you, in a smooth half-second turn, and the camera stays put so you can play
+  him from the front; Up turns him back round.
+- A calmer camera: it follows Wally but only turns once he heads well off to the side, and then gently.
+- A camera button beside the speaker (or V, or the pause screen): Auto follows Wally; Manual turns only when
+  you turn it, for anyone the moving camera bothers.
+- Croc Park runs lighter: about a quarter less work for the computer each frame (the scene is worked out once
+  a frame, the water's reflection no longer makes every material be re-checked, and flat rings are drawn
+  once). Smoother on phones and older laptops; nothing looks different.
+
 ## v1.0.0-beta.15 (2026-10-25)
 
 - The title banner says it plainly: free for anyone to play, no ads, no cookies, no sign-in, a personal

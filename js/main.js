@@ -46,6 +46,9 @@ import { showLeaderboard } from './leaderboard.js';
 import { installMap, openMap, recordVisit, markRetry, mapActive, pageFor } from './mapmodal.js';
 import { installShop, openShop } from './shopmodal.js';
 import * as sound from './sound.js';
+import { aimTurn, aimSlow } from './aim-rules.js';
+import { installCameraButton, toggleCamera } from './audio-ui.js';
+import { settings } from './settings.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, difficulty,
          clampToPark, terrainHeight, onDeck, LIVES, REVIVE_ENERGY, inRedZone,
          positionAt, foodSurface, lagoonDistance, PARK_EDGE, deckHeight, isWater, LAGOON, CLUSTER, BOARDWALK, ROCKS, aimOffset } from './rules.js';
@@ -68,6 +71,10 @@ renderer.toneMappingExposure = 1.05;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
+// Every object's place in the world is worked out once a frame, in the game loop (frame), not by three.js
+// at each of the frame's several drawings (the water's reflection, the picture, the shading pass): nothing
+// moves between them, and the scene has about 3,000 objects (measured 2026-10-26).
+scene.matrixWorldAutoUpdate = false;
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 900);
 function resize() {
   renderer.setSize(innerWidth, innerHeight, false);
@@ -276,6 +283,9 @@ for (const [id, flag] of [['b-dive', 'diveQueued'], ['b-up', 'upQueued']]) {
 }
 input.onPause = () => setPaused(!game.paused);
 input.onMute = () => toast(sound.toggleMute() ? 'Sound off' : 'Sound on', 'info');
+// The camera, auto or manual (audio-ui.js): a button beside the speaker, V on the keyboard, or the pause settings.
+installCameraButton();
+input.onCamera = () => { toggleCamera(); toast(settings.camera === 'manual' ? 'Camera: manual (Q and E turn it)' : 'Camera: auto', 'info'); };
 
 // ---- Game state ---------------------------------------------------------------
 
@@ -585,6 +595,18 @@ const machete = (() => {
 // ---- One frame ------------------------------------------------------------------
 
 let arrow = guideArrow({ show: false });                       // set for the attempt when play starts
+// Where each falling piece of food will come down to Wally's mouth height, for the aim help (aim-rules.js).
+function landings() {
+  const mouthY = wally.mouthPosition().y, out = [];
+  for (const it of food.items) {
+    for (let ahead = 0; ahead < 2.5; ahead += 0.05) {
+      if (it.v.y - 9.8 * (it.t + ahead) >= 0) continue;            // still going up
+      const p = food.predict(it, ahead);
+      if (p.y <= mouthY + 0.3) { out.push({ x: p.x, z: p.z }); break; }
+    }
+  }
+  return out;
+}
 const bot = params.has('bot') ? makeBot() : null;
 
 function step(dt, t) {
@@ -606,6 +628,13 @@ function step(dt, t) {
   const pace = speedFactor(game.energy) * (game.boost > 0 ? 1.35 : 1);
 
   diveStep(dt, k);
+  // Aim help on the keyboard (aim-rules.js): the turn slows as he comes onto nearby food, and while he runs his
+  // heading leans gently toward food close ahead.
+  if (k.steer) {
+    const land = landings();
+    k.right *= aimSlow({ pos: wally.pos, facing: wally.facing, turning: k.right, landings: land });
+    if (k.forward > 0) k.aim = (k.aim || 0) + aimTurn({ pos: wally.pos, facing: wally.facing, running: true, landings: land, dt });
+  }
   for (const e of wally.update(dt, k, cam.yaw, pace)) {
     if (e === 'leap') { sound.play.leap(); fx.splash(wally.pos, 22); } else if (e === 'jump') sound.play.jump();
     else if (e === 'splash') { sound.play.splash(); fx.splash(wally.pos, 26); fx.shake(0.2, 0.15); } else if (e === 'land') sound.play.land();
@@ -839,6 +868,7 @@ function introStep(dt) {
   }
 }
 
+const CAM_ZONE = 0.6;     // radians (about 35 degrees) he may turn either way before the camera turns with him
 function followCamera(dt) {
   const shot = opening.active && opening.shot();
   // The opening's cinematic can look at something other than Wally (the park, the sign).
@@ -861,7 +891,7 @@ function followCamera(dt) {
       const d = Math.atan2(Math.sin(want - cam.yaw), Math.cos(want - cam.yaw));
       cam.yaw += d * Math.min(1, dt * 6);
       if (Math.abs(d) < 0.02) cam.recenter = false;
-    } else if (cam.manual <= 0 && cam.still > 2.5 && !wally.airborne) {
+    } else if (cam.manual <= 0 && cam.still > 2.5 && !wally.airborne && !wally.front && settings.camera !== 'manual') {
       // Standing about: drift round to a three-quarter view of his face.
       const want = wally.facing + 0.7;
       const d = Math.atan2(Math.sin(want - cam.yaw), Math.cos(want - cam.yaw));
@@ -870,7 +900,17 @@ function followCamera(dt) {
       // The leash: keep the camera where it was and let Wally pull it round.
       const dx = camera.position.x - cam.target.x, dz = camera.position.z - cam.target.z;
       // Steering (the default): the camera swings round behind him as he turns.
-      if (steering()) cam.yaw = easeBehind(cam.yaw, wally.facing, dt);
+      // A calm camera (Ken, 2026-10-26: swinging with every wiggle can make people sick). It always follows
+      // where he is, so he stays on screen, but it only turns once he heads well off to one side (more than
+      // CAM_ZONE from straight away from it), and then gently, just enough to bring him back inside. Played
+      // from the front (Down: wally.front), it holds still and lets him face you.
+      if (settings.camera === 'manual') { /* the manual camera turns only when the player turns it */ }
+      else if (steering()) {
+        if (!wally.front) {
+          const behind = wally.facing + Math.PI, off = Math.atan2(Math.sin(behind - cam.yaw), Math.cos(behind - cam.yaw));
+          if (Math.abs(off) > CAM_ZONE) cam.yaw += (off - Math.sign(off) * CAM_ZONE) * Math.min(1, dt * 2);
+        }
+      }
       else if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz);
     }
   }
@@ -1131,6 +1171,9 @@ function frame() {
   lamps.update(dt, night, wally.pos);
   fpsWatch.focus(opening.phase === 'intro');      // the spiral is the test (Ken): smooth, or the detail comes down
   fpsWatch(dt);
+  // Once a frame: every object's place, then the water's reflection, then the picture (world.js says why).
+  scene.updateMatrixWorld();
+  if (inVR()) world.reflectInside(); else world.reflectFirst(renderer, camera);
   post.render();
   if (!inVR()) requestAnimationFrame(frame);   // in a VR headset, the headset sets the pace (vr.js)
 }

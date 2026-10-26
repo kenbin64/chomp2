@@ -9,10 +9,13 @@
 //   music     true      the background music
 //   sfx       true      the sound effects
 //   perf      false     a small frame-rate and detail readout in the corner
+//   camera    'auto'    the camera follows Wally calmly, turning only when he heads well off to one side
+//             'manual'  it never turns by itself (it still follows where he is); the player turns it
+//                       (Ken, 2026-10-26: a toggle, since camera movement can make some people sick)
 // Changing a setting tells the page (SETTINGS_CHANGED), so open screens update.
 
 const KEY = 'chomp-settings';
-const DEFAULTS = { controls: 'classic', tips: true, music: true, sfx: true, perf: false };
+const DEFAULTS = { controls: 'classic', tips: true, music: true, sfx: true, perf: false, camera: 'auto' };
 export const SETTINGS_CHANGED = 'chomp-settings-changed';
 
 function load() {

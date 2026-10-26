@@ -14,6 +14,26 @@ export function toggleAllSound() {
   return off;
 }
 
+// The camera button, beside the speaker (Ken, 2026-10-26): one tap switches the camera between Auto (it
+// follows Wally calmly) and Manual (it turns only when the player turns it), as V does. Shows the current one.
+export function toggleCamera() { setSetting('camera', settings.camera === 'manual' ? 'auto' : 'manual'); }
+export function installCameraButton() {
+  if (typeof document === 'undefined' || document.getElementById('cam-btn')) return;
+  const b = document.createElement('button');
+  b.id = 'cam-btn'; b.type = 'button'; b.className = 'sound-btn cam-btn';
+  const draw = () => {
+    const manual = settings.camera === 'manual';
+    b.textContent = manual ? '✋' : '\u{1F3A5}';
+    b.title = b.ariaLabel = manual ? 'Camera: manual (it turns only when you turn it). Tap for auto.' : 'Camera: auto (it follows Wally). Tap for manual.';
+  };
+  b.onclick = e => { e.stopPropagation(); toggleCamera(); };
+  b.addEventListener('pointerdown', e => e.stopPropagation());
+  b.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+  addEventListener(SETTINGS_CHANGED, draw);
+  draw();
+  document.body.append(b);
+}
+
 export function installSoundButton() {
   if (typeof document === 'undefined' || document.getElementById('sound-btn')) return;
   const b = document.createElement('button');

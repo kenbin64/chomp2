@@ -63,7 +63,7 @@ export class Effects {
       live.add(it);
       let mk = this.markers.get(it);
       if (!mk) {
-        mk = new THREE.Mesh(this.markerGeo, new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide }));
+        mk = new THREE.Mesh(this.markerGeo, new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true }));
         mk.rotation.x = -Math.PI / 2;
         mk.renderOrder = 5;
         this.scene.add(mk); this.markers.set(it, mk);

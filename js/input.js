@@ -145,6 +145,7 @@ export class Input {
     const justUnlocked = performance.now() - (this.unlockedAt || 0) < 300 || document.pointerLockElement;
     if (down && (k === 'p' || (k === 'escape' && !justUnlocked)) && !e.repeat && this.onPause) this.onPause();
     if (down && k === 'm' && this.onMute) this.onMute();
+    if (down && k === 'v' && !e.repeat && this.onCamera) this.onCamera();   // the camera: auto or manual
     if (down && k === 'c') this.recenterQueued = true;
     if (down) this.keys.add(k); else this.keys.delete(k);
     if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
@@ -309,6 +310,8 @@ export class Input {
     const ease = (v, to) => to === 0 ? 0 : v + (to - v) * Math.min(1, dt * 12);
     this.kf = ease(this.kf || 0, f); this.kr = ease(this.kr || 0, r);
     if (f && r || this.kf && this.kr) { f = this.kf; r = this.kr; }
+    // (Tried 2026-10-26 and left out: turning on its own walking him slowly round, like the orb. Measured, it
+    // crept him into the tourists' nervous ring while he turned to aim; they bolted and threw a third less food.)
     const pad = this.readPad(), padMoving = !!(pad && (pad.forward || pad.right));
     if (padMoving) { f = pad.forward; r = pad.right; }
     // The orb (Ken, 2026-10-21): up goes forward, the sides TURN him at a steady rate (not a sideways

@@ -264,13 +264,27 @@ function addRealWater(scene, q, sun) {
   // to see in a rippled reflection (the grass: half a million blades) are left
   // out of that drawing only (userData.noReflect).
   const mirror = water.onBeforeRender.bind(water), skipped = [];
-  water.onBeforeRender = (...args) => {
+  const reflect = (...args) => {
     scene.traverse(o => { if (o.userData.noReflect && o.visible) { o.visible = false; skipped.push(o); } });
     mirror(...args);
     for (const o of skipped) o.visible = true;
     skipped.length = 0;
   };
+  // The reflection is drawn just before the frame's main drawing (reflectFirst, called by the game loop), not
+  // from inside it. Drawn inside, three.js keeps a separate record of the lights for it, so every material
+  // was re-checked as it went from one record to the other (measured 2026-10-26: about 100 needless program
+  // checks a frame). Same picture, drawn first. In a VR headset the old way is kept (reflectInside).
+  let first = false;
+  const view = new THREE.Frustum(), viewMatrix = new THREE.Matrix4();
+  water.onBeforeRender = (...args) => { if (!first) reflect(...args); };
   const ripple = function ripple(t) { water.material.uniforms.time.value = t * 0.55; };
+  ripple.reflectFirst = (renderer, camera) => {
+    first = true;
+    camera.updateMatrixWorld();
+    view.setFromProjectionMatrix(viewMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    if (water.visible && view.intersectsObject(water)) reflect(renderer, scene, camera);   // only when it would be drawn
+  };
+  ripple.reflectInside = () => { first = false; };
   // See into the lagoon while Wally is diving: k 0 is the usual mirror-like
   // surface, 1 clear enough to watch him down at the bottom.
   ripple.clear = k => {
@@ -613,5 +627,7 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
     gate(dt, gateOpen);
     boats.forEach((b, i) => { b.position.y = 0.6 + Math.sin(t * 0.8 + i) * 0.15; b.rotation.z = Math.sin(t * 0.6 + i) * 0.03; });
   };
-  return { update, sun, sky, photo, sign, waterClear: k => wave.clear && wave.clear(k) };
+  return { update, sun, sky, photo, sign, waterClear: k => wave.clear && wave.clear(k),
+    reflectFirst: (renderer, camera) => wave.reflectFirst && wave.reflectFirst(renderer, camera),
+    reflectInside: () => wave.reflectInside && wave.reflectInside() };
 }

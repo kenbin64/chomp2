@@ -10,9 +10,12 @@ import { person, wearModel } from './tourists.js';
 import { pickTraders } from './trade-rules.js';
 import { pickLine } from './bubbles.js';
 
+// A see-through, two-sided material is drawn twice a frame by three.js (back faces, then front faces), and
+// marked changed before each. A flat ring cannot overlap itself, so one pass looks the same
+// (forceSinglePass, used on every flat see-through ring in the game; measured 2026-10-26).
 function ringMesh(inner, outer, color, opacity) {
   const m = new THREE.Mesh(new THREE.RingGeometry(inner, outer, 64),
-    new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide }));
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true }));
   m.rotation.x = -Math.PI / 2; m.renderOrder = 4;
   return m;
 }

@@ -193,6 +193,8 @@ body.touch .dive-buttons button { width: 70px; height: 58px; font-size: 15px; }
 .tip-off { background: none; color: #b9d3cf; border: 0; text-decoration: underline; }
 @keyframes tip-in { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
 /* The speaker button (audio-ui.js): on every page, always there, in the top row left of Gear (clear of the score and the feed-o-meter). */
+/* The camera button (audio-ui.js), just left of the speaker: Auto or Manual camera. */
+.sound-btn.cam-btn { transform: translateX(-220px); }
 .sound-btn { position: fixed; top: max(10px, env(safe-area-inset-top)); right: 50%; transform: translateX(-168px); z-index: 40; width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255, 209, 102, 0.6); background: rgba(12, 40, 56, 0.85); font-size: 20px; line-height: 1; cursor: pointer; display: grid; place-items: center; }
 /* The trailer playing muted on the opening screen, bottom right; hidden on small screens (the Trailer button stays). */
 .trailer-peek { position: absolute; right: 18px; top: 18px;   /* top right, clear of the buttons along the bottom */ width: clamp(180px, 21vw, 300px); padding: 0; border: 3px solid rgba(255, 209, 102, 0.85); border-radius: 14px; overflow: hidden; background: #000; cursor: pointer; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); }

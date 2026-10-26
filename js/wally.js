@@ -18,7 +18,11 @@ import { rigWally, WallyMotion, shapeFor, HumanoidPoser } from './rig.js';
 const SPEED = { upright: 5.6, fours: 8.2, swim: 4.8 };   // eased (Ken, 2026-10-20: a little quick going forward)
 const JUMP = { land: 8.5, water: 13, show: 11 };   // show: jumping on the spot, for the big Jump move
 const TURN = 2.8;                // keyboard steering: how fast left and right turn him (radians a second)
-const SPIN = 14;                 // and how fast down spins him round
+// Keyboard turning that behaves like the phone's orb (Ken, 2026-10-26: players found the keys clunky and
+// spun past the food). A tap turns him slowly, for a small correction; held, the turn speeds up to a little
+// faster than before, for a big one. Measured: the scripted player reversed its turn 68 times a minute.
+const TURN_TAP = 1.9, TURN_HELD = 3.4, TURN_RAMP = 0.35;   // radians a second at first, after TURN_RAMP seconds held
+const SPIN_TIME = 0.5;           // seconds for the animated turn round (Down, or the phone's turn-around button)
 // Turning while he moves (Ken, 2026-10-20: smooth, every angle in between): his
 // heading swings round toward where the player points at this rate, so a change of
 // direction is an arc, not a snap. Radians a second: on land, swimming, in the air.
@@ -392,18 +396,35 @@ export class Wally {
       // as they are held, at any angle, not in steps. On their own he turns on
       // the spot; with Up held he runs and steers. Up runs ahead the way he
       // faces. Down spins him round once and he runs the other way while held.
-      if (input.forward < 0 && !(this.lastForward < 0)) this.turnLeft = (this.turnLeft || 0) + Math.PI;
+      // Facing the player (Ken, 2026-10-26): Down turns him round to face the camera, and the camera stays
+      // where it is (main.js), so he is played from the front, face toward you; Down again just runs him
+      // toward you. Up turns him back round to face away, then runs him on.
+      const pressedDown = input.forward < 0 && !(this.lastForward < 0);
+      const pressedUp = input.forward > 0.5 && !(this.lastForward > 0.5);
+      if (pressedDown && !this.front) { this.turnLeft = (this.turnLeft || 0) + Math.PI; this.front = true; }
+      if (pressedUp && this.front) { this.turnLeft = (this.turnLeft || 0) + Math.PI; this.front = false; }
       if (input.turnAround) this.turnLeft = (this.turnLeft || 0) + Math.PI;   // the phone pad's turn-around button
       this.lastForward = input.forward;
+      // The turn round is animated (Ken, 2026-10-26: it looked like a teleport): he swings round over
+      // SPIN_TIME seconds, starting gently, fastest midway, settling at the end (a smoothstep curve).
       if (this.turnLeft) {
-        const step = Math.sign(this.turnLeft) * Math.min(Math.abs(this.turnLeft), SPIN * dt);
-        this.facing += step; this.turnLeft -= step;
-        if (Math.abs(this.turnLeft) < 1e-4) this.turnLeft = 0;
+        if (!this.spin || this.spin.left !== this.turnLeft) this.spin = { total: this.turnLeft, done: 0, t: 0, left: this.turnLeft };
+        this.spin.t = Math.min(1, this.spin.t + dt / SPIN_TIME);
+        const s = this.spin.t, eased = s * s * (3 - 2 * s), want = this.spin.total * eased;
+        this.facing += want - this.spin.done; this.spin.done = want;
+        this.turnLeft = this.spin.total - want; this.spin.left = this.turnLeft;
+        if (this.spin.t >= 1) { this.turnLeft = 0; this.spin = null; }
       }
-      // Turning eases in over a moment, so a tap nudges him a little and a hold sweeps round.
-      this.turnRate = (this.turnRate || 0) + ((-input.right * TURN) - (this.turnRate || 0)) * Math.min(1, dt * 10);
-      this.facing += this.turnRate * dt + (input.aim || 0);       // the keys or stick, and the mouse with the cursor taken
-      const going = input.forward !== 0 && Math.abs(this.turnLeft || 0) < 0.3 ? 1 : 0;
+      // Turning eases in over a moment, so a tap nudges him a little and a hold sweeps round faster and faster.
+      const side = Math.sign(input.right);
+      this.turnHeld = side !== 0 && side === this.turnSide ? (this.turnHeld || 0) + dt : 0;
+      this.turnSide = side;
+      const rate = TURN_TAP + (TURN_HELD - TURN_TAP) * Math.min(1, this.turnHeld / TURN_RAMP);
+      this.turnRate = (this.turnRate || 0) + ((-input.right * rate) - (this.turnRate || 0)) * Math.min(1, dt * 10);
+      this.facing += this.turnRate * dt + (input.aim || 0);       // the keys or stick, the mouse, and the aim help
+      // How fast he goes: full speed with Up (or running the other way after Down), and the slow walk the keys
+      // give when turning on their own (input.js), so he keeps moving round instead of standing to turn.
+      const going = Math.abs(this.turnLeft || 0) < 0.3 ? (input.forward < 0 ? 1 : Math.min(1, input.forward)) : 0;
       want = new THREE.Vector3(Math.sin(this.facing) * going, 0, Math.cos(this.facing) * going);
     } else {
       // Phone stick: relative to the camera, forward is away from it.

@@ -252,7 +252,7 @@ export class Kenny {
     const baseY = Math.max(0, terrainHeight(this.goal.x, this.goal.z));
     mesh.position.set(this.goal.x, baseY + 0.6, this.goal.z);
     const glow = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.9, 48),
-      new THREE.MeshBasicMaterial({ color: 0xffd400, transparent: true, opacity: 0.4, side: THREE.DoubleSide }));
+      new THREE.MeshBasicMaterial({ color: 0xffd400, transparent: true, opacity: 0.4, side: THREE.DoubleSide, forceSinglePass: true }));
     glow.rotation.x = -Math.PI / 2; glow.position.set(this.goal.x, baseY + 0.05, this.goal.z);
     this.scene.add(mesh, glow);
     this.toast = { mesh, glow, baseY, life: TOAST_LIFE };
