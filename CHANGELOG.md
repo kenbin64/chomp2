@@ -5,6 +5,9 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- Words stay on screen long enough to read: cut scenes, speech bubbles and messages. In a cut scene, a key or a tap goes on
+  to the next line, and Escape skips the lot.
+
 ## v1.0.0-beta.17 (2026-10-31)
 
 - Croc Park has a new ending: a high speed race to escape. Once Wally has the key, Kenny explains what comes next. Out of

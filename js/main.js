@@ -38,6 +38,7 @@ import { createEscapeScene } from './escape-scene.js';
 import { MANGO_NEED, MANGO_ENERGY, GIVE_REACH, mangoSpots, giantChestSpot, escapeStage, nextGateNeed } from './escape-rules.js';
 import { chestModel } from './chest.js';
 import { carried } from './carried.js';
+import { readSeconds } from './read-time.js';
 import { Pickups, mangoMaker } from './pickups.js';
 import { BANK_Y } from './rules.js';
 import { GATE_POST } from './chase-rules.js';
@@ -334,7 +335,7 @@ function toast(text, kind = 'good') {
   const el = document.createElement('div');
   el.className = `toast ${kind}`; el.textContent = text;
   $('toasts').appendChild(el);
-  setTimeout(() => el.remove(), 1800);
+  setTimeout(() => el.remove(), Math.max(1800, readSeconds(text) * 1000));
   while ($('toasts').children.length > 3) $('toasts').firstChild.remove();
 }
 
@@ -660,7 +661,7 @@ function wearGoldenMango() {
 }
 function giveMango() {
   escape.given = true; lastHud = ''; drawQuest();
-  attempt = Trip.gain(attempt, 'golden-mango');
+  attempt = Trip.gain(attempt, 'kings-golden-mango');
   wearGoldenMango();
   wally.vel.set(0, 0, 0); sound.play.goal(); game.score += 500; catcher.state.mode = 'search'; catcher.state.helper = true; catcher.state.last = { x: catcher.state.x, z: catcher.state.z }; catcher.state.hold = 0;
   catcher.state.heading = Math.atan2(wally.pos.x - catcher.pos.x, wally.pos.z - catcher.pos.z);

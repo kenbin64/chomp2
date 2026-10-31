@@ -44,6 +44,9 @@ if (out('git tag --list').split('\n').includes(`v${next}`)) stop(`v${next} alrea
 try { run('npm test'); } catch { stop('a unit test failed'); }
 if (e2e) { try { run('npm run e2e'); } catch { stop('the browser suite failed (is node serve.mjs running?)'); } }
 
+// That the site will build, before anything is pushed (a dry run: it publishes nothing).
+try { run('npx wrangler deploy --dry-run', PORTAL); } catch { stop('the site does not build'); }
+
 // The version and the changelog.
 pkg.version = next; writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
 const logPath = join(GAME, 'CHANGELOG.md'), today = new Date().toISOString().slice(0, 10);

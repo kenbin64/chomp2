@@ -4,6 +4,7 @@
 // Each bubble is one small picture that faces the camera, so they cost very little.
 
 import * as THREE from 'three';
+import { readSeconds } from './read-time.js';
 
 export const LINES = {
   wallyCatch:   ['Bonza tucker!', 'Ripper!', 'Beauty, mate!', 'Too easy!', 'Fair dinkum, that\'s good!', 'Ta very much!',
@@ -98,6 +99,7 @@ export class Bubbles {
   say(target, text, height = 3.2, seconds = 2.2) {
     // The player's own name for their croc (Ken: name changes), wherever a line says Wally.
     try { const n = JSON.parse(localStorage.getItem('chomp-progress') || '{}').crocName; if (n) text = text.replace(/\bWally\b/g, n); } catch { /* his own name */ }
+    seconds = Math.max(seconds, readSeconds(text));             // long enough to read, whatever the caller asked for
     const old = this.list.find(b => b.target === target);
     if (old) this.remove(old);
     if (this.list.length >= this.max) this.remove(this.list[0]);

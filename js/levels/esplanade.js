@@ -453,7 +453,7 @@ poolOpen = () => game.ready && game.hasBigMango;
 
 // This go's meter speed (trip-rules.js).
 game.tripDrain = Trip.drainFactor(progress.trip, 'esplanade', attempt.level);
-if (Trip.have(progress.trip, 'golden-mango')) carried.add('golden-mango', { id: 'giant-mango' });   // for the Croc King (the park, main.js)
+if (Trip.have(progress.trip, 'kings-golden-mango')) carried.add('golden-mango', { id: 'giant-mango' });   // for the Croc King (the park, main.js)
 game.hasBigMango = Trip.have(progress.trip, 'big-golden-mango');     // on a return visit he has it already
 if (game.hasBigMango) carried.add('mango', { id: 'big-mango', label: 'Big Golden Mango' });
 

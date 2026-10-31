@@ -260,7 +260,7 @@ const game = {
   toadCool: 0, hint: 0,
 };
 game.tripDrain = Trip.drainFactor(progress.trip, 'cane', attempt.level);
-if (Trip.have(progress.trip, 'golden-mango')) carried.add('golden-mango', { id: 'giant-mango' });   // for the Croc King (the park, main.js)
+if (Trip.have(progress.trip, 'kings-golden-mango')) carried.add('golden-mango', { id: 'giant-mango' });   // for the Croc King (the park, main.js)
 const cutsToMiddle = cutsNeeded(field);
 window.chomp = { game, wally, field: () => field, pieces, scene, camera, machete, poseMachete };
 

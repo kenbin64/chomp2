@@ -297,7 +297,7 @@ if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progr
 const entry = Trip.canEnter(progress.trip, 'reef'), testingAll = params.has('all');
 let attempt = Trip.startAttempt(progress.trip, 'reef', { force: true }); startRun('reef', { level: attempt.level });
 game.tripDrain = Trip.drainFactor(progress.trip, 'reef', attempt.level);
-if (Trip.have(progress.trip, 'golden-mango')) carried.add('golden-mango', { id: 'giant-mango' });   // for the Croc King (the park, main.js)
+if (Trip.have(progress.trip, 'kings-golden-mango')) carried.add('golden-mango', { id: 'giant-mango' });   // for the Croc King (the park, main.js)
 game.hasPearlKey = Trip.have(progress.trip, 'pearl-key');           // on a return dive he has it already
 if (game.hasPearlKey) carried.add('pearl-key');
 game.keyRise = 9;

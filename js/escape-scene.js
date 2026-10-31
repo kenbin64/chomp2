@@ -3,6 +3,7 @@
 // and after him, the park locking down, what he has to find. Each shot is a camera move and a line; any key or tap skips.
 
 import * as THREE from 'three';
+import { readSeconds } from './read-time.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
@@ -10,7 +11,7 @@ const V = (x, y, z) => new THREE.Vector3(x, y, z);
 export function createEscapeScene(camera) {
   const look = V(0, 0, 0), posNow = V(0, 0, 0);
   const box = document.createElement('div'); box.className = 'escape-scene'; box.hidden = true;
-  box.innerHTML = '<div class="cine-bar top"></div><div class="cine-bar bottom"></div><div class="siren"></div><p class="escape-line"></p><small class="escape-skip">Tap or press a key to skip</small>';
+  box.innerHTML = '<div class="cine-bar top"></div><div class="cine-bar bottom"></div><div class="siren"></div><p class="escape-line"></p><small class="escape-skip">Tap or press a key for the next line. Esc skips all</small>';
   document.body.append(box);
   const lineEl = box.querySelector('.escape-line'), sirenEl = box.querySelector('.siren');
   let shots = [], k = 0, t = 0, done = null, armed = 0;
@@ -29,14 +30,17 @@ export function createEscapeScene(camera) {
     for (const s of shots.slice(k + 1)) if (s.cue) s.cue();      // what was skipped still happens
     const then = done; done = null; if (then) then();
   };
-  const skip = () => { if (armed <= 0) end(); };
+  // A key or a tap goes on to the next line, so a stray press loses one line at most; Escape skips the lot.
+  const next = () => { t = 0; k++; if (k >= shots.length) { k = shots.length - 1; end(); return; } say(shots[k]); armed = 0.25; };
+  const skip = e => { if (armed > 0) return; if (e.key === 'Escape') end(); else next(); };
 
   const scene = {
     active: false,
     end,
     play(list, then, { siren = true } = {}) {
       sirenEl.hidden = !siren;
-      shots = list; k = 0; t = 0; done = then; armed = 0.4;      // (the key he was holding as he ran out does not count)
+      // Each shot lasts as long as it takes to read its words. (armed: the key he was holding as he ran out does not count.)
+      shots = list.map(s => ({ ...s, s: Math.max(s.s, readSeconds(s.line)) })); k = 0; t = 0; done = then; armed = 0.4;
       scene.active = true; box.hidden = false; document.body.classList.add('in-cut');
       say(shots[0]);
       addEventListener('keydown', skip); addEventListener('pointerdown', skip);
@@ -44,11 +48,7 @@ export function createEscapeScene(camera) {
     step(dt) {
       if (!scene.active) return;
       armed -= dt; t += dt;
-      if (t >= shots[k].s) {
-        t = 0; k++;
-        if (k >= shots.length) { k = shots.length - 1; end(); return; }
-        say(shots[k]);
-      }
+      if (t >= shots[k].s) next();
     },
     // The camera, each frame while it plays.
     place() {

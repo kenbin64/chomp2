@@ -177,7 +177,7 @@ game.hasKey = Trip.have(progress.trip, 'mossman-key');
 if (game.hasKey) carried.add('key', { label: 'Chest key' });
 game.talisman = game.hadOpal = Trip.have(progress.trip, 'talisman-earth');   // back again: the opal is sealed already (the way out is open); the chest gives a prize
 game.tripDrain = Trip.drainFactor(progress.trip, 'mossman', attempt.level);
-if (Trip.have(progress.trip, 'golden-mango')) carried.add('golden-mango', { id: 'giant-mango' });   // for the Croc King (the park, main.js)
+if (Trip.have(progress.trip, 'kings-golden-mango')) carried.add('golden-mango', { id: 'giant-mango' });   // for the Croc King (the park, main.js)
 window.chomp = { game, wally, scene, camera, clusters, keySpot, chestSpot, dive };
 
 // Visitors throw where he will be (the same rule as everywhere).

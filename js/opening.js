@@ -21,6 +21,7 @@ import { isWater, terrainHeight } from './rules.js';
 import { addSwimSway } from './swim.js';
 import { ModelSkin } from './models.js';
 import { showTip } from './tips.js';
+import { readSeconds } from './read-time.js';
 
 const KENNY_LINES = [
   "G'day, Wally! I'm Kenny the Koala.",
@@ -34,7 +35,7 @@ const KENNY_LINES = [
   'Find what the visitors dropped down there, and it opens.',
   "And stay fed, or you'll run out of puff.",
 ];
-const LINE_SECONDS = 2.7;
+const LINE_SECONDS = Math.max(...KENNY_LINES.map(readSeconds));
 
 // The words over the cinematic (Ken: "something like that, in not so many words").
 // The cinematic (Ken, 2026-10-20): one smooth pan spiralling down over the park to

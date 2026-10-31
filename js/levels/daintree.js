@@ -194,7 +194,7 @@ input.onPause = () => setPaused(!game.paused);
 input.onMute = () => toast_('Sound ' + (sound.toggleMute() ? 'off' : 'on'), 'info');
 const game = { running: false, paused: false, done: false, time: 0, energy: ENERGY_MAX, lives: LIVES, faint: 0, points: 0, caught: 0, streak: 0, behind: 0, scene: null, stun: 0, bites: 0, stolen: 0, crocTip: false, phase: 'river' };
 game.tripDrain = Trip.drainFactor(progress.trip, 'daintree', Trip.attemptLevel(progress.trip, 'daintree').level);
-if (Trip.have(progress.trip, 'golden-mango')) carried.add('golden-mango', { id: 'giant-mango' });   // for the Croc King (the park, main.js)
+if (Trip.have(progress.trip, 'kings-golden-mango')) carried.add('golden-mango', { id: 'giant-mango' });   // for the Croc King (the park, main.js)
 window.chomp = { game, wally, scene, camera, boat, passengers, forest, court };
 window.chomp.toForest = () => { game.running = true; $('title').hidden = true; game.scene = { over: true }; fade(() => enterForest()); };   // testing: straight to the rainforest
 

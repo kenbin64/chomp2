@@ -108,6 +108,15 @@ const diveTo = (p, x, z) => p.evaluate(async (x, z) => {
   check('used at the gate, the key icon has gone', !(await icon('key')));
   check('breaking out: the cut scene plays first', await p.evaluate(() => window.chomp.escapeScene.active));
   check('and the wrangler waits for it', await p.evaluate(() => window.chomp.catcher.state.hold > 100));
+  // A key goes on one line, not the whole scene; every line stays up long enough to read.
+  {
+    const line = () => p.evaluate(() => document.querySelector('.escape-line').textContent);
+    await wait(900); const before = await line();
+    await p.keyboard.press('KeyZ'); await wait(300);
+    check('a key goes on to the next line, and the scene plays on', before !== await line() && await p.evaluate(() => window.chomp.escapeScene.active), before);
+    const { readSeconds } = await import('../js/read-time.js');
+    check('a long line gets time to be read', readSeconds('You must bring it to him in the Daintree, as a token of bravery, right now') > 6);
+  }
   await p.evaluate(() => window.chomp.escapeScene.end());
   await wait(300);
   check('with the key: past the fence, and the chase is on', s.out, JSON.stringify({ x: s.x, z: s.z }));

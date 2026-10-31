@@ -12,6 +12,7 @@ export const LIMITS = { name: 80, reply: 120, message: 4000, page: 200, minMessa
 const EMAIL = /^[^\s@<>"']{1,64}@[^\s@<>"']{1,180}\.[A-Za-z]{2,24}$/;
 const clean = (v, max) => (typeof v === 'string' ? v.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, max) : '');
 
+export const PER_HOUR = 5;                       // messages a visitor may send in an hour (used by the site's worker.js, in the playbutterflyfx repo)
 export function checkFeedback(body) {
   if (!body || typeof body !== 'object') return { ok: false, error: 'empty' };
   if (typeof body.website === 'string' && body.website.trim()) return { ok: false, error: 'spam' };   // the hidden field only a robot fills in
