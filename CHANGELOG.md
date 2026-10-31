@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.18 (2026-10-31)
+
 - Words stay on screen long enough to read: cut scenes, speech bubbles and messages. In a cut scene, a key or a tap goes on
   to the next line, and Escape skips the lot.
 
