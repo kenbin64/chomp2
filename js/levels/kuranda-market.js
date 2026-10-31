@@ -385,33 +385,6 @@ export function stockedCanopy(gltf, kind, sign, tone = 0, height = 3.6) {
 }
 
 // ---- Plants (Ken: lots of plants on the verandas and all around) --------------------------------
-// A cluster of potted tropical plants: ferns, palms, bromeliads, gingers with
-// red flowers, a pink bougainvillea. Built from shapes, merged by the caller.
-export function plantCluster(rnd, n = 4) {
-  mats();
-  const leaf = [M.leaf, M.leafLight || (M.leafLight = new THREE.MeshStandardMaterial({ color: 0x5ea83e, side: THREE.DoubleSide, roughness: 0.8 })), M.leafDark || (M.leafDark = new THREE.MeshStandardMaterial({ color: 0x2a5a2a, side: THREE.DoubleSide, roughness: 0.8 }))];
-  const flower = [0xe0303a, 0xff6aa8, 0xf2b02e, 0xd84ad0].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6 }));
-  const pots = [M.pot, new THREE.MeshStandardMaterial({ color: 0x1f8a84, roughness: 0.5 }), new THREE.MeshStandardMaterial({ color: 0xe8a830, roughness: 0.5 })];
-  const g = new THREE.Group();
-  for (let i = 0; i < n; i++) {
-    const x = (rnd() - 0.5) * 1.6, z = (rnd() - 0.5) * 1.0, big = 0.7 + rnd() * 0.8, kind = Math.floor(rnd() * 4);
-    cyl(0.2 * big, 0.14 * big, 0.36 * big, pots[i % 3], x, 0.18 * big, z, g, 10);
-    const top = 0.36 * big;
-    const fronds = kind === 1 ? 6 : 10;
-    for (let k = 0; k < fronds; k++) {
-      const a = k / fronds * Math.PI * 2 + rnd();
-      const len = (kind === 1 ? 1.1 : kind === 2 ? 0.45 : 0.7) * big;
-      const fr = new THREE.Mesh(new THREE.PlaneGeometry(kind === 1 ? 0.22 : 0.14, len), leaf[(k + i) % 3]);
-      fr.position.set(x + Math.cos(a) * len * 0.3, top + len * 0.4, z + Math.sin(a) * len * 0.3);
-      fr.rotation.set(kind === 2 ? 0.25 : 0.6, -a, 0); g.add(fr);
-    }
-    if (kind === 2 || kind === 3) for (let k = 0; k < (kind === 3 ? 5 : 1); k++) {   // a bromeliad heart, or ginger and bougainvillea flowers
-      const f = new THREE.Mesh(new THREE.ConeGeometry(0.07 * big, 0.22 * big, 6), flower[(i + k) % 4]);
-      f.position.set(x + (rnd() - 0.5) * 0.3 * big, top + 0.35 * big + rnd() * 0.3 * big, z + (rnd() - 0.5) * 0.3 * big); g.add(f);
-    }
-  }
-  return g;
-}
 
 // ---- The lane, like Ken's photo of the real Kuranda markets --------------------------------------
 // Warm brick pavers in a herringbone, worn and sun-dappled.
@@ -430,36 +403,6 @@ export function paverTexture(repeatX, repeatY) {
   return t;
 }
 
-// A leafy canopy arching over the lane: big cut-out sprays of leaves high up,
-// that cast dappled shade on the pavers (the shadow keeps the leaf shapes).
-export function leafCanopy(scene, half, z0, z1) {
-  const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
-  g.clearRect(0, 0, 512, 512);
-  for (let i = 0; i < 900; i++) {
-    const x = Math.random() * 512, y = Math.random() * 512, a = Math.random() * Math.PI * 2, l = 10 + Math.random() * 16;
-    if (Math.random() < 0.18) continue;                                          // gaps for the sun to come through
-    g.fillStyle = ['#3f7a35', '#5ea83e', '#2f6a2a', '#78b84a', '#4a8a3a'][Math.floor(Math.random() * 5)];
-    g.save(); g.translate(x, y); g.rotate(a); g.beginPath(); g.ellipse(0, 0, l, l * 0.45, 0, 0, Math.PI * 2); g.fill(); g.restore();
-  }
-  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  const mat = new THREE.MeshStandardMaterial({ map: tex, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.8 });
-  const group = new THREE.Group();
-  for (let z = z0; z < z1; z += 14) {
-    // Sprays reaching in from each side, tilted, not a flat roof: the sky shows between.
-    for (const side of [-1, 1]) {
-      const spray = new THREE.Mesh(new THREE.PlaneGeometry(half * 1.5, 11, 4, 4), mat);
-      const pos = spray.geometry.attributes.position;
-      for (let i = 0; i < pos.count; i++) pos.setZ(i, Math.sin((pos.getX(i) / (half * 1.5) + 0.5) * Math.PI) * 1.2);   // arching
-      spray.geometry.computeVertexNormals();
-      spray.rotation.set(-Math.PI / 2, 0, side * 0.12);
-      spray.position.set(side * half * 0.55, 8.5 + Math.random() * 1.5, z + Math.random() * 6);
-      spray.castShadow = true; spray.receiveShadow = false; spray.userData.noAO = true;
-      group.add(spray);
-    }
-  }
-  scene.add(group);
-  return group;
-}
 
 // A chalkboard A-frame with rainbow chalk writing (like the photo's signs).
 const CHALK = ['#ffe066', '#ff7ab6', '#6ad8ff', '#8dff7a', '#ffb04a', '#d0a0ff', '#ffffff'];

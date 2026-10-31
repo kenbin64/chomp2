@@ -119,8 +119,6 @@ addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvent 
 // display mode is the browser's own word for it.
 export const isApp = () => { try { if (new URLSearchParams(location.search).has('app')) sessionStorage.setItem('chomp-app', '1'); if (sessionStorage.getItem('chomp-app') === '1') return true; } catch { /* fine */ }
   return matchMedia('(display-mode: fullscreen), (display-mode: standalone), (display-mode: minimal-ui), (display-mode: window-controls-overlay)').matches || navigator.standalone === true; };
-// Installed on this device (remembered when it happens), so a browser tab offers Play, not Install.
-export const isInstalled = () => { try { return localStorage.getItem('chomp-installed') === '1'; } catch { return false; } };
 addEventListener('appinstalled', () => { try { localStorage.setItem('chomp-installed', '1'); } catch { /* fine */ } dispatchEvent(new Event('chomp-installed')); });
 const isApple = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 function howToInstall() {
@@ -133,13 +131,6 @@ function howToInstall() {
     document.body.append(box);
   }
   box.hidden = false;
-}
-// Install the game: the browser's own prompt where there is one, the Share steps on an iPhone or iPad.
-// Returns 'prompted', 'apple' or 'unavailable' (a browser that cannot install apps, such as Firefox).
-export async function installApp() {
-  if (installEvent) { installEvent.prompt(); const c = await installEvent.userChoice.catch(() => null); installEvent = null; return c && c.outcome === 'accepted' ? 'installed' : 'prompted'; }
-  if (isApple()) { howToInstall(); return 'apple'; }
-  return 'unavailable';
 }
 
 function appButtons() {

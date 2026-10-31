@@ -1,5 +1,5 @@
 // Day and night, and the moon as seen from Cairns (Ken, 2026-10-18).
-import { CYCLE, CYCLE_LENGTH, nightAmount, nightProgress, moonAge, moonLit, waxing, moonElongation, moonDirection, moonSunDirection, SYNODIC } from '../js/sky-rules.js';
+import { CYCLE, CYCLE_LENGTH, nightAmount, nightProgress, moonLit, waxing, moonElongation, moonDirection, moonSunDirection } from '../js/sky-rules.js';
 
 let pass = 0, fail = 0;
 function check(name, ok, detail = '') { if (ok) pass++; else { fail++; console.log('FAIL', name, detail); } }

@@ -6,7 +6,7 @@
 // in-app purchase), wear what you own, and give your croc a name.
 
 import * as THREE from 'three';
-import { readProgress, OUTFITS, buyItem, wearItem, outfitOn, outfitModel, wearing, crocName, setCrocName, EXTRAS, hasExtra, buyExtra, saveProgress, ticketsFor, earnHats } from './progress.js';
+import { readProgress, OUTFITS, buyItem, wearItem, outfitOn, setCrocName, EXTRAS, hasExtra, buyExtra, saveProgress, ticketsFor, earnHats } from './progress.js';
 import { readBook } from './points.js';
 import { loadModels, ModelSkin } from './models.js';
 import { dressOutfit } from './outfit.js';

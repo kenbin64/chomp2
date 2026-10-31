@@ -15,8 +15,7 @@ import { addPoints } from '../points.js';
 import * as THREE from 'three';
 import { Trees } from '../trees.js';
 import { ModelSkin } from '../models.js';
-import { COURSE, ANCHOR_Y, VINE_LENGTH, SWAMP_Y, START, VINES, END, PAWPAW_REACH, DT,
-  handAt, swingStep, release, flyStep, catches, grab, landed, inSwamp, firstSwing, pawpawSpots } from './vine-rules.js';
+import { COURSE, ANCHOR_Y, SWAMP_Y, START, VINES, END, PAWPAW_REACH, DT, handAt, swingStep, release, flyStep, catches, grab, landed, inSwamp, firstSwing, pawpawSpots } from './vine-rules.js';
 
 export const COURT = { z: END.z + 26, throneZ: END.z + 34, billabong: { z: END.z + 20, x: 9, r: 7 } };
 const X = COURSE.x;

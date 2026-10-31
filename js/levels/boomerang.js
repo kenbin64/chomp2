@@ -23,7 +23,7 @@ import { addSky, addLights } from '../world.js';
 import { readProgress, saveProgress, outfitModel, wearing, activityOpen } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
 import { installBook } from '../book.js';
-import { flight, positionAt, landsAt, hits, catchable, throwPoints, IDEAL_ANGLE, ANGLE_RANGE, THROWS, CATCH_REACH } from './boomerang-rules.js';
+import { flight, positionAt, landsAt, hits, catchable, throwPoints, IDEAL_ANGLE, ANGLE_RANGE, THROWS } from './boomerang-rules.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);

@@ -22,16 +22,8 @@ function set(d) {
   showLists();
 }
 export const device = () => current;
-export const padConnected = () => connected;
-export const onDevice = fn => { listeners.add(fn); return () => listeners.delete(fn); };
 export const say = map => map[current] ?? map.keys;
 
-// The words for each action, per device: one place, used by every prompt.
-export const BUTTONS = {
-  act:   { keys: 'Space', mouse: 'Click', pad: 'A', touch: 'Tap' },
-  jump:  { keys: 'Space', mouse: 'Space', pad: 'A', touch: 'Jump' },
-  forward: { keys: 'W / ↑', mouse: 'Hold left button', pad: 'Left stick up', touch: 'Stick up' },
-};
 
 // Show the matching control lists (data-device) and hide the others.
 function showLists() {

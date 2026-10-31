@@ -8,7 +8,6 @@
 
 export const KINDS = { feedback: 'Feedback or an idea', bug: 'Something is broken', culture: 'How people or culture are shown', takedown: 'Copyright or takedown notice' };
 export const LIMITS = { name: 80, reply: 120, message: 4000, page: 200, minMessage: 5 };
-export const PER_HOUR = 5;                       // messages a visitor may send in an hour
 
 const EMAIL = /^[^\s@<>"']{1,64}@[^\s@<>"']{1,180}\.[A-Za-z]{2,24}$/;
 const clean = (v, max) => (typeof v === 'string' ? v.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, max) : '');

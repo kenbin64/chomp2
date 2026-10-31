@@ -7,7 +7,7 @@
 import { fitText } from '../signtext.js';
 import * as THREE from 'three';
 import { PATH } from './esplanade-rules.js';
-import { addSky, addLights, addHorizon, addRanges, palm } from '../world.js';
+import { addSky, addLights, addHorizon, addRanges } from '../world.js';
 import { palmStand } from '../palms.js';
 import { Trees } from '../trees.js';
 import { Grass } from '../grass.js';
@@ -136,23 +136,6 @@ function addGround(scene, realism, q) {
   return sea;
 }
 
-function mangrove(x, z, s) {
-  const g = new THREE.Group();
-  const root = mat(0x5b4632), leaf = mat(0x2f5f2c);
-  for (let i = 0; i < 7; i++) {
-    const a = (i / 7) * Math.PI * 2;
-    const r = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 1.6, 6), root));
-    r.position.set(Math.cos(a) * 0.6, 0.6, Math.sin(a) * 0.6); r.rotation.set(Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.5);
-    g.add(r);
-  }
-  for (let i = 0; i < 5; i++) {
-    const c = shadowed(new THREE.Mesh(new THREE.SphereGeometry(1 + Math.random() * 0.5, 16, 12), leaf));
-    c.position.set((Math.random() - 0.5) * 1.6, 1.8 + Math.random() * 0.8, (Math.random() - 0.5) * 1.6); c.scale.y = 0.7;
-    g.add(c);
-  }
-  g.position.set(x, -1.2, z); g.scale.setScalar(s);             // standing in the shallows
-  return g;
-}
 
 // A big shady fig: thick trunk, hanging roots, a wide dark-green crown.
 function fig(x, z, s) {
@@ -211,15 +194,6 @@ function balconyTower(rnd, w, h, d, colour) {
   return g;
 }
 
-function windowsTexture(base) {
-  return canvasTexture(128, 256, (g, w, h) => {
-    g.fillStyle = base; g.fillRect(0, 0, w, h);
-    for (let y = 8; y < h; y += 22) for (let x = 8; x < w; x += 24) {
-      g.fillStyle = Math.random() < 0.15 ? '#ffe9a8' : '#4b6a80'; g.fillRect(x, y, 14, 12);
-      g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(x, y + 13, 14, 3);        // balcony rail
-    }
-  });
-}
 
 function addCity(scene, rnd) {
   const colours = [0xf2e6d2, 0xe6efe9, 0xf5dcc0, 0xd8e8e1, 0xfaf4ea, 0xefd2bd, 0xf0e2a8];

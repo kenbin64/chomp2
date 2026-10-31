@@ -44,7 +44,6 @@ export function addPoints(kind, n = 1) {
   run = r.run; saveRun(); draw(r.gained);
   return r.gained;
 }
-export function runPoints() { return run ? run.pts : 0; }
 
 export function bankRun({ stars = 0 } = {}) {
   if (!run) return null;

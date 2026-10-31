@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import { readProgress, saveProgress } from './progress.js';
 import { pickQuest, nextStage, questReward } from './sidequest-rules.js';
 import { makeOffer, giftText, applyGift } from './trade-rules.js';
-import { bookEvent, bookFound, ability } from './book.js';
+import { bookEvent, bookFound } from './book.js';
 import { Pickups } from './pickups.js';
 
 let q = null, panel = null, cfg = null;

@@ -11,14 +11,14 @@
 import { installMenu } from '../menu.js';
 import { installVR, inVR } from '../vr.js';
 import { guideArrow, nearest } from '../guide-arrow.js';
-import { startRun, addPoints, bankRun, installScore } from '../points.js';
+import { startRun, addPoints, installScore } from '../points.js';
 import * as THREE from 'three';
-import { AGROUND_Z, BOAT_LENGTH, riverX, boatX, groundAt, insideRiver, crocsRoundBoat } from './daintree-rules.js';
+import { AGROUND_Z, BOAT_LENGTH, boatX, groundAt, insideRiver, crocsRoundBoat } from './daintree-rules.js';
 import { buildDaintree } from './daintree-scene.js';
 import { BEAT, CROCS, PARK, CALL, READY, NEEDED, offBeat, quality, rating, heave, settle, afloat, beatOf } from './push-rules.js';
 import { SPACING, addToTrail, placeInLine, follow } from './rescue-rules.js';
 import { Wally } from '../wally.js';
-import { Input, steering, easeBehind } from '../input.js';
+import { Input, steering, easeBehind, lazyBehind } from '../input.js';
 import { Bubbles } from '../bubbles.js';
 import { Effects } from '../fx.js';
 import { loadModels, ModelSkin, MODEL_FILES } from '../models.js';
@@ -31,7 +31,8 @@ import { loadRealism } from '../realism.js';
 import * as sound from '../sound.js';
 import { makeSceptre, ALL_TALISMANS, holdHigh } from '../sceptre-model.js';
 import { say as forDevice } from '../device.js';
-import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
+import { areaIntro, orbitShots } from '../area-intro.js';
+import { toast } from '../toast.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -150,11 +151,6 @@ const bubbles = new Bubbles(scene, touch ? 3 : 4);
 const fx = new Effects(scene, { items: [] });
 const game = { running: false, phase: 'swim', time: 0, beatT: 0, lastBeat: -1, pressed: -1, heaves: 0, perfect: 0, done: false, flash: 0 };
 window.chomp = { game, wally, boat, parkCrocs, scene, camera, wild, stern: () => stern() };
-function toast(text, kind = 'good') {
-  const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
-  $('toasts').appendChild(el); setTimeout(() => el.remove(), 1800);
-  while ($('toasts').children.length > 3) $('toasts').firstChild.remove();
-}
 function caption(text) { const el = $('cine-caption'); el.textContent = text; el.hidden = !text; }
 function press() {
   if (game.phase !== 'push' || afloat(boat.moved)) return;
@@ -274,7 +270,7 @@ function frameCamera(dt) {
   if (game.phase === 'swim') {
     camTarget.lerp(wally.pos.clone().add(new THREE.Vector3(0, 1.3, 0)), Math.min(1, dt * 6));
     cam.manual = Math.max(0, cam.manual - dt);
-    if (game.running && cam.manual <= 0) cam.yaw = steering() ? easeBehind(cam.yaw, wally.facing, dt) : cam.yaw;
+    if (game.running && cam.manual <= 0) cam.yaw = steering() ? easeBehind(cam.yaw, wally.facing, dt) : lazyBehind(cam.yaw, wally, dt);
     const cp = Math.cos(cam.pitch);
     camera.position.set(camTarget.x + Math.sin(cam.yaw) * cp * cam.dist, camTarget.y + Math.sin(cam.pitch) * cam.dist, camTarget.z + Math.cos(cam.yaw) * cp * cam.dist);
     camera.position.y = Math.max(camera.position.y, 1);

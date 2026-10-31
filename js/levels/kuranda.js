@@ -10,11 +10,11 @@ import { guideArrow, nearest } from '../guide-arrow.js';
 import { installVR, inVR } from '../vr.js';
 import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { foundTalisman, givePrize } from '../revisit.js';
-import { installGear, snorkelling, drainFactor } from '../gear.js';
+import { installGear, drainFactor } from '../gear.js';
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
-import { Food, randomKind, kindFor, useJarModel } from '../food.js';
-import { Input, steering, easeBehind } from '../input.js';
+import { Food, kindFor, useJarModel } from '../food.js';
+import { Input, steering, easeBehind, lazyBehind } from '../input.js';
 import { Bubbles, reaction, pickLine, chatty } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
 import { loadModels, dress, MODEL_FILES } from '../models.js';
@@ -22,7 +22,7 @@ import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
-import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
+import { areaIntro, courseShots } from '../area-intro.js';
 import { installMap, recordVisit, markRetry } from '../mapmodal.js';
 import { installShop, openShop } from '../shopmodal.js';
 import { showLeaderboard } from '../leaderboard.js';
@@ -30,13 +30,13 @@ import { loadRealism } from '../realism.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone, aimOffset } from '../rules.js';
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
-import { completeArea, readProgress, starsFor, POSTCARDS, bankFinds, payEntry, WARDROBE, buyItem, wearItem, wearing, buyBoatTicket, BOAT_TICKET_PRICE, outfitModel, PROGRESS_CHANGED } from '../progress.js';
+import { completeArea, readProgress, starsFor, POSTCARDS, payEntry, wearing, outfitModel, PROGRESS_CHANGED } from '../progress.js';
 import { Clusters } from '../clusters.js';
 import { peopleModels } from '../tourists.js';
 import { kennysJar } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
 import { dressOutfit } from '../outfit.js';
-import { installBook, bookEvent, bookFound, ability, HiddenFinds, openBook } from '../book.js';
+import { installBook, bookEvent, HiddenFinds, openBook } from '../book.js';
 import { startTrading, tradeStep } from '../trade.js';
 import { startQuest, questStep } from '../sidequest.js';
 import { DayNight } from '../daynight.js';
@@ -47,6 +47,7 @@ import { boomerangThrow } from './boomerang-throw.js';
 import * as Trip from '../trip-rules.js';
 import { installVendor, openVendor } from '../vendormodal.js';
 import { Pickups, goldPiece } from '../pickups.js';
+import { toast as toast_ } from '../toast.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -230,12 +231,6 @@ startQuest({ land: 'kuranda', scene, clusters,
   },
   feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c ? c.people[0].g : wally.root, text, c ? 2.4 : 3.4), toast: text => toast_(text, 'info') });
 
-function toast_(text, kind = 'good') {
-  const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
-  $('toasts').appendChild(el); setTimeout(() => el.remove(), 1800);
-  while ($('toasts').children.length > 3) $('toasts').firstChild.remove();
-}
-
 // People throw toward where Wally will be.
 function throwFrom(hand, cluster = null, gentle = false, thrower = null) {
   const flight = gentle ? 0.8 : 1.2 + Math.random() * 0.5;   // up close: a short handout
@@ -412,7 +407,7 @@ function followCamera(dt) {
       const dx = camera.position.x - camTarget.x, dz = camera.position.z - camTarget.z;
       // Steering (the default): the camera swings round behind him as he turns.
       if (steering()) cam.yaw = easeBehind(cam.yaw, wally.facing, dt);
-      else if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz);
+      else cam.yaw = lazyBehind(cam.yaw, wally, dt);
     }
   }
   const cp = Math.cos(cam.pitch);

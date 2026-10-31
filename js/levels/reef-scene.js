@@ -11,7 +11,7 @@ import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { SEABED_Y, SWIM_Y, WALL_TOP, LANES, TREASURES, wallBoxes, cellCentre, pearlCells, inMaze, mazePath, STARFISH_Y } from './reef-rules.js';
 import { dressedJelly } from '../hazards.js';
-import { mangoModel } from './esplanade-scene.js';
+import './esplanade-scene.js';
 import { chestModel } from '../chest.js';
 
 // Where things are, in metres. The cave maze's north-west corner is at

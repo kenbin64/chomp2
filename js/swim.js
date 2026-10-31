@@ -6,7 +6,7 @@
 //
 //   addSwimSway(root, { speed })   root: the croc's model (head toward +z)
 
-import * as THREE from 'three';
+import 'three';
 
 const clock = { value: 0 };
 export function tickSwim(t) { clock.value = t; }

@@ -204,41 +204,6 @@ const ROBB = (() => {
 })();
 
 // ---- Downtown Cairns (Ken): where the train pulls in. A low tropical city between the line's end and
-// the sea: white and pastel blocks of two to five storeys on a street grid, a few hotel towers along
-// the waterfront, palms down the Esplanade, the marina with white boats, and the green ranges rising
-// behind (the land's own range). A representation, not a street map.
-const CITY = (() => {
-  const g = new THREE.Group(); let sd = 29; const r = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
-  const wallCols = [0xf4efe4, 0xeae3d2, 0xdfeee8, 0xf3e3cf, 0xe6ecf2, 0xf1e9d8];
-  const roofCols = [0x9a8f84, 0xb04a3a, 0x7d8a90, 0x6e7c6a];
-  const winTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, 64, 64);
-    for (let yy = 6; yy < 64; yy += 14) for (let xx = 5; xx < 64; xx += 12) { x.fillStyle = 'rgba(40,70,90,0.75)'; x.fillRect(xx, yy, 7, 8); }
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })();
-  const X0 = -330, X1 = -150, Z0 = -230, Z1 = 90, BLOCK = 22;
-  for (let x = X0; x < X1; x += BLOCK) for (let z = Z0; z < Z1; z += BLOCK) {
-    if (Math.hypot(x - END.x, z - END.z) < 45) continue;                 // the station's yard
-    for (let k = 0; k < 4; k++) {
-      if (r() < 0.35) continue;                                     // gaps: car parks, gardens
-      const w = 7 + r() * 6, d = 7 + r() * 6, nearSea = x < X0 + 24, tower = nearSea && r() < 0.12;   // a few hotel towers on the waterfront
-      const h = tower ? 24 + r() * 18 : 4 + r() * 6;                  // the rest: two or three storeys, as Cairns is
-      const map = winTex.clone(); map.needsUpdate = true; map.repeat.set(Math.max(1, w / 3.2), Math.max(1, h / 3.4));
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ map, color: wallCols[Math.floor(r() * wallCols.length)], roughness: 0.85 }));
-      const bx = x + (k % 2) * 10 + 2, bz = z + Math.floor(k / 2) * 10 + 2;
-      m.position.set(bx, height(bx, bz) + h / 2, bz); m.castShadow = true; m.receiveShadow = true; g.add(m);
-      if (!tower && r() < 0.8) { const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.max(w, d) * 0.72, 2.4, 4), new THREE.MeshStandardMaterial({ color: roofCols[Math.floor(r() * roofCols.length)], roughness: 0.7 })); roof.rotation.y = Math.PI / 4; roof.scale.set(w / Math.max(w, d), 1, d / Math.max(w, d)); roof.position.set(bx, height(bx, bz) + h + 1.2, bz); g.add(roof); }
-    }
-  }
-  // The marina: a jetty and white boats on the water off the waterfront.
-  const deck = new THREE.MeshStandardMaterial({ color: 0x8a7a64, roughness: 0.9 }), hull = new THREE.MeshStandardMaterial({ color: 0xf6f6f2, roughness: 0.4 });
-  for (const zz of [-40, -10, 20]) {
-    const coast = -380 + Math.sin(zz * 0.004) * 60 + Math.sin(zz * 0.011) * 18;
-    const j = new THREE.Mesh(new THREE.BoxGeometry(40, 0.5, 2), deck); j.position.set(coast - 18, 0.6, zz); g.add(j);
-    for (let k = 0; k < 6; k++) { const b = new THREE.Mesh(new THREE.BoxGeometry(6 + r() * 4, 1.6, 2.4), hull); b.position.set(coast - 6 - k * 6, 0.4, zz + (k % 2 ? 3 : -3)); g.add(b);
-      const cab = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.2, 1.8), hull); cab.position.set(b.position.x, 1.6, b.position.z); g.add(cab); }
-  }
-  scene.add(g);
-  return g;
-})();
 // Palms along the Esplanade (the waterfront) and down the streets.
 const cityPalms = new Trees(scene, { light });
 for (let x = -320; x < -150; x += 22) for (let z = -225; z < 90; z += 11) { if (Math.random() < 0.55) cityPalms.add(Math.random() < 0.5 ? 'umbrella' : 'palm', x + 8 + Math.random() * 4, height(x, z), z + Math.random() * 3, 7 + Math.random() * 4); }   // street trees: Cairns is green

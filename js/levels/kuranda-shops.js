@@ -11,8 +11,6 @@
 import * as THREE from 'three';
 import { fitText } from '../signtext.js';
 
-// Heritage colours for weatherboards, iron roofs, and the names on the boards.
-export const WALLS = ['#e9dcc0', '#cfe0cf', '#cfdde8', '#f1e3a6', '#e8c3a8', '#e2d2ea', '#f4efe4'];
 export const ROOFS = ['#3f6a48', '#8a4a38', '#4a5f72', '#8a6a4a', '#5f686a'];   // heritage iron: green, Indian red, blue-grey, rust, galvanised
 export const NAMES = ['Tropical Treats', 'Rainforest Gallery', 'Kuranda Coffee House', 'Bush Tucker Pantry', 'Butterfly Books',
   'Leather & Hats', 'Gelato Hut', 'Crystal Cave', 'Rainforest Honey', 'Op Shop', 'Tableland Fudge', 'Gecko Gifts'];
@@ -61,26 +59,3 @@ function repaint(material, wall, roof, eave) {
   return m;
 }
 
-// One shop: a copy of the model, `height` metres tall, repainted, with its own
-// name. Faces +z (the caller turns it). Returns the group.
-export function shopVariant(gltf, { wall, roof, name, height = 6.4, widen = 1, sign = { x: 0.085, y: 0.615, w: 0.3 } }) {
-  const root = gltf.scene.clone(true);
-  const box = new THREE.Box3().setFromObject(root), size = box.getSize(new THREE.Vector3());
-  const k = height / size.y;
-  const eave = box.min.y + size.y * 0.55;              // in the model's own units
-  root.traverse(o => {
-    if (!o.isMesh) return;
-    o.material = repaint(o.material, wall, roof, eave);
-    o.castShadow = true; o.receiveShadow = true;
-  });
-  root.scale.set(k * widen, k, k);
-  root.position.set(-(box.min.x + size.x / 2) * k * widen, -box.min.y * k, -(box.min.z + size.z / 2) * k);
-  const g = new THREE.Group(); g.add(root);
-  // The name board over the sign on the front gable.
-  const b = board(name);
-  const w = size.x * k * widen * sign.w * 1.25;
-  b.scale.set(w, w, 1);
-  b.position.set(size.x * k * widen * sign.x, size.y * k * sign.y, size.z * k / 2 + 0.06);
-  g.add(b);
-  return g;
-}

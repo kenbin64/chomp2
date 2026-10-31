@@ -8,12 +8,12 @@
 import { fitText } from '../signtext.js';
 import * as THREE from 'three';
 import { addSky, addLights, addRanges } from '../world.js';
-import { marketStall, queenslander, overStreet, setMarketNight, bakeStall, stockedCanopy, placeModel, paverTexture, leafCanopy, chalkboard, clothesRack, edgeRocks } from './kuranda-market.js';
-import { shopVariant, WALLS, ROOFS, NAMES } from './kuranda-shops.js';
+import { marketStall, queenslander, overStreet, setMarketNight, bakeStall, stockedCanopy, placeModel, paverTexture, chalkboard, clothesRack, edgeRocks } from './kuranda-market.js';
+import './kuranda-shops.js';
 import { bandCells } from '../forest-tiles.js';
 import { Trees } from '../trees.js';
-import { Grass } from '../grass.js';
-import { surfaceMaterial, applySky } from '../realism.js';
+import '../grass.js';
+import { applySky } from '../realism.js';
 import { CLEARING, THROW_SPOT, ENTRY, inClearing } from './kuranda-rules.js';
 
 export const STREET = { half: 5, z0: -10, z1: 230, ground: 0 };

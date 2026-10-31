@@ -44,5 +44,3 @@ export function showTip(id, text) {
   return true;
 }
 
-// Forget which tips were seen (for "show tips again").
-export function resetTips() { seen = new Set(); try { localStorage.removeItem(SEEN); } catch { /* fine */ } }

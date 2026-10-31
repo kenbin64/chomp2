@@ -2,7 +2,7 @@
 // Run:  node test/boomerang-physics.test.mjs
 
 import * as B from '../js/levels/boomerang-physics.js';
-import { CLEARING, THROW_SPOT, GUIDE_SPOT, THROWERS, inClearing, nearThrowSpot } from '../js/levels/kuranda-rules.js';
+import { THROW_SPOT, GUIDE_SPOT, THROWERS, inClearing, nearThrowSpot } from '../js/levels/kuranda-rules.js';
 
 let passed = 0, failed = 0;
 function check(name, ok, detail = '') {

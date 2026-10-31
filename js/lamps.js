@@ -98,9 +98,3 @@ export class StreetLamps {
   }
 }
 
-// Lamps every `step` metres along a path given as a function of distance, from a to b.
-export function lampsAlong(a, b, step, at) {
-  const out = [];
-  for (let d = a; d <= b + 1e-6; d += step) { const p = at(d); if (p) out.push(p); }
-  return out;
-}

@@ -108,7 +108,6 @@ const BUILD = {
     return g;
   },
 };
-export const HAT_SHAPES = Object.keys(BUILD);
 
 export function makeHat(id) {
   const b = BUILD[id]; if (!b) return null;

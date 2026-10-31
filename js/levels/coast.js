@@ -8,13 +8,13 @@
 import { installMenu } from '../menu.js';
 import { installVR, inVR } from '../vr.js';
 import { guideArrow } from '../guide-arrow.js';
-import { startRun, addPoints, bankRun, installScore } from '../points.js';
+import { startRun, addPoints, installScore } from '../points.js';
 import * as THREE from 'three';
-import { LENGTH, MOUTH_Z, BEACH, LANE, SURFACE_DROP, PLACES, shoreX, placeAt, swimStep, reachedMouth, END_Z, BOATS, boatTarget, boatStep, inThrowRange } from './coast-rules.js';
+import { MOUTH_Z, BEACH, SURFACE_DROP, PLACES, shoreX, placeAt, swimStep, reachedMouth, END_Z, BOATS, boatTarget, boatStep, inThrowRange } from './coast-rules.js';
 import { SPACING, addToTrail, placeInLine, follow } from './rescue-rules.js';
 import { Wally } from '../wally.js';
 import { Food, randomKind, useJarModel, kennysJar } from '../food.js';
-import { Input, steering, easeBehind } from '../input.js';
+import { Input, steering, easeBehind, lazyBehind } from '../input.js';
 import { Bubbles, pickLine } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
 import { loadModels, dress, ModelSkin, MODEL_FILES } from '../models.js';
@@ -30,10 +30,10 @@ import { jarLabelTexture } from '../textures.js';
 import { readProgress, outfitModel, wearing } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
 import * as sound from '../sound.js';
-import { installGear, snorkelling, drainFactor } from '../gear.js';
+import { installGear, drainFactor } from '../gear.js';
 import { installBook, openBook } from '../book.js';
 import { makeSceptre, ALL_TALISMANS, holdHigh } from '../sceptre-model.js';
-import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
+import { areaIntro, courseShots } from '../area-intro.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone, aimOffset } from '../rules.js';
 
 const $ = id => document.getElementById(id);
@@ -263,7 +263,7 @@ const camTarget = new THREE.Vector3();
 function followCamera(dt) {
   camTarget.lerp(wally.pos.clone().add(new THREE.Vector3(0, 1.3, 0)), Math.min(1, dt * 6));
   cam.manual = Math.max(0, cam.manual - dt);
-  if (game.running && cam.manual <= 0) { if (steering()) cam.yaw = easeBehind(cam.yaw, wally.facing, dt); else { const dx = camera.position.x - camTarget.x, dz = camera.position.z - camTarget.z; if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz); } }
+  if (game.running && cam.manual <= 0) { if (steering()) cam.yaw = easeBehind(cam.yaw, wally.facing, dt); else cam.yaw = lazyBehind(cam.yaw, wally, dt); }
   const cp = Math.cos(cam.pitch);
   camera.position.set(camTarget.x + Math.sin(cam.yaw) * cp * cam.dist, camTarget.y + Math.sin(cam.pitch) * cam.dist, camTarget.z + Math.cos(cam.yaw) * cp * cam.dist);
   camera.position.y = Math.max(camera.position.y, 1); camera.lookAt(camTarget);
