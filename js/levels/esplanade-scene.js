@@ -331,7 +331,7 @@ export function buildEsplanade(scene, q, backdrops = {}, realism = null) {
   // from the real Esplanade). The sea is to the west (-x) here, hence the turn.
   ring.visible = false; ring.userData.off = true;
   // A cool blue haze keeps them rainforest green (the warm sunset haze turned them sandy).
-  const ranges = addRanges(scene, new THREE.Color(0x9cbcc8), sun.position.clone().normalize(), { sink: 0.6, turn: Math.PI / 2 });   // Ken's photos: open water out to sea, ranges behind the city and lower hills across the end of Trinity Bay
+  const ranges = addRanges(scene, new THREE.Color(0x9cbcc8), sun.position.clone().normalize(), { sink: 0.6, slope: 1.1, turn: Math.PI / 2 });   // Ken's photos: open water out to sea, ranges behind the city and lower hills across the end of Trinity Bay
   const sea = addGround(scene, realism, q);
   // The park's photographed blue sky (Ken: the ocean as vibrant as the park's;
   // the pale sunset made the water reflect pale). It lights the scene too.

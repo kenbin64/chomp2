@@ -7,43 +7,60 @@
 
 import * as THREE from 'three';
 import { ownView } from './bubbles.js';
-import { loadModels } from './models.js';
+import { loadModels, ModelSkin } from './models.js';
 
 const HIGH = 0.75;                 // eyes above where he floats: just clear of the surface
 const FORWARD = 0.4;               // and ahead of his middle, near the front of his head
 const TILT_TOP = 0.04, TILT_UNDER = 0.24;   // how far the view looks down (per metre ahead): under, at the bed
 
-// His snout along the bottom of the picture: Ken's model (models/croc-snout.glb, its tip along +z). It stays at the
-// bottom of the screen but level, as he swims, pointing the way he faces, with only its top and nose in view: the back
-// of it is below the picture. Drawn last and over everything, because he floats so low the water would cut it off (the
-// depth is cleared just for it). On its own layer, so it stays out of the water's reflection.
+// What Wally sees of himself: a whole crocodile, Ken's croc-regular (Ken, 2026-10-31: "that way there is no way to just
+// show the back"), with the camera over his head. His snout runs out ahead along the bottom of the picture and the rest of
+// him carries on behind the camera, so there is no end to see. Level, as he swims, pointing the way he faces. Eating, the
+// head rears up on its neck and snaps down. His right arm can reach forward, to hold a fishing rod (marlin-fight.js).
+// Drawn last and over everything, because he floats so low the water would cut him off (the depth is cleared just for
+// him). On his own layer, so he stays out of the water's reflection.
 const OVER = 20, SNOUT_LAYER = 1;
-const SNOUT = { scale: 0.52, ahead: 0.74, below: 0.49, keepDown: 1.1 };   // keepDown: how far it drops per unit the camera looks down, to stay at the bottom
-const SWING = 0.3;                                                       // radians at most off the view: the cut-off back of it must never show (Ken, 2026-10-30)
-const CHOMP_TIME = 0.55, RISE = 0.27, REAR = 0.42;                       // a mouthful: up it comes, tip first, and snaps down
+const SEAT = { up: 0.86, back: 0.7 };                                    // the camera, above and behind his nose's end of him, in the fitted model's metres
+const SWING = 0.3;                                                       // radians at most off the view
+const CHOMP_TIME = 0.55, REAR = 0.5;
+const ARM = { yaw: 1.4, lift: -0.3, fore: -0.45 };                     // his right arm, holding the rod
+const axis = new THREE.Vector3(), turnQ = new THREE.Quaternion(), upQ = new THREE.Quaternion();
+// Turn a bone by an angle about an axis given in the group's own terms, whatever its own axes are.
+function turnBone(bone, group, x, y, z, angle) {
+  bone.parent.getWorldQuaternion(upQ).invert();
+  axis.set(x, y, z).applyQuaternion(group.getWorldQuaternion(turnQ)).applyQuaternion(upQ).normalize();
+  bone.quaternion.premultiply(turnQ.setFromAxisAngle(axis, angle));
+}
 export function createSnout(scene, camera) {
-  const g = new THREE.Group(); g.name = 'snout-view'; g.visible = false; g.rotation.order = 'YXZ'; scene.add(g);
+  const g = new THREE.Group(); g.name = 'snout-view'; g.visible = false; g.rotation.order = 'YXZ'; g.userData.ARM = ARM; scene.add(g);
   camera.layers.enable(SNOUT_LAYER);
   const light = matchMedia('(pointer: coarse)').matches;                  // (a phone: the lighter copy)
-  loadModels(['croc-snout'], { light }).then(found => {
-    const gltf = found.get('croc-snout');
+  let skin = null, bones = {}, holding = false;
+  const rest = new Map();                                                 // each bone as modelled: a pose starts from this each frame, or the turns would add up
+  loadModels(['croc-regular'], { light }).then(found => {
+    const gltf = found.get('croc-regular');
     if (!gltf) return;
+    skin = new ModelSkin(gltf, { length: 3.6 });
     let first = true;
-    gltf.scene.scale.setScalar(SNOUT.scale);
-    gltf.scene.traverse(o => {
+    skin.root.traverse(o => {
+      if (o.isBone) { bones[o.name] = o; rest.set(o, o.quaternion.clone()); }
       if (!o.isMesh) return;
-      o.material = o.material.clone(); o.material.transparent = true; o.material.fog = false;
+      o.material = o.material.clone(); o.material.transparent = true; o.material.fog = false; o.material.color.set(0x9ed47a);   // green, as Wally is
       o.renderOrder = OVER; o.layers.set(SNOUT_LAYER); o.frustumCulled = false; o.castShadow = o.receiveShadow = false;
       if (first) { o.onBeforeRender = renderer => renderer.clearDepth(); first = false; }
     });
-    g.add(gltf.scene);
+    const seat = new THREE.Group(); seat.position.set(0, -SEAT.up, -SEAT.back); seat.add(skin.root); g.add(seat);
   });
   const look = new THREE.Vector3();
-  let chomping = CHOMP_TIME, lift = 0, rear = 0;
+  let chomping = CHOMP_TIME, rear = 0;
   return {
     show(on) { g.visible = on; },
     // He has just eaten. from: how far through it to start (0 to 1), for looking at one moment of it.
     chomp(from = 0) { chomping = from * CHOMP_TIME; },
+    // His right arm up and forward, or back to swimming.
+    holdRod(on) { holding = on; },
+    // Where his right hand is, into v. False if the model is not there.
+    handAt(v) { if (!bones.RightHand) return false; g.updateMatrixWorld(true); bones.RightHand.getWorldPosition(v); return true; },
     update(dt) {
       chomping = Math.min(CHOMP_TIME, chomping + dt);
       const u = chomping / CHOMP_TIME;
@@ -51,15 +68,28 @@ export function createSnout(scene, camera) {
       if (u < 0.45) { const e = u / 0.45; k = e * e * (3 - 2 * e); }       // up it comes
       else if (u < 0.62) { const e = (u - 0.45) / 0.17; k = 1 - e * e; }   // and slams down
       else k = -0.12 * Math.sin((u - 0.62) / 0.38 * Math.PI) * (1 - u);    // with a little bounce in the water
-      lift = RISE * k; rear = REAR * k;
+      rear = REAR * k; g.userData.rear = rear;
+      if (!skin) return;
+      if (!holding) { skin.play('idle', { alternatives: ['swim'] }); skin.update(dt); }   // (fishing, he holds still: the rod must not wander)
+      g.updateMatrixWorld(true);
+      // (On top of whatever the clip has done, each frame.) The head rears: a little from the neck, more from the head.
+      if (rear && bones.Neck) { bones.Neck.quaternion.copy(rest.get(bones.Neck)); g.updateMatrixWorld(true); turnBone(bones.Neck, g, 1, 0, 0, -rear * 0.45); g.updateMatrixWorld(true); }
+      if (rear && bones.Head) { bones.Head.quaternion.copy(rest.get(bones.Head)); g.updateMatrixWorld(true); turnBone(bones.Head, g, 1, 0, 0, -rear * 0.55); }
+      if (holding && bones.RightArm) {
+        bones.RightArm.quaternion.copy(rest.get(bones.RightArm)); if (bones.RightForeArm) bones.RightForeArm.quaternion.copy(rest.get(bones.RightForeArm));
+        g.updateMatrixWorld(true);
+        turnBone(bones.RightArm, g, 0, 1, 0, ARM.yaw); g.updateMatrixWorld(true);        // from out at his side, round to the front
+        turnBone(bones.RightArm, g, 1, 0, 0, ARM.lift); g.updateMatrixWorld(true);       // and up
+        if (bones.RightForeArm) turnBone(bones.RightForeArm, g, 1, 0, 0, ARM.fore);      // the hand higher still, in view
+      }
+      g.updateMatrixWorld(true);
     },
     // Once the camera is placed. heading: the way he faces.
     place(heading) {
       camera.getWorldDirection(look);
-      const flat = Math.hypot(look.x, look.z) || 1, x = look.x / flat, z = look.z / flat;
-      g.position.set(camera.position.x + x * SNOUT.ahead, camera.position.y - SNOUT.below + look.y / flat * SNOUT.keepDown + lift, camera.position.z + z * SNOUT.ahead);
-      const view = Math.atan2(x, z), off = Math.atan2(Math.sin(heading - view), Math.cos(heading - view));
-      g.rotation.set(-rear, view + Math.max(-SWING, Math.min(SWING, off)), 0);   // level, but for the tip rearing up
+      const view = Math.atan2(look.x, look.z), off = Math.atan2(Math.sin(heading - view), Math.cos(heading - view));
+      g.position.copy(camera.position);
+      g.rotation.set(0, view + Math.max(-SWING, Math.min(SWING, off)), 0);  // level, whichever way the view tips
       g.scale.setScalar(Math.min(1, 0.55 + camera.aspect * 0.35));         // smaller on a tall, narrow phone screen, clear of the buttons
     },
   };

@@ -96,13 +96,28 @@ async function upIsForward(p, name) {
   await hold(p, { x: 3, z: -8 }, 2500);
   await p.waitForFunction(() => !window.chomp.wally.root.visible, { timeout: 25000, polling: 100 }).catch(() => {});   // (on game time: a slow machine takes longer)
   const q = await state(p); check('in the lagoon: his own eyes', !q.seen, JSON.stringify(q));
-  const nose = () => p.evaluate(() => { const c = window.chomp, g = c.scene.getObjectByName('snout-view'), w = c.wally; return { loaded: g.children.length > 0, seen: g.visible, level: g.rotation.x, off: Math.atan2(Math.sin(g.rotation.y - w.facing), Math.cos(g.rotation.y - w.facing)) }; });
+  const nose = () => p.evaluate(() => { const c = window.chomp, g = c.scene.getObjectByName('snout-view'), w = c.wally; return { loaded: g.children.length > 0, seen: g.visible, level: g.rotation.x - (g.userData.rear || 0), off: Math.atan2(Math.sin(g.rotation.y - w.facing), Math.cos(g.rotation.y - w.facing)) }; });
   let n = await nose();
   check('his snout is there, level, pointing the way he faces', n.loaded && n.seen && Math.abs(n.level) < 0.01 && Math.abs(n.off) < 0.05, JSON.stringify(n));
   await p.evaluate(() => { const w = window.chomp.wally; w.facing = 2.2; window.chomp.eyes.chomp(0.3); });
-  await p.waitForFunction(() => window.chomp.scene.getObjectByName('snout-view').rotation.x < -0.2, { timeout: 8000, polling: 'raf' }).catch(() => {});
+  await p.waitForFunction(() => window.chomp.scene.getObjectByName('snout-view').userData.rear > 0.2, { timeout: 8000, polling: 'raf' }).catch(() => {});
   n = await nose(); check('eating: it rears up', n.level < -0.2, JSON.stringify(n));
   await wait(2500); n = await nose(); check('and snaps back down, level', Math.abs(n.level) < 0.01, JSON.stringify(n));
+  // The back of the snout stays off the screen, at rest and at every moment of a bite (Ken, 2026-10-31).
+  {
+    const r = await p.evaluate(async () => {
+      const THREE = await import('three'), c = window.chomp, g = c.scene.getObjectByName('snout-view'), v = new THREE.Vector3(), frame = () => new Promise(q => requestAnimationFrame(q));
+      let mesh = null; g.traverse(o => { if (o.isMesh && !mesh) mesh = o; });
+      const pos = mesh.geometry.attributes.position; mesh.geometry.computeBoundingBox(); const bb = mesh.geometry.boundingBox, cut = bb.min.z + (bb.max.z - bb.min.z) * 0.06;
+      const back = []; for (let i = 0; i < pos.count; i++) if (pos.getZ(i) < cut) back.push(i);
+      let seen = 0, tested = 0, topY = -9;
+      const look = () => { c.camera.updateMatrixWorld(); mesh.updateMatrixWorld(true); for (const i of back.filter((_, n) => n % 3 === 0)) { v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld).project(c.camera); tested++; topY = Math.max(topY, v.y); if (v.z < 1 && v.y > -1 && Math.abs(v.x) < 1) seen++; } };
+      await frame(); look();
+      for (const u of [0.05, 0.15, 0.3, 0.4, 0.45, 0.55, 0.7]) { c.eyes.chomp(u); await frame(); await frame(); look(); }
+      return { seen, tested, topY: +topY.toFixed(2), points: back.length };
+    });
+    check('he is a whole croc: the far end of him never shows, at rest or in a bite', r.points > 0 && r.seen === 0, JSON.stringify(r));
+  }
   // Turning the view with the mouse: he turns with it, and the back of the snout never comes into view.
   {
     const r = await p.evaluate(async () => {

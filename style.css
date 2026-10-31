@@ -754,3 +754,29 @@ body.in-cut .guide-arrow, body.in-cut .tip-card, body.in-cut #toasts { display: 
 @keyframes carried-out { to { transform: translateY(-16px) scale(1.5); opacity: 0; } }
 body.in-cut .carried { visibility: hidden; }
 @media (max-width: 600px) { .carried-item { min-width: 44px; padding: 3px 5px; font-size: 10px; } .carried-item svg { width: 28px; height: 28px; } }
+
+/* Out after the marlin (levels/marlin-fight.js). */
+.fish-ui { position: fixed; inset: 0; z-index: 50; pointer-events: none; font-family: var(--font); color: #fff; }
+.fish-ui button { pointer-events: auto; }
+.fish-gauge { position: absolute; left: max(18px, env(safe-area-inset-left)); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px; border-radius: 16px; background: rgba(8, 30, 44, 0.78); }
+.fish-gauge-label { font: 800 12px var(--font); letter-spacing: 0.1em; }
+.fish-gauge-bar { position: relative; width: 34px; height: min(44vh, 300px); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column-reverse; background: #203642; }
+.fish-gauge-bar i { display: block; } .z-safe { height: 62%; background: #4caf64; } .z-careful { height: 23%; background: #f2b632; } .z-danger { height: 15%; background: #e23d30; }
+.fish-needle { position: absolute; left: -2px; right: -2px; height: 6px; margin-bottom: -3px; background: #fff; box-shadow: 0 0 6px #000; transition: bottom 0.05s linear; }
+.fish-gauge.alarm { animation: fish-alarm 0.25s ease-in-out infinite alternate; }
+@keyframes fish-alarm { to { background: rgba(226, 61, 48, 0.9); transform: translateY(-50%) scale(1.06); } }
+.fish-stats { position: absolute; top: calc(max(10px, env(safe-area-inset-top)) + 100px); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 16px; border-radius: 14px; background: rgba(8, 30, 44, 0.78); font-weight: 700; }
+.fish-strength { display: flex; align-items: center; gap: 8px; } .fish-strength div { width: min(40vw, 200px); height: 10px; border-radius: 6px; overflow: hidden; background: #203642; } .fish-strength i { display: block; height: 100%; width: 100%; background: #6db7e8; }
+.fish-stats [hidden], .fish-ui [hidden] { display: none !important; }
+.fish-meter { position: absolute; right: max(18px, env(safe-area-inset-right)); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px; border-radius: 16px; background: rgba(8, 30, 44, 0.78); font-weight: 800; }
+.fish-meter div { position: relative; width: 34px; height: min(44vh, 300px); border-radius: 10px; overflow: hidden; background: #203642; } .fish-meter i { position: absolute; left: 0; right: 0; bottom: 0; background: #ffd166; }
+.fish-prompt { position: absolute; left: 50%; bottom: 24%; transform: translateX(-50%); width: min(720px, 86vw); margin: 0; text-align: center; font: 800 clamp(18px, 3vw, 28px)/1.25 var(--font); text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85); }
+.fish-buttons { position: absolute; right: max(16px, env(safe-area-inset-right)); bottom: max(18px, env(safe-area-inset-bottom)); display: flex; gap: 12px; }
+.fish-buttons button, .fish-after button { padding: 18px 20px; min-width: 104px; border: 2px solid #ffd166; border-radius: 16px; background: rgba(8, 30, 44, 0.86); color: #fff; font: 800 16px var(--font); touch-action: none; user-select: none; cursor: pointer; }
+.fish-b-reel { background: rgba(47, 125, 74, 0.92) !important; }
+.fish-after { position: absolute; left: 50%; bottom: 10%; transform: translateX(-50%); display: flex; gap: 12px; }
+body.fishing #toasts, body.fishing .guide-arrow, body.fishing .tip-card { display: none; }
+
+body.in-cut .level-intro { display: none !important; }
+
+.fish-keys { position: absolute; left: 50%; bottom: 17%; transform: translateX(-50%); width: min(820px, 88vw); margin: 0; padding: 6px 12px; border-radius: 10px; background: rgba(8, 30, 44, 0.72); text-align: center; font: 700 clamp(12px, 1.6vw, 15px)/1.3 var(--font); }

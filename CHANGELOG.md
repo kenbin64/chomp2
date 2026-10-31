@@ -5,6 +5,18 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- The Esplanade has a purpose now. The skipper's charter boat waits at the end of the pier: the fare is mangoes, and pelicans
+  and fruit bats try to steal them. Out at sea, through Wally's eyes: cast with the right angle and force, troll until the
+  gauge shows a bite, strike, and fight a black marlin with real line physics, reeling in and releasing to keep the tension
+  safe. He leaps, runs and charges the boat. Bring him alongside and let him go, and he gives Wally the sun medallion.
+- The chest by the Lagoon now holds just the Big Golden Mango, for the giant clam at the reef.
+- The way off the Esplanade is now the skipper's boat, which runs Wally out to the reef once he has the medallion and the Big
+  Golden Mango. Feeding every picnic group is no longer required, and the Lagoon is just for swimming.
+- Keyboard on a computer, touch on a phone: the game no longer takes the cursor, and the mouse is only for menus and buttons.
+- In first person Wally is a whole crocodile now, with his own hand on the rod, so the cut-off back of a snout can never show.
+- The fishing controls are listed on screen for each stage: Space casts and strikes, Down reels, Up releases.
+- Fixed the sheer pale cliff in the hills on the horizon.
+
 ## v1.0.0-beta.18 (2026-10-31)
 
 - Words stay on screen long enough to read: cut scenes, speech bubbles and messages. In a cut scene, a key or a tap goes on

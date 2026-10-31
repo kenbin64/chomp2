@@ -4,7 +4,8 @@
 // the city side throw lunch when he is in the sweet spot and bolt if he crowds
 // them. Bins, benches, pelicans and fig branches are in the way, joggers come
 // and go, and there are stingers in the water. Feed out every group, fill the
-// feed-o-meter, and the Lagoon pool at the end is the way on. Fed-out groups
+// feed-o-meter. Mangoes are the job: the fare for the skipper's boat at the end of the pier (the black marlin, for the sun
+// medallion) and the chest by the Lagoon (for the reef's clam); then the boat takes him on to the reef. Fed-out groups
 // leave pearls, which carry on to the Great Barrier Reef. In the sea he can
 // swim under water (air meter) and crawl back up onto the boardwalk.
 
@@ -12,6 +13,9 @@ import { guideArrow, nearest } from '../guide-arrow.js';
 import { installVR, inVR } from '../vr.js';
 import { createEyes } from '../eyes.js';
 import { carried } from '../carried.js';
+import { createEscapeScene } from '../escape-scene.js';
+import { createMarlinFight, charterBoat } from './marlin-fight.js';
+import { MangoThieves } from './mango-thieves.js';
 import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { foundTalisman } from '../revisit.js';
 import { fitText } from '../signtext.js';
@@ -25,7 +29,7 @@ import { Food, kindFor, kennysToast, useJarModel, useToastModel } from '../food.
 import { Input, steering, easeBehind, lazyBehind } from '../input.js';
 import { Bubbles, reaction, pickLine, chatty } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
-import { loadModels, dress, ModelSkin } from '../models.js';
+import { loadModels, dress, ModelSkin, MODEL_FILES } from '../models.js';
 import { usePalmCrown } from '../palms.js';
 import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
@@ -130,7 +134,7 @@ const fpsWatch = watchFrameRate(quality, lower => {
   resize();
 });
 
-const models = await loadModels(undefined, { light: touch || quality.name === 'low' });
+const models = await loadModels([...MODEL_FILES, 'talisman-sun', 'black-marlin', 'marlin-rod'], { light: touch || quality.name === 'low' });
 useJarModel(models.get('jar'));                    // Ken's jar for Kenny's rescue, when present
 useToastModel(models.get('toast'));                // and his toast power-up
 useMangoModel(models.get('mango'));                // Ken's mango for the Golden Mangoes
@@ -449,7 +453,7 @@ function throwFrom(hand, cluster = null, gentle = false, thrower = null) {
 // ---- One frame --------------------------------------------------------------------
 const bot = params.has('bot') ? makeBot() : null;
 game.groupsTotal = clusters.list.length;
-poolOpen = () => game.ready && game.hasBigMango;
+poolOpen = () => true;                   // a place to swim: the way on is the skipper's boat (Ken, 2026-10-31)
 
 // This go's meter speed (trip-rules.js).
 game.tripDrain = Trip.drainFactor(progress.trip, 'esplanade', attempt.level);
@@ -470,10 +474,8 @@ function bigMangoChest(dt) {
   const c = bigChest;
   if (!game.hasBigMango && Math.hypot(wally.pos.x - c.group.position.x, wally.pos.z - c.group.position.z) < 2.6) {
     if (game.mangoes >= mangoTarget) {
-      // Until the Esplanade's own key and chest are built (Ken, 2026-10-20: key, then the chest with the
-      // talisman), this chest holds the sun talisman as well as the Big Golden Mango (a trade item).
-      attempt = Trip.gain(Trip.gain(attempt, 'big-golden-mango'), 'talisman-sun'); game.hasBigMango = true; carried.add('mango', { id: 'big-mango', label: 'Big Golden Mango' }); addPoints('talisman');    // kept when the Esplanade is completed
-      setTimeout(() => foundTalisman('talisman-sun', toast_), 1600);          // new: the sceptre card; already sealed: a random useful prize (revisit.js)
+      // The Big Golden Mango, for the giant clam at the reef (the sun medallion comes from the marlin, below).
+      attempt = Trip.gain(attempt, 'big-golden-mango'); game.hasBigMango = true; carried.add('mango', { id: 'big-mango', label: 'Big Golden Mango' }); addPoints('talisman');    // kept when the Esplanade is completed
       game.points += 150; sound.play.powerup(); fx.burst(c.group.position, [0xffb51f, 0xffe066, 0xffffff], 34);
       toast_('The Big Golden Mango! The reef will need it', 'good'); bubbles.say(wally.root, 'Crikey, look at the size of it!', 3.4);
     } else if ((c.hint -= dt) <= 0) {
@@ -485,12 +487,78 @@ function bigMangoChest(dt) {
   if (c.mango.visible) { c.mango.rotation.y += dt * 2; c.mango.position.y = 1.2 + c.open * 0.6; }
 }
 
+// The charter boat at the end of the pier, and the black marlin (Ken, 2026-10-31): the fare is mangoes, and the marlin, let
+// go, gives Wally the sun medallion. A new level opens with a cut scene: the skipper tells him what he needs.
+const cut = createEscapeScene(camera);
+const boatAt = new THREE.Vector3(-PATH.half - SPUR.length - 6, 0, SPUR.z);          // her stern just off the end of the pier
+const boat = charterBoat(); boat.position.copy(boatAt); boat.rotation.y = -Math.PI / 2; scene.add(boat);
+game.hasMedal = Trip.have(progress.trip, 'talisman-sun');
+const fishing = createMarlinFight({ scene, camera, fx, sound, models, wally, boat, mooredAt: boatAt, cut,
+  onReleased() {
+    if (game.hasMedal) return;
+    game.hasMedal = true; game.points += 500; attempt = Trip.gain(attempt, 'talisman-sun'); addPoints('talisman'); carried.add('talisman', { label: 'Sun medallion' });
+    setTimeout(() => foundTalisman('talisman-sun', toast_), 1600);          // new: the sceptre card; already sealed: a random useful prize (revisit.js)
+  },
+  onLeave(caught) {
+    wally.root.visible = true; wally.pos.set(-PATH.half - SPUR.length + 2, G, SPUR.z); wally.root.position.copy(wally.pos); wally.vel.set(0, 0, 0); wally.vy = 0; wally.facing = Math.PI / 2;
+    cam.yaw = wally.facing + Math.PI; $('hud').hidden = false; $('touch').hidden = !touch;
+    if (caught && game.hasBigMango) { leaveForTheReef(); return; }
+    bubbles.say(wally.root, caught ? 'What a fish! Now for that chest by the Lagoon!' : "He'll keep. I'll be back.", 3);
+  } });
+const FARE_AT = 7.5, FARE = Math.min(mangoTarget, 20);                    // (the chest's share of a random course can run to 60)
+let fareHint = 0;
+function charter(dt) {
+  fareHint -= dt;
+  if (game.done || Math.hypot(wally.pos.x - boatAt.x, wally.pos.z - boatAt.z) > FARE_AT || wally.pos.y < G - 0.4) return;
+  if (game.hasMedal) {                                                  // the marlin is done: the boat is the way on, with the clam's mango
+    if (game.hasBigMango) leaveForTheReef();
+    else if (fareHint <= 0) { fareHint = 5; toast_(`The chest by the Lagoon first: the giant clam needs that mango (${game.mangoes}/${mangoTarget} mangoes)`, 'info'); bubbles.say(wally.root, 'Not without the Big Golden Mango!', 2.6); }
+    return;
+  }
+  if (game.mangoes >= FARE) {
+    eyes.off(); $('hud').hidden = true; $('touch').hidden = true; $('dive-buttons').hidden = true;
+    sound.play.powerup(); fishing.start();
+  } else if (fareHint <= 0) { fareHint = 5; toast_(`The skipper wants ${FARE} mangoes for the trip: you have ${game.mangoes}`, 'info'); bubbles.say(wally.root, 'I need more mangoes!', 2.6); }
+}
+const thieves = new MangoThieves(scene, models, () => { const m = mangoModel(); return m; }, { ground: G, half: PATH.half, finish: PATH.finish,
+  onWarn: b => { sound.play.jump(); bubbles.say(b.g, b.name === 'pelican' ? 'Mine!' : 'Screech!', 1.2); } });
+function thievesStep(dt) {
+  const r = thieves.update(dt, wally, game.mangoes);
+  if (r.stole) { game.mangoes -= r.stole; sound.play.sting(); toast_('A thief took a mango! See where it drops', 'bad'); bubbles.say(wally.root, pickLine('wallyBird'), 2.6); }
+  if (r.got) { game.mangoes += r.got; game.points += r.got; sound.play.goal(); toast_('Got it back!', 'good'); }
+}
+// The way off the Esplanade (Ken, 2026-10-31): the skipper runs him out to the reef, and the reef opens with him on its jetty.
+function leaveForTheReef() {
+  game.done = true; game.leaving = true; wally.vel.set(0, 0, 0); wally.root.visible = false;
+  eyes.off(); wally.root.visible = false;
+  $('hud').hidden = true; $('touch').hidden = true; $('dive-buttons').hidden = true;
+  sound.play.powerup();
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z), at = V3(boatAt.x, 2.2, boatAt.z);
+  cut.play([
+    { s: 3.6, who: 'The Skipper', line: "Good on ya, Wally! Hop aboard. The reef's only a run out from here.", from: V3(at.x + 16, 6, at.z + 15), to: V3(at.x + 10, 4.2, at.z + 11), lookFrom: at, lookTo: at },
+    { s: 3.6, who: 'Wally', line: 'Next stop, the Great Barrier Reef! Hang on to that mango, mate.', from: V3(at.x + 10, 4.2, at.z + 11), to: V3(at.x + 2, 8, at.z + 22), lookFrom: at, lookTo: V3(at.x - 38, 2, at.z) },
+  ], () => finish(true), { siren: false });
+}
+function skipperScene() {
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z), bow = V3(boatAt.x, 2.2, boatAt.z), start = wally.pos.clone().add(V3(0, 1.5, 0));
+  $('hud').hidden = true; $('touch').hidden = true;
+  cut.play([
+    { s: 3.6, who: 'The Skipper', line: "G'day, Wally! I'm taking the Reel Croc out after a black marlin.", from: V3(bow.x + 26, 7, bow.z + 22), to: V3(bow.x + 15, 5, bow.z + 12), lookFrom: bow, lookTo: bow },
+    { s: 3.6, who: 'The Skipper', line: `The fare's ${FARE} mangoes. Bring them to the end of the pier, and you can come along.`, from: V3(bow.x + 15, 5, bow.z + 12), to: V3(bow.x + 8, 3.6, bow.z + 10), lookFrom: bow, lookTo: bow },
+    { s: 3.4, who: 'The Skipper', line: "But watch out for the pelicans and the fruit bats. They'll have those mangoes off you!", from: V3(start.x - 10, 6, start.z - 9), to: V3(start.x - 7, 4, start.z - 7), lookFrom: start, lookTo: start },
+    { s: 3.4, who: 'Wally', line: 'And the chest at the Lagoon holds the Big Golden Mango, for the giant clam at the reef. Crikey, a big day!', from: V3(start.x - 7, 4, start.z - 7), to: V3(start.x - 4, 3, start.z - 6), lookFrom: start, lookTo: start },
+  ], () => { $('hud').hidden = false; $('touch').hidden = !touch; }, { siren: false });
+}
+Object.assign(window.chomp, { fishing, thieves, cut, boatAt });
+
 // The follow camera, as in the park: on a leash behind him, C swings it round.
 const cam = { yaw: 0, pitch: 0.35, dist: 11, manual: 0, recenter: false, side: 'behind', still: 0 };
 window.chomp.cam = cam;                                  // for testing in the browser console
 window.chomp.camera = camera; window.chomp.scene = scene;
 
 function step(dt, t) {
+  if (cut.active) { input.read(); clusters.idle(dt); cut.step(dt); if (fishing.active) fishing.step(dt, t); if (game.leaving) { boat.position.x -= dt * 7; boat.position.y = Math.sin(t * 0.9) * 0.08; } return; }
+  if (fishing.active) { input.read(); clusters.idle(dt); fishing.step(dt, t); return; }
   const k = input.read();
   game.time += dt;
   if (bot) Object.assign(k, bot());
@@ -621,14 +689,6 @@ function step(dt, t) {
       fx.burst(p.mesh.position, [0xffffff, 0xffd6f0], 10); toast_(`A pearl! ${game.pearls} now`, 'good'); bookEvent('pearl');
     }
   }
-  // Ken's rule: every group fed out, then a full tank, then on to the Lagoon.
-  if (!game.ready && game.groupsDone >= game.groupsTotal) {
-    if (game.energy >= FULL) {
-      game.ready = true; sound.play.powerup();
-      toast_('Every group fed and a full tank! Head for the Lagoon', 'info');
-    }
-    else if (!food.items.length && !(toast)) { finish(false, 'hungry'); return; }
-  }
 
   // Food: catch in the air, or scoop up off the path.
   const { dissolved } = food.update(dt, t);
@@ -690,24 +750,18 @@ function step(dt, t) {
   }
 
   bigMangoChest(dt);
+  charter(dt);
+  thievesStep(dt);
   {                                                                // where to go next, first visit (guide-arrow.js)
     const cp = bigChest.group.position, hungry = clusters.active.filter(c => !c.fled && c.food > 0).map(c => c.root.position);
     const mango = nearest(mangoes.filter(m => !m.taken).map(m => m.mesh.position), wally.pos), group = nearest(hungry, wally.pos);
     arrow.update(game.done ? null
-      : game.hasBigMango && game.ready ? { x: 0, z: POOL_Z + 2, label: 'The Lagoon' }
+      : game.hasBigMango && game.hasMedal ? { x: boatAt.x + 5, z: boatAt.z, label: 'The boat to the reef' }
+      : !game.hasMedal && game.mangoes >= FARE ? { x: boatAt.x + 5, z: boatAt.z, label: 'The charter boat' }
       : !game.hasBigMango && game.mangoes >= mangoTarget ? { x: cp.x, z: cp.z, label: 'The chest' }
-      : group ? { x: group.x, z: group.z, label: 'Hungry visitors' }
-      : !game.hasBigMango && mango ? { x: mango.x, z: mango.z, label: 'Golden Mango' }
+      : game.energy < 35 && group ? { x: group.x, z: group.z, label: 'Hungry visitors' }
+      : mango ? { x: mango.x, z: mango.z, label: 'Golden Mango' }
       : { x: cp.x, z: cp.z, label: 'The chest' }, wally.pos, cam.yaw);
-  }
-  // The Lagoon: the way on, once the job is done and the Big Golden Mango found.
-  if (!game.done && game.ready && !game.hasBigMango && wally.pos.z > POOL_Z - 1 && game.hintCool <= 0) {
-    game.hintCool = 6; toast_(`The chest by the Lagoon first: it opens for ${mangoTarget} Golden Mangoes (you have ${game.mangoes})`, 'info');
-  } else if (!game.done && game.ready && game.hasBigMango && wally.pos.z >= POOL_Z + 2) {
-    game.done = true; wally.cheer = 1.2; bubbles.say(wally.root, 'Last one in is a rotten egg!', 3.4);
-    setTimeout(() => finish(true), 2200);
-  } else if (!game.ready && wally.pos.z > POOL_Z - 1 && game.hintCool <= 0) {
-    game.hintCool = 6; toast_('Not yet! Feed out every group and fill up first', 'info');
   }
   game.hintCool = (game.hintCool || 0) - dt;
   drawHud();
@@ -728,6 +782,13 @@ function stumble(o) {
 const camTarget = new THREE.Vector3();
 const eyes = createEyes({ camera, wally, cam, canvas });   // in the water, his own view
 function followCamera(dt) {
+  if (cut.active || fishing.active) {
+    if (cut.active) { cut.place(); fishing.releaseFrame(); } else fishing.place(dt, t);
+    world.ring.position.x = camera.position.x; world.ring.position.z = camera.position.z;
+    if (world.ranges) world.ranges.userData.follow(camera);
+    world.sun.position.set(camera.position.x - 30, 70, camera.position.z + 50); world.sun.target.position.copy(camera.position);   // behind him, so the marlin is lit, not a shadow
+    return;
+  }
   camTarget.lerp(wally.pos.clone().add(new THREE.Vector3(0, 1.6, 0)), Math.min(1, dt * 6));
   cam.manual = Math.max(0, cam.manual - dt);
   if (game.running) {
@@ -776,7 +837,7 @@ function drawHud() {
   $('lives').textContent = '●'.repeat(Math.max(0, game.lives)) + '○'.repeat(Math.max(0, LIVES - game.lives));
   $('veg').hidden = game.boost <= 0;
   $('track-wally').style.left = `${Math.min(100, Math.max(0, wally.pos.z / PATH.finish * 100))}%`;
-  $('job').textContent = game.ready ? (game.hasBigMango ? 'Head for the Lagoon!' : `Golden Mangoes for the chest: ${game.mangoes}/${mangoTarget}`) : game.groupsDone >= game.groupsTotal ? 'Now fill the feed-o-meter' : `Groups fed out ${game.groupsDone}/${game.groupsTotal}`;
+  $('job').textContent = game.done ? '' : !game.hasMedal ? (game.mangoes >= FARE ? 'The charter boat, at the end of the pier!' : `Mangoes for the charter boat: ${game.mangoes}/${FARE}`) : !game.hasBigMango ? (game.mangoes >= mangoTarget ? 'The chest by the Lagoon!' : `Mangoes for the chest: ${game.mangoes}/${mangoTarget}`) : 'Back to the boat: on to the reef!';
 }
 
 function start() {
@@ -794,6 +855,9 @@ function begin() {
   game.running = true;
   cam.yaw = Math.PI;                    // start behind him, looking down the boardwalk
   bubbles.say(wally.root, "G'day! Lunch on the Esplanade!", 3.4, 3);
+  // Straight to the marlin, for trying it out: esplanade.html?all&play&stay&marlin
+  if (params.has('marlin')) { game.mangoes = Math.max(game.mangoes, FARE); wally.pos.set(boatAt.x + 5.5, G, boatAt.z); wally.root.position.copy(wally.pos); return; }
+  if (attempt.visit === 1 && !params.has('noscene')) skipperScene();
 }
 
 function setPaused(p) { if (!game.running) return; game.paused = p; $('paused').hidden = !p; }
@@ -813,7 +877,7 @@ function finish(won, why = '') {
     if (game.pierOpen && !progress.pier) progress = openPier(progress, pierPrice).progress;   // paid for now, this run's mangoes banked first
   } else { progress.trip = Trip.failAttempt(progress.trip, attempt).trip; failRun(); }   // nothing from this run is kept, points included (points.js)   // nothing from this attempt is kept (trip-rules.js)
   try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
-  $('result-title').textContent = won ? 'Made it to the Lagoon!' : why === 'hungry' ? 'Still peckish!' : why === 'air' ? 'Out of air!' : 'Out of puff';
+  $('result-title').textContent = won ? 'Off to the reef!' : why === 'hungry' ? 'Still peckish!' : why === 'air' ? 'Out of air!' : 'Out of puff';
   $('result-why').textContent = why === 'hungry' ? `Wally made it, but his feed-o-meter isn't full. He needs a full tank (${FULL}%) to head on.` : '';
   markRetry(won, 'the Esplanade');
   $('result-stars').textContent = won ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
@@ -843,7 +907,6 @@ function makeBot() {
     if (!goal) {
       const live = clusters.list.filter(c => !c.counted && !c.fled && c.food > 0).sort((a, b) => Math.abs(a.root.position.z - me.z) - Math.abs(b.root.position.z - me.z))[0];
       if (live) goal = { x: -1.5, z: live.root.position.z };                   // across the boardwalk from them: the sweet spot
-      else if (game.ready) goal = { x: 0, z: POOL_Z + 6 };
       else if (toast) goal = { x: toast.x, z: toast.z };
     }
     if (!goal) return { forward: 0, right: 0, jump: false, fours: false, turn: 0, turnKeys: 0, tilt: 0, zoom: 0 };
@@ -861,6 +924,7 @@ function makeBot() {
 }
 
 // ---- Loop ------------------------------------------------------------------------------
+const skyDome = scene.children.find(o => o.isMesh && o.geometry.type === 'SphereGeometry');
 let t = 0, last = performance.now();
 function frame() {
   const now = performance.now(), dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt;
@@ -869,6 +933,9 @@ function frame() {
   if (world.trees) world.trees.update(t);          // the breeze in the trees
   world.sea.userData.ripple(t); world.sea.userData.grass.update(t);   // waves, and the breeze in the grass
   followCamera(dt);
+  // The sky goes with him, and well outside the hills, which follow him too. Fixed at the start of the walk, it cut the far
+  // hills off once he was part way along: a pale wall with a sharp edge, standing on the horizon (Ken, 2026-10-31).
+  if (skyDome) { skyDome.position.x = camera.position.x; skyDome.position.z = camera.position.z; skyDome.scale.setScalar(1.7); }
   intro.update(dt, camera);                       // the first-visit fly-over, when it plays
   { const night = daynight.update(game.paused ? 0 : dt, camera); lamps.update(dt, night, wally.pos); }
   fpsWatch(dt);

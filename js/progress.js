@@ -81,7 +81,7 @@ const NEED_TEXT = {
   'machete': 'the machete, from opening the Croc Park gate',
   'golden-mango': 'Golden Mangoes, found along the Esplanade',
   'talisman-fire': 'the fire talisman, from the middle of the cane fields',
-  'talisman-sun': 'the sun talisman, from the chest by the Esplanade Lagoon',
+  'talisman-sun': 'the sun medallion, from the black marlin off the Esplanade',
   'talisman-moon': "the moon talisman, from the reef's pirate chest",
   'talisman-air': 'the air talisman, from the boomerang throw in Kuranda',
   'talisman-water': 'the water talisman, from the bottom of the zip line',

@@ -8,11 +8,7 @@
 //
 // PC:    WASD or the arrows steer him (Ken, 2026-10-20): up / W runs the way he faces,
 //        left and right turn him, down turns him round. Space jump, Shift all fours.
-//        The mouse (Ken chose, 2026-10-20): click the game to take the cursor; then
-//        moving the mouse turns Wally (up and down tilts the view), holding the left
-//        button runs him forward, and holding the right button looks around with the
-//        camera (let go and the mouse steers him again). Esc gives the cursor back; a
-//        click on the game takes it again.
+//        The mouse is only for clicking menus and buttons (Ken, 2026-10-31): the game never takes the cursor.
 //        The wheel zooms. Space jumps (and swims up), Shift dives under (and runs on
 //        all fours on land). Q / E turn the camera, wheel zooms, C swings it behind
 //        him, P pauses. (Camera-relative moving is a setting, settings.js.)
@@ -67,79 +63,12 @@ export class Input {
     addEventListener('keyup', e => this.key(e, false));
     addEventListener('blur', () => this.keys.clear());
 
-    // The mouse. Click the game to take the cursor (pointer lock); then moving the
-    // mouse turns Wally gradually, the left button held takes him forward, a quick click
-    // jumps, and the right button held hands the mouse to the camera until it is let go.
-    // Esc gives the cursor back.
-    // Without the cursor taken, dragging turns the camera.
-    let drag = null;
-    this.aim = 0; this.mouseMode = 'wally'; this.mouseRun = false;
-    // Only while a level is being played: not over a menu, card, tip or the map.
-    const MODALS = '.overlay:not([hidden]), .map-modal:not([hidden])';   // (a tip is a slim line now, never in the way)
-    this.canLock = () => !document.querySelector(MODALS);
-    // Any card coming up gives the cursor back for ordinary clicking; when the last
-    // card is dismissed, Wally has the mouse again (Ken, 2026-10-20). The click or key
-    // that dismissed it counts as the player's go-ahead the browser asks for.
-    let handBack = false;
-    new MutationObserver(() => {
-      const open = !this.canLock();
-      if (open && document.pointerLockElement === canvas) { handBack = true; document.exitPointerLock(); }
-      else if (!open && handBack) { handBack = false; this.mouseMode = 'wally'; canvas.requestPointerLock?.()?.catch?.(() => {}); }
-    }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] });
-    const locked = () => document.pointerLockElement === canvas;
-    // A small label saying what the mouse is doing: steering Wally, turning the camera,
-    // or free (click the game to take it).
-    const chip = document.createElement('div'); chip.className = 'mouse-chip'; document.body.append(chip);
-    this.showChip = () => {
-      chip.textContent = !locked() ? '' : settings.controls !== 'classic' ? '🖱 Mouse turns the camera · hold left: go · click: jump · Esc: cursor' : this.mouseMode === 'wally' ? '🖱 Mouse turns Wally · hold left: go · click: jump · hold right: look around · Esc: cursor' : '🖱 Looking around · let go of the right button to steer';
-      chip.hidden = !locked();
-    };
-    this.showChip();
-    canvas.addEventListener('mousedown', e => {
-      if (locked()) {
-        if (e.button === 0) { this.mouseRun = true; this.leftDown = { t: performance.now(), moved: 0 }; }   // held: go; a quick click: jump (mouseup)
-        if (e.button === 2) { this.mouseMode = 'camera'; this.showChip(); }
-        return;
-      }
-      if (e.button !== 0) return;
-      drag = { x: e.clientX, y: e.clientY, moved: 0 };
-    });
-    addEventListener('mouseup', e => {
-      if (e.button === 0) {
-        this.mouseRun = false;
-        // A quick click, the mouse barely moved: jump (Ken, 2026-10-21: hold left to go, click to jump).
-        if (locked() && this.leftDown && performance.now() - this.leftDown.t < 220 && this.leftDown.moved < 12) this.jumpQueued = true;
-        this.leftDown = null;
-      }
-      if (e.button === 2 && this.mouseMode === 'camera') { this.mouseMode = 'wally'; this.showChip(); }
-      // A click (not a drag) on the game takes the cursor, while a level is being played.
-      if (drag && drag.moved < 6 && !locked() && this.canLock && this.canLock()) canvas.requestPointerLock?.();
-      drag = null;
-    });
-    canvas.addEventListener('contextmenu', e => e.preventDefault());     // the right button is the camera, not a menu
-    document.addEventListener('pointerlockchange', () => {
-      if (!locked()) { this.unlockedAt = performance.now(); this.mouseRun = false; }
-      this.mouseMode = 'wally';
-      document.body.classList.toggle('mouse-steer', locked());
-      this.showChip();
-    });
-    addEventListener('mousemove', e => {
-      if (locked()) {
-        if (this.leftDown) this.leftDown.moved += Math.abs(e.movementX) + Math.abs(e.movementY);
-        // Camera-relative play (the default): the mouse orbits the camera, as in most third-person games.
-        if (this.mouseMode === 'wally' && settings.controls === 'classic') this.aimLeft = (this.aimLeft || 0) - e.movementX * 0.0022;   // a gradual turn (Ken: too fast before), let out smoothly in read()
-        else this.turn -= e.movementX * 0.004;
-        this.tilt += e.movementY * 0.0025; return;
-      }
-      if (!drag) return;
-      drag.moved += Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y);
-      this.turn -= (e.clientX - drag.x) * 0.005; this.tilt += (e.clientY - drag.y) * 0.004;
-      drag.x = e.clientX; drag.y = e.clientY;
-    });
+    // Keyboard on a computer, touch on a phone (Ken, 2026-10-31: players will not know Esc gives a captured cursor back).
+    // So the game never takes the cursor, and the mouse is only for clicking menus and buttons.
+    this.aim = 0;
     canvas.addEventListener('wheel', e => { this.zoom += Math.sign(e.deltaY) * 1.2; e.preventDefault(); }, { passive: false });
 
     if (touchUi) this.bindTouch(canvas, touchUi);
-    else this.bindMouseOrb();
     installSettingsUi();
   }
 
@@ -148,9 +77,7 @@ export class Input {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
     const k = e.key.toLowerCase();
     if (down && k === ' ' && !this.keys.has(' ')) this.jumpQueued = true;
-    // Esc first gives back the cursor (the browser does that); only an Esc without it pauses.
-    const justUnlocked = performance.now() - (this.unlockedAt || 0) < 300 || document.pointerLockElement;
-    if (down && (k === 'p' || (k === 'escape' && !justUnlocked)) && !e.repeat && this.onPause) this.onPause();
+    if (down && (k === 'p' || k === 'escape') && !e.repeat && this.onPause) this.onPause();
     if (down && k === 'm' && this.onMute) this.onMute();
     if (down && k === 'v' && !e.repeat && this.onCamera) this.onCamera();   // the camera: auto or manual
     if (down && k === 'c') this.recenterQueued = true;
@@ -209,34 +136,6 @@ export class Input {
     tap(ui.cam, () => { this.recenterQueued = true; });
   }
 
-  // The same green orb on a computer (Ken, 2026-10-21: the best controller), always on the right. The
-  // cursor only has to rest over it: up from the middle goes the way he faces, to the side turns, the
-  // middle stops him, and moving off it stops him. A click on it jumps. The keys still work as well.
-  bindMouseOrb() {
-    const orb = document.getElementById('stick'), knob = document.getElementById('knob'), hud = document.getElementById('hud');
-    if (!orb || !knob || !hud) return;
-    hud.append(orb); orb.classList.add('orb', 'mouse-orb'); if (!orb.querySelector('.orb-arrows')) orb.insertAdjacentHTML('afterbegin', ORB_ARROWS);
-    this.orbArrows = orb.querySelector('.orb-arrows');           // it shows and hides with the rest of the play screen
-    const R = 55;
-    const steer = e => {
-      const r = orb.getBoundingClientRect(), w = toWally(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
-      const d = Math.hypot(w.x, w.y), k = d > R ? R / d : 1, still = d < R * 0.22;
-      this.stick = { id: 'mouse', dx: still ? 0 : w.x * k / R, dy: still ? 0 : w.y * k / R };
-      orb.classList.add('active');
-    };
-    // Once the cursor is on the orb it keeps steering until it strays well past the edge, so reaching
-    // for full speed never drops it.
-    const stop = () => { this.stick = null; orb.classList.remove('active'); };
-    orb.addEventListener('mouseenter', steer);
-    addEventListener('mousemove', e => {
-      if (!orb.classList.contains('active')) return;
-      const r = orb.getBoundingClientRect();
-      if (Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2)) > r.width * 0.85) stop(); else steer(e);
-    });
-    orb.addEventListener('mousedown', e => { if (e.button === 0) this.jumpQueued = true; e.preventDefault(); e.stopPropagation(); });
-    orb.addEventListener('click', e => e.stopPropagation());
-  }
-
   // A game controller, if one is plugged in: this frame's stick, d-pad and
   // buttons. A, Y and Start count once per press, like the keys.
   readPad() {
@@ -260,7 +159,7 @@ export class Input {
   // Read and clear this frame's input.
   read() {
     const k = this.keys;
-    let f = (k.has('w') || k.has('arrowup') || this.mouseRun ? 1 : 0) - (k.has('s') || k.has('arrowdown') ? 1 : 0);
+    let f = (k.has('w') || k.has('arrowup') ? 1 : 0) - (k.has('s') || k.has('arrowdown') ? 1 : 0);
     let r = (k.has('d') || k.has('arrowright') ? 1 : 0) - (k.has('a') || k.has('arrowleft') ? 1 : 0);
     // The keys are on or off; eased over about a tenth of a second they act more like a
     // stick: rolling from W to D passes through every angle between (Ken, 2026-10-20).
@@ -302,7 +201,7 @@ export class Input {
       const s = this.stick || { dx: 0, dy: 0 };
       // The compass lights the way he is going, from the orb or from the mouse (hold left: go; moving it: turn).
       // (orb- names: a plain 'go' class is the site's big gold button style, which covered the orb.)
-      this.orbArrows.classList.toggle('orb-go', s.dy < -0.15 || this.mouseRun); this.orbArrows.classList.toggle('orb-back', s.dy > 0.15);
+      this.orbArrows.classList.toggle('orb-go', s.dy < -0.15); this.orbArrows.classList.toggle('orb-back', s.dy > 0.15);
       this.orbArrows.classList.toggle('orb-left', s.dx < -0.2 || this.aim > 0.004); this.orbArrows.classList.toggle('orb-right', s.dx > 0.2 || this.aim < -0.004);
     }
     if (pad) { this.turn += pad.turn; this.tilt += pad.tilt; }

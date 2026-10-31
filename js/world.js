@@ -110,18 +110,21 @@ function addHorizon(scene, image) {
 // carried along with the camera by its own share (the far one nearly all the way,
 // the near one 70%: never so little that a level 480 m long walks through the
 // near ring), which keeps them on the skyline and keeps the depth.
-export function addRanges(scene, horizon, sunDir, { sink = 1, turn = 0 } = {}) {
+export function addRanges(scene, horizon, sunDir, { sink = 1, turn = 0, slope = 4 } = {}) {
   const group = new THREE.Group(); group.rotation.y = turn;
   const layers = [
     { r: 215, base: 3, rise: 14, colour: 0x24482e, seed: 2.9, haze: 0.08, follow: 0.7 },    // the near foothills
     { r: 290, base: 7, rise: 26, colour: 0x2e5a3c, seed: 1.7, haze: 0.2, follow: 0.85 },
     { r: 370, base: 18, rise: 40, colour: 0x557487, seed: 4.1, haze: 0.45, follow: 0.94 },
   ];
+  // (Every wave a whole number of turns round the ring, or the ring does not meet itself: 7.3 here left a sheer cliff
+  // across all three layers, a pale wall on the far one, Ken 2026-10-31.)
   const height = (L, a) => {
-    let h = L.base + L.rise * (0.5 + 0.28 * Math.sin(a * 3 + L.seed) + 0.17 * Math.sin(a * 7.3 + L.seed * 2) + 0.05 * Math.sin(a * 19 + L.seed));
+    let h = L.base + L.rise * (0.5 + 0.28 * Math.sin(a * 3 + L.seed) + 0.17 * Math.sin(a * 7 + L.seed * 2) + 0.05 * Math.sin(a * 19 + L.seed));
     h += 1.6 * Math.sin(a * 41 + L.seed) + 0.8 * Math.sin(a * 97);           // canopy on the skyline
     const z = Math.sin(a);
-    return h * (1 - sink * Math.max(0, Math.min(1, (-z - 0.15) * 4)));       // sink toward the sea side
+    const u = Math.max(0, Math.min(1, (-z - 0.15) * slope));
+    return h * (1 - sink * u * u * (3 - 2 * u));                             // sink toward the sea side (slope: how suddenly)
   };
   for (const L of layers) {
     const steps = 480, rows = 6, pos = [], col = [], idx = [];

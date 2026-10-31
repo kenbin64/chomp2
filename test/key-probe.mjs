@@ -169,7 +169,7 @@ const diveTo = (p, x, z) => p.evaluate(async (x, z) => {
   await p.setViewport({ width: 1100, height: 700 });
   await p.goto(BASE + 'about.html');
   await p.evaluate(() => { localStorage.clear(); localStorage.setItem('chomp-tips-off', '1'); localStorage.setItem('chomp-settings', JSON.stringify({ tips: false })); });
-  await p.goto(BASE + 'esplanade.html?all&play');
+  await p.goto(BASE + 'esplanade.html?all&play&noscene');
   await p.waitForFunction(() => window.chomp && window.chomp.game && window.chomp.game.running, { timeout: 90000, polling: 250 }).catch(() => {});
   await wait(5000);
   const atGate = n => p.evaluate(async n => {

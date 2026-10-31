@@ -13,13 +13,13 @@ export function installSettingsUi() {
     <label>Steering
       <select id="set-controls">
         <option value="classic">Steer: up runs, left and right turn, down turns round</option>
-        <option value="camera">Camera: move the way you press, the mouse turns the camera</option>
+        <option value="camera">Camera: move the way you press</option>
       </select>
     </label>
     <label>Camera
       <select id="set-camera">
         <option value="auto">Auto: follows Wally, turning gently when he heads off to the side</option>
-        <option value="manual">Manual: turns only when you turn it (Q and E, right mouse button, or drag)</option>
+        <option value="manual">Manual: turns only when you turn it (Q and E)</option>
       </select>
     </label>
     <label class="check"><input type="checkbox" id="set-tips"> Show tips the first time</label>

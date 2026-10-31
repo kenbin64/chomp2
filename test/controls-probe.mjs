@@ -63,19 +63,19 @@ const jolt = (s, key) => { let m = 0; for (let i = 2; i < s.length; i++) m = Mat
   const ax = after[after.length - 1].x - after[0].x, az = after[after.length - 1].z - after[0].z;
   check('then up: forward the new way, no spinning back', Math.abs(wrap(u0.f - b.f)) < 0.25 && Math.abs(wrap(Math.atan2(ax, az) - b.f)) < 0.25, `${wrap(u0.f - b.f).toFixed(2)}, ${wrap(Math.atan2(ax, az) - b.f).toFixed(2)}`);
 
-  // ---- The mouse: as if the cursor were taken. ----
+  // ---- A click never takes the cursor, and the mouse does not steer (Ken, 2026-10-31: all keyboard, on a computer). ----
   await home(p);
-  await p.evaluate(() => { const c = document.querySelector('canvas'); Object.defineProperty(document, 'pointerLockElement', { get: () => c, configurable: true }); window.__c = c; document.dispatchEvent(new Event('pointerlockchange')); });
-  const m0 = await state(p);
-  for (let i = 0; i < 12; i++) { await p.evaluate(() => window.dispatchEvent(new MouseEvent('mousemove', { movementX: 40, movementY: 0, bubbles: true }))); await wait(25); }
-  await wait(400); const m1 = await state(p);
-  check('mouse right: he turns right', wrap(m1.f - m0.f) < -0.5, wrap(m1.f - m0.f).toFixed(2));
-  check('mouse alone: he does not walk', Math.hypot(m1.x - m0.x, m1.z - m0.z) < 0.5);
-  await p.evaluate(() => window.__c.dispatchEvent(new MouseEvent('mousedown', { button: 0, bubbles: true })));
-  const go = await watch(p, 1000);
-  await p.evaluate(() => window.dispatchEvent(new MouseEvent('mouseup', { button: 0, bubbles: true }))); await wait(400);
-  const gx = go[go.length - 1].x - go[0].x, gz = go[go.length - 1].z - go[0].z;
-  check('left held: forward the way he faces', moved(go) > 3 && Math.abs(wrap(Math.atan2(gx, gz) - m1.f)) < 0.15, `${moved(go).toFixed(1)} m`);
+  const m = await p.evaluate(async () => {
+    const c = document.querySelector('canvas'); let asked = 0; c.requestPointerLock = () => { asked++; return Promise.resolve(); };
+    const w = window.chomp.wally, f0 = w.facing, x0 = w.pos.x, z0 = w.pos.z;
+    for (const type of ['mousedown', 'mouseup', 'click']) c.dispatchEvent(new MouseEvent(type, { button: 0, bubbles: true }));
+    for (let i = 0; i < 10; i++) { window.dispatchEvent(new MouseEvent('mousemove', { movementX: 40, bubbles: true })); await new Promise(r => setTimeout(r, 25)); }
+    await new Promise(r => setTimeout(r, 300));
+    return { asked, turned: Math.abs(w.facing - f0), moved: Math.hypot(w.pos.x - x0, w.pos.z - z0), orb: !!document.querySelector('.mouse-orb') };
+  });
+  check('clicking the game never takes the cursor', m.asked === 0, JSON.stringify(m));
+  check('the mouse does not steer him', m.turned < 0.02 && m.moved < 0.3, JSON.stringify(m));
+  check('no mouse orb on a computer', !m.orb);
   check('no page errors', !p.errors.length, p.errors.join(' | '));
   await p.done();
 }

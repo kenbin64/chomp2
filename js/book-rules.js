@@ -25,13 +25,13 @@ export const STAMPS = [
   { id: 'park-hidden',  land: 'park', visit: 3, name: 'Sticky beak',        how: 'Find every hidden find in one visit', event: 'hiddenAll' },
   { id: 'park-gift',    land: 'park', visit: 3, name: 'Good on ya',         how: 'Get 3 gifts from friendly visitors', event: 'gift', count: 3 },
   // The Esplanade
-  { id: 'esp-finish',   land: 'esplanade', visit: 1, name: 'Lunch on the Esplanade', how: 'Reach the Lagoon pool', event: 'finish' },
+  { id: 'esp-finish',   land: 'esplanade', visit: 1, name: 'Lunch on the Esplanade', how: 'Leave for the reef on the charter boat', event: 'finish' },
   { id: 'esp-pier',     land: 'esplanade', visit: 1, name: 'Pier pressure',     how: 'Open the pier with Croc Park mangoes', event: 'pier' },
   { id: 'esp-pearls',   land: 'esplanade', visit: 1, name: 'String of pearls',  how: 'Collect 3 pearls in one visit', event: 'pearl', count: 3 },
   { id: 'esp-mangoes',  land: 'esplanade', visit: 2, name: 'Mango madness',     how: 'Collect 60 Golden Mangoes on one run', event: 'mango', count: 60 },
   { id: 'esp-night',    land: 'esplanade', visit: 2, name: 'Moonlight stroll',  how: 'Catch 5 pieces of tucker after dark', event: 'nightCatch', count: 5 },
   { id: 'esp-hidden',   land: 'esplanade', visit: 2, name: 'Beachcomber',       how: 'Find a hidden find', event: 'hidden' },
-  { id: 'esp-clean',    land: 'esplanade', visit: 3, name: 'Light on his feet', how: 'Reach the Lagoon without a single bump', event: 'finish', clean: 'bump' },
+  { id: 'esp-clean',    land: 'esplanade', visit: 3, name: 'Light on his feet', how: 'Leave for the reef without a single bump', event: 'finish', clean: 'bump' },
   { id: 'esp-pearls6',  land: 'esplanade', visit: 3, name: 'Pearl diver',       how: 'Collect 6 pearls in one visit', event: 'pearl', count: 6 },
   { id: 'esp-gift',     land: 'esplanade', visit: 3, name: 'Fair dinkum friend', how: 'Get 3 gifts from friendly visitors', event: 'gift', count: 3 },
   // The Great Barrier Reef

@@ -15,7 +15,7 @@ export const AREAS = [
     objective: 'Cut a path through the cane with the machete to the fire talisman in the middle. Eat the sugar cane before the cane toads and fruit bats get it. The burning cane you cannot go through, but the fire never reaches you.',
     notes: "Sugar cane at dusk: the sunset behind the ranges, the moon, the fires; Walsh's Pyramid on the skyline." },
   { id: 'esplanade', name: 'The Esplanade', place: 'The Cairns waterfront', ready: true,
-    objective: 'Feed every picnic group along the boardwalk (each leaves a pearl for the reef) and fill the feed-o-meter, then head for the Lagoon pool. Watch the box jellyfish if you swim.',
+    objective: "Collect mangoes while the pelicans and fruit bats try to steal them. The skipper's boat at the end of the pier takes you out after a black marlin for the sun medallion; the chest by the Lagoon holds the Big Golden Mango; then the boat runs you out to the reef. Watch the box jellyfish if you swim.",
     notes: 'The Cairns Esplanade: lagoon pool, boardwalk, fig trees, mangroves along the mudflats.' },
   { id: 'reef', name: 'The Great Barrier Reef', place: 'Green Island, off Cairns', ready: true,
     objective: 'Dive from the Green Island jetty, follow the guide fish through the coral maze to the cave, find the pirate chest and get out before your air runs out. Bring pearls: one opens the giant clam.',
