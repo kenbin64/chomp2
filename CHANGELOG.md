@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.19 (2026-10-31)
+
 - The Esplanade has a purpose now. The skipper's charter boat waits at the end of the pier: the fare is mangoes, and pelicans
   and fruit bats try to steal them. Out at sea, through Wally's eyes: cast with the right angle and force, troll until the
   gauge shows a bite, strike, and fight a black marlin with real line physics, reeling in and releasing to keep the tension
