@@ -10,6 +10,8 @@
 
 import { showLeaderboard } from '../leaderboard.js';
 import { installVR, inVR } from '../vr.js';
+import { createEyes } from '../eyes.js';
+import { carried } from '../carried.js';
 import { guideArrow } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { foundTalisman } from '../revisit.js';
@@ -21,14 +23,14 @@ import { POOLS, KEY_POOL, CHEST_POOL, SLIDE_HALF, SLIDE_SPEED, START, FINISH_Z, 
 import { buildMossman } from './mossman-scene.js';
 import { Wally } from '../wally.js';
 import { Food, kindFor, useJarModel } from '../food.js';
-import { Input, steering, easeBehind } from '../input.js';
+import { Input, steering, easeBehind, lazyBehind } from '../input.js';
 import { Bubbles, reaction, pickLine, chatty } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
 import { loadModels, dress, MODEL_FILES } from '../models.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
-import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
+import { areaIntro, courseShots } from '../area-intro.js';
 import { installMap, recordVisit, markRetry } from '../mapmodal.js';
 import { showTip } from '../tips.js';
 import { chestModel } from '../chest.js';
@@ -43,6 +45,7 @@ import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocit
 import { completeArea, readProgress, saveProgress, outfitModel, wearing, starsFor } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
 import { loadRealism } from '../realism.js';
+import { toast as toast_ } from '../toast.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -171,15 +174,11 @@ const game = {
   air: AIR.max, points: 0, caught: 0, streak: 0, hasKey: false, talisman: false, foursWas: false, diveQueued: false, upQueued: false, hint: 0, slides: 0,
 };
 game.hasKey = Trip.have(progress.trip, 'mossman-key');
+if (game.hasKey) carried.add('key', { label: 'Chest key' });
 game.talisman = game.hadOpal = Trip.have(progress.trip, 'talisman-earth');   // back again: the opal is sealed already (the way out is open); the chest gives a prize
 game.tripDrain = Trip.drainFactor(progress.trip, 'mossman', attempt.level);
+if (Trip.have(progress.trip, 'golden-mango')) carried.add('golden-mango', { id: 'giant-mango' });   // for the Croc King (the park, main.js)
 window.chomp = { game, wally, scene, camera, clusters, keySpot, chestSpot, dive };
-
-function toast_(text, kind = 'good') {
-  const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
-  $('toasts').appendChild(el); setTimeout(() => el.remove(), 1800);
-  while ($('toasts').children.length > 3) $('toasts').firstChild.remove();
-}
 
 // Visitors throw where he will be (the same rule as everywhere).
 function throwFrom(hand, cluster, gentle, thrower) {
@@ -253,7 +252,7 @@ function step(dt, t) {
     const p = it.mesh.position;
     const d = it.landed && !wally.airborne ? Math.hypot(p.x - mouth.x, p.z - mouth.z) + (mouth.y - p.y > 3.2 ? 99 : 0) : p.distanceTo(mouth);
     if (d < 1.4) {
-      clusters.cheer(it.cluster); fx.burst(p, CRUMBS[it.kind] || [0xffffff]); food.take(it, 'eaten'); wally.chomp(); sound.play.chomp();
+      clusters.cheer(it.cluster); fx.burst(p, CRUMBS[it.kind] || [0xffffff]); food.take(it, 'eaten'); wally.chomp(); eyes.chomp(); sound.play.chomp();
       game.streak++; game.caught++;
       const how = it.landed ? 'ground' : (wally.airborne ? 'leap' : 'air'), pts = catchPoints(how, game.streak, false);
       game.points += pts; addPoints(how); game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[it.kind].energy);
@@ -265,11 +264,12 @@ function step(dt, t) {
   // The key, and the chest with the opal.
   key.rotation.y += dt * 1.5;
   if (!game.hasKey && canReach(wally.pos.x, wally.pos.z, dive.depth > 1.2, keySpot.x, keySpot.z)) {
-    game.hasKey = true; key.visible = false; attempt = Trip.gain(attempt, 'mossman-key'); addPoints('pickup');
+    game.hasKey = true; carried.add('key', { label: 'Chest key' }); key.visible = false; attempt = Trip.gain(attempt, 'mossman-key'); addPoints('pickup');
     game.points += 100; sound.play.powerup(); toast_('A key! Now find what it opens', 'good'); bubbles.say(wally.root, "A key, right on the bottom! What's it for?", 3.4);
   }
   if (!game.chestOpen && canReach(wally.pos.x, wally.pos.z, dive.depth > 1.2, chestSpot.x, chestSpot.z)) {
     if (game.hasKey) {
+      carried.use('key'); carried.add('talisman', { label: 'The opal' });
       game.chestOpen = true; game.talisman = true; attempt = Trip.gain(attempt, 'talisman-earth'); game.points += 300; addPoints('talisman');
       setTimeout(() => foundTalisman('talisman-earth', toast_), 1600);          // new: the sceptre card; already sealed: a random useful prize (revisit.js)
       sound.play.powerup(); wally.cheer = 1.2; fx.burst(new THREE.Vector3(chestSpot.x, chestSpot.y + 1, chestSpot.z), [0xb8e6ff, 0xff9ad8, 0xffffff], 40);
@@ -313,12 +313,13 @@ function rescueStep(dt, t) {
 
 // ---- Camera: behind him, above the water ---------------------------------------------------------
 const camTarget = new THREE.Vector3();
+const eyes = createEyes({ camera, wally, cam, canvas });   // in the water, his own view
 function followCamera(dt) {
   camTarget.lerp(wally.pos.clone().add(new THREE.Vector3(0, 1.5, 0)), Math.min(1, dt * 6));
   cam.manual = Math.max(0, cam.manual - dt);
   if (game.running && cam.manual <= 0) {
     if (steering()) cam.yaw = easeBehind(cam.yaw, wally.facing, dt);
-    else { const dx = camera.position.x - camTarget.x, dz = camera.position.z - camTarget.z; if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz); }
+    else cam.yaw = lazyBehind(cam.yaw, wally, dt);
   }
   const pitch = dive.depth > 1 ? Math.max(cam.pitch, 0.9) : cam.pitch;      // looking down into the clear water when he dives
   const cp = Math.cos(pitch);
@@ -326,6 +327,7 @@ function followCamera(dt) {
   const floor = groundAt(camera.position.x, camera.position.z).y + 1;
   if (camera.position.y < floor) camera.position.y = floor;
   camera.lookAt(camTarget);
+  eyes.step(dt, game.running && !inVR() && wally.surface === 'water' && game.faint <= 0, dive.depth > 1);
   const jolt = fx.shakeOffset(dt); if (jolt) camera.position.add(jolt);
 }
 

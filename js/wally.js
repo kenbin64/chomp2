@@ -21,7 +21,7 @@ const TURN = 2.8;                // keyboard steering: how fast left and right t
 // Keyboard turning that behaves like the phone's orb (Ken, 2026-10-26: players found the keys clunky and
 // spun past the food). A tap turns him slowly, for a small correction; held, the turn speeds up to a little
 // faster than before, for a big one. Measured: the scripted player reversed its turn 68 times a minute.
-const TURN_TAP = 1.9, TURN_HELD = 3.4, TURN_RAMP = 0.35;   // radians a second at first, after TURN_RAMP seconds held
+const TURN_TAP = 1.4, TURN_HELD = 3.2, TURN_RAMP = 0.6;   // radians a second at first, after TURN_RAMP seconds held
 const SPIN_TIME = 0.5;           // seconds for the animated turn round (Down, or the phone's turn-around button)
 // Turning while he moves (Ken, 2026-10-20: smooth, every angle in between): his
 // heading swings round toward where the player points at this rate, so a change of
@@ -392,19 +392,9 @@ export class Wally {
 
     let want;
     if (input.steer) {
-      // Keyboard (Ken, 2026-10-17): Left and Right turn him smoothly for as long
-      // as they are held, at any angle, not in steps. On their own he turns on
-      // the spot; with Up held he runs and steers. Up runs ahead the way he
-      // faces. Down spins him round once and he runs the other way while held.
-      // Facing the player (Ken, 2026-10-26): Down turns him round to face the camera, and the camera stays
-      // where it is (main.js), so he is played from the front, face toward you; Down again just runs him
-      // toward you. Up turns him back round to face away, then runs him on.
-      const pressedDown = input.forward < 0 && !(this.lastForward < 0);
-      const pressedUp = input.forward > 0.5 && !(this.lastForward > 0.5);
-      if (pressedDown && !this.front) { this.turnLeft = (this.turnLeft || 0) + Math.PI; this.front = true; }
-      if (pressedUp && this.front) { this.turnLeft = (this.turnLeft || 0) + Math.PI; this.front = false; }
-      if (input.turnAround) this.turnLeft = (this.turnLeft || 0) + Math.PI;   // the phone pad's turn-around button
-      this.lastForward = input.forward;
+      // Steering (Ken, 2026-10-30), the same from every controller: up goes the way he faces, left and right
+      // turn him, the longer the more, the two together curve, and down (input.js: turnAround) is an about-face.
+      if (input.turnAround) this.turnLeft = (this.turnLeft || 0) + Math.PI;
       // The turn round is animated (Ken, 2026-10-26: it looked like a teleport): he swings round over
       // SPIN_TIME seconds, starting gently, fastest midway, settling at the end (a smoothstep curve).
       if (this.turnLeft) {
@@ -422,9 +412,8 @@ export class Wally {
       const rate = TURN_TAP + (TURN_HELD - TURN_TAP) * Math.min(1, this.turnHeld / TURN_RAMP);
       this.turnRate = (this.turnRate || 0) + ((-input.right * rate) - (this.turnRate || 0)) * Math.min(1, dt * 10);
       this.facing += this.turnRate * dt + (input.aim || 0);       // the keys or stick, the mouse, and the aim help
-      // How fast he goes: full speed with Up (or running the other way after Down), and the slow walk the keys
-      // give when turning on their own (input.js), so he keeps moving round instead of standing to turn.
-      const going = Math.abs(this.turnLeft || 0) < 0.3 ? (input.forward < 0 ? 1 : Math.min(1, input.forward)) : 0;
+      // How fast he goes: as far as up is pushed. He stops for the moment of an about-face.
+      const going = Math.abs(this.turnLeft || 0) < 0.3 ? Math.max(0, Math.min(1, input.forward)) : 0;
       want = new THREE.Vector3(Math.sin(this.facing) * going, 0, Math.cos(this.facing) * going);
     } else {
       // Phone stick: relative to the camera, forward is away from it.
@@ -457,7 +446,11 @@ export class Wally {
     }
 
     // Fall onto whatever is underneath: water, bank, boardwalk or rock.
-    if (!this.grounded) { this.vy -= FALL * dt; this.pos.y += this.vy * dt; }
+    if (!this.grounded) {
+      this.vy -= FALL * dt; this.pos.y += this.vy * dt;
+      const roof = this.vy > 0 && ground.ceiling ? ground.ceiling(this.pos.x, this.pos.z, this.pos.y) : null;
+      if (roof !== null && this.pos.y > roof) { this.pos.y = roof; this.vy = 0; }   // bumped his head on the boardwalk
+    }
     const under = ground.stand(this.pos.x, this.pos.z, this.pos.y, FLOAT_Y, this.airborne && this.fromWater);
     if (this.pos.y <= under.y + 0.001 && this.vy <= 0) {
       if (!this.grounded && under.surface === 'water') events.push('splash');

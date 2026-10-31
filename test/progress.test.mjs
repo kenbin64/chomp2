@@ -113,7 +113,13 @@ check('every area has a postcard', AREAS.every(a => typeof POSTCARDS[a.id] === '
   check('the Esplanade needs the ranger badge', P.entryNeeds(p, 'esplanade').what === 'badge');
   p = P.completeArea(p, 'park', { score: 50, stars: 1, mangoes: 6 });
   check('finishing Croc Park gives the badge and banks its mangoes', p.badge && p.mangoes === 6 && P.entryNeeds(p, 'esplanade') === null);
-  // The Esplanade pier opens for mangoes brought from Croc Park.
+  // The Esplanade pier opens for mangoes found on the Esplanade (Ken, 2026-10-30), on the very run they were found:
+  // the run's mangoes are banked first, then the pier is paid for.
+  {
+    const fresh = P.completeArea(P.freshProgress(), 'esplanade', { mangoes: 8 });
+    const open = P.openPier(fresh);
+    check('a first run on the Esplanade can pay for the pier with what it found', open.ok && open.progress.pier && open.progress.mangoes === 0, JSON.stringify(open.why));
+  }
   check('the pier is shut to start with', !p.pier);
   check('not enough mangoes: the pier stays shut', P.openPier(p).why === 'mangoes');
   p = P.bankFinds(p, { mangoes: P.PIER_PRICE });

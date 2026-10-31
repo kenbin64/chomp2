@@ -10,6 +10,8 @@
 
 import { guideArrow, nearest } from '../guide-arrow.js';
 import { installVR, inVR } from '../vr.js';
+import { createEyes } from '../eyes.js';
+import { carried } from '../carried.js';
 import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { foundTalisman } from '../revisit.js';
 import { fitText } from '../signtext.js';
@@ -19,8 +21,8 @@ import * as Trip from '../trip-rules.js';
 import { chestModel } from '../chest.js';
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
-import { Food, randomKind, kindFor, kennysToast, useJarModel, useToastModel } from '../food.js';
-import { Input, steering, easeBehind } from '../input.js';
+import { Food, kindFor, kennysToast, useJarModel, useToastModel } from '../food.js';
+import { Input, steering, easeBehind, lazyBehind } from '../input.js';
 import { Bubbles, reaction, pickLine, chatty } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
 import { loadModels, dress, ModelSkin } from '../models.js';
@@ -29,18 +31,18 @@ import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
-import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
+import { areaIntro, courseShots } from '../area-intro.js';
 import { installMap, recordVisit, markRetry } from '../mapmodal.js';
-import { installShop, openShop } from '../shopmodal.js';
+import { installShop } from '../shopmodal.js';
 import { showLeaderboard } from '../leaderboard.js';
 import { dressOutfit } from '../outfit.js';
 import { loadRealism } from '../realism.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, LIVES, REVIVE_ENERGY, inRedZone, aimOffset } from '../rules.js';
 import { FULL } from '../quests.js';
 import { HumanoidPoser } from '../rig.js';
-import { jellyModel, dressedJelly } from '../hazards.js';
-import { completeArea, readProgress, starsFor, POSTCARDS, wearing, WARDROBE, outfitModel, openPier, PROGRESS_CHANGED, saveProgress } from '../progress.js';
-import { installBook, bookEvent, ability, HiddenFinds, openBook } from '../book.js';
+import { dressedJelly } from '../hazards.js';
+import { completeArea, readProgress, starsFor, POSTCARDS, wearing, outfitModel, openPier, PROGRESS_CHANGED, saveProgress } from '../progress.js';
+import { installBook, bookEvent, HiddenFinds, openBook } from '../book.js';
 import { startTrading, tradeStep } from '../trade.js';
 import { startQuest, questStep } from '../sidequest.js';
 import { DayNight } from '../daynight.js';
@@ -53,6 +55,7 @@ import { airStep, AIR } from './reef-rules.js';
 import { clamWithPearl } from './reef-scene.js';
 import { kennysJar } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
+import { toast as toast_ } from '../toast.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -248,11 +251,11 @@ if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progr
 const entry = Trip.canEnter(progress.trip, 'esplanade'), testingAll = params.has('all');
 let attempt = Trip.startAttempt(progress.trip, 'esplanade', { force: true }); startRun('esplanade', { level: attempt.level });
 const arrow = guideArrow({ show: attempt.visit === 1 });
-const PARK_MANGOES = 8;                              // what Croc Park holds (the pier price is a share of it)
+const PIER_MANGOES = 8;                              // the pier's full price (each go's price is a share of it)
 // This go's level: the mango target for the chest (a share of this course's
-// mangoes, rounded up) and the pier price (the same share of Croc Park's eight).
+// mangoes, rounded up) and the pier price (the same share of its full price).
 const mangoTarget = Trip.target(mangoes.length, attempt.level);
-const pierPrice = Trip.target(PARK_MANGOES, attempt.level);
+const pierPrice = Trip.target(PIER_MANGOES, attempt.level);
 addEventListener(PROGRESS_CHANGED, () => { progress = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })()); });   // the book, trades and shops write it too
 const game = {
   running: false, paused: false, done: false, countdown: 0, time: 0,
@@ -291,12 +294,6 @@ startQuest({ land: 'esplanade', scene, clusters,
   },
   feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c ? c.people[0].g : wally.root, text, c ? 2.4 : 3.4), toast: text => toast_(text, 'info') });
 
-function toast_(text, kind = 'good') {
-  const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
-  $('toasts').appendChild(el); setTimeout(() => el.remove(), 1800);
-  while ($('toasts').children.length > 3) $('toasts').firstChild.remove();
-}
-
 // ---- Pearls on the boardwalk ------------------------------------------------------
 // A group fed out to the last bite leaves a pearl behind (not a group he scared
 // off). Pearls start on this level and run through the game: the more he has,
@@ -312,7 +309,7 @@ function dropPearl(cluster) {
 
 // ---- The pier (Ken, 2026-10-18) ----------------------------------------------------
 // A timber jetty out over the sea from the middle of the timber section. Its
-// gate opens once, for pierPrice Golden Mangoes banked from Croc Park (the
+// gate opens once, for pierPrice Golden Mangoes (the
 // second land needs what the first gave); pearls lie out along it.
 const pier = (() => {
   const g = new THREE.Group(); scene.add(g);
@@ -369,14 +366,15 @@ function pierGate(dt) {
   const atGate = wally.pos.x < -PATH.half + 1.4 && Math.abs(wally.pos.z - SPUR.z) < 2.2 && wally.pos.y > G - 0.4;
   if (!atGate || progress.pier || game.pierOpen || pierHint > 0) return;
   pierHint = 4;
-  // Opened on this attempt, like a trade: paid with Croc Park's mangoes only if
-  // the Esplanade is completed; a failed attempt closes it again, mangoes kept.
-  if ((progress.mangoes || 0) >= pierPrice) {
+  // Opened on this attempt, like a trade: paid with the mangoes he has, those banked and those found on this run
+  // (Ken, 2026-10-30: Croc Park has none now), only if the Esplanade is completed; a failed attempt closes it again.
+  const has = (progress.mangoes || 0) + game.mangoes;
+  if (has >= pierPrice) {
     game.pierOpen = true;
-    toast_(`The pier is open! (${pierPrice} Golden Mangoes from Croc Park)`, 'good'); sound.play.powerup(); bookEvent('pier');
+    toast_(`The pier is open! (${pierPrice} Golden Mangoes)`, 'good'); sound.play.powerup(); bookEvent('pier');
     bubbles.say(wally.root, 'Ripper! Pearls out on the pier!', 3.4);
     pier.lay();
-  } else toast_(`The pier opens for ${pierPrice} Golden Mangoes from Croc Park (you have ${progress.mangoes || 0})`, 'info');
+  } else toast_(`The pier opens for ${pierPrice} Golden Mangoes (you have ${has})`, 'info');
 }
 
 // Crawling out of the sea onto the boardwalk: from where he was to the deck's edge.
@@ -455,7 +453,9 @@ poolOpen = () => game.ready && game.hasBigMango;
 
 // This go's meter speed (trip-rules.js).
 game.tripDrain = Trip.drainFactor(progress.trip, 'esplanade', attempt.level);
+if (Trip.have(progress.trip, 'golden-mango')) carried.add('golden-mango', { id: 'giant-mango' });   // for the Croc King (the park, main.js)
 game.hasBigMango = Trip.have(progress.trip, 'big-golden-mango');     // on a return visit he has it already
+if (game.hasBigMango) carried.add('mango', { id: 'big-mango', label: 'Big Golden Mango' });
 
 // The chest by the Lagoon (Ken, 2026-10-18): it holds the Big Golden Mango, the
 // Esplanade's main item, and opens when Wally has the target of Golden Mangoes.
@@ -472,7 +472,7 @@ function bigMangoChest(dt) {
     if (game.mangoes >= mangoTarget) {
       // Until the Esplanade's own key and chest are built (Ken, 2026-10-20: key, then the chest with the
       // talisman), this chest holds the sun talisman as well as the Big Golden Mango (a trade item).
-      attempt = Trip.gain(Trip.gain(attempt, 'big-golden-mango'), 'talisman-sun'); game.hasBigMango = true; addPoints('talisman');    // kept when the Esplanade is completed
+      attempt = Trip.gain(Trip.gain(attempt, 'big-golden-mango'), 'talisman-sun'); game.hasBigMango = true; carried.add('mango', { id: 'big-mango', label: 'Big Golden Mango' }); addPoints('talisman');    // kept when the Esplanade is completed
       setTimeout(() => foundTalisman('talisman-sun', toast_), 1600);          // new: the sceptre card; already sealed: a random useful prize (revisit.js)
       game.points += 150; sound.play.powerup(); fx.burst(c.group.position, [0xffb51f, 0xffe066, 0xffffff], 34);
       toast_('The Big Golden Mango! The reef will need it', 'good'); bubbles.say(wally.root, 'Crikey, look at the size of it!', 3.4);
@@ -640,7 +640,7 @@ function step(dt, t) {
     const d = it.landed && !wally.airborne ? Math.hypot(p.x - mouth.x, p.z - mouth.z) + (mouth.y - p.y > 3.2 ? 99 : 0) : p.distanceTo(mouth);
     if (d < 1.4 * (game.boost > 0 ? 1.4 : 1)) {
       clusters.cheer(it.cluster);
-      fx.burst(p, CRUMBS[it.kind] || [0xffffff]); food.take(it, 'eaten'); wally.chomp(); sound.play.chomp(); fx.shake(0.1, 0.1);
+      fx.burst(p, CRUMBS[it.kind] || [0xffffff]); food.take(it, 'eaten'); wally.chomp(); eyes.chomp(); sound.play.chomp(); fx.shake(0.1, 0.1);
       game.streak++; game.caught++;
       if (daynight.night > 0.6) bookEvent('nightCatch');
       const how = it.landed ? 'ground' : (wally.airborne ? 'leap' : 'air');
@@ -726,6 +726,7 @@ function stumble(o) {
 
 // ---- Camera: on a leash behind him, as in the park ----------------------------------
 const camTarget = new THREE.Vector3();
+const eyes = createEyes({ camera, wally, cam, canvas });   // in the water, his own view
 function followCamera(dt) {
   camTarget.lerp(wally.pos.clone().add(new THREE.Vector3(0, 1.6, 0)), Math.min(1, dt * 6));
   cam.manual = Math.max(0, cam.manual - dt);
@@ -743,7 +744,7 @@ function followCamera(dt) {
       const dx = camera.position.x - camTarget.x, dz = camera.position.z - camTarget.z;
       // Steering (the default): the camera swings round behind him as he turns.
       if (steering()) cam.yaw = easeBehind(cam.yaw, wally.facing, dt);
-      else if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz);
+      else cam.yaw = lazyBehind(cam.yaw, wally, dt);
     }
   }
   const cp = Math.cos(cam.pitch);
@@ -754,6 +755,7 @@ function followCamera(dt) {
     camera.position.y = Math.min(-0.9, Math.max(SEA_FLOOR + 0.8, camera.position.y));   // never up through the surface
   } else if (camera.position.y < 0.8) camera.position.y = 0.8;
   camera.lookAt(camTarget);
+  eyes.step(dt, game.running && !inVR() && wally.surface === 'water' && game.faint <= 0, seaDive.depth < -1.0);
   const jolt = fx.shakeOffset(dt); if (jolt) camera.position.add(jolt);
   world.ring.position.x = camera.position.x; world.ring.position.z = camera.position.z;   // the horizon stays on the horizon
   if (world.ranges) world.ranges.userData.follow(camera);   // parallax: the near hills slide past the far ones
@@ -807,8 +809,8 @@ function finish(won, why = '') {
     let a = Trip.gain(Trip.gain(attempt, 'golden-mango', game.mangoes), 'pearl', game.pearls);
     const done = Trip.completeAttempt(progress.trip, a, { objectiveMet: true });
     if (done.ok) { progress.trip = done.trip; bankRun({ stars }); }
-    if (game.pierOpen && !progress.pier) progress = openPier(progress, pierPrice).progress;   // the pier is paid for now
     progress = completeArea(progress, 'esplanade', { score: s.total, stars, mangoes: game.mangoes, pearls: game.pearls });
+    if (game.pierOpen && !progress.pier) progress = openPier(progress, pierPrice).progress;   // paid for now, this run's mangoes banked first
   } else { progress.trip = Trip.failAttempt(progress.trip, attempt).trip; failRun(); }   // nothing from this run is kept, points included (points.js)   // nothing from this attempt is kept (trip-rules.js)
   try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
   $('result-title').textContent = won ? 'Made it to the Lagoon!' : why === 'hungry' ? 'Still peckish!' : why === 'air' ? 'Out of air!' : 'Out of puff';

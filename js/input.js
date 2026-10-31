@@ -16,8 +16,9 @@
 //        The wheel zooms. Space jumps (and swims up), Shift dives under (and runs on
 //        all fours on land). Q / E turn the camera, wheel zooms, C swings it behind
 //        him, P pauses. (Camera-relative moving is a setting, settings.js.)
-// Phone: left thumb anywhere on the left half is a joystick, drag on the right
-//        half turns the camera, buttons for Jump and Fours.
+// Phone: a finger down anywhere is a thumb-stick there (Ken, 2026-10-30: very smooth, simply by touch): drag up
+//        to go, the further the faster, to the side to turn, the further the sharper, up and across to curve, down
+//        for an about-face, a quick tap to jump. A second finger turns the camera. A button for Duck.
 // Game controller (the standard layout: Xbox, PlayStation, Switch Pro): left stick
 //        or d-pad steers him the same way (up forward, sides turn, down turns round),
 //        right stick turns the camera, A jumps (and swims up), B or a
@@ -31,6 +32,11 @@ import { installSettingsUi } from './settings-ui.js';
 
 // The orb: how fast a full push to the side turns him (radians a second).
 const ORB_TURN = 1.7, ORB_STEER = 0.5;    // ORB_STEER: a full push to the side, as a share of the keys' turning speed (gentler)
+// A thumb, a stick or a VR controller: how far it reads as a push, and how softly he answers.
+const THUMB_R = 62;                       // pixels of drag for a full push
+const THUMB_TURN = 0.75;                  // a full push to the side, as a share of the keys' turning speed
+const SMOOTH = 9;                         // how quickly he follows a push: a tenth of a second or so
+const soft = v => Math.sign(v) * Math.pow(Math.abs(v), 1.5);   // small pushes are fine, a big one is full
 // Which way Wally faces on screen, as an angle from straight up (clockwise), set by wally.js every frame.
 // The orb's arrows turn to it (Ken, 2026-10-21: the orb always at Wally's orientation), and a push is read
 // against them: toward the up arrow is forward for him, whichever way the camera looks.
@@ -85,7 +91,7 @@ export class Input {
     // or free (click the game to take it).
     const chip = document.createElement('div'); chip.className = 'mouse-chip'; document.body.append(chip);
     this.showChip = () => {
-      chip.textContent = !locked() ? '' : this.mouseMode === 'wally' ? '🖱 Mouse turns Wally · hold left: go · click: jump · hold right: look around · Esc: cursor' : '🖱 Looking around · let go of the right button to steer';
+      chip.textContent = !locked() ? '' : settings.controls !== 'classic' ? '🖱 Mouse turns the camera · hold left: go · click: jump · Esc: cursor' : this.mouseMode === 'wally' ? '🖱 Mouse turns Wally · hold left: go · click: jump · hold right: look around · Esc: cursor' : '🖱 Looking around · let go of the right button to steer';
       chip.hidden = !locked();
     };
     this.showChip();
@@ -120,7 +126,8 @@ export class Input {
     addEventListener('mousemove', e => {
       if (locked()) {
         if (this.leftDown) this.leftDown.moved += Math.abs(e.movementX) + Math.abs(e.movementY);
-        if (this.mouseMode === 'wally') this.aim -= e.movementX * 0.0022;   // a gradual turn (Ken: too fast before)
+        // Camera-relative play (the default): the mouse orbits the camera, as in most third-person games.
+        if (this.mouseMode === 'wally' && settings.controls === 'classic') this.aimLeft = (this.aimLeft || 0) - e.movementX * 0.0022;   // a gradual turn (Ken: too fast before), let out smoothly in read()
         else this.turn -= e.movementX * 0.004;
         this.tilt += e.movementY * 0.0025; return;
       }
@@ -131,7 +138,7 @@ export class Input {
     });
     canvas.addEventListener('wheel', e => { this.zoom += Math.sign(e.deltaY) * 1.2; e.preventDefault(); }, { passive: false });
 
-    if (touchUi) { this.bindTouch(canvas, touchUi); this.bindPad(touchUi); }
+    if (touchUi) this.bindTouch(canvas, touchUi);
     else this.bindMouseOrb();
     installSettingsUi();
   }
@@ -151,33 +158,30 @@ export class Input {
     if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
   }
 
-  // Touch (Ken, 2026-10-21): one green orb, bottom right where the thumb rests, is the controller. Put a
-  // finger on it and a gold ring lights round it: drag up to go the way he faces, left or right to turn,
-  // back to the middle to stop; a quick tap jumps. The finger never covers Wally. Any other drag on the
-  // screen turns the camera.
+  // Touch (Ken, 2026-10-30: very smooth, simply by touch). A finger down anywhere on the game is a thumb-stick right
+  // there, with a ring to show it: no button to find, and the finger is never in the way of Wally. The middle of the
+  // ring follows a thumb dragged past its edge, so coming back is instant. A quick tap jumps; down is an about-face.
   bindTouch(canvas, ui) {
-    const orb = ui.stick, R = 55;
-    orb.classList.add('orb'); if (!orb.querySelector('.orb-arrows')) orb.insertAdjacentHTML('afterbegin', ORB_ARROWS);
-    this.orbArrows = orb.querySelector('.orb-arrows');
-    const centre = () => { const r = orb.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
-    const steer = t => {
-      const c = centre(), w = toWally(t.clientX - c.x, t.clientY - c.y), d = Math.hypot(w.x, w.y), k = d > R ? R / d : 1;
-      if (d > 10) this.stick.moved = true;
-      const still = d < R * 0.22;                                   // the middle: stop
-      this.stick.dx = still ? 0 : w.x * k / R; this.stick.dy = still ? 0 : w.y * k / R;
+    const ring = ui.stick, knob = ui.knob;
+    ring.classList.add('thumb');
+    const show = s => { ring.classList.add('on'); ring.style.left = `${s.x0}px`; ring.style.top = `${s.y0}px`; knob.style.transform = `translate(${s.dx * THUMB_R}px, ${s.dy * THUMB_R}px)`; };
+    const read = (s, t) => {
+      let x = t.clientX - s.x0, y = t.clientY - s.y0, d = Math.hypot(x, y);
+      if (d > 12) s.moved = true;
+      if (d > THUMB_R) { s.x0 += x * (1 - THUMB_R / d); s.y0 += y * (1 - THUMB_R / d); x = t.clientX - s.x0; y = t.clientY - s.y0; d = THUMB_R; }
+      const live = d < THUMB_R * 0.12 ? 0 : (d - THUMB_R * 0.12) / (THUMB_R * 0.88) / d;   // a small dead middle, so a resting thumb is still
+      s.dx = x * live; s.dy = y * live;
     };
-    orb.addEventListener('touchstart', e => {
-      const t = e.changedTouches[0];
-      if (!this.stick) { this.stick = { id: t.identifier, dx: 0, dy: 0, t0: performance.now(), moved: false }; orb.classList.add('active'); steer(t); }
-      e.preventDefault(); e.stopPropagation();
-    }, { passive: false });
     canvas.addEventListener('touchstart', e => {
-      for (const t of e.changedTouches) if (!this.look) this.look = { id: t.identifier, x: t.clientX, y: t.clientY };
+      for (const t of e.changedTouches) {
+        if (!this.stick) { this.stick = { id: t.identifier, x0: t.clientX, y0: t.clientY, dx: 0, dy: 0, t0: performance.now(), moved: false }; show(this.stick); }
+        else if (!this.look) this.look = { id: t.identifier, x: t.clientX, y: t.clientY };
+      }
       e.preventDefault();
     }, { passive: false });
     addEventListener('touchmove', e => {
       for (const t of e.changedTouches) {
-        if (this.stick && t.identifier === this.stick.id) steer(t);
+        if (this.stick && t.identifier === this.stick.id) { read(this.stick, t); show(this.stick); }
         else if (this.look && t.identifier === this.look.id) {
           this.turn -= (t.clientX - this.look.x) * 0.008; this.tilt += (t.clientY - this.look.y) * 0.006;
           this.look.x = t.clientX; this.look.y = t.clientY;
@@ -188,8 +192,8 @@ export class Input {
     const end = e => {
       for (const t of e.changedTouches) {
         if (this.stick && t.identifier === this.stick.id) {
-          if (!this.stick.moved && performance.now() - this.stick.t0 < 280) this.jumpQueued = true;   // a quick tap: jump
-          this.stick = null; orb.classList.remove('active');
+          if (!this.stick.moved && performance.now() - this.stick.t0 < 240) this.jumpQueued = true;   // a quick tap: jump
+          this.stick = null; ring.classList.remove('on');
         }
         if (this.look && t.identifier === this.look.id) this.look = null;
       }
@@ -233,51 +237,6 @@ export class Input {
     orb.addEventListener('click', e => e.stopPropagation());
   }
 
-  // The diamond pad on phones and tablets (Ken, 2026-10-22): five round buttons. Top: go forward. Left and
-  // right: turn. Middle: jump. Bottom: turn right round, quickly (Ken, 2026-10-23: diving and ducking moved
-  // to buttons beside the backpack, style.css). Hold to keep going; slide the thumb from one button to the
-  // next without lifting it (forward and a turn together: slide between them, or use two fingers).
-  // The orb stays on computers.
-  bindPad(ui) {
-    if (document.getElementById('dpad')) return;
-    const svg = d => `<svg viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">${d}</g></svg>`;
-    const pad = document.createElement('div'); pad.id = 'dpad'; pad.setAttribute('aria-label', 'Controls');
-    pad.innerHTML = [
-      ['up', 'Forward', svg('<path d="M20 31V10"/><path d="M11 18l9-9 9 9"/>')],
-      ['left', 'Turn left', svg('<path d="M28 30a12 12 0 0 1-14-18"/><path d="M8 15l6-4 3 7"/>')],
-      ['jump', 'Jump', svg('<path d="M8 30h24"/><path d="M12 24c2-12 14-12 16 0"/><path d="M24 14l4-2 1 5"/>')],
-      ['right', 'Turn right', svg('<path d="M12 30a12 12 0 0 0 14-18"/><path d="M32 15l-6-4-3 7"/>')],
-      ['down', 'Turn around', svg('<path d="M12 32V17a8 8 0 0 1 16 0v6"/><path d="M22 18l6 6 6-6"/>')],
-    ].map(([k, label, icon]) => `<button type="button" class="pad-${k}" data-k="${k}" aria-label="${label}">${icon}</button>`).join('');
-    document.getElementById('touch').append(pad);
-    if (ui.stick) ui.stick.classList.add('replaced');                  // the orb gives way to the pad on touch
-    if (ui.jump) ui.jump.classList.add('replaced');
-    this.padKeys = new Set();
-    const held = new Map();                                            // touch id -> the button under it
-    // Where the thumb is on the pad: the middle jumps; around it, eight directions, so the gap between
-    // forward and a turn does both (Ken: going forward while turning must be easy, with one thumb).
-    const under = t => {
-      const r = pad.getBoundingClientRect(), dx = t.clientX - (r.left + r.width / 2), dy = t.clientY - (r.top + r.height / 2);
-      if (Math.hypot(dx, dy) < r.width * 0.17) return ['jump'];
-      const a = Math.round(Math.atan2(dx, -dy) / (Math.PI / 4));          // 0 up, 1 up-right, 2 right ... -1 up-left
-      return ({ 0: ['up'], 1: ['up', 'right'], 2: ['right'], 3: ['right'], 4: ['down'], '-4': ['down'], '-3': ['left'], '-2': ['left'], '-1': ['up', 'left'] })[a] || [];
-    };
-    const sync = () => {
-      this.padKeys = new Set([...held.values()].flat());
-      for (const b of pad.children) b.classList.toggle('on', this.padKeys.has(b.dataset.k));
-    };
-    pad.addEventListener('touchstart', e => {
-      for (const t of e.changedTouches) { const k = under(t); held.set(t.identifier, k); if (k.includes('jump')) this.jumpQueued = true; if (k.includes('down')) this.turnQueued = true; }
-      sync(); e.preventDefault(); e.stopPropagation();
-    }, { passive: false });
-    pad.addEventListener('touchmove', e => {
-      for (const t of e.changedTouches) if (held.has(t.identifier)) { const k = under(t), was = held.get(t.identifier); if (k.includes('jump') && !was.includes('jump')) this.jumpQueued = true; if (k.includes('down') && !was.includes('down')) this.turnQueued = true; held.set(t.identifier, k); }
-      sync(); e.preventDefault(); e.stopPropagation();
-    }, { passive: false });
-    const end = e => { for (const t of e.changedTouches) held.delete(t.identifier); sync(); };
-    pad.addEventListener('touchend', end); pad.addEventListener('touchcancel', end);
-  }
-
   // A game controller, if one is plugged in: this frame's stick, d-pad and
   // buttons. A, Y and Start count once per press, like the keys.
   readPad() {
@@ -312,24 +271,33 @@ export class Input {
     if (f && r || this.kf && this.kr) { f = this.kf; r = this.kr; }
     // (Tried 2026-10-26 and left out: turning on its own walking him slowly round, like the orb. Measured, it
     // crept him into the tourists' nervous ring while he turned to aim; they bolted and threw a third less food.)
+    // A stick, a thumb, the orb or a VR controller: one way of reading them all, the push softened, and followed
+    // smoothly both ways, so he eases into a move and out of it (Ken, 2026-10-30: smooth, especially on phones).
     const pad = this.readPad(), padMoving = !!(pad && (pad.forward || pad.right));
-    if (padMoving) { f = pad.forward; r = pad.right; }
-    // The orb (Ken, 2026-10-21): up goes forward, the sides TURN him at a steady rate (not a sideways
-    // step, which with the camera following made him spin). A gentle curve: small moves are slow.
+    const steerAll = settings.controls === 'classic';
+    let wantF = 0, wantR = 0, pushed = false;
+    if (padMoving) { wantF = soft(pad.forward); wantR = soft(pad.right) * (steerAll ? THUMB_TURN : 1); pushed = true; }
     if (this.stick) {
-      const sx = this.stick.dx, sy = this.stick.dy, ease = v => Math.sign(v) * Math.pow(Math.abs(v), 1.6);
-      f = sy < 0 ? ease(-sy) : -ease(sy) * 0.5;                       // backing up is slower
-      if (Math.abs(sx) > 0.2 && Math.abs(f) < 0.25) f = 0.25 * Math.abs(sx);   // pushed to the side alone: a slow walk round, so he turns too
-      // Classic controls: the sides turn Wally himself and the camera follows behind (turning the camera
-      // instead does nothing in classic, where forward is the way he faces). Otherwise the camera turns.
-      if (settings.controls === 'classic') r = ease(sx) * ORB_STEER; else { r = 0; this.turn -= ease(sx) * ORB_TURN * dt; }
+      const sx = this.stick.dx, sy = this.stick.dy, mine = this.stick.id === 'mouse' ? ORB_STEER : THUMB_TURN;
+      wantF = sy < 0 ? soft(-sy) : (sy > 0.6 ? -1 : 0);          // up goes; well down is the about-face, or backing up
+      if (steerAll) wantR = soft(sx) * mine; else { wantR = 0; this.turn -= soft(sx) * ORB_TURN * dt; }
+      pushed = true;
     }
-    if (this.padKeys && this.padKeys.size) {
-      const k = this.padKeys;
-      if (k.has('up')) f = 1;
-      const tr = (k.has('left') ? 1 : 0) - (k.has('right') ? 1 : 0);
-      if (tr) { if (settings.controls === 'classic') r = -tr * ORB_STEER; else this.turn += tr * ORB_TURN * dt; if (!k.has('up')) f = Math.max(f, 0.25); }   // a turn alone walks him slowly round
+    const k2 = Math.min(1, dt * SMOOTH);
+    this.softF = (this.softF || 0) + ((wantF < 0 && steerAll ? 0 : wantF) - (this.softF || 0)) * k2;
+    this.softR = (this.softR || 0) + (wantR - (this.softR || 0)) * k2;
+    if (Math.abs(this.softF) < 0.005) this.softF = 0;
+    if (Math.abs(this.softR) < 0.005) this.softR = 0;
+    if (!f && !r && (pushed || this.softF || this.softR)) { f = this.softF; r = this.softR; if (wantF < 0) f = wantF; }
+    // Steering: down, from anything, is one about-face per push; up goes the way he faces, never back.
+    if (steerAll) {
+      const back = f < -0.5;
+      if (back && !this.backWas) this.turnQueued = true;
+      this.backWas = back;
+      f = Math.max(0, f);
     }
+    // The mouse's turn, let out over a few frames.
+    if (this.aimLeft) { const part = this.aimLeft * Math.min(1, dt * 18); this.aim += part; this.aimLeft -= part; if (Math.abs(this.aimLeft) < 1e-4) { this.aim += this.aimLeft; this.aimLeft = 0; } }
     if (this.orbArrows) {
       const s = this.stick || { dx: 0, dy: 0 };
       // The compass lights the way he is going, from the orb or from the mouse (hold left: go; moving it: turn).
@@ -339,17 +307,16 @@ export class Input {
     }
     if (pad) { this.turn += pad.turn; this.tilt += pad.tilt; }
     const turnKeys = (k.has('q') ? 1 : 0) - (k.has('e') ? 1 : 0);
-    if (this.turnQueued && settings.controls !== 'classic') this.turn += Math.PI;   // camera-relative: the camera swings round, so up is the other way
     const out = {
       forward: f, right: r,
       // Classic steering (a setting) is for the keyboard only: up runs the way he
       // faces, down turns him round, left and right turn him. Otherwise, and
       // always for the phone stick and a controller, moving is relative to the camera.
-      steer: settings.controls === 'classic' && !this.stick,
+      steer: settings.controls === 'classic',
       aim: this.aim,                   // the mouse's turn of Wally this frame (radians), with the cursor taken
       jump: this.jumpQueued,
       fours: k.has('shift') || this.foursToggle || !!(pad && pad.fours),
-      turnAround: !!this.turnQueued,   // the pad's bottom button: Wally spins right round (wally.js)
+      turnAround: !!this.turnQueued,   // down, once: Wally's about-face (wally.js)
       ctrl: k.has('control'),          // with Shift: come up from a dive (the reef and the sea)
       turn: this.turn, turnKeys, tilt: this.tilt, zoom: this.zoom, recenter: this.recenterQueued,
     };
@@ -362,6 +329,16 @@ export class Input {
 // The camera with steering (the default): it swings round behind Wally as he turns,
 // smoothly, so up is always the way he is going. Each level's camera calls this.
 export function steering() { return settings.controls === 'classic'; }
+// The camera in camera-relative play (the default, Ken 2026-10-29). It holds its angle, so running
+// sideways or toward it never swings it round: that chase is what made him run in circles before.
+// Only while he runs roughly away from it does it drift in behind him, slowly. The mouse or the
+// right stick turns it at any time. The Manual camera setting never turns it.
+export function lazyBehind(yaw, wally, dt) {
+  const v = wally.vel;
+  if (settings.camera === 'manual' || !v || Math.hypot(v.x, v.z) < 0.5) return yaw;
+  const want = wally.facing + Math.PI, d = Math.atan2(Math.sin(want - yaw), Math.cos(want - yaw));
+  return Math.abs(d) < 0.8 ? yaw + d * Math.min(1, dt * 0.6) : yaw;
+}
 export function easeBehind(yaw, facing, dt, rate = 3) {
   const want = facing + Math.PI, d = Math.atan2(Math.sin(want - yaw), Math.cos(want - yaw));
   return yaw + d * Math.min(1, dt * rate);

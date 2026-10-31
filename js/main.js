@@ -7,12 +7,12 @@ import { isApp } from './menu.js';
 import { installVR, inVR } from './vr.js';
 import { guideArrow, nearest } from './guide-arrow.js';
 import { startRun, addPoints, bankRun, failRun } from './points.js';
-import { installGear, snorkelling, drainFactor } from './gear.js';
+import { installGear, drainFactor } from './gear.js';
 import { showTip } from './tips.js';
 import * as THREE from 'three';
 import { buildWorld, GATE } from './world.js';
 import { Wally } from './wally.js';
-import { Food, randomKind, kindFor, useJarModel } from './food.js';
+import { Food, kindFor, useJarModel } from './food.js';
 import { Tourists, peopleModels, Cast } from './tourists.js';
 import { Kenny } from './kenny.js';
 import { Crocs } from './crocs.js';
@@ -23,35 +23,47 @@ import { PARK_TREASURE, swimDepth } from './treasure-rules.js';
 import * as Trip from './trip-rules.js';
 import { createOpening, openingDue, resetOpening } from './opening.js';
 import { addSwimSway, tickSwim } from './swim.js';
-import { setGround, parkGround, addSolid } from './ground.js';
+import { setGround, parkGround, addSolid, setParkMode, getParkMode } from './ground.js';
 import { DayNight } from './daynight.js';
 import { StreetLamps } from './lamps.js';
-import { Pickups, mangoMaker } from './pickups.js';
-import { installBook, bookEvent, ability, HiddenFinds, openBook } from './book.js';
-import { startTrading, tradeStep } from './trade.js';
+import { installBook, bookEvent, HiddenFinds, openBook } from './book.js';
 import { startQuest, questStep } from './sidequest.js';
-import { Input, steering, easeBehind } from './input.js';
+import { Input, steering, lazyBehind } from './input.js';
 import { Bubbles, reaction, pickLine, chatty } from './bubbles.js';
 import { Effects, CRUMBS } from './fx.js';
-import { loadModels } from './models.js';
+import { loadModels, MODEL_FILES, PARK_MODEL_FILES } from './models.js';
 import { createPost } from './post.js';
+import { createEyes } from './eyes.js';
+import { createEscapeScene } from './escape-scene.js';
+import { MANGO_NEED, MANGO_ENERGY, GIVE_REACH, mangoSpots, giantChestSpot, escapeStage, nextGateNeed } from './escape-rules.js';
+import { chestModel } from './chest.js';
+import { carried } from './carried.js';
+import { Pickups, mangoMaker } from './pickups.js';
+import { BANK_Y } from './rules.js';
+import { GATE_POST } from './chase-rules.js';
 import { loadRealism } from './realism.js';
 import { usePalmCrown } from './palms.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from './quality.js';
-import { createQuest, parkQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
+import { createQuest, escapeQuest, nextArea, markVisited, AREAS, PARK_GROUPS, FULL } from './quests.js';
 import { parkEase, thievesAllowed, ARRIVAL_LINES } from './park-ease.js';
-import { readProgress, completeArea, isOpen, starsFor, POSTCARDS, ACTIVITIES, totalStars, activityOpen, entryNeeds, wearing, WARDROBE, outfitModel, findTreasure, bankFinds, PROGRESS_CHANGED, saveProgress } from './progress.js';
+import { readProgress, completeArea, starsFor, POSTCARDS, wearing, outfitModel, PROGRESS_CHANGED, saveProgress } from './progress.js';
 import { dressOutfit } from './outfit.js';
 import { showLeaderboard } from './leaderboard.js';
 import { installMap, openMap, recordVisit, markRetry, mapActive, pageFor } from './mapmodal.js';
-import { installShop, openShop } from './shopmodal.js';
+import { installShop } from './shopmodal.js';
 import * as sound from './sound.js';
 import { aimTurn, aimSlow } from './aim-rules.js';
 import { installCameraButton, toggleCamera } from './audio-ui.js';
 import { settings } from './settings.js';
 import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocity, difficulty,
          clampToPark, terrainHeight, onDeck, LIVES, REVIVE_ENERGY, inRedZone,
-         positionAt, foodSurface, lagoonDistance, PARK_EDGE, deckHeight, isWater, LAGOON, CLUSTER, BOARDWALK, ROCKS, aimOffset } from './rules.js';
+         positionAt, foodSurface, lagoonDistance, PARK_EDGE, deckHeight, isWater, LAGOON, CLUSTER, BOARDWALK, ROCKS, aimOffset, PATH, fencePoint } from './rules.js';
+import { kioskSpots } from './park-path.js';
+import { fenceOffset } from './rules.js';
+import { Catcher } from './chase.js';
+import { focusOn } from './see-through.js';
+import { clearOfSections } from './park-sections.js';
+import { EXIT, EXIT_SPOT, OUT_DRAIN, OUT_MARGIN } from './chase-rules.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -85,7 +97,7 @@ function resize() {
 addEventListener('resize', resize); resize();
 
 // Ken's models and backdrop pictures, where they exist; stand-ins otherwise.
-const models = await loadModels(undefined, { light: touch || quality.name === 'low' });
+const models = await loadModels([...MODEL_FILES, ...PARK_MODEL_FILES], { light: touch || quality.name === 'low' });
 useJarModel(models.get('jar'));                    // Ken's jar for Kenny's rescue, when present
 const backdrops = await loadBackdrops();
 async function loadBackdrops() {
@@ -131,6 +143,8 @@ const food = new Food(scene);
 const tourists = new Tourists(scene, quality.tourists);
 const kenny = new Kenny(scene);
 const crocs = new Crocs(scene, 3, { guard: true });           // and one guarding the lagoon's treasure chest
+// The croc catcher (chase.js, Ken 2026-10-29): he walks the path, and chases Wally once he is out of the gate.
+const catcher = new Catcher(scene, models.get('croc-wrangler'));
 const jellies = new Jellies(scene, quality.jellies, { deep: 2 });   // two drifting up and down round the chest
 const bats = new FlyingFoxes(scene, quality.bats);
 const pelicans = new Pelicans(scene, quality.name === 'low' ? 1 : 2);
@@ -143,10 +157,10 @@ const fx = new Effects(scene, food);
 const standHeight = (x, z) => onDeck(x, z) ? deckHeight(x) : Math.max(0, terrainHeight(x, z));
 const clusters = new Clusters(scene, standHeight, bubbles);
 pelicans.hotspots = () => clusters.active.map(c => c.root.position);   // pelicans loiter near people eating
-const CLUSTER_SPOTS = [120, 60, 200, 330, 250, 160, 290].map(deg => {
-  const a = deg * Math.PI / 180;
-  return { x: Math.cos(a) * LAGOON.rx * 1.22, z: Math.sin(a) * LAGOON.rz * 1.22 };
-}).concat([{ x: -14, z: 2 }, { x: 16, z: 2 }]);             // and two on the boardwalk
+// They stand on the visitors' path at the fence (Ken, 2026-10-29: people belong outside the croc fence, not
+// on the bank). From the fence Wally is 3.8 to 4.5 m from them: close enough to make them nervous, never
+// close enough to make them bolt on the spot.
+const CLUSTER_SPOTS = [120, 60, 200, 330, 250, 160, 290, 38, 76].map(deg => fencePoint(deg * Math.PI / 180, PATH.stand)).concat([{ x: -14, z: 2 }, { x: 16, z: 2 }]);             // and two on the boardwalk
 function spawnCluster(opts = {}) {
   const taken = clusters.active.map(c => c.root.position);
   const free = CLUSTER_SPOTS.filter(s => taken.every(p => Math.hypot(p.x - s.x, p.z - s.z) > 8)
@@ -186,9 +200,6 @@ clusters.useModels(cast);
 // Friendly traders (Ken): some groups offer a trade instead of running off.
 clusters.enableTraders(0.25);
 // Nothing is saved mid-run (trip-rules.js): leaving partway ends the attempt.
-startTrading({ land: 'park', run: () => ({ mangoes: game.mangoes }), setRun: r => { game.mangoes = r.mangoes; drawQuest(); },
-  feed: () => { game.energy = ENERGY_MAX; }, say: (c, text) => bubbles.say(c.people[0].g, text, 2.4), toast: text => toast(text, 'good') });
-// A sidequest (Ken): one group has lost something; where it ends up in the park.
 startQuest({ land: 'park', scene, clusters,
   spot(where) {
     if (where === 'lagoonBottom') { const a = Math.random() * Math.PI * 2, r = 5 + Math.random() * 7, x = Math.cos(a) * r, z = Math.sin(a) * r * 0.6; return { x, y: terrainHeight(x, z) + 0.35, z }; }
@@ -202,28 +213,35 @@ tourists.useModels(cast, clusters.worn());
 clusters.othersUsed = () => tourists.worn();
 clusters.borrow = () => tourists.release();
 food.useModels(models);
-// The chest on the lagoon bottom: a bonus of Golden Mangoes. (The key to the gate
-// comes from feeding every group: Ken's storyboard, 2026-10-20.)
-const treasure = new LagoonTreasure(scene, models.get('mango'));
+// The chest on the lagoon bottom holds the key to the park (Ken, 2026-10-30), which rises out of it when it opens.
+const chestKey = (() => {
+  const k = models.get('park-key');
+  if (!k) return gateKey();
+  const m = k.scene.clone(true), b = new THREE.Box3().setFromObject(m);
+  m.scale.setScalar(0.7 / Math.max(...b.getSize(new THREE.Vector3()).toArray()));
+  return m;
+})();
+const treasure = new LagoonTreasure(scene, null, chestKey);
 // How the game begins (opening.js, Ken's storyboard): as an ordinary croc, the sceptre, the change, the sign, Kenny.
 const opening = createOpening({ scene, models, wally, kenny, clusters, bubbles, fx, world, sound, toast: (t, k) => toast(t, k),
   underWater: () => game.depth < PARK_TREASURE.surfaceY - 0.6 });
-whenLoaded(() => { window.chomp.camera = camera; window.chomp.opening = opening; window.chomp.parkKey = parkKey; window.chomp.machete = machete; window.chomp.GATE = GATE; });
+whenLoaded(() => { window.chomp.camera = camera; window.chomp.opening = opening; window.chomp.machete = machete; window.chomp.GATE = GATE; });
 
 // Day and night (Ken): now and then it gets dark, the moon comes up over the
 // northern sky as it does from Cairns, and the street lamps round the lagoon
 // light the park. Lamps stand on the bank about every 12 m, clear of the
 // boardwalk and the gate.
 const daynight = new DayNight(scene, { sun: world.sun });
+// The lamps light the visitors' path, on its outer edge (Ken, 2026-10-29), clear of the kiosks.
 function parkLampSpots() {
-  const spots = [], d = 1.27, steps = 400;
+  const spots = [], steps = 400, kiosks = kioskSpots();
   let run = 0, px = null, pz = null;
   for (let i = 0; i < steps; i++) {
-    const a = (i / steps) * Math.PI * 2, x = Math.cos(a) * LAGOON.rx * d, z = Math.sin(a) * LAGOON.rz * d;
+    const a = (i / steps) * Math.PI * 2, { x, z } = fencePoint(a, PATH.outer + 0.3);
     if (px !== null) run += Math.hypot(x - px, z - pz);
     px = x; pz = z;
     if (run < 12) continue;
-    if (onDeck(x, z) || Math.abs(z - GATE.z) < 3 && Math.abs(x - GATE.x) < 4 || isWater(x, z)) continue;
+    if (Math.abs(z - BOARDWALK.z) < BOARDWALK.width / 2 + 1 || kiosks.some(k => Math.hypot(k.x - x, k.z - z) < 5) || !clearOfSections(x, z)) continue;
     run = 0;
     spots.push({ x, y: Math.max(0, terrainHeight(x, z)), z, rot: -a });
   }
@@ -237,22 +255,6 @@ function parkLampSpots() {
   }
   return spots;
 }
-// Golden Mangoes about the park (Ken: the first land gives the mangoes the
-// second needs). A new spread every visit: on the bank, on top of the
-// boulders, and up above the boardwalk where he has to jump for them.
-function parkMangoSpots() {
-  const spots = [], rnd = Math.random;
-  const rocks = [...ROCKS].sort(() => rnd() - 0.5).slice(0, 2);
-  for (const r of rocks) spots.push({ x: r.x, y: r.top + 1.3, z: r.z });             // up on a boulder: climb or jump for it
-  for (let i = 0; i < 2; i++) { const x = (rnd() * 2 - 1) * 20; spots.push({ x, y: deckHeight(x) + 3, z: BOARDWALK.z }); }   // out of reach unless he jumps
-  while (spots.length < 8) {
-    const a = rnd() * Math.PI * 2, d = 1.12 + rnd() * 0.18, x = Math.cos(a) * LAGOON.rx * d, z = Math.sin(a) * LAGOON.rz * d;
-    if (onDeck(x, z) || isWater(x, z) || spots.some(s => Math.hypot(s.x - x, s.z - z) < 8)) continue;
-    spots.push({ x, y: Math.max(0, terrainHeight(x, z)) + 0.7, z });
-  }
-  return spots;
-}
-const parkMangoes = new Pickups(scene, parkMangoSpots(), mangoMaker(models.get('mango')));
 // Hidden finds (Ken): tucked by the fence, behind boulders and under the palms;
 // three of these places each visit, unseen till Wally is close.
 const hidden = new HiddenFinds(scene, [
@@ -302,7 +304,7 @@ const game = {
   by: { bat: 0, pelican: 0, toad: 0, jelly: 0, croc: 0 },      // who took the food, for balancing
   // Diving for the lagoon treasure: how deep he is, where he is heading, and the keys.
   depth: PARK_TREASURE.surfaceY, wantDepth: PARK_TREASURE.surfaceY, clear: 0, foursWas: false, ctrlShiftWas: false,
-  diveQueued: false, upQueued: false, hasKey: false, tripDrain: 1, biteCool: 0, treasureHint: 0, diveHint: false, mangoes: 0,
+  diveQueued: false, upQueued: false, hasKey: false, tripDrain: 1, biteCool: 0, treasureHint: 0, diveHint: false,
   kennyCall: 0, kennyTold: false,       // Ken: under half, Wally can go to Kenny for a scoop
 };
 
@@ -315,9 +317,9 @@ setGround({
     return s;
   },
 });
-window.chomp = { game, wally, food, quality: () => quality };   // for testing in the browser console
+window.chomp = { game, wally, food, catcher, scene, renderer, quality: () => quality };   // for testing in the browser console
 function whenLoaded(fn) { if (document.readyState === 'complete') setTimeout(fn); else addEventListener('load', fn); }
-whenLoaded(() => { window.chomp.quest = () => window.__quest; window.chomp.hidden = hidden; window.chomp.parkMangoes = parkMangoes; window.chomp.daynight = daynight; window.chomp.lamps = lamps; window.chomp.tourists = tourists; window.chomp.treasure = treasure; window.chomp.crocs = crocs; window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
+whenLoaded(() => { window.chomp.quest = () => window.__quest; window.chomp.hidden = hidden; window.chomp.daynight = daynight; window.chomp.lamps = lamps; window.chomp.tourists = tourists; window.chomp.treasure = treasure; window.chomp.crocs = crocs; window.chomp.cam = cam; window.chomp.clusters = clusters; window.chomp.kenny = kenny; window.chomp.pelicans = pelicans; window.chomp.jellies = jellies; window.chomp.toads = toads; });
 
 // The camera follows Wally on a leash, the way Ocarina of Time follows Link:
 // run sideways and it swings round behind him, run toward it and it backs off.
@@ -347,27 +349,29 @@ function drawQuest() {
     li.firstChild.textContent = g.text;
     $('goals').appendChild(li);
   }
-  if (parkMangoes) {
-    const li = document.createElement('li');
-    li.className = 'extra' + (parkMangoes.found === parkMangoes.total ? ' done' : '');
-    li.innerHTML = '<span>Golden Mangoes (for the pier)</span><span></span>';
-    li.lastChild.textContent = `${parkMangoes.found}/${parkMangoes.total}`;
-    $('goals').appendChild(li);
-  }
-  if (treasure) {
-    const li = document.createElement('li');
-    li.className = 'extra' + (treasure.opened ? ' done' : '');
-    li.innerHTML = '<span>Treasure (lagoon chest: dive!)</span><span></span>';
-    li.lastChild.textContent = treasure.opened ? 'found' : `${treasure.found}/${treasure.total}`;
-    $('goals').appendChild(li);
-  }
-  if (q.goalsDone() && q.stage === 'goals') {
+  if (q.goalsDone() && q.stage === 'goals' && q.needsFull()) {
     const li = document.createElement('li');
     li.innerHTML = '<span>Now fill the feed-o-meter</span><span></span>';
     $('goals').appendChild(li);
   }
   $('frenzy').hidden = true;
-  if (q.stage === 'gate') $('quest-title').textContent = 'Gate open: run the boardwalk to it';
+  if (q.stage === 'gate') $('quest-title').textContent = game.out ? 'Boss: get away from the croc wrangler. Run for the cane fields!' : 'You have the key: out the gate on the boardwalk';
+  if (escape.on) {
+    const next = nextGateNeed(escape.found), stage = escapeStage(escape.found, escape.giant, escape.given);
+    $('quest-title').textContent = escape.given ? 'The gate is open: to the cane field!' : escape.giant ? 'Find the wrangler: show him the mango' : game.out ? 'Escape! The wrangler is after you' : 'Caught! Back out the gate';
+    $('goals').innerHTML = '';
+    for (const [text, right, done] of [
+      ['Mangoes', `${Math.min(escape.found, MANGO_NEED)}/${MANGO_NEED}`, stage !== 'mangoes'],
+      [next ? `Next gate opens at ${next}` : 'All the gates are open', '', !next],
+      ['Open the chest', escape.giant ? '1/1' : '0/1', escape.giant],
+      ['Show it to the wrangler', escape.given ? '1/1' : '0/1', escape.given],
+      ['Through the final gate to the cane field', '', false],
+    ]) {
+      const li = document.createElement('li'); li.className = done ? 'done' : '';
+      li.innerHTML = '<span></span><span></span>'; li.firstChild.textContent = text; li.lastChild.textContent = right;
+      $('goals').appendChild(li);
+    }
+  }
 }
 
 let lastHud = '';
@@ -427,7 +431,6 @@ function landingOf(from, v) {
 
 function updateClusters(dt, t) {
   const clusterEvents = clusters.update(dt, t, wally.pos, (hand, c, gentle, thrower) => throwFood(hand, true, gentle, thrower));
-  tradeStep(clusterEvents, wally.pos);
   questStep(dt, t, clusterEvents, wally.pos);
   stageThieves();
   for (const e of clusterEvents) {
@@ -438,20 +441,21 @@ function updateClusters(dt, t) {
     if (e.type === 'empty') toast('That lot are all out of food', 'info');
     if ((e.type === 'flee' || e.type === 'empty') && !e.cluster.counted) {
       e.cluster.counted = true;                                    // fed out or run off: either way, that group is done
-      for (const g of game.quest.record('groupDone')) { toast(`Done: ${g.text}`, 'info'); sound.play.goal(); }
+      game.groupsDone++;                                           // the thieves arrive as this goes up (stageThieves)
     }
   }
   // The park's visitors for the day: four to start, three more turn up, and
   // when all seven are done a tour group arrives on the boardwalk.
   game.newGroupIn -= dt;
   const live = clusters.active.filter(c => !c.counted).length;
-  if (game.groupsArrived < game.parkGroups - 1 && (game.newGroupIn <= 0 || live === 0)) {
+  // After the tour group they keep coming for as long as he is here: he has to be able to stay fed (Ken, 2026-10-30).
+  if ((game.groupsArrived < game.parkGroups - 1 || game.tourGroup) && (live === 0 || (game.newGroupIn <= 0 && live < 4))) {
     if (spawnCluster()) { game.groupsArrived++; toast('More visitors have arrived!', 'info'); }
     game.newGroupIn = 25;
   } else if (!game.tourGroup && game.groupsArrived >= game.parkGroups - 1 && live === 0) {
     game.tourGroup = true;
     clusters.add({ x: 0, z: 2, size: 6, food: 16, rate: 0.5 });
-    toast("A tour group's here! The last lot for today", 'info'); sound.play.goal();
+    toast("A tour group's here, with plenty of tucker!", 'info'); sound.play.goal();
   }
 }
 
@@ -469,7 +473,7 @@ function caught(item) {
   food.take(item, 'eaten');
   const how = item.landed ? 'ground' : (wally.airborne ? 'leap' : 'air');
   wally.chomp(how);
-  sound.play.chomp();
+  sound.play.chomp(); eyes.chomp();
   game.streak++; game.catches++;
   if (daynight.night > 0.6) bookEvent('nightCatch');
   if (game.streak === 8) bookEvent('streak8');
@@ -514,57 +518,213 @@ function checkCatches() {
 function updateQuest(dt) {
   const q = game.quest;
   const r = q.checkFull(game.energy, foodLeft());
-  if (r === 'gate') { toast('Every group fed and a full tank! The gate is open', 'info'); sound.play.powerup(); }
+  if (r === 'gate' && !game.hadKey) { toast('Now out the gate on the boardwalk!', 'info'); sound.play.powerup(); }
   if (r === 'hungry') { finish(false, 'hungry'); return; }
 
-  // Every group fed (Ken's storyboard): the key to the park turns up beside him.
-  if (q.goalsDone() && !game.hasKey && !parkKey.out) parkKey.drop();
-  parkKey.update(dt);
-
   const atGate = Math.abs(wally.pos.x - GATE.x) < 1.2 && Math.abs(wally.pos.z - GATE.z) < 2 && onDeck(wally.pos.x, wally.pos.z);
-  // Out through the gate: the objective met and the key in hand (trip-rules.js).
-  // The lock opens and the machete is there for the cane fields; picking it up is the way out.
-  if (q.gateOpen() && atGate && game.hasKey && !machete.out) machete.show();
-  else if (q.gateOpen() && atGate && !game.hasKey && game.time > (game.keyHintAt || 0)) {
-    game.keyHintAt = game.time + 6; toast("The gate's locked! Feed every group and the key is yours", 'info'); bubbles.say(wally.root, 'Locked! I need that key.', 3);
+  const gateOpen = q.gateOpen() || game.chaseTest;
+  // Out through the gate (Ken, 2026-10-29): the objective met and the key in hand (trip-rules.js), the lock
+  // opens onto the park's grounds. The machete for the cane fields waits at the way out, over the far side;
+  // picking it up is the way out. Once he is past the croc fence the catcher comes running (chase.js).
+  if (gateOpen && atGate && game.hasKey && getParkMode() === 'park') {
+    setParkMode('gate');
+    carried.use('key');                                              // the key has done its job
+    if (!machete.out) machete.show(EXIT_SPOT);
+  } else if (atGate && !game.hasKey && game.time > (game.keyHintAt || 0)) {
+    game.keyHintAt = game.time + 6; toast("The gate's locked! The key is in the chest, on the bottom of the lagoon", 'info'); bubbles.say(wally.root, 'Locked! I need that key.', 3);
   }
-  if (machete.out && machete.update(dt) && q.leave()) finish(true);
-  // Where to go next, on the first visit (guide-arrow.js): the next hungry group, the key, the gate, the machete.
+  if (getParkMode() === 'gate' && fenceOffset(wally.pos.x, wally.pos.z) > OUT_MARGIN) breakOut();
+  if (machete.out && machete.update(dt)) {
+    if (escape.on && !escape.given && !game.chaseTest) { if (game.time > (game.keyHintAt || 0)) { game.keyHintAt = game.time + 5; toast('The final gate is locked. Only the wrangler has the key!', 'bad'); bubbles.say(wally.root, 'Locked! The wrangler has that key.', 2.6); } }
+    else if (q.leave() || game.chaseTest) finish(true);
+  }
+  if (escape.on) escapeStep(dt, game.time);
+  if (game.hasKey && !game.kennyTold && !game.chaseTest && wally.surface !== 'water' && !wally.airborne && getParkMode() === 'park') kennyTells();
+  // Where to go next, on the first visit (guide-arrow.js): food when he is low; otherwise the next lost thing, the
+  // chest, the gate, the way out.
   const hungry = clusters.active.filter(c => !c.fled && c.food > 0).map(c => c.root.position);
-  arrow.update(machete.out ? { x: machete.at.x, z: machete.at.z, label: 'The machete' }
+  arrow.update(escape.on && game.out ? escapeArrow()
+    : machete.out ? { x: machete.at.x, z: machete.at.z, label: game.out ? 'The way out' : 'The gate' }
     : game.hasKey ? { x: GATE.x, z: GATE.z, label: 'The gate' }
-    : parkKey.out ? { x: parkKey.at.x, z: parkKey.at.z, label: 'The park key' }
-    : (n => n && { x: n.x, z: n.z, label: 'Hungry visitors' })(nearest(hungry, wally.pos)), wally.pos, cam.yaw);
+    : (game.energy < 35 && hungry.length) ? (n => ({ x: n.x, z: n.z, label: 'Hungry visitors' }))(nearest(hungry, wally.pos))
+    : (treasure.found < treasure.total) ? (n => ({ x: n.x, z: n.z, label: 'Something lost: dive!' }))(nearest(treasure.things.filter(x => !x.taken), wally.pos))
+    : { x: treasure.chest.group.position.x, z: treasure.chest.group.position.z, label: 'The chest: dive!' }, wally.pos, cam.yaw);
 }
 
-// The key to the park (models/park-key.glb), glowing on the ground near Wally once
-// every group is fed; walking over it picks it up.
-const parkKey = (() => {
-  const g = new THREE.Group(); g.visible = false; scene.add(g);
-  const k = models.get('park-key');
-  const m = k ? k.scene.clone(true) : gateKey();
-  if (k) { const b = new THREE.Box3().setFromObject(m); m.scale.setScalar(0.7 / Math.max(...b.getSize(new THREE.Vector3()).toArray())); m.rotation.x = -Math.PI / 2.4; }
-  g.add(m); const glow = new THREE.PointLight(0xffd36a, 4, 5); glow.position.y = 0.6; g.add(glow);
-  return {
-    out: false, at: g.position,                        // at: where it lies (for testing)
-    drop() {
-      this.out = true; g.visible = true;
-      const spot = kenny.dropSpotNear(wally.pos);
-      g.position.set(spot.x, Math.max(0, terrainHeight(spot.x, spot.z)) + 0.5, spot.z);
-      toast("Every group fed! There's the key to the park", 'good'); sound.play.goal();
-      bubbles.say(wally.root, 'Crikey, the key to the park!', 3.4);
-    },
-    update(dt) {
-      if (!this.out || game.hasKey) return;
-      g.rotation.y += dt * 2; g.position.y += Math.sin(game.time * 3) * dt * 0.2;
-      if (Math.hypot(g.position.x - wally.pos.x, g.position.z - wally.pos.z) < 1.4) {
-        game.hasKey = true; g.visible = false; attempt = Trip.gain(attempt, 'park-key'); addPoints('pickup');
-        game.score += 200; sound.play.powerup(); toast('The key! Fill up, then out the gate', 'good');
-        bubbles.say(wally.root, 'Got it! Now, out the gate.', 3.4); drawQuest();
-      }
-    },
-  };
-})();
+// The boss of Croc Park is the croc wrangler (Ken, 2026-10-30): the banner as the chase begins.
+function bossBanner() {
+  const b = document.createElement('div'); b.className = 'boss-banner';
+  b.innerHTML = '<small>Boss</small>The Croc Wrangler<span>Find the way out before he catches you</span>';
+  document.body.append(b); setTimeout(() => b.remove(), 3400);
+}
+// The race (Ken, 2026-10-30; escape-rules.js has the rules). Nothing of it is out until he breaks out; he keeps what he
+// has found if he is caught.
+const HEAD_START = 1.5, PRIZE_ON_SHOW = 3;
+const escapeScene = createEscapeScene(camera);
+// The King's Golden Mango, a crown jewel: the same mango, in solid gold, with a glow of its own.
+function crownJewel() {
+  const m = mangoMaker(models.get('mango'))();
+  m.traverse(o => { if (o.isMesh) o.material = new THREE.MeshStandardMaterial({ color: 0xffc926, metalness: 0.85, roughness: 0.22, emissive: 0x6a4300, emissiveIntensity: 0.7 }); });
+  return m;
+}
+const escape = {
+  on: false, found: 0, giant: false, mangoes: null, chest: null, open: 0, chestAt: giantChestSpot(), hintAt: 0,
+  begin() {
+    this.on = true; this.found = 0; this.giant = false; this.given = false; this.open = 0; this.shown = 0;
+    world.finalGate.show();
+    this.mangoes = new Pickups(scene, mangoSpots().map(p => ({ x: p.x, y: BANK_Y + p.up + 1, z: p.z })), mangoMaker(models.get('mango')), { size: 1.7, glint: 2.2, reach: 1.5 });
+    if (!this.chest) {
+      const holder = new THREE.Group(); holder.add(crownJewel());     // (chestModel sets the size of what it is given: a holder keeps the model's own fit)
+      this.chest = chestModel(holder);
+      const g = this.chest.group; g.position.set(this.chestAt.x, BANK_Y, this.chestAt.z); g.rotation.y = this.chestAt.rot; g.scale.setScalar(1.4); scene.add(g);
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 7, 20, 1, true), new THREE.MeshBasicMaterial({ color: 0xffb030, transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide }));
+      beam.position.y = 3.5; beam.userData.noAO = true; g.add(beam);
+      addSolid(this.chestAt.x, this.chestAt.z, 0.9);
+    }
+    this.chest.group.visible = true; this.chest.lid.rotation.x = 0; this.chest.mango.visible = false; this.chest.glow.intensity = 0;
+    world.gateBars.set(0);
+    if (!machete.out) machete.show(EXIT_SPOT);
+  },
+  // A new run: all of it gone again.
+  clear() {
+    this.on = false; this.found = 0; this.giant = false; this.given = false;
+    if (world.finalGate) world.finalGate.hide();
+    if (this.mangoes) { for (const p of this.mangoes.list) { scene.remove(p.mesh, p.shine); p.shine.material.dispose(); } this.mangoes = null; }
+    if (this.chest) this.chest.group.visible = false;
+  },
+};
+window.chomp.escape = escape; window.chomp.escapeScene = escapeScene;
+function escapeArrow() {
+  const stage = escapeStage(escape.found, escape.giant, escape.given);
+  if (stage === 'exit') return { x: machete.at.x, z: machete.at.z, label: 'The final gate' };
+  if (stage === 'give') return { x: catcher.pos.x, z: catcher.pos.z, label: 'The wrangler: show him the mango' };
+  if (stage === 'chest') return { x: escape.chestAt.x, z: escape.chestAt.z, label: 'The chest!' };
+  const left = escape.mangoes.list.filter(p => !p.taken);
+  const n = nearest(left.map(p => p.mesh.position), wally.pos);
+  return n ? { x: n.x, z: n.z, label: 'A mango' } : null;
+}
+function escapeStep(dt, t) {
+  for (const m of escape.mangoes.update(dt, t, wally.pos)) {
+    escape.found++; game.score += 10; game.energy = Math.min(ENERGY_MAX, game.energy + MANGO_ENERGY); addPoints('pickup');
+    sound.play.goal(); fx.burst(m.mesh.position, [0xffc21a, 0xfff1a0], 12); lastHud = ''; drawQuest();
+    const opened = world.gateBars.set(escape.found);
+    if (opened) { toast(`${escape.found} mangoes: a gate opens!`, 'good'); sound.play.powerup(); catcher.forget(); }
+    if (escape.found === MANGO_NEED) { toast('All the gates are open! Find the chest!', 'good'); bubbles.say(wally.root, 'Now, where is that chest?', 3); }
+  }
+  const c = escape.chest, near = Math.hypot(wally.pos.x - escape.chestAt.x, wally.pos.z - escape.chestAt.z) < 2.6;
+  if (near && !escape.giant) {
+    if (escape.found >= MANGO_NEED) {
+      escape.giant = true; carried.add('golden-mango', { id: 'giant-mango' }); lastHud = ''; drawQuest(); sound.play.goal(); fx.burst(c.group.position.clone().add(new THREE.Vector3(0, 1.5, 0)), [0xffc21a, 0xfff1a0, 0xff8a30], 40);
+      toast("The King's Golden Mango! Show it to the wrangler!", 'good'); bubbles.say(wally.root, 'He needs to see this.', 3);
+    } else if (t > escape.hintAt) { escape.hintAt = t + 4; toast(`Locked until all the gates are open: ${MANGO_NEED - escape.found} more mangoes`, 'bad'); }
+  }
+  if (escape.giant && escape.open < 1) { escape.open = Math.min(1, escape.open + dt * 1.5); c.lid.rotation.x = -escape.open * 1.9; c.glow.intensity = escape.open * 6; c.mango.visible = true; }
+  if (c.mango.visible) { c.mango.rotation.y += dt * 2; c.mango.position.y = 1.2 + escape.open * 0.9 + Math.sin(t * 2) * 0.12; escape.shown = (escape.shown || 0) + dt; if (escape.shown > PRIZE_ON_SHOW) c.mango.visible = false; }
+}
+
+// Back on land with the key, Kenny tells him what comes next (Ken, 2026-10-30).
+function kennyTells() {
+  game.kennyTold = true;
+  wally.vel.set(0, 0, 0);
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z), f = wally.facing;
+  kenny.pos.set(wally.pos.x + Math.sin(f) * 2.1 + Math.cos(f) * 0.5, wally.pos.y, wally.pos.z + Math.cos(f) * 2.1 - Math.sin(f) * 0.5);
+  kenny.mesh.position.copy(kenny.pos); kenny.mesh.visible = true; kenny.state = 'sit'; kenny.timer = 40;
+  kenny.mesh.rotation.y = Math.atan2(wally.pos.x - kenny.pos.x, wally.pos.z - kenny.pos.z);
+  wally.root.rotation.y = wally.facing;
+  const mid = wally.pos.clone().lerp(kenny.pos, 0.5).add(V3(0, 1.1, 0)), sx = Math.cos(f), sz = -Math.sin(f);
+  // The camera on the side with nothing big in the way: a boulder hid them both, when he came ashore beside one.
+  const blockedAt = side => ROCKS.some(r => { for (let d = 1; d <= 7; d++) if (Math.hypot(mid.x + sx * side * d - r.x, mid.z + sz * side * d - r.z) < r.r + 0.8) return true; return false; });
+  const clear = !blockedAt(1) ? 1 : -1;
+  const talk = (a, b) => ({ from: V3(mid.x + sx * clear * Math.abs(a), mid.y + 0.6, mid.z + sz * clear * Math.abs(a)), to: V3(mid.x + sx * clear * Math.abs(b), mid.y + 0.4, mid.z + sz * clear * Math.abs(b)), lookFrom: mid, lookTo: mid });
+  const bridge = V3(GATE.x, deckHeight(GATE.x) + 1.5, GATE.z);
+  escapeScene.play([
+    { s: 3.6, who: 'Kenny', line: "Good on ya, Wally! Now cross the bridge to the park.", ...talk(6, 5) },
+    { s: 4.2, who: 'Kenny', line: 'Watch out! The park will be alerted the moment you leave the croc enclosure.', from: V3(GATE.x - 12, bridge.y + 3, GATE.z + 9), to: V3(GATE.x - 8, bridge.y + 1.5, GATE.z + 7), lookFrom: bridge, lookTo: bridge },
+    { s: 4.2, who: 'Kenny', line: 'Dodge the croc wrangler while you collect mangoes. Mangoes unlock the gates.', ...talk(-5, -6) },
+    { s: 4, who: 'Kenny', line: "Once all the gates are open, find the chest. Inside is the Golden Mango, one of the Croc King's crown jewels.", ...talk(-6, -4.5) },
+    { s: 4.4, who: 'Kenny', line: "Show it to the wrangler. He'll know what it means, and unlock the final gate to the cane field.", ...talk(4.5, 5.5) },
+    { s: 3.4, who: 'Kenny', line: 'But if he catches you first, you end up back in the croc enclosure!', ...talk(5.5, 3.6) },
+  ], () => { $('hud').hidden = false; $('touch').hidden = !touch; kenny.timer = 1.5; bubbles.say(wally.root, "Right! Over the bridge.", 3); }, { siren: false });
+  $('hud').hidden = true; $('touch').hidden = true;
+}
+
+// The golden mango shown to the wrangler (Ken, 2026-10-30): only a croc summoned by the Croc King could get it, so he
+// is not bribed, he understands. Wally keeps it with the sceptre until he first meets the King, in the Daintree; and the
+// wrangler unlocks the final gate.
+// It rides on his back beside the sceptre from now on.
+let goldenOnBack = null;
+function wearGoldenMango() {
+  if (goldenOnBack) { goldenOnBack.visible = true; return; }
+  goldenOnBack = crownJewel(); goldenOnBack.scale.multiplyScalar(1.2);
+  goldenOnBack.position.set(-0.22, 1.2, -0.42); wally.root.add(goldenOnBack);
+}
+function giveMango() {
+  escape.given = true; lastHud = ''; drawQuest();
+  attempt = Trip.gain(attempt, 'golden-mango');
+  wearGoldenMango();
+  wally.vel.set(0, 0, 0); sound.play.goal(); game.score += 500; catcher.state.mode = 'search'; catcher.state.helper = true; catcher.state.last = { x: catcher.state.x, z: catcher.state.z }; catcher.state.hold = 0;
+  catcher.state.heading = Math.atan2(wally.pos.x - catcher.pos.x, wally.pos.z - catcher.pos.z);
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z), him = catcher.pos.clone().add(V3(0, 1.5, 0)), dx = him.x - wally.pos.x, dz = him.z - wally.pos.z, d = Math.hypot(dx, dz) || 1, sx = dz / d, sz = -dx / d;
+  const mid = him.clone().lerp(wally.pos.clone().add(V3(0, 1.5, 0)), 0.5), gate = V3(EXIT.x, BANK_Y + 1.4, EXIT.z), o = Math.hypot(EXIT.x, EXIT.z), inX = -EXIT.x / o, inZ = -EXIT.z / o;
+  const close = { from: V3(mid.x + sx * 7.5, mid.y + 0.5, mid.z + sz * 7.5), to: V3(mid.x + sx * 6, mid.y + 0.2, mid.z + sz * 6), lookFrom: mid, lookTo: mid };
+  escapeScene.play([
+    { s: 3.6, who: 'Croc Wrangler', line: "Crikey! The King's Golden Mango! Only a croc summoned by the Croc King could get that.", ...close },
+    { s: 3.6, who: 'Croc Wrangler', line: 'It is one of his crown jewels. Bring it to him in the Daintree, as a token of bravery.', ...close },
+    { s: 3, who: 'Croc Wrangler', line: "You've proved yourself, mate. Keep it with the sceptre. Come on, I'll unlock the final gate!", ...close },
+    { s: 2.6, line: 'The final gate is open. The cane field awaits!', cue: () => { world.finalGate.open(); sound.play.powerup(); }, from: V3(gate.x + inX * 11, gate.y + 2, gate.z + inZ * 11), to: V3(gate.x + inX * 7, gate.y + 0.8, gate.z + inZ * 7), lookFrom: gate, lookTo: gate },
+    { s: 3.6, who: 'Croc Wrangler', line: "I'm letting you out into the cane fields. No one will pursue you in there.", ...close },
+    { s: 3.6, who: 'Croc Wrangler', line: 'Look for a chest. It holds an item to help you complete your journey.', ...close },
+    { s: 4, who: 'Croc Wrangler', line: 'But look out for the cane toads, and eat the fallen sugar cane, or you will lose your puff!', ...close },
+  ], () => { $('hud').hidden = false; $('touch').hidden = !touch; catcher.helps({ x: EXIT_SPOT.x + inX * 3 + inZ * 3.5, z: EXIT_SPOT.z + inZ * 3 - inX * 3.5 }); bubbles.say(catcher.g, 'This way, mate!', 2.6); bubbles.say(wally.root, 'Ta, mate! Cane fields, here I come!', 3); }, { siren: false });
+  $('hud').hidden = true; $('touch').hidden = true;
+}
+
+// Out past the croc fence: the grounds are his now, and the catcher heard the gate.
+function breakOut() {
+  setParkMode('outside'); game.out = true; lastHud = '';
+  wally.vel.set(0, 0, 0);
+  if (escape.on) {                                                  // caught, and out again: he is on Wally's heels
+    drawQuest(); catcher.alertAgain(wally.pos, game.caught || 0); sound.play.whistle();
+    bubbles.say(catcher.g, 'Oh no you don\'t!', 2.2);
+    return;
+  }
+  escape.begin();
+  drawQuest();
+  // The cut scene, then the race. Everything is set up as the shots need it, and the wrangler starts once it ends.
+  catcher.alert(wally.pos, 1e9);
+  const eye = wally.pos.clone().add(new THREE.Vector3(0, 1.6, 0)), post = catcher.pos.clone().add(new THREE.Vector3(0, 1.5, 0));
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+  escapeScene.play([
+    { s: 2.6, big: true, line: 'CROC ESCAPE!', cue: () => sound.play.whistle(), from: V3(eye.x + 4, eye.y + 0.4, eye.z + 6), to: V3(eye.x + 7, eye.y + 1, eye.z + 3), lookFrom: eye, lookTo: eye },
+    { s: 3.2, who: 'Croc Wrangler', line: "Oi! A croc's out! I'm right behind him!", cue: () => { sound.play.whistle(); catcher.state.heading = -Math.PI / 2; }, from: V3(post.x - 5, post.y + 0.3, post.z + 3.5), to: V3(post.x - 2.8, post.y, post.z + 2), lookFrom: post, lookTo: post },
+    { s: 3.6, line: 'The park locks down. Mangoes unlock the gates: dodge him and collect them!', cue: () => { world.lockdown(true); catcher.forget(); tourists.clearOfWalls(); }, from: V3(34, 44, 66), to: V3(-14, 42, 66), lookFrom: V3(6, 0, 8), lookTo: V3(-8, 0, 14) },
+    { s: 1.4, big: true, line: 'RUN!', from: V3(eye.x - 9, eye.y + 3, eye.z), to: V3(eye.x - 5, eye.y + 1.4, eye.z), lookFrom: eye, lookTo: eye },
+  ], () => {
+    $('hud').hidden = false; $('touch').hidden = !touch;
+    catcher.alert(wally.pos, HEAD_START);
+    bossBanner();
+    bubbles.say(catcher.g, 'Oi! Come back here!', 2.6);
+  });
+  $('hud').hidden = true; $('touch').hidden = true;
+  if (game.chaseTest) escapeScene.end();                            // (the test shortcut goes straight to the race)
+}
+// The catcher every frame: spotting Wally, losing him, catching him. Caught, Wally is put back inside the
+// gate without losing a life (Ken), the gate still open, and the catcher walks back to his post.
+function chaseStep(dt) {
+  // With the golden mango, meeting him is what Wally wants: he sees it, and understands. After that he is on Wally's side.
+  if (escape.on && escape.giant && !escape.given && game.out && Math.hypot(wally.pos.x - catcher.pos.x, wally.pos.z - catcher.pos.z) < GIVE_REACH) { giveMango(); return; }
+  const e = catcher.update(dt, { x: wally.pos.x, z: wally.pos.z, out: game.out && !escape.given, high: wally.pos.y > BANK_Y + 1 });
+  if (e === 'spotted') { sound.play.whistle(); bubbles.say(catcher.g, pickLine('catcherSpotted'), 2.2); }
+  else if (e === 'lost' && game.out && !escape.given) bubbles.say(wally.root, 'Phew! Lost him.', 2.2);
+  else if (e === 'caught') {
+    game.out = false; setParkMode('gate'); game.caught = (game.caught || 0) + 1; lastHud = ''; drawQuest();
+    wally.pos.set(GATE.x - 3, deckHeight(GATE.x - 3), GATE.z); wally.vel.set(0, 0, 0); wally.vy = 0; wally.facing = Math.PI / 2;
+    catcher.reset();
+    sound.play.lose();
+    toast('The wrangler got you! Back in the sanctuary. You keep your mangoes: out the gate again!', 'bad');
+    bubbles.say(wally.root, 'Strewth! Again!', 2.6);
+  }
+}
 
 // The machete (models/machete.glb), there at the gate once it is unlocked: what the
 // cane fields will need (trip-rules.js: what Croc Park opens).
@@ -578,11 +738,13 @@ const machete = (() => {
   beam.position.y = 3; beam.userData.noAO = true; g.add(beam);                     // a column of light over it, to spot it from across the park
   return {
     out: false, at: g.position,
-    show() {
+    // at: where it lies (the way out to the cane, chase-rules.js EXIT_SPOT); left out, by the gate.
+    show(at = null) {
       this.out = true; g.visible = true;
-      g.position.set(GATE.x - Math.sign(GATE.x || 1) * 1.4, deckHeight(GATE.x) + 0.6, GATE.z);
-      toast('The gate is open! And something left by the gate...', 'good'); sound.play.goal();
-      bubbles.say(wally.root, "A machete! That'll get me through the cane.", 3.4);
+      if (at) g.position.set(at.x, Math.max(0, terrainHeight(at.x, at.z)) + 0.6, at.z);
+      else g.position.set(GATE.x - Math.sign(GATE.x || 1) * 1.4, deckHeight(GATE.x) + 0.6, GATE.z);
+      if (at) { toast("The gate's open! Get out, and find the way to the cane fields", 'good'); sound.play.goal(); bubbles.say(wally.root, "I'm off to the cane fields!", 3.4); }
+      else { toast('The gate is open! And something left by the gate...', 'good'); sound.play.goal(); bubbles.say(wally.root, "A machete! That'll get me through the cane.", 3.4); }
     },
     // True once he has picked it up.
     update(dt) {
@@ -612,6 +774,7 @@ const bot = params.has('bot') ? makeBot() : null;
 function step(dt, t) {
   if (opening.active) { openingStep(dt, t); return; }
   if (game.intro > 0) { introStep(dt); return; }
+  if (escapeScene.active) { input.read(); clusters.idle(dt); escapeScene.step(dt); if (kenny.skin) { kenny.skin.play('wave', { alternatives: ['idle'] }); kenny.skin.update(dt); } catcher.update(dt, { x: wally.pos.x, z: wally.pos.z, out: false }); return; }
   const k = input.read();
   if (bot) Object.assign(k, bot());
   if (game.nap > 0) Object.assign(k, { forward: 0, right: 0, jump: false, fours: false });
@@ -640,7 +803,7 @@ function step(dt, t) {
     else if (e === 'splash') { sound.play.splash(); fx.splash(wally.pos, 26); fx.shake(0.2, 0.15); } else if (e === 'land') sound.play.land();
   }
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (game.boost <= 0 && game.nap <= 0) game.energy -= energyDrain(wally.mode, moving, 'park') * drainFactor() * game.tripDrain * dt;   // vitamins (gear.js) halve it; the trip's difficulty sets the speed
+  if (game.boost <= 0 && game.nap <= 0) game.energy -= energyDrain(wally.mode, moving, 'park') * drainFactor() * game.tripDrain * (game.out ? OUT_DRAIN : 1) * dt;   // vitamins (gear.js) halve it; the trip's difficulty sets the speed
   if (game.nap > 0) napping(dt);
 
   tourists.update(dt, wally.pos);                // strollers on the boardwalk: scenery, no food
@@ -687,13 +850,6 @@ function step(dt, t) {
 
   treasureStep(dt, t);
   for (const f of hidden.update(dt, t, wally.pos)) { toast(f.text, 'good'); sound.play.powerup(); }
-  for (const m of parkMangoes.update(dt, t, wally.pos)) {
-    bookEvent('mango');
-    game.mangoes++; game.score += 10; addPoints('pickup'); sound.play.goal(); fx.burst(m.mesh.position, [0xffc21a, 0xfff1a0], 10);
-    toast(`A Golden Mango! ${parkMangoes.found}/${parkMangoes.total}`, 'good');
-    if (parkMangoes.found === parkMangoes.total) bubbles.say(wally.root, "Every mango in the park! Bonza!", 3.4);
-    drawQuest();
-  }
 
   const k2 = kenny.update(dt, wally.pos, game.energy);
   if (k2 === 'revived') revive();
@@ -720,6 +876,7 @@ function step(dt, t) {
   if (game.energy < 25 && game.hungryCool <= 0) { bubbles.say(wally.root, pickLine('wallyHungry'), 3.6); game.hungryCool = 12; }
 
   updateQuest(dt);
+  chaseStep(dt);
   if (game.energy <= 0 && game.nap <= 0) loseLife();
 }
 
@@ -747,7 +904,6 @@ function diveStep(dt, k) {
   if (under) k.jump = false;
   game.clear += ((under ? 1 : 0) - game.clear) * Math.min(1, dt * 3);
   if (world.waterClear) world.waterClear(game.clear);
-  if (under && cam.manual <= 0) cam.pitch += (Math.max(cam.pitch, 0.8) - cam.pitch) * Math.min(1, dt * 2);
   if (sound.underwaterMusic) sound.underwaterMusic(under);
   $('dive-buttons').hidden = !inWater || !game.running;
   $('b-dive').disabled = game.wantDepth <= T.diveY + 0.01; $('b-up').disabled = !under;
@@ -766,6 +922,7 @@ function treasureStep(dt, t) {
   for (const e of treasure.update(dt, t, wally.pos.x, wally.pos.z, wally.pos.y)) {
     if (e.type === 'found') {
       bookEvent('lostThing');
+      game.quest.record('lostThing');
       sound.play.goal(); game.score += 50;
       const left = treasure.total - treasure.found;
       toast(left ? `Found: ${e.thing.name}! ${left} more down here` : `Found: ${e.thing.name}! That's the lot: now the chest`, 'good');
@@ -773,15 +930,15 @@ function treasureStep(dt, t) {
       drawQuest();
     } else if (e.type === 'open') {
       bookEvent('chest');
-      game.mangoes += 10; game.score += 500; sound.play.powerup();
-      toast('Treasure! Ten Golden Mangoes', 'good');
-      bubbles.say(wally.root, 'Ten Golden Mangoes! Ripper!', 3.6);
+      game.score += 500; sound.play.powerup();
+      game.quest.record('chestOpened');
+      if (!game.hasKey) { game.hasKey = true; carried.add('key', { label: 'Park key' }); attempt = Trip.gain(attempt, 'park-key'); addPoints('pickup'); toast('The key to the park!', 'good'); bubbles.say(wally.root, 'Got it! Now, out the gate.', 3.6); }
       drawQuest();
     }
   }
-  // A nudge toward it, a little while in, if he has not found anything yet.
+  // A nudge toward it, soon after he starts, if he has not found anything yet.
   game.treasureHint -= dt;
-  if (game.time > 40 && treasure.found === 0 && game.treasureHint <= 0) {
+  if (game.time > 12 && treasure.found === 0 && !game.hasKey && game.treasureHint <= 0) {
     game.treasureHint = 60;
     bubbles.say(wally.root, "Hang on, what's bubbling up in the middle of the lagoon?", 3.6);
   }
@@ -868,8 +1025,20 @@ function introStep(dt) {
   }
 }
 
+// In the water the view is his own (eyes.js). Not in a VR headset, where the headset is the camera, nor while Kenny revives him.
+const CROC_ON_SHOW = 5;
+const eyes = createEyes({ camera, wally, cam, canvas });
+window.chomp.eyes = eyes;
+function diveView(dt) {
+  // At the start of the game (Ken, 2026-10-30) he is a regular croc, and has to be seen as one: the cinematic has the
+  // camera, then he is on show a few seconds before the view becomes his own (at once, if he dives).
+  const under = game.depth < PARK_TREASURE.surfaceY - 0.6;
+  const shown = !opening.active || (opening.phase === 'croc' && (opening.phaseTime > CROC_ON_SHOW || under));
+  eyes.step(dt, game.running && !inVR() && shown && wally.surface === 'water' && game.nap <= 0, under);
+}
 const CAM_ZONE = 0.6;     // radians (about 35 degrees) he may turn either way before the camera turns with him
 function followCamera(dt) {
+  if (escapeScene.active) { eyes.off(); escapeScene.place(); focusOn(camera, wally.pos.x, wally.pos.y + 1.2, wally.pos.z); return; }
   const shot = opening.active && opening.shot();
   // The opening's cinematic can look at something other than Wally (the park, the sign).
   const goal = shot && shot.target ? shot.target : wally.pos.clone().add(new THREE.Vector3(0, 1.6, 0));
@@ -891,7 +1060,7 @@ function followCamera(dt) {
       const d = Math.atan2(Math.sin(want - cam.yaw), Math.cos(want - cam.yaw));
       cam.yaw += d * Math.min(1, dt * 6);
       if (Math.abs(d) < 0.02) cam.recenter = false;
-    } else if (cam.manual <= 0 && cam.still > 2.5 && !wally.airborne && !wally.front && settings.camera !== 'manual') {
+    } else if (cam.manual <= 0 && cam.still > 2.5 && !wally.airborne && settings.camera !== 'manual') {
       // Standing about: drift round to a three-quarter view of his face.
       const want = wally.facing + 0.7;
       const d = Math.atan2(Math.sin(want - cam.yaw), Math.cos(want - cam.yaw));
@@ -902,16 +1071,13 @@ function followCamera(dt) {
       // Steering (the default): the camera swings round behind him as he turns.
       // A calm camera (Ken, 2026-10-26: swinging with every wiggle can make people sick). It always follows
       // where he is, so he stays on screen, but it only turns once he heads well off to one side (more than
-      // CAM_ZONE from straight away from it), and then gently, just enough to bring him back inside. Played
-      // from the front (Down: wally.front), it holds still and lets him face you.
+      // CAM_ZONE from straight away from it), and then gently, just enough to bring him back inside.
       if (settings.camera === 'manual') { /* the manual camera turns only when the player turns it */ }
       else if (steering()) {
-        if (!wally.front) {
-          const behind = wally.facing + Math.PI, off = Math.atan2(Math.sin(behind - cam.yaw), Math.cos(behind - cam.yaw));
-          if (Math.abs(off) > CAM_ZONE) cam.yaw += (off - Math.sign(off) * CAM_ZONE) * Math.min(1, dt * 2);
-        }
+        const behind = wally.facing + Math.PI, off = Math.atan2(Math.sin(behind - cam.yaw), Math.cos(behind - cam.yaw));
+        if (Math.abs(off) > CAM_ZONE) cam.yaw += (off - Math.sign(off) * CAM_ZONE) * Math.min(1, dt * 2);
       }
-      else if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz);
+      else cam.yaw = lazyBehind(cam.yaw, wally, dt);
     }
   }
   const cp = Math.cos(cam.pitch);
@@ -921,8 +1087,10 @@ function followCamera(dt) {
   const floor = Math.max(0, terrainHeight(camera.position.x, camera.position.z)) + 0.8;
   if (camera.position.y < floor) camera.position.y = floor;
   camera.lookAt(cam.target);
+  diveView(dt);
   const jolt = fx.shakeOffset(dt);
   if (jolt) camera.position.add(jolt);
+  focusOn(camera, wally.pos.x, wally.pos.y + 1.2, wally.pos.z);   // the bridge dissolves if it is in the way of him (see-through.js)
 }
 
 // ---- Start, pause, end ------------------------------------------------------------
@@ -935,7 +1103,7 @@ const thiefSets = { pelican: pelicans, bat: bats, toad: toads, croc: crocs };
 const thiefAll = Object.fromEntries(Object.entries(thiefSets).map(([k, s]) => [k, s.list.slice()]));
 const thiefShown = {};
 function stageThieves() {
-  const done = game.quest.goals[0].have;
+  const done = game.groupsDone || 0;
   for (const [kind, set] of Object.entries(thiefSets)) {
     const all = thiefAll[kind].filter(x => !x.guard), guards = thiefAll[kind].filter(x => x.guard);
     const n = thievesAllowed(kind, done, all.length, ease.first);
@@ -960,13 +1128,17 @@ function start() {
   ensureTrip();
   attempt = Trip.startAttempt(progress.trip, 'park'); startRun('park', { level: attempt.level });
   arrow = guideArrow({ show: attempt.visit === 1 });          // where to go next, on the first visit
+  carried.clear(); if (goldenOnBack) goldenOnBack.visible = false; game.kennyTold = false; game.caught = 0; game.out = false; setParkMode('park'); world.lockdown(false); escape.clear(); catcher.forget(); catcher.reset(); game.groupsDone = 0;
+  game.quest = createQuest(escapeQuest());
   game.hasKey = Trip.have(progress.trip, 'park-key') || Trip.have(progress.trip, 'gate-key');   // on a return visit he has it already (gate-key: saves from before)
+  game.hadKey = game.hasKey;                                   // come back with the key: nothing to find, the gate is his
+  if (game.hadKey) { for (const g of game.quest.goals) for (let i = 0; i < g.need; i++) game.quest.record(g.event); }
   game.tripDrain = Trip.drainFactor(progress.trip, 'park', attempt.level);
   // The first visit starts gentle and builds (park-ease.js); a return visit plays as the trip says.
   ease = parkEase(attempt.visit);
   if (ease.first) {
     game.tripDrain = Math.min(game.tripDrain, ease.drain);
-    game.parkGroups = ease.groups; game.quest = createQuest(parkQuest(ease.groups));
+    game.parkGroups = ease.groups;
     game.throwPace = ease.throwPace; clusters.calm = ease.calm; clusters.panic = ease.panic;
   }
   stageThieves();
@@ -1004,9 +1176,10 @@ function finish(won, why = '') {
     bookEvent('finish');
     const stars = starsFor(game.score, PARK_STARS);
     // Opening the gate gives the machete for the cane fields (trip-rules.js: what the park opens).
-    const done = Trip.completeAttempt(progress.trip, Trip.gain(Trip.gain(attempt, 'golden-mango', game.mangoes), 'machete'), { objectiveMet: true });
+    if (!game.caught) bookEvent('bossClean');                   // got away from the wrangler without being caught once
+    const done = Trip.completeAttempt(progress.trip, Trip.gain(attempt, 'machete'), { objectiveMet: true });
     if (done.ok) { progress.trip = done.trip; bankRun({ stars }); }
-    progress = completeArea(progress, 'park', { score: game.score, stars, mangoes: game.mangoes });
+    progress = completeArea(progress, 'park', { score: game.score, stars });
     try { localStorage.setItem('chomp-progress', JSON.stringify(progress)); } catch { /* not saved */ }
     $('win-score').textContent = game.score.toLocaleString();
     $('win-stars').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
@@ -1181,6 +1354,12 @@ installVR({ renderer, scene, camera, frame });   // a VR headset, if there is on
 requestAnimationFrame(frame);
 if (params.has('play') || bot) start();
 else if (params.has('map')) showMap();
+// Testing the chase (index.html?play&chase&noopening): Wally starts on the boardwalk just past the gate with
+// the key, as if every group were fed, and steps out into the grounds.
+if (params.has('chase') && game.running) {
+  game.chaseTest = true; game.hasKey = true; setParkMode('gate'); machete.show(EXIT_SPOT);
+  wally.pos.set(GATE.x + 8, deckHeight(GATE.x + 8), GATE.z); wally.facing = Math.PI / 2;
+}
 
 // The map, from anywhere (mapmodal.js): the Map button or Tab. Play pauses while it is open.
 installMap({ pause: on => { if (game.running) game.paused = on; } });

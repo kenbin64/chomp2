@@ -29,6 +29,8 @@ export const MODEL_FILES = [
   'palm-1', 'palm-2', 'palm-crown', 'boat', 'jar', 'mango', 'seashell', 'coral', 'streetlamp', 'kuranda-shop', 'kuranda-canopy', 'kuranda-art',
   'croc-regular', 'sceptre', 'park-key', 'machete',              // the opening in Croc Park, and the way out
 ];
+// Only the park's own levels (Croc Park and the rescue) need this: the croc catcher (chase.js).
+export const PARK_MODEL_FILES = ['croc-wrangler'];
 
 // Load whichever files exist. Returns a Map of name -> loaded glTF.
 // Files are asked for all at once; ones that are not there are skipped quietly.

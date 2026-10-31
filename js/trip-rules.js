@@ -49,9 +49,9 @@ export const TALISMANS = ['talisman-sun', 'talisman-moon', 'talisman-air', 'tali
 // small, the smaller thing it gives for the area two after it (Fibonacci).
 // decided: false marks Ken's open questions, so nothing pretends to be settled.
 export const CHAIN = {
-  park:      { key: 'park-key',  opens: ['machete'],                      small: 'golden-mango', decided: true },
+  park:      { key: 'park-key',  opens: ['machete'],                      small: null,           decided: true },
   cane:      { key: 'machete',   opens: ['talisman-fire'],                small: null,           decided: true },
-  esplanade: { key: null,        opens: ['talisman-sun'],                 small: null,           decided: false },  // its key: open
+  esplanade: { key: null,        opens: ['talisman-sun'],                 small: 'golden-mango', decided: false },  // its key: open
   reef:      { key: 'pearl-key', opens: ['talisman-moon'],                small: null,           decided: true },
   kuranda:   { key: null,        opens: ['talisman-air', 'talisman-water'], small: null,         decided: false },  // the boomerang and the zip line
   mossman:   { key: 'mossman-key', opens: ['talisman-earth'],             small: null,           decided: true },   // the opal, in the last swimming hole
@@ -105,7 +105,6 @@ export function tripFor(progress) {
 }
 
 export const areaIndex = area => ORDER.indexOf(area);
-export const previousArea = area => ORDER[areaIndex(area) - 1] || null;
 export const nextArea = area => ORDER[areaIndex(area) + 1] || null;
 export const isCompleted = (trip, area) => trip.completed.includes(area);
 export const have = (trip, item) => (trip.items[item] || 0) > 0;

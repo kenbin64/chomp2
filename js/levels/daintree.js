@@ -10,21 +10,23 @@
 //
 // The river's rules are in daintree-rules.js (tested), the look in daintree-scene.js.
 
-import { guideArrow, nearest } from '../guide-arrow.js';
+import { guideArrow } from '../guide-arrow.js';
 import { installVR, inVR } from '../vr.js';
-import { startRun, addPoints, bankRun, failRun } from '../points.js';
+import { createEyes } from '../eyes.js';
+import { carried } from '../carried.js';
+import { startRun, addPoints, failRun } from '../points.js';
 import * as THREE from 'three';
 import * as Trip from '../trip-rules.js';
-import { HALF, START_Z, BOAT_START_Z, BOAT_LENGTH, AGROUND_Z, SANDBAR, CROC, riverX, boatX, groundAt, insideRiver, boatStep, aground, inThrowRange, crocSpots, crocsRoundBoat, crocStep, crocBites, afterBite } from './daintree-rules.js';
+import { START_Z, BOAT_START_Z, BOAT_LENGTH, AGROUND_Z, SANDBAR, CROC, riverX, boatX, groundAt, insideRiver, boatStep, aground, inThrowRange, crocSpots, crocsRoundBoat, crocStep, crocBites, afterBite } from './daintree-rules.js';
 import { buildDaintree } from './daintree-scene.js';
 import { vineCourse, forestGround, insideForest } from './daintree-forest.js';
 import { kingScene } from './king-court.js';
-import { installGear, snorkelling, drainFactor } from '../gear.js';
+import { installGear, drainFactor } from '../gear.js';
 import { installBook, openBook } from '../book.js';
 import { device } from '../device.js';
 import { Wally } from '../wally.js';
 import { Food, randomKind, useJarModel } from '../food.js';
-import { Input, steering, easeBehind } from '../input.js';
+import { Input, steering, easeBehind, lazyBehind } from '../input.js';
 import { Bubbles, reaction, pickLine } from '../bubbles.js';
 import { Effects, CRUMBS } from '../fx.js';
 import { loadModels, dress, ModelSkin, MODEL_FILES } from '../models.js';
@@ -41,6 +43,7 @@ import { FOODS, ENERGY_MAX, energyDrain, speedFactor, catchPoints, launchVelocit
 import { readProgress, saveProgress, outfitModel, wearing } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
 import { loadRealism } from '../realism.js';
+import { toast as toast_ } from '../toast.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -191,14 +194,9 @@ input.onPause = () => setPaused(!game.paused);
 input.onMute = () => toast_('Sound ' + (sound.toggleMute() ? 'off' : 'on'), 'info');
 const game = { running: false, paused: false, done: false, time: 0, energy: ENERGY_MAX, lives: LIVES, faint: 0, points: 0, caught: 0, streak: 0, behind: 0, scene: null, stun: 0, bites: 0, stolen: 0, crocTip: false, phase: 'river' };
 game.tripDrain = Trip.drainFactor(progress.trip, 'daintree', Trip.attemptLevel(progress.trip, 'daintree').level);
+if (Trip.have(progress.trip, 'golden-mango')) carried.add('golden-mango', { id: 'giant-mango' });   // for the Croc King (the park, main.js)
 window.chomp = { game, wally, scene, camera, boat, passengers, forest, court };
 window.chomp.toForest = () => { game.running = true; $('title').hidden = true; game.scene = { over: true }; fade(() => enterForest()); };   // testing: straight to the rainforest
-
-function toast_(text, kind = 'good') {
-  const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
-  $('toasts').appendChild(el); setTimeout(() => el.remove(), 1800);
-  while ($('toasts').children.length > 3) $('toasts').firstChild.remove();
-}
 
 // A passenger throws to where Wally will be (the same rule as everywhere).
 function passengerThrow(p) {
@@ -272,7 +270,7 @@ function step(dt, t) {
     const p = it.mesh.position;
     const d = it.landed && !wally.airborne ? Math.hypot(p.x - mouth.x, p.z - mouth.z) + (mouth.y - p.y > 3.2 ? 99 : 0) : p.distanceTo(mouth);
     if (d < 1.5) {
-      fx.burst(p, CRUMBS[it.kind] || [0xffffff]); food.take(it, 'eaten'); wally.chomp(); sound.play.chomp();
+      fx.burst(p, CRUMBS[it.kind] || [0xffffff]); food.take(it, 'eaten'); wally.chomp(); eyes.chomp(); sound.play.chomp();
       game.streak++; game.caught++;
       const how = it.landed ? 'ground' : (wally.airborne ? 'leap' : 'air'), pts = catchPoints(how, game.streak, false);
       game.points += pts; addPoints(how); game.energy = Math.min(ENERGY_MAX, game.energy + FOODS[it.kind].energy);
@@ -440,6 +438,7 @@ function enterForest() {
 
 // ---- The King's court: a cinematic ----------------------------------------------------------------
 function enterCourt() {
+  carried.use('giant-mango');                                    // his to give, at last: the first time he meets the King
   game.phase = 'court'; drawVineHelp();
   fade(() => { $('hud').hidden = true; $('scene-skip').hidden = false; court.start(forest.gathered, () => { $('scene-skip').hidden = true; finish(true); }); });
 }
@@ -455,19 +454,21 @@ addEventListener('keydown', e => {
   else if (game.scene && !game.scene.over) { e.preventDefault(); endSandbar(); }
 });
 
-// ---- Camera: behind him, low over the water -------------------------------------------------------
+// ---- Camera: behind him, low over the water; in it, his own view ----------------------------------
 const camTarget = new THREE.Vector3();
+const eyes = createEyes({ camera, wally, cam, canvas });
 function followCamera(dt) {
   camTarget.lerp(wally.pos.clone().add(new THREE.Vector3(0, 1.3, 0)), Math.min(1, dt * 6));
   cam.manual = Math.max(0, cam.manual - dt);
   if (game.running && cam.manual <= 0) {
     if (steering()) cam.yaw = easeBehind(cam.yaw, wally.facing, dt);
-    else { const dx = camera.position.x - camTarget.x, dz = camera.position.z - camTarget.z; if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz); }
+    else cam.yaw = lazyBehind(cam.yaw, wally, dt);
   }
   const cp = Math.cos(cam.pitch);
   camera.position.set(camTarget.x + Math.sin(cam.yaw) * cp * cam.dist, camTarget.y + Math.sin(cam.pitch) * cam.dist, camTarget.z + Math.cos(cam.yaw) * cp * cam.dist);
   camera.position.y = Math.max(camera.position.y, groundAt(camera.position.x, camera.position.z).y + 1);
   camera.lookAt(camTarget);
+  eyes.step(dt, game.running && !inVR() && wally.surface === 'water' && game.faint <= 0);
   const jolt = fx.shakeOffset(dt); if (jolt) camera.position.add(jolt);
 }
 
@@ -547,6 +548,7 @@ function frame() {
   for (const c of bankCrocs) c.skin.update(dt);                   // their moves are in step (crocsStep)
   bubbles.update(dt); fx.update(dt, t);
   world.update(t, camera);
+  if (game.scene || game.phase !== 'river') eyes.off();          // the sandbar and the forest have the camera
   if (!game.scene && game.phase === 'river') followCamera(dt);
   else if (game.phase === 'forest') forestCamera(dt);
   intro.update(dt, camera);

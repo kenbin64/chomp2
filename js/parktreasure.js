@@ -6,7 +6,7 @@
 
 import * as THREE from 'three';
 import { chestModel } from './chest.js';
-import { PARK_TREASURE as T, LOST_THINGS, lostSpots, canTake, chestOpens } from './treasure-rules.js';
+import { PARK_TREASURE as T, lostSpots, canTake, chestOpens } from './treasure-rules.js';
 import { isWater, terrainHeight } from './rules.js';
 import { ModelSkin } from './models.js';
 
@@ -117,7 +117,7 @@ export class LagoonTreasure {
 
     const c = this.chest;
     if (this.opened && this.open < 1) { this.open = Math.min(1, this.open + dt * 1.5); c.lid.rotation.x = -this.open * 1.9; c.glow.intensity = this.open * 6; c.mango.visible = true; }
-    if (c.mango.visible) { c.mango.rotation.y += dt * 2; c.mango.position.y = 1.2 + this.open * 0.6 + Math.sin(t * 2) * 0.12; }
+    if (c.mango.visible) { c.mango.rotation.y += dt * 2; c.mango.position.y = 1.2 + this.open * 0.6 + Math.sin(t * 2) * 0.12; this.shown = (this.shown || 0) + dt; if (this.shown > 3) c.mango.visible = false; }   // on show, then he has it (carried.js): the chest stays open
 
     // Bubbles: rising from the chest, wobbling, popping at the surface.
     const base = c.group.position, top = -0.05, h = top - base.y;

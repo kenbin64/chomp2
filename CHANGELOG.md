@@ -5,6 +5,20 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- Croc Park has a new ending: a high speed race to escape. Once Wally has the key, Kenny explains what comes next. Out of
+  the gate, the siren goes and the croc wrangler is right behind him. Mangoes open the gates across the park; once they
+  are all open, the chest holds the King's Golden Mango, one of the Croc King's crown jewels. Show it to the wrangler and
+  he knows Wally was summoned by the King: he helps him now, and unlocks the final gate to the cane fields.
+- If the wrangler catches Wally he goes back to the croc enclosure, with no life lost and his mangoes kept, and each catch
+  gives him a longer start next time.
+- Wally can jump the shut gates, and climb stacks of painted boxes for mangoes, where the wrangler cannot reach him.
+- Wally sees through his own eyes whenever he is in the water, on the zip line and in the coral maze, with his snout at
+  the bottom of the screen; it rears up and snaps down when he eats. Not on the way up the coast, where the crocs follow.
+- The game begins with Wally seen as a full regular croc, before the view becomes his own.
+- What he takes out of a chest shows as an icon at the upper left until he uses it.
+- Visitors now walk a paved path right round the outside of the croc fence, with food vendors along it, and more of them:
+  tropical fruit, ice creams and cold drinks. The bridge is wider. Steering: Up always goes the way Wally faces.
+
 ## v1.0.0-beta.16 (2026-10-26)
 
 - Easier to steer on the keyboard: a tap turns Wally a little and a hold swings him round faster; the turn

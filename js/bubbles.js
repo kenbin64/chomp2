@@ -21,6 +21,7 @@ export const LINES = {
   wallyFlee:    ['Aw, come back! I only wanted lunch!', 'Sorry! Didn\'t mean to scare ya!', 'Too close, my bad.'],
   wallyBird:    ['Oi, ya big beak!', 'Cheeky pelican!', 'Fair go, that was mine!'],
   wallyBat:     ['Cheeky fruit bat!', 'Oi, come back with that!'],
+  catcherSpotted: ['There he is!', 'Oi! Stop that croc!', 'Got you now, mate!', 'Come here, you!'],   // the croc catcher (chase.js)
   wallyCroc:    ['Oi! That was mine, ya scaly thief!', 'Beat me to it, mate.'],
   wallyTired:   ['Crikey... I\'m knackered...', 'Need... a... feed...'],
   wallyAir:     ['Need... air...', 'Up! Up!'],
@@ -83,6 +84,11 @@ function bubbleTexture(text) {
   return { tex, aspect: c.width / c.height };
 }
 
+// Whose eyes we are looking through (eyes.js), if anyone's: their lines show ahead of the view, not above their head.
+let own = null;
+export function ownView(target, camera) { own = target ? { target, camera } : null; }
+const ahead = new THREE.Vector3();
+
 export class Bubbles {
   constructor(scene, max = 4) {
     this.scene = scene; this.max = max; this.list = [];
@@ -117,7 +123,10 @@ export class Bubbles {
       if (b.life <= 0) { this.remove(b); continue; }
       b.target.getWorldPosition(p);
       const rise = (b.max - b.life) * 0.15;
-      b.sprite.position.set(p.x, p.y + b.height + rise, p.z);
+      if (own && b.target === own.target) {
+        own.camera.getWorldDirection(ahead);
+        b.sprite.position.copy(own.camera.position).addScaledVector(ahead, 8.5); b.sprite.position.y += 1.9 + rise;
+      } else b.sprite.position.set(p.x, p.y + b.height + rise, p.z);
       b.sprite.material.opacity = Math.min(1, b.life / 0.3, (b.max - b.life) / 0.15);
     }
   }

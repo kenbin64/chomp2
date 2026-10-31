@@ -4,10 +4,12 @@
 // powered by what he catches, and finishing it opens the way to the next area.
 // Pure data and counting, no drawing, so it is tested (test/quests.test.mjs).
 
+import { LOST_THINGS } from './treasure-rules.js';
+
 export const AREAS = [
   // objective: what the player has to do, in a sentence or two, shown on the trip map.
   { id: 'park', name: 'Croc Park', place: 'Cairns, Far North Queensland', ready: true,
-    objective: 'Feed out every group of visitors around the lagoon, beating the pelicans, flying foxes, toads and crocs to the food. Then fill the feed-o-meter.',
+    objective: 'Dive for everything the visitors dropped in the lagoon, keeping fed on what they throw. That opens the chest and its key. Then the boss: out the gate and run for the cane fields, with the croc wrangler after you.',
     notes: 'Lagoon, banks, rocks and the boardwalk. Tourists throw food from the boardwalk.' },
   { id: 'cane', name: 'The Cane Fields', place: 'Cane country north of Cairns', ready: true,
     objective: 'Cut a path through the cane with the machete to the fire talisman in the middle. Eat the sugar cane before the cane toads and fruit bats get it. The burning cane you cannot go through, but the fire never reaches you.',
@@ -37,6 +39,18 @@ export const FULL = 95;
 // Croc Park: seven groups of visitors, then a tour group, then fill up.
 export const PARK_GROUPS = 8;
 const PARK = parkQuest();
+
+// Croc Park (Ken, 2026-10-30): the key to the park is in the chest on the lagoon bed. Find everything the visitors
+// dropped down there and the chest opens; stay fed on what they throw meanwhile. Then out the gate, and the chase.
+export function escapeQuest() {
+  return {
+    title: 'Get the key and get out',
+    goals: [
+      { id: 'lost', text: 'Find what visitors dropped in the lagoon', event: 'lostThing', need: LOST_THINGS.length },
+      { id: 'chest', text: 'Open the chest: the key is inside', event: 'chestOpened', need: 1 },
+    ],
+  };
+}
 
 // The park quest for a given number of groups (fewer on the gentle first visit: park-ease.js).
 export function parkQuest(groups = PARK_GROUPS) {

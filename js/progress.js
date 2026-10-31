@@ -75,13 +75,11 @@ export function bankFinds(progress, { mangoes = 0, pearls = 0, coins = 0, shells
 export const PIER_PRICE = 8;
 export const VENDOR_PAYS = { shells: 2 };                  // Golden Mangoes for each seashell
 export const BOAT_TICKET_PRICE = 20;                       // Golden Mangoes
-// Kept for older pages: the Skyrail no longer has a fare.
-export const SKYRAIL_FARE = 0;
 
 // What each main item is and where it comes from, for the map's "Needs ...".
 const NEED_TEXT = {
   'machete': 'the machete, from opening the Croc Park gate',
-  'golden-mango': 'Golden Mangoes, found round Croc Park',
+  'golden-mango': 'Golden Mangoes, found along the Esplanade',
   'talisman-fire': 'the fire talisman, from the middle of the cane fields',
   'talisman-sun': 'the sun talisman, from the chest by the Esplanade Lagoon',
   'talisman-moon': "the moon talisman, from the reef's pirate chest",

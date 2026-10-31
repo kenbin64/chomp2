@@ -13,7 +13,7 @@ export function installSettingsUi() {
     <label>Steering
       <select id="set-controls">
         <option value="classic">Steer: up runs, left and right turn, down turns round</option>
-        <option value="camera">Camera: move relative to the camera</option>
+        <option value="camera">Camera: move the way you press, the mouse turns the camera</option>
       </select>
     </label>
     <label>Camera

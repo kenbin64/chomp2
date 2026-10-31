@@ -82,5 +82,6 @@ export const play = {
   stolen() { tone(500, 160, 0.35, 'square', 0.15); },
   powerup() { [523, 659, 784, 1047].forEach((f, i) => tone(f, f, 0.16, 'triangle', 0.3, i * 0.08)); },
   goal() { [784, 988, 1175].forEach((f, i) => tone(f, f, 0.2, 'sine', 0.3, i * 0.1)); },
+  whistle() { tone(2750, 2900, 0.13, 'sine', 0.22); tone(2750, 2950, 0.32, 'sine', 0.22, 0.2); },   // the croc catcher's two blasts (chase.js)
   lose() { [392, 330, 262].forEach((f, i) => tone(f, f * 0.98, 0.3, 'triangle', 0.3, i * 0.18)); },
 };

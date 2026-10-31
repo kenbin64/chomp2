@@ -1,9 +1,9 @@
 // settings.js
 // The player's settings, kept in this browser (and never required: if storage is
 // blocked, the defaults are used).
-//   controls  'classic' (the default, Ken 2026-10-20) up or W runs the way he
-//                       faces, left and right turn him, down turns him round; the
-//                       same on a controller's stick, and the mouse turns him
+//   controls  'classic' (the default, Ken 2026-10-30) up runs the way he faces, left and right
+//                       turn him, the longer the more, up and right together curve, down is
+//                       an about-face; the same on every controller, and the mouse turns him
 //             'camera'  the keys or stick move Wally relative to the camera
 //   tips      true      show a short tip the first time something is met
 //   music     true      the background music
@@ -24,6 +24,8 @@ function load() {
     // Saved before steering became the default: it was 'camera' only because that was
     // the default then, so it moves to the new one (a choice made after this is kept).
     if (!saved.v2) { delete saved.controls; saved.v2 = true; }
+    // And again: camera-relative was the default for one day (2026-10-29), which Ken undid.
+    if (!saved.v4) { delete saved.controls; saved.v4 = true; }
     return { ...DEFAULTS, ...saved };
   } catch { return { ...DEFAULTS }; }
 }

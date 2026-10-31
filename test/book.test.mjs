@@ -27,10 +27,13 @@ check('each land counts its own visits', tierFor(p, 'reef') === 1);
 const run = new StampRun('park');
 const open = openStamps(p, 'park');
 let got = [];
-for (let i = 0; i < 7; i++) got = got.concat(run.record('mango', open));
-check('7 mangoes is not yet the Mango hunter stamp', !got.includes('park-mangoes'));
-got = run.record('mango', open);
-check('the 8th mango earns it', got.includes('park-mangoes'));
+// (A stamp that takes a count: three gifts.)
+const counted = [{ id: 'park-gift', event: 'gift', count: 3 }];
+for (let i = 0; i < 2; i++) got = got.concat(run.record('gift', counted));
+check('2 gifts is not yet the Good on ya stamp', !got.includes('park-gift'));
+got = run.record('gift', counted);
+check('the 3rd gift earns it', got.includes('park-gift'));
+check('getting away from the wrangler uncaught earns the boss stamp', run.record('bossClean', open).includes('park-boss'));
 const run2 = new StampRun('park');
 run2.record('hurt', open);
 const chest = run2.record('chest', open);

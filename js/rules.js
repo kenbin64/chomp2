@@ -45,6 +45,86 @@ export function clampToPark(x, z) {
   return { x: x * k, z: z * k };
 }
 
+// ---- The visitors' path -------------------------------------------------
+// People watch from a path outside the fence, as at a real croc park, not from
+// the bank inside it (Ken, 2026-10-29). Distances on the path are in metres out
+// from the fence, so the path is the same width all the way round the oval.
+export const FENCE_D = 1.42;                 // where the fence stands, in lagoon units
+export const PATH = { inner: 1.5, outer: 5.5, stand: 2.5, lanes: [3.2, 4.6] };   // metres out from the fence
+
+// The point `out` metres outside the fence, at angle a round the oval.
+export function fencePoint(a, out = 0) {
+  const nx = Math.cos(a) / LAGOON.rx, nz = Math.sin(a) / LAGOON.rz, n = Math.hypot(nx, nz);
+  return { x: Math.cos(a) * LAGOON.rx * FENCE_D + nx / n * out, z: Math.sin(a) * LAGOON.rz * FENCE_D + nz / n * out };
+}
+
+// The angle round the oval a point is at (the one fencePoint takes).
+export function pathAngle(x, z) {
+  return Math.atan2(z / LAGOON.rz, x / LAGOON.rx);
+}
+
+// How many metres outside the fence a point is (negative: inside). Across the
+// path it is within about 8 cm (measured: 0.7 cm at its inner edge, 8.0 cm at its outer).
+export function fenceOffset(x, z) {
+  const a = pathAngle(x, z), f = fencePoint(a);
+  const nx = Math.cos(a) / LAGOON.rx, nz = Math.sin(a) / LAGOON.rz, n = Math.hypot(nx, nz);
+  return (x - f.x) * nx / n + (z - f.z) * nz / n;
+}
+
+// Where a fence goes round an oval: runs of posts about `spacing` metres apart, with gaps wherever
+// blocked({ x, z, a }) says. a is the angle round the oval.
+export function fenceRuns(rx, rz, blocked, spacing) {
+  const N = 6000, at = a => { const p = { x: Math.cos(a) * rx, z: Math.sin(a) * rz, a }; return p; };
+  let a0 = 0;
+  for (let i = 0; i < N; i++) { a0 = i / N * Math.PI * 2; if (!blocked(at(a0))) break; }
+  const runs = [];
+  let run = null, last = null, prev = null;
+  const finish = () => {
+    if (!run) return;
+    if (prev && prev !== last && Math.hypot(prev.x - last.x, prev.z - last.z) > spacing * 0.3) run.push(prev);
+    if (run.length > 1) runs.push(run);
+    run = null;
+  };
+  for (let i = 0; i <= N; i++) {
+    const p = at(a0 + i / N * Math.PI * 2);
+    if (blocked(p)) { finish(); prev = null; continue; }
+    if (!run) { run = [p]; last = p; }
+    else if (Math.hypot(p.x - last.x, p.z - last.z) >= spacing) { run.push(p); last = p; }
+    prev = p;
+  }
+  finish();
+  return runs;
+}
+// The croc fence stops at the boardwalk, which crosses it at both ends.
+export function overDeck(p) {
+  return Math.abs(p.z - BOARDWALK.z) < BOARDWALK.width / 2 + 0.3 && Math.abs(p.x) < BOARDWALK.x1;
+}
+
+// The shops on the path's outer edge (shops.js draws them, each its own), in the gaps between the groups'
+// places and clear of the boardwalk. The food stands sell foods from FOODS; the souvenir shop is just
+// before the way out. Angles in degrees.
+export const STANDS = [
+  { deg: 30, kind: 'grill' },       // the Food Court (park-sections.js)
+  { deg: 50, kind: 'fryer' },
+  { deg: 70, kind: 'oven' },
+  { deg: 138, kind: 'drinks' },
+  { deg: 158, kind: 'souvenir' },   // just before the way out
+  { deg: 285, kind: 'fruit' },      // the far side of the path, so there are vendors all the way round (Ken, 2026-10-30)
+  { deg: 322, kind: 'icecream' },
+];
+export const STAND = { w: 3.3, d: 2.75 };    // the ground a shop takes, metres
+export function kioskSpots() {
+  return STANDS.map(k => {
+    const a = k.deg * Math.PI / 180, p = fencePoint(a, PATH.outer + STAND.d / 2 + 1.0), in_ = fencePoint(a, 0);
+    return { ...k, x: p.x, z: p.z, rot: Math.atan2(in_.x - p.x, in_.z - p.z) };   // its front (+z) toward the crocs
+  });
+}
+
+export function onPath(x, z, margin = 0) {
+  const o = fenceOffset(x, z);
+  return o >= PATH.inner - margin && o <= PATH.outer + margin;
+}
+
 // ---- Energy -------------------------------------------------------------
 
 export const ENERGY_MAX = 100;
@@ -147,7 +227,7 @@ export function difficulty(seconds) {
 
 // The boardwalk crosses the lagoon high enough to swim under and leap onto.
 // Its ends slope down to the banks so Wally can hop on from dry land.
-export const BOARDWALK = { z: 2, width: 3.2, x0: -58, x1: 58, top: 3.2, flat: 24, rampEnd: 40, low: 0.6 };
+export const BOARDWALK = { z: 2, width: 5, x0: -58, x1: 58, top: 3.2, flat: 24, rampEnd: 40, low: 0.6 };
 
 export function deckHeight(x) {
   const B = BOARDWALK, a = Math.abs(x);
@@ -158,11 +238,17 @@ export function deckHeight(x) {
 
 // Places Wally can pass the boardwalk's edge: gaps in the railing over the water,
 // and the steps down to the bank at each end. Everywhere else the rails hold him.
+export const GATE_X = 35.5;                  // the gate on the boardwalk (world.js draws it)
+
 export const DECK_OPENINGS = [
   { x0: -38, x1: -31, kind: 'steps' },
   { x0: -10, x1: -7, kind: 'gap' },
   { x0: 12, x1: 15, kind: 'gap' },
   { x0: 31, x1: 38, kind: 'steps' },
+  // Where the visitors' path outside the fence meets it (it crosses x 41.15 to 45.18 at the deck's middle):
+  // people step up onto it there, and Wally, once out of the gate, steps off onto the path (chase-rules.js).
+  { x0: -45, x1: -41.4, kind: 'path' },
+  { x0: 41.4, x1: 45, kind: 'path' },
 ];
 
 export function deckOpenAt(x) {

@@ -6,6 +6,8 @@
 
 import { startRun, addPoints, bankRun } from '../points.js';
 import { installVR, inVR } from '../vr.js';
+import { ownView } from '../bubbles.js';
+import { createSnout } from '../eyes.js';
 import * as THREE from 'three';
 import { Wally } from '../wally.js';
 import { loadModels } from '../models.js';
@@ -440,6 +442,7 @@ function stepIntro(dt) {
 for (const ev of ['keydown', 'pointerdown']) addEventListener(ev, () => { if (cine.active) endIntro(); });
 
 const camLook = new THREE.Vector3(0, 30, FALLS_Z + 40);   // where the camera is looking, eased so it swings rather than snaps
+const snout = createSnout(scene, camera);
 function place(t) {
   const st = game.state || { s: 0 };
   if (!line) return;
@@ -450,16 +453,19 @@ function place(t) {
   // Wally hangs from the strap: his hands up at the trolley, body swinging below.
   wally.root.position.set(body.x, body.y - 1.4, z); wally.root.rotation.set(-0.05, Math.PI, -game.side * 0.25);
   if (wally.skin) { wally.skin.play('climbacross', { alternatives: ['climb', 'idle'] }); }
+  // Riding, the view is his own (Ken, 2026-10-30), as in the boomerang throw: he is hidden, his lines show ahead of it.
+  const riding = game.running && !cine.active;
+  if (riding === wally.root.visible) { wally.root.visible = strap.visible = !riding; snout.show(riding); ownView(riding ? wally.root : null, camera); }
   // Camera. On the title screen: down the gorge, looking back up it at the falls
-  // (like Ken's photo from the lookout). Riding: behind him, a little above,
-  // looking down the line, downstream. It swings between the two.
+  // (like Ken's photo from the lookout). Riding: from his eyes, looking down the line, downstream. It swings between the two.
   const onTitle = !game.running && !$('title').hidden;
   const ahead = Math.min(1, st.s + 30 / line.length);
-  const want = onTitle ? new THREE.Vector3(14, 54, -62) : new THREE.Vector3(2.6 + game.side * 0.3, cy - 1.2, z + 7.5);   // riding: beside and just below the cable
-  const look = onTitle ? new THREE.Vector3(0, 30, FALLS_Z + 40) : new THREE.Vector3(0, cableY(line, ahead) - HANG - 1, -ahead * line.length);
+  const want = onTitle ? new THREE.Vector3(14, 54, -62) : (riding ? new THREE.Vector3(body.x, body.y + 0.9, z - 0.5) : new THREE.Vector3(2.6 + game.side * 0.3, cy - 1.2, z + 7.5));   // after the ride: beside and just below the cable
+  const look = onTitle ? new THREE.Vector3(0, 30, FALLS_Z + 40) : new THREE.Vector3(riding ? game.side * 0.6 : 0, cableY(line, ahead) - HANG - 1, -ahead * line.length);
   camera.position.lerp(want, onTitle ? 0.05 : 0.15);
   camLook.lerp(look, onTitle ? 0.05 : 0.2);
   camera.lookAt(camLook);
+  snout.place(Math.PI);                                // he rides down the line, toward -z
   if (cine.active) stepIntro(0);                     // the intro, when playing, has the camera
   for (const th of things) if (!th.got) th.mesh.rotation.y += 0.03;
   for (const b of lights) b.material.color.setHSL(0.11, 1, 0.6 + 0.15 * Math.sin(t * 4 + b.position.z));

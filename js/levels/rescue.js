@@ -9,14 +9,14 @@
 import { installMenu } from '../menu.js';
 import { installVR, inVR } from '../vr.js';
 import { guideArrow, nearest } from '../guide-arrow.js';
-import { startRun, addPoints, bankRun, installScore } from '../points.js';
+import { startRun, addPoints, installScore } from '../points.js';
 import * as THREE from 'three';
 import { buildWorld, drawnHeight } from '../world.js';
 import { Wally } from '../wally.js';
-import { Input, steering, easeBehind } from '../input.js';
+import { Input, steering, easeBehind, lazyBehind } from '../input.js';
 import { Bubbles } from '../bubbles.js';
 import { Effects } from '../fx.js';
-import { loadModels, ModelSkin, MODEL_FILES } from '../models.js';
+import { loadModels, ModelSkin, MODEL_FILES, PARK_MODEL_FILES } from '../models.js';
 import { createPost } from '../post.js';
 import { loadRealism } from '../realism.js';
 import { usePalmCrown } from '../palms.js';
@@ -27,9 +27,9 @@ import { readProgress, outfitModel, wearing } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
 import * as sound from '../sound.js';
 import { makeSceptre, ALL_TALISMANS, holdHigh } from '../sceptre-model.js';
-import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
+import { areaIntro, orbitShots } from '../area-intro.js';
 import { LAGOON, terrainHeight, isWater, WATER_Y, BOARDWALK, deckHeight } from '../rules.js';
-import { CALL, GAP, FENCE, SEA_Z, startingCrocs, fenceDistance, inGap, onShore, inSea, addToTrail, placeInLine, follow, allCalled, SPACING } from './rescue-rules.js';
+import { CALL, GAP, FENCE, SEA_Z, startingCrocs, fenceDistance, inGap, onShore, addToTrail, placeInLine, follow, allCalled, SPACING } from './rescue-rules.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -51,7 +51,7 @@ const fpsWatch = watchFrameRate(quality, lower => { quality = lower; renderer.se
 const intro = areaIntro({ id: 'rescue', name: 'Croc Park', place: 'Back where it all began', focus: on => fpsWatch.focus(on),
   shots: () => orbitShots({ centre: { x: 0, y: 0, z: 0 }, radius: 70, height: 45, low: 18, a0: -Math.PI * 0.4, a1: Math.PI * 0.95 }) });
 
-const models = await loadModels([...MODEL_FILES, 'talisman-sun', 'talisman-moon', 'talisman-air', 'talisman-earth', 'talisman-fire', 'sceptre-hero', 'sceptre-hero'], { light: touch || quality.name === 'low' });
+const models = await loadModels([...MODEL_FILES, ...PARK_MODEL_FILES, 'talisman-sun', 'talisman-moon', 'talisman-air', 'talisman-earth', 'talisman-fire', 'sceptre-hero', 'sceptre-hero'], { light: touch || quality.name === 'low' });
 const realism = params.get('real') === '0' ? null : await loadRealism(renderer, { light: touch || quality.name === 'low' });
 usePalmCrown(models.get('palm-crown'));
 const GAP_ANGLE = (GAP.half + 0.6) / FENCE.rx;                     // the fence's opening, half its angle
@@ -157,7 +157,7 @@ function followCamera(dt) {
   cam.manual = Math.max(0, cam.manual - dt);
   if (game.running && cam.manual <= 0) {
     if (steering()) cam.yaw = easeBehind(cam.yaw, wally.facing, dt);
-    else { const dx = camera.position.x - camTarget.x, dz = camera.position.z - camTarget.z; if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz); }
+    else cam.yaw = lazyBehind(cam.yaw, wally, dt);
   }
   const dist = cam.dist + Math.min(8, game.called * 0.6);              // backing off as the line grows, to see it
   const cp = Math.cos(cam.pitch);

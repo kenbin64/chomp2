@@ -15,8 +15,8 @@ export const LANDS = ['park', 'esplanade', 'reef', 'kuranda'];
 
 export const STAMPS = [
   // Croc Park
-  { id: 'park-fed',     land: 'park', visit: 1, name: 'Fed the lot',        how: 'Feed out every group of visitors and finish', event: 'finish' },
-  { id: 'park-mangoes', land: 'park', visit: 1, name: 'Mango hunter',       how: 'Find all 8 Golden Mangoes in one visit', event: 'mango', count: 8 },
+  { id: 'park-fed',     land: 'park', visit: 1, name: 'Over the fence',     how: 'Get the key and get out of the park', event: 'finish' },
+  { id: 'park-boss',    land: 'park', visit: 1, name: 'Slipped the wrangler', how: 'Get away from the croc wrangler without being caught once', event: 'bossClean' },
   { id: 'park-chest',   land: 'park', visit: 1, name: 'Lagoon treasure',    how: 'Open the chest on the lagoon bottom', event: 'chest' },
   { id: 'park-night',   land: 'park', visit: 2, name: 'Night owl',          how: 'Catch 5 pieces of tucker after dark', event: 'nightCatch', count: 5 },
   { id: 'park-clean',   land: 'park', visit: 2, name: 'Slippery customer',  how: 'Open the lagoon chest without a sting or a bite', event: 'chest', clean: 'hurt' },
@@ -170,7 +170,7 @@ export function applyReward(progress, r) {
 // The first time Wally gets each kind of thing, the book opens on it: what it
 // is and what it can do. It stays listed in the book after.
 export const ITEMS = [
-  { id: 'mango',     icon: '🥭', name: 'Golden Mango',   is: 'A ripe golden mango, found about Croc Park and along the Esplanade.', does: 'Opens the Esplanade pier (8 of them), buys outfits, and the Kuranda trader pays gold for them.' },
+  { id: 'mango',     icon: '🥭', name: 'Golden Mango',   is: 'A ripe golden mango, found along the Esplanade.', does: 'Opens the Esplanade pier (8 of them), buys outfits, and the Kuranda trader pays gold for them.' },
   { id: 'lostThing', icon: '🕶️', name: 'Lost things',    is: 'Sunnies, a ring, a watch, a phone and a bangle that visitors dropped into the lagoon.', does: 'Find all five on the lagoon bottom and the treasure chest opens.' },
   { id: 'jar',       icon: '🫙', name: "Kenny's jar",     is: "Kenny's jar of black spread: a scoop of it does wonders.", does: 'Fills the feed-o-meter right up. Under half full, go and find Kenny for a scoop.' },
   { id: 'pearl',     icon: '⚪', name: 'Pearl',           is: 'A pearl, left by happy picnickers, found out on the pier and down in the coral cave.', does: 'Opens the giant clam at the reef. Esplanade traders take them too.' },

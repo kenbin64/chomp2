@@ -717,3 +717,40 @@ body.touch:has(#dive-buttons:not([hidden])) #t-fours { display: none; }
 .vr-button:hover { background: rgba(159, 238, 255, 0.2); }
 .menu-panel .vr-button { position: static; transform: none; display: block; }
 #title:not([hidden]) ~ .vr-button { display: none !important; }
+
+/* The thumb-stick on touch screens (input.js): a ring that comes up under the finger, wherever it lands. */
+#stick.thumb { position: fixed; display: none; width: 124px; height: 124px; margin: -62px 0 0 -62px; pointer-events: none; border: 3px solid rgba(255, 255, 240, 0.6); background: rgba(255, 255, 240, 0.1); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25); }
+#stick.thumb.on { display: block; }
+#stick.thumb #knob { display: block; position: absolute; left: 35px; top: 35px; width: 54px; height: 54px; border-radius: 50%; background: rgba(255, 209, 102, 0.8); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
+#stick.replaced { display: none; }
+
+/* The boss banner as the chase begins (main.js). */
+.boss-banner { position: fixed; top: 22%; left: 50%; transform: translateX(-50%); z-index: 40; pointer-events: none; text-align: center; padding: 14px 34px 16px; border-radius: 14px; background: rgba(40, 14, 8, 0.86); border: 2px solid #ff8a5c; color: #fff4e0; font: 900 clamp(26px, 5vw, 46px)/1.1 Impact, 'Arial Black', sans-serif; letter-spacing: 0.02em; animation: boss-in 3.4s ease both; }
+.boss-banner small { display: block; font-size: 0.42em; letter-spacing: 0.32em; text-transform: uppercase; color: #ff8a5c; margin-bottom: 4px; }
+.boss-banner span { display: block; font: 700 clamp(13px, 2vw, 17px) 'Trebuchet MS', sans-serif; letter-spacing: 0; margin-top: 8px; color: #ffe0c0; }
+@keyframes boss-in { 0% { opacity: 0; transform: translateX(-50%) scale(1.35); } 10% { opacity: 1; transform: translateX(-50%) scale(1); } 82% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) translateY(-14px); } }
+
+/* The water's colour over the picture while he is under (main.js diveView). */
+.dive-tint { position: fixed; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, rgba(40, 150, 150, 0.55), rgba(8, 62, 78, 1)); }
+
+/* The cut scene as Wally breaks out (escape-scene.js). */
+.escape-scene { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+body.in-cut .guide-arrow, body.in-cut .tip-card, body.in-cut #toasts { display: none; }
+.escape-scene .cine-bar { position: absolute; left: 0; right: 0; height: max(11vh, 106px); background: #000; }
+.escape-scene .cine-bar.top { top: 0; } .escape-scene .cine-bar.bottom { bottom: 0; }
+.escape-scene .siren { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(255, 40, 20, 0) 45%, rgba(255, 40, 20, 0.5)); animation: siren 0.9s ease-in-out infinite; }
+@keyframes siren { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+.escape-line { position: absolute; left: 50%; bottom: calc(max(11vh, 106px) + 14px); transform: translateX(-50%); width: min(820px, 90vw); margin: 0; padding: 12px 18px; border-radius: 14px; background: rgba(8, 30, 44, 0.86); color: #fff; font: 700 clamp(17px, 2.6vw, 24px)/1.3 var(--font); text-align: center; }
+.escape-line b { color: #ffd166; }
+.escape-line.big { bottom: 40vh; background: none; color: #ffd166; font-size: clamp(42px, 9vw, 92px); letter-spacing: 0.03em; text-shadow: 0 4px 0 #8a1c10, 0 8px 24px rgba(0, 0, 0, 0.7); }
+.escape-skip { position: absolute; right: 16px; bottom: 3.5vh; color: rgba(255, 255, 255, 0.7); font: 600 13px var(--font); }
+
+/* What he took out of a chest, until he uses it (carried.js). */
+.carried { position: fixed; top: 12px; left: 90px; z-index: 12; display: flex; gap: 8px; pointer-events: none; }
+.carried-item { display: flex; flex-direction: column; align-items: center; min-width: 56px; padding: 5px 7px 4px; border: 2px solid #ffd166; border-radius: 14px; background: rgba(8, 30, 44, 0.82); color: #fff; font: 700 11px/1.15 var(--font); text-align: center; animation: carried-in 0.5s cubic-bezier(.2, 1.6, .4, 1); }
+.carried-item span { display: block; max-width: 74px; margin-top: 2px; }
+.carried-item.used { animation: carried-out 0.45s ease-in forwards; }
+@keyframes carried-in { from { transform: scale(0.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes carried-out { to { transform: translateY(-16px) scale(1.5); opacity: 0; } }
+body.in-cut .carried { visibility: hidden; }
+@media (max-width: 600px) { .carried-item { min-width: 44px; padding: 3px 5px; font-size: 10px; } .carried-item svg { width: 28px; height: 28px; } }

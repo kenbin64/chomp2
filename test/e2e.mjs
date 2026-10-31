@@ -123,10 +123,10 @@ test('Croc Park first visit is gentle and builds; a return visit is not', async 
   await p.evaluate(() => window.chompStartHere()); await wait(1500);
   const shown = () => p.evaluate(() => ({ pel: window.chomp.pelicans.list.length, toad: window.chomp.toads.list.length,
     croc: window.chomp.crocs.list.filter(c => !c.guard).length, guard: window.chomp.crocs.list.some(c => c.guard),
-    need: window.chomp.game.quest.goals[0].need, drain: window.chomp.game.tripDrain }));
+    need: window.chomp.game.parkGroups, drain: window.chomp.game.tripDrain }));
   let s = await shown();
   check('first visit: six groups, slow drain, no thieves yet, the treasure guard still there', s.need === 6 && s.drain <= 0.4 && s.pel === 0 && s.toad === 0 && s.croc === 0 && s.guard, JSON.stringify(s));
-  await p.evaluate(() => { const q = window.chomp.game.quest; q.record('groupDone'); q.record('groupDone'); q.record('groupDone'); });
+  await p.evaluate(() => { window.chomp.game.groupsDone = 3; });
   await p.waitForFunction(() => window.chomp.pelicans.list.length > 0, { timeout: 15000 }).catch(() => {}); await wait(500);   // after the start-of-level moment
   s = await shown();
   check('after three groups: pelicans, toads and a croc have turned up', s.pel === 2 && s.toad >= 1 && s.croc === 1, JSON.stringify(s));
@@ -140,23 +140,24 @@ test('Croc Park first visit is gentle and builds; a return visit is not', async 
   await p.done();
 });
 
-test('phone: the pad bottom turns Wally round; Duck sits by the backpack; no Cam button', async () => {
+test('phone: a finger anywhere steers; down is an about-face; Duck sits by the backpack; no Cam button', async () => {
   const p = await page({ save: { unlocked: ['park'], trip: trip({ park: 1 }) }, size: [844, 390], phone: true });
   await go(p, 'index.html?noopening', 5000);
   await p.evaluate(() => window.chompStartHere());
-  await p.waitForFunction(() => window.chomp.game.intro <= 0 && document.querySelector('#dpad .pad-down').getBoundingClientRect().width > 0, { timeout: 20000 }).catch(() => {}); await wait(500);
+  await p.waitForFunction(() => window.chomp.game.intro <= 0, { timeout: 20000 }).catch(() => {}); await wait(500);
   const before = await p.evaluate(() => window.chomp.wally.facing);
-  const r = await p.evaluate(() => { const e = document.querySelector('#dpad .pad-down').getBoundingClientRect(); return { x: e.left + e.width / 2, y: e.top + e.height / 2 }; });
-  await p.touchscreen.tap(r.x, r.y); await wait(1500);
+  const t = await p.touchscreen.touchStart(420, 200);
+  await t.move(420, 300); await wait(900); await t.end(); await wait(900);
   const turned = Math.abs(await p.evaluate(() => window.chomp.wally.facing) - before) / Math.PI;
-  check('one tap turns him right round (half a circle)', Math.abs(turned - 1) < 0.1, turned.toFixed(2));
+  check('a drag down turns him right round (half a circle)', Math.abs(turned - 1) < 0.1, turned.toFixed(2));
   const v = await p.evaluate(() => {
     const box = e => { if (!e) return null; const r = e.getBoundingClientRect(); return getComputedStyle(e).display !== 'none' && !e.hidden && r.width > 0 ? r : null; };
-    const duck = box(document.getElementById('t-fours')), gear = box(document.querySelector('.gear-badge')), pad = box(document.getElementById('dpad'));
-    return { cam: !!box(document.getElementById('t-cam')), duck: !!duck, besideGear: !!(duck && gear && duck.left > gear.left && duck.left < pad.left && Math.abs(duck.bottom - gear.bottom) < 40) };
+    const duck = box(document.getElementById('t-fours')), gear = box(document.querySelector('.gear-badge'));
+    return { cam: !!box(document.getElementById('t-cam')), duck: !!duck, besideGear: !!(duck && gear && duck.left > gear.left && Math.abs(duck.bottom - gear.bottom) < 40), noPad: !document.getElementById('dpad') };
   });
   check('no Cam button on a phone', !v.cam, JSON.stringify(v));
-  check('Duck shows on land, beside the backpack, away from the pad', v.duck && v.besideGear, JSON.stringify(v));
+  check('Duck shows on land, beside the backpack', v.duck && v.besideGear, JSON.stringify(v));
+  check('the thumb-stick has replaced the old pad', v.noPad, JSON.stringify(v));
   if (process.env.SHOT) await p.screenshot({ path: process.env.SHOT });
   check('no errors', !p.errors.length, p.errors.join(' | '));
   await p.done();

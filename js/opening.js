@@ -30,6 +30,8 @@ const KENNY_LINES = [
   "Run out of puff, and I'll bring my jar.",
   'But only three times in each place!',
   'First, you need the key to the park.',
+  "It's in the chest, on the bottom of the lagoon.",
+  'Find what the visitors dropped down there, and it opens.',
   "And stay fed, or you'll run out of puff.",
 ];
 const LINE_SECONDS = 2.7;
@@ -321,6 +323,7 @@ export function createOpening({ scene, models, wally, kenny, clusters, bubbles, 
   return {
     get active() { return !!phase; },
     get phase() { return phase; },
+    get phaseTime() { return time; },
     get sceptreAt() { return sceptre.position; },              // for testing
     get croc() { return croc; },
     begin(done) { onDone = done; enter('intro'); },

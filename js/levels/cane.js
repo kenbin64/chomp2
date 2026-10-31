@@ -16,24 +16,25 @@ import { installVR, inVR } from '../vr.js';
 import { guideArrow } from '../guide-arrow.js';
 import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { foundTalisman } from '../revisit.js';
-import { installGear, snorkelling, drainFactor } from '../gear.js';
+import { installGear, drainFactor } from '../gear.js';
 import { installBook, openBook } from '../book.js';
 import * as THREE from 'three';
 import * as Trip from '../trip-rules.js';
 import { CANE, makeField, cellToWorld, worldToCell, walkable, cuttable, cut, startCell, middle, cutsNeeded } from './cane-rules.js';
 import { buildCane } from './cane-scene.js';
 import { Wally } from '../wally.js';
-import { Input, steering, easeBehind } from '../input.js';
+import { Input, steering, easeBehind, lazyBehind } from '../input.js';
 import { Bubbles, reaction, pickLine } from '../bubbles.js';
 import { Effects } from '../fx.js';
 import { loadModels, dress } from '../models.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
-import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
+import { areaIntro, orbitShots } from '../area-intro.js';
 import { installMap, recordVisit, markRetry } from '../mapmodal.js';
 import { showTip } from '../tips.js';
 import { chestModel } from '../chest.js';
+import { carried } from '../carried.js';
 import { kennysJar } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
 import { HumanoidPoser } from '../rig.js';
@@ -41,6 +42,7 @@ import { FlyingFoxes, CaneToads } from '../hazards.js';
 import { ENERGY_MAX, energyDrain, speedFactor, LIVES, REVIVE_ENERGY, inRedZone } from '../rules.js';
 import { completeArea, readProgress, saveProgress, outfitModel, wearing, starsFor } from '../progress.js';
 import { dressOutfit } from '../outfit.js';
+import { toast as toast_ } from '../toast.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -258,14 +260,9 @@ const game = {
   toadCool: 0, hint: 0,
 };
 game.tripDrain = Trip.drainFactor(progress.trip, 'cane', attempt.level);
+if (Trip.have(progress.trip, 'golden-mango')) carried.add('golden-mango', { id: 'giant-mango' });   // for the Croc King (the park, main.js)
 const cutsToMiddle = cutsNeeded(field);
 window.chomp = { game, wally, field: () => field, pieces, scene, camera, machete, poseMachete };
-
-function toast_(text, kind = 'good') {
-  const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
-  $('toasts').appendChild(el); setTimeout(() => el.remove(), 1800);
-  while ($('toasts').children.length > 3) $('toasts').firstChild.remove();
-}
 
 // ---- One frame ------------------------------------------------------------------------------
 // Above Wally, looking down over the cane (3.4 m) into the path he is cutting,
@@ -356,7 +353,7 @@ function step(dt, t) {
 
   // The chest in the clearing: the fire talisman.
   if (!game.talisman && Math.hypot(wally.pos.x - chest.x, wally.pos.z - chest.z) < 2.4) {
-    game.talisman = true; game.points += 300; attempt = Trip.gain(attempt, 'talisman-fire'); addPoints('talisman');
+    game.talisman = true; carried.add('talisman', { label: 'Fire talisman' }); game.points += 300; attempt = Trip.gain(attempt, 'talisman-fire'); addPoints('talisman');
       setTimeout(() => foundTalisman('talisman-fire', toast_), 1600);          // new: the sceptre card; already sealed: a random useful prize (revisit.js)
     sound.play.powerup(); wally.cheer = 1.2; fx.burst(new THREE.Vector3(chest.x, 1.5, chest.z), [0xff6a1a, 0xffc04a, 0xffffff], 40);
     toast_('The fire talisman!', 'good'); bubbles.say(wally.root, 'Crikey! The fire talisman! One for the sceptre!', 3.6);
@@ -406,7 +403,7 @@ function followCamera(dt) {
       const dx = camera.position.x - camTarget.x, dz = camera.position.z - camTarget.z;
       // Steering (the default): the camera swings round behind him as he turns.
       if (steering()) cam.yaw = easeBehind(cam.yaw, wally.facing, dt);
-      else if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz);
+      else cam.yaw = lazyBehind(cam.yaw, wally, dt);
     }
   }
   const cp = Math.cos(cam.pitch);

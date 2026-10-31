@@ -24,7 +24,7 @@ export const PRICES = {
 // Where each thing the traders take comes from (Ken: a button to go back there,
 // so there is a purpose to going back to other lands).
 export const SOURCE = {
-  mangoes: { land: 'park', page: 'index.html?play', name: 'Croc Park' },
+  mangoes: { land: 'esplanade', page: 'esplanade.html?play', name: 'the Esplanade' },
   pearls:  { land: 'esplanade', page: 'esplanade.html', name: 'the Esplanade' },
   shells:  { land: 'reef', page: 'reef.html', name: 'the Great Barrier Reef' },
   coins:   { land: 'kuranda', page: 'kuranda.html', name: 'the Kuranda markets' },

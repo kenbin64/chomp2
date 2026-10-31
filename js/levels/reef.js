@@ -9,42 +9,45 @@
 
 import { startRun, addPoints, bankRun, failRun } from '../points.js';
 import { installVR, inVR } from '../vr.js';
+import { createEyes } from '../eyes.js';
+import { carried } from '../carried.js';
 import { foundTalisman } from '../revisit.js';
 import { fitText } from '../signtext.js';
 import { installGear, snorkelling } from '../gear.js';
 import * as THREE from 'three';
 import { Water } from 'three/addons/objects/Water.js';
 import { Wally } from '../wally.js';
-import { Input, steering, easeBehind } from '../input.js';
+import { Input, steering, easeBehind, lazyBehind } from '../input.js';
 import { Bubbles, reaction, pickLine } from '../bubbles.js';
 import { Effects } from '../fx.js';
 import { loadModels, dress, MODEL_FILES } from '../models.js';
-import { usePalmCrown, buildPalm, palmStand } from '../palms.js';
+import { usePalmCrown, palmStand } from '../palms.js';
 import { Trees } from '../trees.js';
 import { loadRealism, applySky, surfaceMaterial } from '../realism.js';
 import { createPost } from '../post.js';
 import { pickQuality, watchFrameRate, isTouchDevice, pixelRatioFor } from '../quality.js';
 import { setGround } from '../ground.js';
 import * as sound from '../sound.js';
-import { areaIntro, courseShots, orbitShots } from '../area-intro.js';
+import { areaIntro, orbitShots } from '../area-intro.js';
 import { installMap, recordVisit, markRetry } from '../mapmodal.js';
-import { installShop, openShop } from '../shopmodal.js';
+import { installShop } from '../shopmodal.js';
 import { showLeaderboard } from '../leaderboard.js';
 import { dressOutfit } from '../outfit.js';
 import { LIVES } from '../rules.js';
 import { HumanoidPoser } from '../rig.js';
 import { kennysJar, useJarModel } from '../food.js';
 import { jarLabelTexture } from '../textures.js';
-import { readProgress, completeArea, starsFor, POSTCARDS, wearing, WARDROBE, outfitModel, PROGRESS_CHANGED, saveProgress } from '../progress.js';
+import { readProgress, completeArea, starsFor, POSTCARDS, wearing, outfitModel, PROGRESS_CHANGED, saveProgress } from '../progress.js';
 import * as Trip from '../trip-rules.js';
 import { showTip } from '../tips.js';
 import { makeMaze, makeReefMaze, mazePath, cellAt, cellCentre, collide, inMaze, airStep, AIR,
          SWIM_Y, SURFACE_Y, SEABED_Y, reefRunScore, REEF_STARS, PEARL_POINTS, CHEST_POINTS,
          LANES, LANE_NAMES, TREASURES, nextDepth, treasureSpots, canCollect, canTouchStarfish, clamCell } from './reef-rules.js';
 import { buildReef, buildTreasures, MAZE, OUTER, DIVE, BOUNDS, buildGiantClam } from './reef-scene.js';
-import { installBook, bookEvent, ability, HiddenFinds, openBook } from '../book.js';
+import { installBook, bookEvent, HiddenFinds, openBook } from '../book.js';
 import { DayNight } from '../daynight.js';
 import { StreetLamps } from '../lamps.js';
+import { toast as toast_ } from '../toast.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -294,7 +297,9 @@ if (!progress.trip) { progress.trip = Trip.tripFor(progress); saveProgress(progr
 const entry = Trip.canEnter(progress.trip, 'reef'), testingAll = params.has('all');
 let attempt = Trip.startAttempt(progress.trip, 'reef', { force: true }); startRun('reef', { level: attempt.level });
 game.tripDrain = Trip.drainFactor(progress.trip, 'reef', attempt.level);
+if (Trip.have(progress.trip, 'golden-mango')) carried.add('golden-mango', { id: 'giant-mango' });   // for the Croc King (the park, main.js)
 game.hasPearlKey = Trip.have(progress.trip, 'pearl-key');           // on a return dive he has it already
+if (game.hasPearlKey) carried.add('pearl-key');
 game.keyRise = 9;
 
 // The giant clam (Ken's model) in a dead end of the coral maze on the open reef,
@@ -325,12 +330,6 @@ const hiddenFinds = new HiddenFinds(scene, [
   { x: JETTY.x0 + 0.6, y: JETTY.y, z: JETTY.z },
 ]);
 window.chomp.hiddenFinds = hiddenFinds;
-
-function toast_(text, kind = 'good') {
-  const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = text;
-  $('toasts').appendChild(el); setTimeout(() => el.remove(), 1800);
-  while ($('toasts').children.length > 3) $('toasts').firstChild.remove();
-}
 
 // ---- The ground: jetty, island, and the water above and below the reef -------------
 setGround({
@@ -586,7 +585,7 @@ function step(dt, t) {
   if (!game.hasPearlKey && !atTop && Math.hypot(wally.pos.x - clam.x, wally.pos.z - clam.z) < 3.4) {
     const t = Trip.trade(progress.trip, attempt, { item: 'big-golden-mango', n: 1 }, { item: 'pearl-key', n: 1 });
     if (t.ok) {
-      attempt = t.attempt; game.hasPearlKey = true; game.keyRise = 0; bookEvent('clam');
+      attempt = t.attempt; game.hasPearlKey = true; carried.add('pearl-key'); game.keyRise = 0; bookEvent('clam');
       sound.play.powerup(); fx.burst(new THREE.Vector3(clam.x, SEABED_Y + 1.5, clam.z), [0xffffff, 0xffd6f0, 0xffd166], 26);
       toast_('The giant clam takes the Big Golden Mango... and opens. The pearl key!', 'good');
       bubbles.say(wally.root, 'A key made of pearl! Now for that chest!', 3.4);
@@ -599,6 +598,7 @@ function step(dt, t) {
   if (!game.chest && game.inCave && Math.hypot(wally.pos.x - ch.x, wally.pos.z - ch.z) < 2.2) {
     if (game.hasPearlKey) {
       game.chest = true; ch.opened = true; ch.mango.visible = true; bookEvent('chest');
+      carried.use('pearl-key'); carried.add('pass', { label: 'Skyrail pass' });
       attempt = Trip.gain(Trip.gain(attempt, 'talisman-moon'), 'skyrail-pass'); addPoints('talisman');   // the moon talisman and the ride up; kept when the reef is completed
       setTimeout(() => foundTalisman('talisman-moon', toast_), 1600);          // new: the sceptre card; already sealed: a random useful prize (revisit.js)
       game.points += CHEST_POINTS; wally.cheer = 1.2;
@@ -629,6 +629,7 @@ function step(dt, t) {
 
 // ---- Camera ------------------------------------------------------------------------------
 const camTarget = new THREE.Vector3();
+const eyes = createEyes({ camera, wally, cam, canvas });   // in the water, his own view (the reef has its own underwater look)
 function followCamera(dt) {
   camTarget.lerp(wally.pos.clone().add(new THREE.Vector3(0, 1.4, 0)), Math.min(1, dt * 6));
   cam.manual = Math.max(0, cam.manual - dt);
@@ -636,7 +637,7 @@ function followCamera(dt) {
     const dx = camera.position.x - camTarget.x, dz = camera.position.z - camTarget.z;
     // Steering (the default): the camera swings round behind him as he turns.
     if (steering()) cam.yaw = easeBehind(cam.yaw, wally.facing, dt);
-    else if (dx * dx + dz * dz > 0.01) cam.yaw = Math.atan2(dx, dz);
+    else cam.yaw = lazyBehind(cam.yaw, wally, dt);
   }
   const under = game.depth < -1.2;
   // In a maze, look down into it from steep and close, staying under the surface.
@@ -648,6 +649,7 @@ function followCamera(dt) {
   if (under) camera.position.y = Math.min(-0.9, Math.max(SEABED_Y + 0.8, camera.position.y));
   else if (camera.position.y < 0.8) camera.position.y = 0.8;
   camera.lookAt(camTarget);
+  eyes.step(dt, game.running && !inVR() && wally.surface === 'water' && game.faint <= 0);
   const jolt = fx.shakeOffset(dt); if (jolt) camera.position.add(jolt);
   sun.target.position.copy(wally.pos); sun.position.copy(wally.pos).add(sunOffset);
 }

@@ -7,14 +7,20 @@ import { addSolid } from './ground.js';
 import { fitText } from './signtext.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { LAGOON, BANK_Y, BOARDWALK, ROCKS, lagoonDistance, terrainHeight, deckHeight, deckOpenAt, PARK_EDGE } from './rules.js';
+import { LAGOON, BANK_Y, BOARDWALK, ROCKS, lagoonDistance, terrainHeight, deckHeight, deckOpenAt, PARK_EDGE, FENCE_D, onPath, GATE_X, fenceRuns, overDeck } from './rules.js';
+import { addVisitorPath, addKiosks, kioskSpots, logFence, addOuterFence, addPens, addExit } from './park-path.js';
+import { OUTER, EXIT, PENS, penShape, outerDistance } from './chase-rules.js';
+import { addSections, setWallSolids, addGateBars, addFinalGate } from './sections-draw.js';
+import { setLockdown } from './park-sections.js';
+import { seeThrough, seeThroughAll } from './see-through.js';
+import { clearOfSections } from './park-sections.js';
 import { signTexture, skyTexture, plankTexture, horizonTexture } from './textures.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
-import { fitToSize, fitToHeight } from './models.js';
+import { fitToSize } from './models.js';
 import { Water } from 'three/addons/objects/Water.js';
 import { surfaceMaterial, groundMaterial, applySky } from './realism.js';
 import { buildPalm, palmStand } from './palms.js';
-import { addForest } from './forest.js';
+import './forest.js';
 import { Trees } from './trees.js';
 import { Grass } from './grass.js';
 
@@ -353,22 +359,13 @@ function mergeByMaterial(group, scene) {
   }
 }
 
-// gap: half the angle of an opening on the harbour side (the rescue, where Wally leads the crocs
-// out to the sea); 0 for none. The opening is at the fence's north point (-z).
+// The croc fence (park-path.js logFence, from Ken's fence module): the top rail at about chest height, stopping
+// at the boardwalk where it crosses. gap: half the angle of an opening on the harbour side (the rescue, where
+// Wally leads the crocs out to the sea); 0 for none. The opening is at the fence's north point (-z).
 function addFence(scene, gap = 0) {
-  const post = new THREE.CylinderGeometry(0.12, 0.14, 1.3, 12);
-  const wood = scanned('planks', 0.5, 1.5, { color: 0xa58466 }) || mat(0x7a5532);
-  const n = 90, pts = [], north = -Math.PI / 2;
-  const at = a => new THREE.Vector3(Math.cos(a) * LAGOON.rx * 1.42, BANK_Y, Math.sin(a) * LAGOON.rz * 1.42);
-  if (!gap) for (let i = 0; i <= n; i++) pts.push(at((i / n) * Math.PI * 2));
-  else for (let i = 0; i <= n; i++) pts.push(at(north + gap + (i / n) * (Math.PI * 2 - 2 * gap)));   // all the way round, the gap left open
-  for (const p of (gap ? pts : pts.slice(0, n))) {
-    const m = shadowed(new THREE.Mesh(post, wood)); m.position.set(p.x, p.y + 0.65, p.z); scene.add(m);
-  }
-  for (const h of [0.55, 1.1]) {
-    const rail = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, !gap), 300, 0.05, 5, !gap), wood);
-    rail.position.y = h; scene.add(rail);
-  }
+  const north = -Math.PI / 2;
+  const blocked = p => overDeck(p) || (gap > 0 && Math.abs(Math.atan2(Math.sin(p.a - north), Math.cos(p.a - north))) < gap);
+  for (const run of fenceRuns(LAGOON.rx * FENCE_D, LAGOON.rz * FENCE_D, blocked, 2.6)) logFence(scene, run, 1.35);
 }
 
 // Built in short sections so it can follow deckHeight: flat over the water,
@@ -380,6 +377,7 @@ function addBoardwalk(scene) {
   const deckMat = scanned('planks', step / 1.2, B.width / 1.2, { rotate: true }) || mat(0xffffff, { map: planks });
   const white = mat(0xf4f1ea), wood = scanned('planks', 0.5, 2, { color: 0x9a7a5a }) || mat(0x6e4b2c);
   const railPost = new THREE.CylinderGeometry(0.1, 0.1, 1.1, 16);
+  seeThrough(deckMat); seeThrough(white); seeThrough(wood);    // it never hides Wally
 
   for (let x = B.x0; x < B.x1; x += step) {
     const xm = x + step / 2, y0 = deckHeight(x), y1 = deckHeight(x + step);
@@ -412,8 +410,8 @@ function addBoardwalk(scene) {
 
 // The way out to the next area: an archway on the boardwalk with a boom gate
 // that lifts when the quest is done. Returns a function that opens it.
-const GATE_X = 35.5;
 export const GATE = { x: GATE_X, z: BOARDWALK.z };
+const LOCK_SINK = 3.8;                       // how far below the ground the iron walls and their gate signs wait
 function addGate(scene) {
   const y = deckHeight(GATE_X), B = BOARDWALK, g = new THREE.Group();
   const timber = mat(0x7a5532);
@@ -440,6 +438,7 @@ function addGate(scene) {
   boom.position.set(0, 1.0, -B.width / 2);
   g.add(boom);
   g.position.set(GATE_X, y, B.z);
+  seeThroughAll(g);
   scene.add(g);
   let lift = 0;
   return function update(dt, open) {
@@ -523,6 +522,13 @@ function addTreeBelt(trees, q) {
   }
 }
 
+// Trees stand clear of the visitors' path, its stands, the keepers' pens, the outer fence and the way
+// out to the cane (park-path.js, chase-rules.js).
+const KIOSK_AT = kioskSpots(), PEN_AT = PENS.map(penShape);
+const clearOfPath = (x, z) => !onPath(x, z, 1.5) && KIOSK_AT.every(k => Math.hypot(k.x - x, k.z - z) > 5)
+  && PEN_AT.every(p => Math.hypot(p.x - x, p.z - z) > 7) && Math.abs(outerDistance(x, z) - 1) * Math.min(OUTER.rx, OUTER.rz) > 2.5
+  && Math.hypot(EXIT.x - x, EXIT.z - z) > 30 && clearOfSections(x, z);
+
 function addPalmsAndRocks(scene, q, models, trees) {
   addSolid(-11, 20.5, 0.4);                                     // the sign's post
   let seed = 3;
@@ -532,13 +538,14 @@ function addPalmsAndRocks(scene, q, models, trees) {
     const a = rnd() * Math.PI * 2, d = 1.5 + rnd() * 1.4;
     const x = Math.cos(a) * LAGOON.rx * d, z = Math.sin(a) * LAGOON.rz * d;
     if (z < SEA_START_Z + 2 || Math.abs(z - BOARDWALK.z) < 3) continue;
-    for (const t of palmStand(x, z, rnd, { minH: 6, maxH: 13 })) trees.add('palm', t.x, drawnHeight(t.x, t.z), t.z, t.height + 2);
+    for (const t of palmStand(x, z, rnd, { minH: 6, maxH: 13 })) if (clearOfPath(t.x, t.z)) trees.add('palm', t.x, drawnHeight(t.x, t.z), t.z, t.height + 2);
   }
   // Ghost gums and umbrella trees further back, giving shade and variety.
   for (let i = 0; i < Math.round(q.palms * 0.5); i++) {
     const a = rnd() * Math.PI * 2, d = 2.0 + rnd() * 1.6;
     const x = Math.cos(a) * LAGOON.rx * d, z = Math.sin(a) * LAGOON.rz * d;
     if (z < SEA_START_Z + 6 || Math.abs(z - BOARDWALK.z) < 5) continue;
+    if (!clearOfPath(x, z)) { rnd(); rnd(); continue; }           // (the same draws as a tree, so the rest stand where they did)
     if (rnd() < 0.55) trees.add('eucalyptus', x, drawnHeight(x, z), z, 13 + rnd() * 8);
     else trees.add('umbrella', x, drawnHeight(x, z), z, 7 + rnd() * 4);
   }
@@ -604,7 +611,9 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
     x0: -110, x1: 110, z0: SEA_START_Z + 6, z1: 110, heightAt: drawnHeight,
     tufts: q.name === 'high' ? 36000 : q.name === 'medium' ? 16000 : 5000,
     density: (x, z) => {
-      if (sandiness(x, z) > 0.15) return 0;
+      if (sandiness(x, z) > 0.15 || onPath(x, z, 0.2)) return 0;   // no grass through the pavers
+      if (KIOSK_AT.some(k => Math.hypot(k.x - x, k.z - z) < 3.2)) return 0;   // nor up the front of a food stand
+      if (Math.abs(z - BOARDWALK.z) < BOARDWALK.width / 2 + 0.4 && Math.abs(x) < BOARDWALK.x1 + 0.4) return 0;   // nor up through the boardwalk
       const d = lagoonDistance(x, z);
       if (d > 4.2) return 0;
       const fade = d > 3.4 ? (4.2 - d) / 0.8 : 1;                // thins out into the distance
@@ -612,8 +621,25 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
     },
   });
   const wave = addWater(scene, q, sun);
-  { const statics = new THREE.Group(); addFence(statics, opts.fenceGap || 0); addBoardwalk(statics); mergeByMaterial(statics, scene); }
+  { const statics = new THREE.Group(); addFence(statics, opts.fenceGap || 0);
+    addBoardwalk(statics);
+    mergeByMaterial(statics, scene); }
   const sign = addSign(scene);
+  addVisitorPath(scene);
+  { const shops = new THREE.Group(); addKiosks(shops, models); mergeByMaterial(shops, scene); }
+  addPens(scene);
+  // The chase's sections (not in the rescue, where he leads the crocs out to the sea).
+  let walled = null, gateBars = null, finalGate = null;
+  if (!opts.fenceGap) {
+    const sections = new THREE.Group(), walls = new THREE.Group();
+    addSections(sections, walls); mergeByMaterial(sections, scene);
+    walled = new THREE.Group(); walled.name = 'lockdown-walls'; walled.visible = false; walled.userData.rise = 1; scene.add(walled);
+    mergeByMaterial(walls, walled);
+    gateBars = addGateBars(scene); gateBars.lockdown(false);
+    finalGate = addFinalGate(scene);
+  }
+  { const fence = new THREE.Group(); addOuterFence(fence); mergeByMaterial(fence, scene); }
+  const smoke = addExit(scene);
   addPalmsAndRocks(scene, q, models, trees);
   trees.build();
   addRocks(scene);
@@ -622,12 +648,26 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
 
   const update = function update(t, dt, gateOpen, camera = null) {
     wave(t);
+    smoke(dt);
     trees.update(t);
     grass.update(t, camera);
     gate(dt, gateOpen);
+    if (gateBars) { gateBars.update(dt); finalGate.update(dt); }
+    if (walled && walled.visible && walled.userData.rise < 1) {     // the walls coming up out of the ground
+      const u = walled.userData.rise = Math.min(1, walled.userData.rise + dt / 1.1);
+      walled.position.y = -LOCK_SINK * (1 - u * u * (3 - 2 * u));
+    }
     boats.forEach((b, i) => { b.position.y = 0.6 + Math.sin(t * 0.8 + i) * 0.15; b.rotation.z = Math.sin(t * 0.6 + i) * 0.03; });
   };
-  return { update, sun, sky, photo, sign, waterClear: k => wave.clear && wave.clear(k),
+  // He is out: the park locks down, and the iron walls and gates come up. Off for a new run.
+  const lockdown = on => {
+    setLockdown(on); setWallSolids(on);
+    if (!walled) return;
+    gateBars.lockdown(on);
+    if (on && walled.visible) return;                             // (caught, and out again: they are still up)
+    walled.visible = on; walled.userData.rise = on ? 0 : 1; walled.position.y = on ? -LOCK_SINK : 0;
+  };
+  return { update, lockdown, gateBars, get finalGate() { return finalGate; }, sun, sky, photo, sign, waterClear: k => wave.clear && wave.clear(k),
     reflectFirst: (renderer, camera) => wave.reflectFirst && wave.reflectFirst(renderer, camera),
     reflectInside: () => wave.reflectInside && wave.reflectInside() };
 }

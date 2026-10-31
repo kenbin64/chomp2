@@ -34,7 +34,7 @@ check('no key is a talisman (keys are just keys)', T.ORDER.every(a => !T.TALISMA
 check('the Daintree needs all six talismans', T.CHAIN.daintree.needsAll.join() === T.TALISMANS.join());
 check('open questions are marked undecided', !T.CHAIN.esplanade.decided && !T.CHAIN.kuranda.decided && T.CHAIN.mossman.decided && T.CHAIN.park.decided);
 check('Mossman: the key, then the opal (the earth talisman)', T.CHAIN.mossman.key === 'mossman-key' && T.CHAIN.mossman.opens.join() === 'talisman-earth');
-check('the Fibonacci small thing: golden mangoes from the park', T.CHAIN.park.small === 'golden-mango');
+check('the Fibonacci small thing: golden mangoes from the Esplanade, none from the park', T.CHAIN.esplanade.small === 'golden-mango' && T.CHAIN.park.small === null);
 
 // ---- Areas not built yet are passed over -------------------------------------------------
 check('the cane fields are built: on the trip', !T.NOT_BUILT.includes('cane'));

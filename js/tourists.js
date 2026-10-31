@@ -1,11 +1,12 @@
 // tourists.js
-// Visitors strolling the boardwalk. Wally is friendly, but a big excited
+// Visitors strolling the boardwalk, and the path outside the fence (Ken, 2026-10-29). Wally is friendly, but a big excited
 // crocodile coming close still startles them: they jump, back off, and throw
 // food to keep him busy. They also toss food over the rail now and then.
 
 import * as THREE from 'three';
-import { BOARDWALK, deckHeight } from './rules.js';
+import { BOARDWALK, BANK_Y, PATH, deckHeight, onDeck, fencePoint, pathAngle } from './rules.js';
 import { dress, PEOPLE_SLOTS } from './models.js';
+import { pathShutAt } from './park-sections.js';
 import { addRim, contactShadow } from './look.js';
 
 const WALK_LIMIT = 30;          // they stay on the part of the deck over the lagoon and banks
@@ -94,16 +95,18 @@ function arm(g, side, skin, shirt) {
 }
 
 // A cartoon visitor, about 1.5 to 1.85 m tall, different every time.
-export function person() {
+// uniform (optional): { shirt, shorts, cap } colours, for park staff such as the croc catcher (chase.js):
+// a plain shirt, long trousers and a cap.
+export function person(uniform = null) {
   const g = new THREE.Group();
   const skinColor = pick(SKIN);
   const skin = skinMat(skinColor);
-  const shirtColor = pick(SHIRTS);
-  const shirt = clothMat(shirtColor, shirtPattern(shirtColor));
-  const shorts = clothMat(pick(SHORTS));
-  const older = Math.random() < 0.2;
+  const shirtColor = uniform ? uniform.shirt : pick(SHIRTS);
+  const shirt = clothMat(shirtColor, uniform ? null : shirtPattern(shirtColor));
+  const shorts = clothMat(uniform ? uniform.shorts : pick(SHORTS));
+  const older = !uniform && Math.random() < 0.2;
   g.add(contactShadow(0.45, 0.32));
-  const longPants = Math.random() < 0.3;                   // trousers or shorts: both legs alike
+  const longPants = uniform ? true : Math.random() < 0.3;   // trousers or shorts: both legs alike
   const shoe = pick([0x333333, 0xffffff, 0x8b5a2b, 0x2f80ed, 0xeb5757]);
 
   const legs = [-1, 1].map(s => {
@@ -138,10 +141,10 @@ export function person() {
   for (const s of [-1, 1]) part(head, new THREE.SphereGeometry(0.04, 12, 10), new THREE.MeshStandardMaterial({ color: 0xf08080, transparent: true, opacity: 0.25, roughness: 0.6 }), s * 0.13, -0.04, 0.17);  // cheeks
   hair(head, pick(HAIRSTYLES), older ? 0xc8c8c8 : pick(HAIR));
   if (Math.random() < 0.3) part(head, new THREE.BoxGeometry(0.3, 0.06, 0.04), plain(0x111111, { roughness: 0.1, metalness: 0.4 }), 0, 0.05, 0.235);   // sunnies
-  if (Math.random() < 0.45) {       // sun hat or cap, with a band
-    const hatColor = pick([0xf4e1b5, 0xffffff, 0x2f80ed, 0xeb5757, 0x2a9d8f]);
+  if (uniform || Math.random() < 0.45) {       // sun hat or cap, with a band
+    const hatColor = uniform ? uniform.cap : pick([0xf4e1b5, 0xffffff, 0x2f80ed, 0xeb5757, 0x2a9d8f]);
     const hat = clothMat(hatColor);
-    if (Math.random() < 0.5) {
+    if (!uniform && Math.random() < 0.5) {
       part(head, new THREE.CylinderGeometry(0.36, 0.36, 0.025, 28), hat, 0, 0.14, 0);
       part(head, new THREE.CylinderGeometry(0.17, 0.2, 0.16, 24), hat, 0, 0.22, 0);
       part(head, new THREE.CylinderGeometry(0.202, 0.202, 0.04, 24), plain(0x333333), 0, 0.165, 0);
@@ -261,7 +264,10 @@ export class Tourists {
       const body = person();
       scene.add(body.g);
       const x = -WALK_LIMIT + (i + Math.random()) * (2 * WALK_LIMIT / count);
-      this.list.push({ body, x, lane: (i % 2 ? 1 : -1) * 0.7, dir: Math.random() < 0.5 ? 1 : -1,
+      // Two in three walk the path round the fence: a: how far round (radians), lane: metres out from the fence.
+      const path = i % 3 !== 0;
+      this.list.push({ body, x, route: path ? 'path' : 'deck', a: (i / count) * Math.PI * 2 + Math.random(),
+        lane: path ? PATH.lanes[(i >> 1) % 2] : (i % 4 ? 1 : -1) * 1.2, dir: Math.random() < 0.5 ? 1 : -1,
         speed: 0.9 + Math.random() * 0.6, state: 'walk', timer: 0, walk: Math.random() * 6,
         calm: 0, hop: 0, throwAt: null });
     }
@@ -290,12 +296,15 @@ export class Tourists {
   }
 
 
+  // The walls have come up across the path: nobody is left standing in one.
+  clearOfWalls() { for (const t of this.list) if (t.route === 'path') while (pathShutAt(t.a)) t.a += 0.02 * t.dir; }
+
   // Ask the nearest free tourist to throw at Wally. Returns true if one agreed.
   requestThrow(wallyPos) {
     let best = null, bestD = 36;
     for (const t of this.list) {
       if (t.off || t.state !== 'walk') continue;
-      const d = Math.abs(t.x - wallyPos.x) + Math.random() * 6;
+      const p = this.where(t), d = Math.hypot(p.x - wallyPos.x, p.z - wallyPos.z) + Math.random() * 6;
       if (d < bestD) { best = t; bestD = d; }
     }
     if (!best) return false;
@@ -303,13 +312,19 @@ export class Tourists {
     return true;
   }
 
+  // Where a stroller stands: on the boardwalk, or on the path (stepping up onto the boardwalk where it crosses).
+  where(t) {
+    if (t.route === 'deck') return new THREE.Vector3(t.x, deckHeight(t.x), BOARDWALK.z + t.lane);
+    const p = fencePoint(t.a, t.lane);
+    return new THREE.Vector3(p.x, onDeck(p.x, p.z) ? deckHeight(p.x) : BANK_Y, p.z);
+  }
+
   // Returns throws released this frame: { hand: Vector3, startled, who: the person's model }.
   update(dt, wallyPos) {
     const releases = [];
     for (const t of this.list) {
       if (t.off) continue;                           // at home: nobody free to be them
-      const y = deckHeight(t.x);
-      const pos = new THREE.Vector3(t.x, y, BOARDWALK.z + t.lane);
+      const pos = this.where(t), y = pos.y;
       const toWally = new THREE.Vector3(wallyPos.x - pos.x, 0, wallyPos.z - pos.z);
       const near = toWally.length() < STARTLE_RANGE && Math.abs(wallyPos.y - y) < 3;
       t.calm -= dt;
@@ -318,7 +333,14 @@ export class Tourists {
         t.state = 'windup'; t.timer = WINDUP; t.startled = true; t.hop = 0.5; t.calm = 5;
       }
 
-      if (t.state === 'walk') {
+      if (t.state === 'walk' && t.route === 'path') {
+        // Round the path at their walking speed: how far a step of angle goes varies round the oval.
+        const ahead = fencePoint(t.a + 0.001 * t.dir, t.lane), metresPerRadian = Math.hypot(ahead.x - pos.x, ahead.z - pos.z) / 0.001;
+        t.a += t.dir * t.speed * dt / metresPerRadian;
+        if (pathShutAt(t.a)) { t.a -= 2 * t.dir * t.speed * dt / metresPerRadian; t.dir *= -1; }   // a wall across the path: back the other way
+        t.walk += dt * t.speed * 6;
+        t.body.g.rotation.y = Math.atan2(ahead.x - pos.x, ahead.z - pos.z);
+      } else if (t.state === 'walk') {
         t.x += t.dir * t.speed * dt;
         if (Math.abs(t.x) > WALK_LIMIT) { t.x = Math.sign(t.x) * WALK_LIMIT; t.dir *= -1; }
         t.walk += dt * t.speed * 6;
@@ -332,7 +354,8 @@ export class Tourists {
           t.state = 'follow'; t.timer = FOLLOW;
         } else if (t.state === 'follow' && t.timer <= 0) {
           t.state = 'walk';
-          if (t.startled) t.dir = Math.sign(t.x - wallyPos.x) || 1;   // back away from him
+          if (t.startled && t.route === 'path') { const d = t.a - pathAngle(wallyPos.x, wallyPos.z); t.dir = Math.sign(Math.atan2(Math.sin(d), Math.cos(d))) || 1; }   // back away from him, round the path
+          else if (t.startled) t.dir = Math.sign(t.x - wallyPos.x) || 1;   // back away from him
           t.speed = t.startled ? 2.2 : 0.9 + Math.random() * 0.6;
         }
       }
