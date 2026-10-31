@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.17 (2026-10-31)
+
 - Croc Park has a new ending: a high speed race to escape. Once Wally has the key, Kenny explains what comes next. Out of
   the gate, the siren goes and the croc wrangler is right behind him. Mangoes open the gates across the park; once they
   are all open, the chest holds the King's Golden Mango, one of the Croc King's crown jewels. Show it to the wrangler and
