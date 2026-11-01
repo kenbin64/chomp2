@@ -217,7 +217,7 @@ function step(dt, t) {
 
   // Energy, Kenny.
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (!game.done && game.faint <= 0) game.energy -= energyDrain(wally.mode, moving, 'park') * drainFactor() * dt;   // a long swim: the gentlest drain
+  if (!game.done && game.faint <= 0) game.energy -= energyDrain(wally.mode, moving, 'park', wally.effort) * drainFactor() * dt;   // a long swim: the gentlest drain
   if (game.energy <= 0 && game.faint <= 0 && !game.done) outOfPuff();
   if (game.faint > 0) rescueStep(dt, t);
 

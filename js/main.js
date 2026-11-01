@@ -23,7 +23,7 @@ import { PARK_TREASURE, swimDepth } from './treasure-rules.js';
 import * as Trip from './trip-rules.js';
 import { createOpening, openingDue, resetOpening } from './opening.js';
 import { addSwimSway, tickSwim } from './swim.js';
-import { setGround, parkGround, addSolid, setParkMode, getParkMode } from './ground.js';
+import { setGround, parkGround, addSolid, setParkMode, getParkMode, setBridgeShut, isBridgeShut } from './ground.js';
 import { DayNight } from './daynight.js';
 import { StreetLamps } from './lamps.js';
 import { installBook, bookEvent, HiddenFinds, openBook } from './book.js';
@@ -40,7 +40,7 @@ import { chestModel } from './chest.js';
 import { carried } from './carried.js';
 import { readSeconds } from './read-time.js';
 import { Pickups, mangoMaker } from './pickups.js';
-import { BANK_Y } from './rules.js';
+import { BANK_Y, BRIDGE_BAR_X } from './rules.js';
 import { GATE_POST } from './chase-rules.js';
 import { loadRealism } from './realism.js';
 import { usePalmCrown } from './palms.js';
@@ -356,7 +356,7 @@ function drawQuest() {
     $('goals').appendChild(li);
   }
   $('frenzy').hidden = true;
-  if (q.stage === 'gate') $('quest-title').textContent = game.out ? 'Boss: get away from the croc wrangler. Run for the cane fields!' : 'You have the key: out the gate on the boardwalk';
+  if (q.stage === 'gate') $('quest-title').textContent = game.out ? 'Boss: get away from the croc wrangler. Run for the cane fields!' : 'You have the key: over the bridge to the gate';
   if (escape.on) {
     const next = nextGateNeed(escape.found), stage = escapeStage(escape.found, escape.giant, escape.given);
     $('quest-title').textContent = escape.given ? 'The gate is open: to the cane field!' : escape.giant ? 'Find the wrangler: show him the mango' : game.out ? 'Escape! The wrangler is after you' : 'Caught! Back out the gate';
@@ -534,6 +534,9 @@ function updateQuest(dt) {
   } else if (atGate && !game.hasKey && game.time > (game.keyHintAt || 0)) {
     game.keyHintAt = game.time + 6; toast("The gate's locked! The key is in the chest, on the bottom of the lagoon", 'info'); bubbles.say(wally.root, 'Locked! I need that key.', 3);
   }
+  if (isBridgeShut() && onDeck(wally.pos.x, wally.pos.z) && wally.pos.x > BRIDGE_BAR_X - 2 && game.time > (game.keyHintAt || 0)) {
+    game.keyHintAt = game.time + 6; toast('The bridge is barred. The key is in the chest, on the bottom of the lagoon', 'info'); bubbles.say(wally.root, 'Key holders only. I need that key.', 3);
+  }
   if (getParkMode() === 'gate' && fenceOffset(wally.pos.x, wally.pos.z) > OUT_MARGIN) breakOut();
   if (machete.out && machete.update(dt)) {
     if (escape.on && !escape.given && !game.chaseTest) { if (game.time > (game.keyHintAt || 0)) { game.keyHintAt = game.time + 5; toast('The final gate is locked. Only the wrangler has the key!', 'bad'); bubbles.say(wally.root, 'Locked! The wrangler has that key.', 2.6); } }
@@ -546,7 +549,7 @@ function updateQuest(dt) {
   const hungry = clusters.active.filter(c => !c.fled && c.food > 0).map(c => c.root.position);
   arrow.update(escape.on && game.out ? escapeArrow()
     : machete.out ? { x: machete.at.x, z: machete.at.z, label: game.out ? 'The way out' : 'The gate' }
-    : game.hasKey ? { x: GATE.x, z: GATE.z, label: 'The gate' }
+    : game.hasKey ? (wally.surface === 'deck' && wally.pos.x > BRIDGE_BAR_X - 1 ? { x: GATE.x, z: GATE.z, label: 'The gate' } : { x: BRIDGE_BAR_X - 3, z: GATE.z, label: 'The bridge' })
     : (game.energy < 35 && hungry.length) ? (n => ({ x: n.x, z: n.z, label: 'Hungry visitors' }))(nearest(hungry, wally.pos))
     : (treasure.found < treasure.total) ? (n => ({ x: n.x, z: n.z, label: 'Something lost: dive!' }))(nearest(treasure.things.filter(x => !x.taken), wally.pos))
     : { x: treasure.chest.group.position.x, z: treasure.chest.group.position.z, label: 'The chest: dive!' }, wally.pos, cam.yaw);
@@ -639,13 +642,16 @@ function kennyTells() {
   const talk = (a, b) => ({ from: V3(mid.x + sx * clear * Math.abs(a), mid.y + 0.6, mid.z + sz * clear * Math.abs(a)), to: V3(mid.x + sx * clear * Math.abs(b), mid.y + 0.4, mid.z + sz * clear * Math.abs(b)), lookFrom: mid, lookTo: mid });
   const bridge = V3(GATE.x, deckHeight(GATE.x) + 1.5, GATE.z);
   escapeScene.play([
-    { s: 3.6, who: 'Kenny', line: "Good on ya, Wally! Now cross the bridge to the park.", ...talk(6, 5) },
-    { s: 4.2, who: 'Kenny', line: 'Watch out! The park will be alerted the moment you leave the croc enclosure.', from: V3(GATE.x - 12, bridge.y + 3, GATE.z + 9), to: V3(GATE.x - 8, bridge.y + 1.5, GATE.z + 7), lookFrom: bridge, lookTo: bridge },
+    { s: 3.6, who: 'Kenny', line: "Good on ya, Wally! That's the key to the bridge.", ...talk(6, 5) },
+    // Ken, 2026-11-01: the camera from one side of the bridge to the other, and on to the way out.
+    { s: 3.6, who: 'Kenny', line: "Up the steps at this end. The bar's lifting for you now.", cue: () => setBridgeShut(false), from: V3(-41, 5.5, 11), to: V3(-37, 5, 9), lookFrom: V3(-31, deckHeight(-31) + 1, 2), lookTo: V3(-31, deckHeight(-31) + 1, 2) },
+    { s: 5, who: 'Kenny', line: 'Then all the way across the water, from one side to the other.', from: V3(-29, 6.4, 2), to: V3(26, 6.4, 2), lookFrom: V3(-18, 4.4, 2), lookTo: bridge },
+    { s: 4.2, who: 'Kenny', line: "And there's the gate out. The park will be alerted the moment you leave the croc enclosure!", from: V3(GATE.x - 12, bridge.y + 3, GATE.z + 9), to: V3(GATE.x - 8, bridge.y + 1.5, GATE.z + 7), lookFrom: bridge, lookTo: bridge },
     { s: 4.2, who: 'Kenny', line: 'Dodge the croc wrangler while you collect mangoes. Mangoes unlock the gates.', ...talk(-5, -6) },
     { s: 4, who: 'Kenny', line: "Once all the gates are open, find the chest. Inside is the Golden Mango, one of the Croc King's crown jewels.", ...talk(-6, -4.5) },
     { s: 4.4, who: 'Kenny', line: "Show it to the wrangler. He'll know what it means, and unlock the final gate to the cane field.", ...talk(4.5, 5.5) },
     { s: 3.4, who: 'Kenny', line: 'But if he catches you first, you end up back in the croc enclosure!', ...talk(5.5, 3.6) },
-  ], () => { $('hud').hidden = false; $('touch').hidden = !touch; kenny.timer = 1.5; bubbles.say(wally.root, "Right! Over the bridge.", 3); }, { siren: false });
+  ], () => { setBridgeShut(false); $('hud').hidden = false; $('touch').hidden = !touch; kenny.timer = 1.5; bubbles.say(wally.root, "Right! Over the bridge.", 3); }, { siren: false });
   $('hud').hidden = true; $('touch').hidden = true;
 }
 
@@ -804,7 +810,7 @@ function step(dt, t) {
     else if (e === 'splash') { sound.play.splash(); fx.splash(wally.pos, 26); fx.shake(0.2, 0.15); } else if (e === 'land') sound.play.land();
   }
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (game.boost <= 0 && game.nap <= 0) game.energy -= energyDrain(wally.mode, moving, 'park') * drainFactor() * game.tripDrain * (game.out ? OUT_DRAIN : 1) * dt;   // vitamins (gear.js) halve it; the trip's difficulty sets the speed
+  if (game.boost <= 0 && game.nap <= 0) game.energy -= energyDrain(wally.mode, moving, 'park', wally.effort) * drainFactor() * game.tripDrain * (game.out ? OUT_DRAIN : 1) * dt;   // vitamins (gear.js) halve it; the trip's difficulty sets the speed
   if (game.nap > 0) napping(dt);
 
   tourists.update(dt, wally.pos);                // strollers on the boardwalk: scenery, no food
@@ -1132,6 +1138,7 @@ function start() {
   carried.clear(); if (goldenOnBack) goldenOnBack.visible = false; game.kennyTold = false; game.caught = 0; game.out = false; setParkMode('park'); world.lockdown(false); escape.clear(); catcher.forget(); catcher.reset(); game.groupsDone = 0;
   game.quest = createQuest(escapeQuest());
   game.hasKey = Trip.have(progress.trip, 'park-key') || Trip.have(progress.trip, 'gate-key');   // on a return visit he has it already (gate-key: saves from before)
+  setBridgeShut(!game.hasKey);
   game.hadKey = game.hasKey;                                   // come back with the key: nothing to find, the gate is his
   if (game.hadKey) { for (const g of game.quest.goals) for (let i = 0; i < g.need; i++) game.quest.record(g.event); }
   game.tripDrain = Trip.drainFactor(progress.trip, 'park', attempt.level);
@@ -1358,7 +1365,7 @@ else if (params.has('map')) showMap();
 // Testing the chase (index.html?play&chase&noopening): Wally starts on the boardwalk just past the gate with
 // the key, as if every group were fed, and steps out into the grounds.
 if (params.has('chase') && game.running) {
-  game.chaseTest = true; game.hasKey = true; setParkMode('gate'); machete.show(EXIT_SPOT);
+  game.chaseTest = true; game.hasKey = true; setBridgeShut(false); setParkMode('gate'); machete.show(EXIT_SPOT);
   wally.pos.set(GATE.x + 8, deckHeight(GATE.x + 8), GATE.z); wally.facing = Math.PI / 2;
 }
 

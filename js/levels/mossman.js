@@ -235,7 +235,7 @@ function step(dt, t) {
 
   // Energy.
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (!game.done && game.faint <= 0) game.energy -= energyDrain(wally.mode, moving, 'mossman') * game.tripDrain * drainFactor() * dt;   // vitamins halve it
+  if (!game.done && game.faint <= 0) game.energy -= energyDrain(wally.mode, moving, 'mossman', wally.effort) * game.tripDrain * drainFactor() * dt;   // vitamins halve it
   if (game.energy <= 0 && game.faint <= 0 && !game.done) outOfPuff('Out of puff!');
   if (game.faint > 0) rescueStep(dt, t);
 

@@ -22,6 +22,9 @@ const TURN = 2.8;                // keyboard steering: how fast left and right t
 // spun past the food). A tap turns him slowly, for a small correction; held, the turn speeds up to a little
 // faster than before, for a big one. Measured: the scripted player reversed its turn 68 times a minute.
 const TURN_TAP = 1.4, TURN_HELD = 3.2, TURN_RAMP = 0.6;   // radians a second at first, after TURN_RAMP seconds held
+// By thumb (Ken, 2026-11-01): how far the thumb is to the side is how sharply he turns, at once. A little is a slight change of
+// course on the run, a full push a corner: a quarter circle in about a third of a second.
+const TURN_THUMB = 4.5;
 const SPIN_TIME = 0.5;           // seconds for the animated turn round (Down, or the phone's turn-around button)
 // Turning while he moves (Ken, 2026-10-20: smooth, every angle in between): his
 // heading swings round toward where the player points at this rate, so a change of
@@ -410,8 +413,8 @@ export class Wally {
       const side = Math.sign(input.right);
       this.turnHeld = side !== 0 && side === this.turnSide ? (this.turnHeld || 0) + dt : 0;
       this.turnSide = side;
-      const rate = TURN_TAP + (TURN_HELD - TURN_TAP) * Math.min(1, this.turnHeld / TURN_RAMP);
-      this.turnRate = (this.turnRate || 0) + ((-input.right * rate) - (this.turnRate || 0)) * Math.min(1, dt * 10);
+      const rate = input.sharp ? TURN_THUMB : TURN_TAP + (TURN_HELD - TURN_TAP) * Math.min(1, this.turnHeld / TURN_RAMP);
+      this.turnRate = (this.turnRate || 0) + ((-input.right * rate) - (this.turnRate || 0)) * Math.min(1, dt * (input.sharp ? 18 : 10));
       this.facing += this.turnRate * dt + (input.aim || 0);       // the keys or stick, the mouse, and the aim help
       // How fast he goes: as far as up is pushed. He stops for the moment of an about-face.
       const going = Math.abs(this.turnLeft || 0) < 0.3 ? Math.max(0, Math.min(1, input.forward)) : 0;
@@ -423,8 +426,8 @@ export class Wally {
                                fz * input.forward - Math.sin(camYaw) * input.right);
       if (want.lengthSq() > 1) want.normalize();
     }
-    want.multiplyScalar(SPEED[this.mode] * pace * (input.boost || 1));
-    if (input.steer) this.vel.lerp(want, Math.min(1, dt * (this.airborne ? 2 : 8)));
+    want.multiplyScalar(Math.min(SPEED[this.mode] * (input.boost || 1), SPEED.fours) * pace);   // boost: walk to sprint by thumb; his top speed is SPEED.fours
+    if (input.steer) this.vel.lerp(want, Math.min(1, dt * (this.airborne ? 2 : input.sharp ? 14 : 8)));   // by thumb he digs in on a corner and keeps his speed
     else this.steerArc(dt, want, inWater);
     this.moveFlat(dt);
 
@@ -476,6 +479,11 @@ export class Wally {
     this.animate(dt, speed);
     this.playModel(dt, speed);
     return events;
+  }
+
+  // How hard he is working, for what it costs in energy (rules.js energyDrain).
+  get effort() {
+    return { share: Math.hypot(this.vel.x, this.vel.z) / SPEED[this.mode], rising: !this.grounded && this.vy > 0 };
   }
 
   // Moving toward `want` (a velocity) the way an animal does: the speed eases up and

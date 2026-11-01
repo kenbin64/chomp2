@@ -32,9 +32,19 @@ check('nothing to hit, nothing blocks', !solidBlocks(0, 0, 1, 1, 0, []));
   setParkMode('park');
   const c = parkGround.ceiling(5, B.z, -0.45);
   check('leaping under it, his head stops at the planks', c !== null && c < deckHeight(5) - 1, c);
-  const gap = 13;
-  check('through an opening nothing stops him leaping up', deckOpenAt(gap) && parkGround.ceiling(gap, B.z, -0.45) === null);
   check('up on the deck there is nothing overhead', parkGround.ceiling(5, B.z, deckHeight(5)) === null);
+  // The bridge (Ken, 2026-11-01): one way on, at the west end; barred until he has the key; on land he goes under the gate end.
+  { const { setBridgeShut } = await import('../js/ground.js');
+    const { BRIDGE_BAR_X: bar, terrainHeight } = await import('../js/rules.js');
+    const along = (from, to) => { let px = from; for (let i = 0; i < 2000 && px < to; i++) { const r = parkGround.move(px, B.z, px + 0.05, B.z, deckHeight(px)); if (r.x === px) break; px = r.x; } return px; };
+    setBridgeShut(true);
+    check('barred: up the steps he stops at the bar', along(-36, 0) < bar);
+    const y = terrainHeight(-34, B.z + 4); const off = parkGround.move(-34, B.z + 2.6, -34, B.z + 2.4, y); check('barred: he can still come onto the steps, on land', off.z < B.z + 2.6);
+    setBridgeShut(false);
+    check('with the key: right across the water to the gate', along(-36, 34) >= 34);
+    for (const x of [30, 34, 36]) check(`on land at ${x} he walks under the gate end`, across(x, terrainHeight(x, B.z + 4)));
+    let up = 0; for (let x = 29; x <= 40; x += 1) for (const f of [0, 1, 2, 3]) if (across(x, deckHeight(x) + f * 0.4)) up++;
+    check('and no jump gets him up onto it there', up === 0, up); }
 }
 
 console.log(`${passed} passed, ${failed} failed`);

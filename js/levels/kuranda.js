@@ -268,7 +268,7 @@ function step(dt, t) {
     if (e === 'jump') sound.play.jump(); else if (e === 'land') sound.play.land();
   }
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (!game.done && game.boost <= 0 && !down) game.energy -= energyDrain(wally.mode, moving, 'kuranda') * drainFactor() * dt;   // vitamins (gear.js) halve it
+  if (!game.done && game.boost <= 0 && !down) game.energy -= energyDrain(wally.mode, moving, 'kuranda', wally.effort) * drainFactor() * dt;   // vitamins (gear.js) halve it
 
   // The shell and mango trader: walk up to the stall and the trading opens.
   const nearVendor = Math.hypot(wally.pos.x - Math.sign(VENDOR.x) * STREET.half, wally.pos.z - VENDOR.z) < 3;

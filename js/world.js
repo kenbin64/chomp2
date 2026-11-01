@@ -3,11 +3,11 @@
 // the sign, palms, the marina beyond, and flying foxes overhead.
 // Scenery only. Where Wally may go is decided in rules.js.
 
-import { addSolid } from './ground.js';
+import { addSolid, isBridgeShut } from './ground.js';
 import { fitText } from './signtext.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { LAGOON, BANK_Y, BOARDWALK, ROCKS, lagoonDistance, terrainHeight, deckHeight, deckOpenAt, PARK_EDGE, FENCE_D, onPath, GATE_X, fenceRuns, overDeck } from './rules.js';
+import { LAGOON, BANK_Y, BOARDWALK, ROCKS, lagoonDistance, terrainHeight, deckHeight, deckOpenAt, BRIDGE_BAR_X, PARK_EDGE, FENCE_D, onPath, GATE_X, fenceRuns, overDeck } from './rules.js';
 import { addVisitorPath, addKiosks, kioskSpots, logFence, addOuterFence, addPens, addExit } from './park-path.js';
 import { OUTER, EXIT, PENS, penShape, outerDistance } from './chase-rules.js';
 import { addSections, setWallSolids, addGateBars, addFinalGate } from './sections-draw.js';
@@ -450,6 +450,31 @@ function addGate(scene) {
   };
 }
 
+// The bar across the bridge just past the steps (Ken, 2026-11-01): down until Wally has the key, then it lifts.
+function addBridgeBar(scene) {
+  const B = BOARDWALK, g = new THREE.Group(), timber = mat(0x7a5532);
+  for (const side of [-1, 1]) {
+    const post = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.34, 1.9, 0.34), timber));
+    post.position.set(0, 0.95, side * (B.width / 2 - 0.05)); g.add(post);
+  }
+  const c = document.createElement('canvas'); c.width = 512; c.height = 128;
+  const ctx = c.getContext('2d'); ctx.fillStyle = '#f4d35e'; ctx.fillRect(0, 0, 512, 128);
+  ctx.fillStyle = '#3a2410'; ctx.textAlign = 'center';
+  fitText(ctx, 'Key holders only!', 256, 82, 470, 62, 'bold {size}px "Trebuchet MS", sans-serif');
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const boom = new THREE.Group();
+  const arm = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, B.width), mat(0xd6212b)));
+  arm.position.z = B.width / 2; boom.add(arm);
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.65), mat(0xffffff, { map: tex, side: THREE.DoubleSide }));
+  board.position.set(-0.12, -0.42, B.width / 2); board.rotation.y = -Math.PI / 2; boom.add(board);
+  boom.position.set(0, 1.5, -B.width / 2); g.add(boom);
+  g.position.set(BRIDGE_BAR_X, deckHeight(BRIDGE_BAR_X), B.z);
+  seeThroughAll(g);
+  scene.add(g);
+  let lift = 0;
+  return dt => { lift += ((isBridgeShut() ? 0 : 1) - lift) * Math.min(1, dt * 2.5); boom.rotation.x = -lift * 1.4; };
+}
+
 // A smooth, slightly lumpy boulder: a fine sphere pushed in and out a little,
 // stretched to size and sliced flat at the top so Wally can stand on it.
 function boulderGeometry(radius, bottom, top, seed) {
@@ -646,7 +671,7 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
   addPalmsAndRocks(scene, q, models, trees);
   trees.build();
   addRocks(scene);
-  const gate = addGate(scene);
+  const gate = addGate(scene), bridgeBar = addBridgeBar(scene);
   const boats = addHarbour(scene, models);
 
   const update = function update(t, dt, gateOpen, camera = null) {
@@ -654,7 +679,7 @@ export function buildWorld(scene, q, models = new Map(), backdrops = {}, realism
     smoke(dt);
     trees.update(t);
     grass.update(t, camera);
-    gate(dt, gateOpen);
+    gate(dt, gateOpen); bridgeBar(dt);
     if (gateBars) { gateBars.update(dt); finalGate.update(dt); }
     if (walled && walled.visible && walled.userData.rise < 1) {     // the walls coming up out of the ground
       const u = walled.userData.rise = Math.min(1, walled.userData.rise + dt / 1.1);

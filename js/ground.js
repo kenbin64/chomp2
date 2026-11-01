@@ -4,7 +4,7 @@
 // ask this, never a level directly, so every level can bring its own ground.
 // The park's ground is the default; another level calls setGround() at start.
 
-import { standHeight, clampToPark, railClamp, onDeck, deckHeight, deckBlocks, deckOpenAt, foodSurface, isWater, terrainHeight, ROCKS, GATE_X, DECK_THICK, WALLY_TALL, WALLY_SWIM_TALL } from './rules.js';
+import { standHeight, clampToPark, railClamp, onDeck, deckHeight, deckBlocks, deckOpenAt, foodSurface, isWater, terrainHeight, ROCKS, GATE_X, BRIDGE_BAR_X, DECK_THICK, WALLY_TALL, WALLY_SWIM_TALL } from './rules.js';
 import { clampOutside } from './chase-rules.js';
 
 // Where Wally may go in the park (chase-rules.js, Ken 2026-10-29): 'park', inside the croc fence;
@@ -12,6 +12,10 @@ import { clampOutside } from './chase-rules.js';
 let parkMode = 'park';
 export function setParkMode(mode) { parkMode = mode; }
 export function getParkMode() { return parkMode; }
+// The bar across the bridge, down until he has the key (Ken, 2026-11-01). Levels other than the park never set it.
+let bridgeShut = false;
+export function setBridgeShut(on) { bridgeShut = on; }
+export function isBridgeShut() { return bridgeShut; }
 function keepIn(x, z) {
   if (parkMode === 'outside') return clampOutside(x, z);
   if (parkMode === 'gate' && onDeck(x, z) && x > GATE_X - 1) return { x, z };   // out along the boardwalk
@@ -60,7 +64,9 @@ export function solidBlocks(x, z, nx, nz, feetY, list = [...ROCKS, ...SOLIDS]) {
 // level of the planks: lower down he is going under it, if there is the room (deckBlocks says), and he can do that
 // anywhere (Ken, 2026-10-30: he could only get under at a couple of spots, the openings).
 function railBlocks(x, z, nx, nz, feetY) {
-  return !onDeck(x, z) && onDeck(nx, nz) && !deckOpenAt(nx) && feetY >= deckHeight(nx) - STEP && feetY < deckHeight(nx) + RAIL;
+  if (onDeck(x, z) || !onDeck(nx, nz) || deckOpenAt(nx) || feetY < deckHeight(nx) - STEP) return false;
+  if (nx > GATE_X - 7 && parkMode === 'park') return true;       // the land by the gate: not even a jump gets him up, or he would skip the bridge
+  return feetY < deckHeight(nx) + RAIL;
 }
 
 export const parkGround = {
@@ -89,6 +95,7 @@ export const parkGround = {
       else if (!blocked(x, tz)) nx = x;
       else { nx = x; tz = z; }
     }
+    if (bridgeShut && onDeck(nx, tz) && y >= deckHeight(nx) - STEP && nx > BRIDGE_BAR_X - BODY) nx = Math.min(x, BRIDGE_BAR_X - BODY);
     return keepIn(nx, tz);
   },
   // Walking into something he can climb (a rock no higher than CLIMB above his

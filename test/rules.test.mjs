@@ -52,6 +52,16 @@ for (let e = 0; e < 100; e++) if (R.speedFactor(e + 1) < R.speedFactor(e)) mono 
 check('more energy is never slower', mono);
 check('running on fours costs more than upright', R.energyDrain('fours', true) > R.energyDrain('upright', true));
 check('moving costs more than standing', R.energyDrain('swim', true) > R.energyDrain('swim', false));
+// Effort costs energy (Ken, 2026-11-01).
+{ const at = (share, rising = false, mode = 'upright', level = 'reef') => R.energyDrain(mode, true, level, { share, rising });
+  check('swimming costs more than running upright', R.energyDrain('swim', true) > R.energyDrain('upright', true));
+  check('faster costs more: walk, usual pace, sprint', at(0.45) < at(1) && at(1) < at(1.45));
+  check('his usual pace costs what it always did when no effort is given', at(1) === R.energyDrain('upright', true, 'reef'));
+  check('a sprint costs well over his usual pace', at(1.45) > at(1) * 1.5);
+  check('a walk still costs something', at(0.45) >= at(1) * 0.5);
+  check('jumping costs extra while he rises', at(1, true) > at(1) + 5);
+  check('a jump costs more on a harder level', at(1, true, 'upright', 'mossman') > at(1, true, 'upright', 'park'));
+  check('standing still is not charged for speed', R.energyDrain('upright', false, 'reef', { share: 0, rising: false }) === R.energyDrain('upright', false, 'reef')); }
 
 // Scoring
 check('no streak, no multiplier', R.comboMultiplier(0) === 1);
@@ -88,7 +98,8 @@ check('deck ends low', R.deckHeight(B.x1) === B.low && R.deckHeight(-B.x1) === B
 let rampOk = true;
 for (let x = B.flat; x < B.rampEnd; x += 0.1) if (R.deckHeight(x + 0.1) > R.deckHeight(x) + 1e-12) rampOk = false;
 check('ramp only goes down toward the ends', rampOk);
-check('ramp is symmetric', near(R.deckHeight(31.3), R.deckHeight(-31.3)));
+check('the west end slopes down to the bank', R.deckHeight(-31.3) < B.top);
+check('the east end stays high past the gate, to walk under (Ken, 2026-11-01)', R.deckHeight(35.5) === B.top);
 check('on deck at its centre line', R.onDeck(0, B.z));
 check('off deck just past its edge', !R.onDeck(0, B.z + B.width / 2 + 0.01));
 
@@ -109,7 +120,7 @@ for (let x = 20; x < 60; x += 0.1) {
   if (R.deckHeight(x) - R.terrainHeight(x, z) <= 0.35) { rampEntry = true; break; }
 }
 const reachJump = (() => { for (let x = 20; x < 60; x += 0.1) { const z = B.z; if (R.lagoonDistance(x, z) <= R.PARK_EDGE && !R.isWater(x, z) && R.deckHeight(x) - R.terrainHeight(x, z) < 1.6) return true; } return false; })();
-check('Wally can get onto the deck from the bank (step or hop)', rampEntry || reachJump);
+check('Wally gets onto the deck from the bank by the steps at the west end, and only there', R.DECK_OPENINGS.filter(o => o.kind === 'steps').length === 1 && R.DECK_OPENINGS.find(o => o.kind === 'steps').x1 < 0);
 
 for (const r of R.ROCKS) {
   const top = R.standHeight(r.x, r.z, r.top + 0.1);
@@ -137,8 +148,9 @@ check('food falling on the deck stops on the deck', R.foodSurface(0, B.z, B.top 
 const half = B.width / 2 - 0.45;
 check('rails stop him walking off the side mid-lagoon', R.railClamp(0, B.z, B.z + 5) === B.z + half);
 check('rails stop him on the other side too', R.railClamp(0, B.z, B.z - 5) === B.z - half);
-check('a gap in the rail lets him off', R.railClamp(-8.5, B.z, B.z + 5) === B.z + 5);
-check('the steps let him off onto the bank', R.railClamp(34, B.z, B.z - 5) === B.z - 5);
+check('over the water the rails hold him all the way (Ken, 2026-11-01: one way on)', R.railClamp(-8.5, B.z, B.z + 5) < B.z + B.width / 2);
+check('the steps let him off onto the bank', R.railClamp(-34, B.z, B.z - 5) === B.z - 5);
+check('and there are no steps at the gate end', R.railClamp(34, B.z, B.z - 5) > B.z - B.width / 2);
 check('off the deck the rails do nothing', R.railClamp(0, B.z + 6, B.z + 7) === B.z + 7);
 for (const o of R.DECK_OPENINGS) {
   const mid = (o.x0 + o.x1) / 2;
@@ -146,7 +158,7 @@ for (const o of R.DECK_OPENINGS) {
   if (o.kind === 'steps') check(`steps at ${mid} lead to bank inside the park`, !R.isWater(mid, B.z + B.width) && R.lagoonDistance(mid, B.z + B.width) <= R.PARK_EDGE);
 }
 check('leaping up mid-lagoon is blocked by the rails', R.standHeight(0, B.z, B.top + 0.2, -0.45, true).surface !== 'deck');
-check('leaping up at a gap lands on the deck', R.standHeight(-8.5, B.z, B.top + 0.2, -0.45, true).surface === 'deck');
+check('leaping up from the water never lands on the deck: one way on', R.standHeight(-8.5, B.z, B.top + 0.2, -0.45, true).surface !== 'deck');
 check('a gap is low enough to leap up to', B.top <= 13 ** 2 / 44 - 0.45);
 check('Kenny toast is not tourist food', !('toast' in R.FOODS));
 check('every food has points and energy', Object.values(R.FOODS).every(f => f.points > 0 && f.energy > 0));
@@ -202,7 +214,7 @@ check('food passing under the deck carries on to the water', R.foodSurface(0, B.
 // The boardwalk is solid from the side (Ken): jump onto it, or swim under where it is high.
 {
   const { deckBlocks, deckHeight: dh, BOARDWALK: B, WALLY_TALL } = await import('../js/rules.js');
-  const lowX = B.flat + 4;                                   // on a ramp, part way down (clear of the steps)
+  const lowX = -(B.flat + 4);                                   // on a ramp, part way down (clear of the steps)
   check('walking into a low part of the boardwalk is blocked', deckBlocks(lowX, B.z, 0.0, false));
   check('jumped up level with it, he is not blocked', !deckBlocks(lowX, B.z, dh(lowX) - 0.1, false));
   check('swimming under the high middle is allowed', !deckBlocks(0, B.z, -0.45, true));

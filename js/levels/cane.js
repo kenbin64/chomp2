@@ -308,7 +308,7 @@ function step(dt, t) {
 
   // Energy: it runs down, slower on easy (trip-rules.js).
   const moving = Math.hypot(wally.vel.x, wally.vel.z) > 0.5;
-  if (!game.done && game.faint <= 0) game.energy -= energyDrain(wally.mode, moving, 'cane') * game.tripDrain * drainFactor() * dt;   // vitamins halve it
+  if (!game.done && game.faint <= 0) game.energy -= energyDrain(wally.mode, moving, 'cane', wally.effort) * game.tripDrain * drainFactor() * dt;   // vitamins halve it
 
   // Eating cane: walk over a piece in the open.
   for (const p of pieces) {

@@ -92,15 +92,45 @@ try {
     const left = () => p.evaluate(() => { const b = id => { const e = document.getElementById(id), r = e.getBoundingClientRect(); return getComputedStyle(e).display === 'none' || !r.width ? null : { says: e.textContent, w: r.width }; }; const a = [b('t-jump'), b('t-fours')].filter(Boolean).sort((x, y) => y.w - x.w); return a.map(x => x.says).join(); });
     check('on land: Jump is the big button, Duck beside it', (await left()) === 'Jump,Duck', await left());
     await shot(p, 'land');
-    // A thumb that pushes up and then relaxes back toward the middle: he keeps his full speed.
+    // Further out is faster: a walk near the middle, about the keys' pace at the rim, a sprint past it, and a top speed.
     const S = await p.evaluate(() => { const r = document.getElementById('stick').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
-    // As a share of his top speed for how he is moving (he may run off the bank and swim), and the thumb's smidgeon is 1.1.
-    const speed = () => p.evaluate(() => { const w = window.chomp.wally; return Math.hypot(w.vel.x, w.vel.z) / { upright: 5.6, fours: 8.2, swim: 4.8 }[w.mode]; });
-    const th = await p.touchscreen.touchStart(S.x, S.y - 50); await wait(700); const full = await speed();
-    await th.move(S.x, S.y - 12); await wait(700); const relaxed = await speed(); await th.move(S.x, S.y + 2); await wait(500); const middle = await speed();
-    check('push up, then the thumb relaxes: he keeps going, just as fast, a smidgeon over the keys', [full, relaxed, middle].every(v => v > 1.05 && v < 1.15), `${full.toFixed(2)}, ${relaxed.toFixed(2)}, ${middle.toFixed(2)}`);
+    const speed = async () => { await p.evaluate(() => { const w = window.chomp.wally; w.pos.set(0, w.pos.y, 18); }); return p.evaluate(() => new Promise(done => { const w = window.chomp.wally; setTimeout(() => done({ v: Math.hypot(w.vel.x, w.vel.z), m: w.mode }), 60); })); };
+    const at = async (y, ms = 700) => { await th.move(S.x, S.y - y); await wait(ms); return speed(); };
+    const th = await p.touchscreen.touchStart(S.x, S.y - 18); await wait(700);
+    const walk = await speed(), rim = await at(66), sprint = await at(110), past = await at(200), back = await at(10);
+    console.log('  speeds m/s', [walk, rim, sprint, past, back].map(s => `${s.v.toFixed(1)} ${s.m}`).join(', '));
+    check('near the middle he walks', walk.v > 1.5 && walk.v < 3.5, walk.v.toFixed(1));
+    check('at the rim, about the pace of the keys (5.6)', rim.v > 4.6 && rim.v < 6.2, rim.v.toFixed(1));
+    check('past the rim he sprints (a running sprint, or a slower swimming one)', sprint.v > (sprint.m === 'swim' ? 6.4 : 7.3), `${sprint.v.toFixed(1)} ${sprint.m}`);
+    check('further out still: the top speed holds', past.v <= 8.5 && Math.abs(past.v - sprint.v) < 0.6, past.v.toFixed(1));
+    check('thumb back toward the middle: back to a walk, still going', back.v > 1.5 && back.v < 3.5, back.v.toFixed(1));
+    { const o = await p.evaluate(() => { const c = document.getElementById('stick').getBoundingClientRect(), r = document.querySelector('.orb-heading').getBoundingClientRect(), w = window.chomp.wally, y = window.chomp.cam.yaw;
+        const dx = r.left + r.width / 2 - (c.left + c.width / 2), dy = r.top + r.height / 2 - (c.top + c.height / 2), hx = Math.sin(w.facing), hz = Math.cos(w.facing);
+        return { got: Math.atan2(dx, -dy), want: Math.atan2(hx * Math.cos(y) - hz * Math.sin(y), -(hx * Math.sin(y) + hz * Math.cos(y))), inside: Math.hypot(dx, dy) + r.width / 2 < c.width / 2 }; });
+      const off = Math.abs(Math.atan2(Math.sin(o.got - o.want), Math.cos(o.got - o.want)));
+      check('the orb sits inside the circle, the way he faces on screen', o.inside && off < 0.35, `${o.got.toFixed(2)} vs ${o.want.toFixed(2)}`); }
     check('the up arrow is lit while he goes', await p.evaluate(() => document.querySelector('#stick .orb-arrows').classList.contains('orb-go')));
+    await at(110, 200); await shot(p, 'sprint');
+    const orbAt = () => p.evaluate(() => { const c = document.getElementById('stick').getBoundingClientRect(), r = document.querySelector('.orb-heading').getBoundingClientRect(); return { x: r.left + r.width / 2 - c.left - c.width / 2, y: r.top + r.height / 2 - c.top - c.height / 2 }; });
+    const straight = await orbAt();
+    await th.move(S.x + 60, S.y - 45); await wait(450); const turning = await orbAt(); await shot(p, 'turning');
+    check('going straight the orb is at the top; turning right it swings right', Math.abs(straight.x) < 8 && straight.y < -25 && turning.x > 15, `${Math.round(straight.x)},${Math.round(straight.y)} then ${Math.round(turning.x)},${Math.round(turning.y)}`);
+    await th.move(S.x, S.y - 110); await wait(300);
+    check('the chevrons all light at a sprint', await p.evaluate(() => document.querySelector('.orb-run').dataset.run === '3'));
     await th.end(); await wait(400);
+    // No swivelling on the spot (Ken, 2026-11-01): a push to the side from a standstill sets him off round the corner, quickly.
+    const put = () => p.evaluate(() => { const w = window.chomp.wally; w.pos.set(0, 0.35, 21); w.vel.set(0, 0, 0); w.facing = Math.PI; w.turnRate = 0; });
+    await put(); await wait(300);
+    const side = await p.touchscreen.touchStart(S.x + 60, S.y); await wait(350);
+    const c = await p.evaluate(() => { const w = window.chomp.wally; return { f: w.facing, sp: Math.hypot(w.vel.x, w.vel.z), m: Math.hypot(w.pos.x, w.pos.z - 21) }; }); await side.end(); await wait(300);
+    check('a full push to the side: about a quarter turn in a third of a second, and he is moving', Math.abs(Math.PI - c.f) > 1 && c.sp > 2 && c.m > 0.3, `${Math.abs(Math.PI - c.f).toFixed(2)} rad, ${c.sp.toFixed(1)} m/s, ${c.m.toFixed(1)} m`);
+    await put(); await wait(300);
+    const run = await p.touchscreen.touchStart(S.x, S.y - 66); await wait(500); const r0 = await speed(); const f0 = await p.evaluate(() => window.chomp.wally.facing);
+    await run.move(S.x + 66, S.y - 8); await wait(300); const r1 = await p.evaluate(() => { const w = window.chomp.wally; return { f: w.facing, v: Math.hypot(w.vel.x, w.vel.z) }; });
+    check('running, then a hard corner: he turns sharply and keeps his speed', Math.abs(r1.f - f0) > 0.8 && r1.v > r0.v * 0.75, `${Math.abs(r1.f - f0).toFixed(2)} rad, ${r0.v.toFixed(1)} to ${r1.v.toFixed(1)} m/s`);
+    await run.move(S.x + 12, S.y - 66); await wait(100); const s0 = await p.evaluate(() => window.chomp.wally.facing); await wait(400); const s1 = await p.evaluate(() => window.chomp.wally.facing);
+    check('a slight lean on the run: a gentle change of course', Math.abs(s1 - s0) > 0.01 && Math.abs(s1 - s0) < 0.5, Math.abs(s1 - s0).toFixed(2));
+    await run.end(); await wait(400);
     await p.evaluate(() => { const w = window.chomp.wally; w.pos.set(3, -0.45, -8); w.vel.set(0, 0, 0); });
     check('in the water: Dive is the big button, Leap beside it', await p.waitForFunction(() => document.getElementById('t-fours').textContent === 'Dive', { timeout: 8000, polling: 100 }).then(() => true).catch(() => false) && (await left()) === 'Dive,Leap', await left());
     await shot(p, 'water');

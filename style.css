@@ -728,6 +728,12 @@ body.touch #t-jump[data-slot="off"], body.touch #t-fours[data-slot="off"] { disp
 .orb-arrows polygon { fill: #fffbe6; stroke: rgba(10, 40, 20, 0.85); stroke-width: 2.5; stroke-linejoin: round; transition: fill 0.08s; }
 .orb-arrows.orb-go .a-go, .orb-arrows.orb-back .a-back, .orb-arrows.orb-left .a-left, .orb-arrows.orb-right .a-right { fill: #ffd166; }
 #stick.orb.hint .a-go { animation: thumb-beckon 1.1s ease-in-out infinite; transform-origin: 50px 16px; }
+/* Inside the circle: an orb that moves round to show which way he faces, and whether he is going straight or turning (input.js). */
+.orb-heading { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #4fc3ff 55%, #0b6fb0); border: 2px solid rgba(5, 30, 50, 0.9); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5); pointer-events: none; }
+/* Above the circle: further out is faster, and these light as he goes from a walk to a sprint (input.js). */
+.orb-run { position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%); display: flex; flex-direction: column-reverse; gap: 3px; pointer-events: none; }
+.orb-run i { display: block; width: 26px; height: 12px; background: #fffbe6; opacity: 0.45; clip-path: polygon(50% 0, 100% 70%, 100% 100%, 50% 35%, 0 100%, 0 70%); transition: opacity 0.08s, background 0.08s; }
+.orb-run[data-run="1"] i:nth-child(-n+1), .orb-run[data-run="2"] i:nth-child(-n+2), .orb-run[data-run="3"] i { background: #ffd166; opacity: 1; }
 @keyframes thumb-beckon { 50% { fill: #ffd166; transform: scale(1.18); } }
 #stick.replaced { display: none; }
 

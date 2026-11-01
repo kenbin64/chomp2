@@ -135,9 +135,14 @@ export const ENERGY_MAX = 100;
 // little harder). 1 is the full rate.
 export const LEVEL_DRAIN = { park: 0.6, cane: 0.55, esplanade: 0.8, reef: 1, kuranda: 1.1, daintree: 0.86, mossman: 1.2 };
 
-export function energyDrain(mode, moving, level = null) {
-  const base = { upright: 1.6, fours: 2.6, swim: 1.3 }[mode] ?? 1.6;
-  return (moving ? base * 1.4 : base) * (LEVEL_DRAIN[level] ?? 1);
+// Effort costs energy (Ken, 2026-11-01). Swimming costs more than running upright. Speed costs more the faster he goes: share is
+// his speed as a share of his usual speed for how he is moving, so a walk costs about half, his usual pace the usual amount, and
+// a sprint nearly double. Jumping costs JUMP_DRAIN a second while he is rising, so a big leap costs more than a hop.
+const JUMP_DRAIN = 8;
+export function energyDrain(mode, moving, level = null, effort = { share: 1, rising: false }) {
+  const base = { upright: 1.6, fours: 2.6, swim: 1.8 }[mode] ?? 1.6;
+  const speed = moving ? Math.max(0.5, Math.pow(effort.share, 1.5)) : 1;
+  return ((moving ? base * 1.4 : base) * speed + (effort.rising ? JUMP_DRAIN : 0)) * (LEVEL_DRAIN[level] ?? 1);
 }
 
 // Below 40 energy he slows down, to just under half speed when empty.
@@ -227,24 +232,24 @@ export function difficulty(seconds) {
 
 // The boardwalk crosses the lagoon high enough to swim under and leap onto.
 // Its ends slope down to the banks so Wally can hop on from dry land.
-export const BOARDWALK = { z: 2, width: 5, x0: -58, x1: 58, top: 3.2, flat: 24, rampEnd: 40, low: 0.6 };
+// The east end stays high past the gate (Ken, 2026-11-01), so on land he walks under it, and only the west end is a way up.
+export const BOARDWALK = { z: 2, width: 5, x0: -58, x1: 58, top: 3.2, flat: 24, rampEnd: 40, low: 0.6, eastFlat: 36.5, eastEnd: 40.5 };
 
 export function deckHeight(x) {
-  const B = BOARDWALK, a = Math.abs(x);
-  if (a <= B.flat) return B.top;
-  if (a >= B.rampEnd) return B.low;
-  return B.top + (B.low - B.top) * (a - B.flat) / (B.rampEnd - B.flat);
+  const B = BOARDWALK, a = Math.abs(x), flat = x > 0 ? B.eastFlat : B.flat, end = x > 0 ? B.eastEnd : B.rampEnd;
+  if (a <= flat) return B.top;
+  if (a >= end) return B.low;
+  return B.top + (B.low - B.top) * (a - flat) / (end - flat);
 }
 
-// Places Wally can pass the boardwalk's edge: gaps in the railing over the water,
-// and the steps down to the bank at each end. Everywhere else the rails hold him.
+// Places Wally can pass the boardwalk's edge (Ken, 2026-11-01): the bridge has one way on, the steps at the west end, the far
+// end from the gate. He crosses the whole of it to get out. Everywhere else the rails hold him. The bar across it just past the
+// steps stays down until he has the key (ground.js), though he can still cross the steps themselves, on land.
 export const GATE_X = 35.5;                  // the gate on the boardwalk (world.js draws it)
+export const BRIDGE_BAR_X = -30.5;           // the bar across the bridge (world.js draws it)
 
 export const DECK_OPENINGS = [
   { x0: -38, x1: -31, kind: 'steps' },
-  { x0: -10, x1: -7, kind: 'gap' },
-  { x0: 12, x1: 15, kind: 'gap' },
-  { x0: 31, x1: 38, kind: 'steps' },
   // Where the visitors' path outside the fence meets it (it crosses x 41.15 to 45.18 at the deck's middle):
   // people step up onto it there, and Wally, once out of the gate, steps off onto the path (chase-rules.js).
   { x0: -45, x1: -41.4, kind: 'path' },

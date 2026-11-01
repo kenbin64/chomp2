@@ -31,10 +31,15 @@ const ORB_TURN = 1.7, ORB_STEER = 0.5;    // ORB_STEER: a full push to the side,
 const THUMB_R = 62;                       // pixels of drag for a full push
 const THUMB_TURN = 0.75;                  // a full push to the side, as a share of the keys' turning speed
 const SMOOTH = 9;                         // how quickly he follows a push: a tenth of a second or so
-// The right thumb on a phone (Ken, 2026-11-01: he slowed when the thumb relaxed). Up is on or off, as on the keyboard: past
-// GO_ON he runs at full speed, and he keeps running until the thumb comes back past GO_OFF, below the middle, or lifts.
+const SMOOTH_THUMB = 16;                  // and a thumb's turn, quicker still: he goes where the thumb says
+// The right thumb on a phone (Ken, 2026-11-01). A push any way but down sets him off, so he never swivels on the spot to aim: he
+// runs and turns together, as we do. He keeps going until the thumb comes back past GO_OFF, below the middle, or lifts. How fast is how far out the thumb is, walk to sprint: a walk near the middle, about the
+// keys' pace at the rim of the circle, and his sprint past it, out to SPRINT_R pixels. Further out than that changes nothing.
 const GO_ON = 0.15, GO_OFF = 0.2;
-const THUMB_PACE = 1.1;                   // a smidgeon quicker with the thumb than the keys (Ken, 2026-11-01)
+const WALK_R = 20, SPRINT_R = 110;        // pixels from the circle's middle where the walk ends and the sprint is reached
+const WALK_PACE = 0.45, SPRINT_PACE = 1.45;   // as a share of his usual speed
+const ORB_REST = 24, ORB_MOVING = 40;     // the orb in the circle: pixels from the middle, standing and on the move
+const ORB_LEAN = 1.5;                     // how far it swings for a turn: a full push to the side takes it about to the side (radians)
 const soft = v => Math.sign(v) * Math.pow(Math.abs(v), 1.5);   // small pushes are fine, a big one is full
 // Which way Wally faces on screen, as an angle from straight up (clockwise), set by wally.js every frame.
 // The orb's arrows turn to it (Ken, 2026-10-21: the orb always at Wally's orientation), and a push is read
@@ -95,12 +100,18 @@ export class Input {
     ring.classList.add('orb'); if (!ring.querySelector('.orb-arrows')) ring.insertAdjacentHTML('afterbegin', THUMB_ARROWS);
     this.orbArrows = ring.querySelector('.orb-arrows'); this.thumbUi = ui;
     ring.classList.add('hint');            // the up arrow beckons until the thumb first lands
+    // Three chevrons above the circle: further out is faster. They light as he goes from a walk to a sprint.
+    ring.insertAdjacentHTML('beforeend', '<div class="orb-run" data-run="0" aria-hidden="true"><i></i><i></i><i></i></div>');
+    this.orbRun = ring.querySelector('.orb-run');
+    // An orb inside the circle: which way he is facing and whether he is going straight or turning (Ken, 2026-11-01). The arrows stay fixed.
+    ring.insertAdjacentHTML('beforeend', '<div class="orb-heading" aria-hidden="true"></div>');
+    this.orbHeading = ring.querySelector('.orb-heading');
     const show = s => { knob.style.transform = `translate(${s.dx * THUMB_R}px, ${s.dy * THUMB_R}px)`; };
     // How far the thumb is from the circle's fixed middle. Past the edge it is a full push, the knob at the rim.
     const read = (s, t) => {
       const x = t.clientX - s.x0, y = t.clientY - s.y0, d = Math.hypot(x, y) || 1;
       const live = d < THUMB_R * 0.12 ? 0 : Math.min(1, (d - THUMB_R * 0.12) / (THUMB_R * 0.88)) / d;   // a small dead middle, so a resting thumb is still
-      s.dx = x * live; s.dy = y * live;
+      s.dx = x * live; s.dy = y * live; s.far = d;
     };
     // The circle itself, or close enough that a thumb reaching for it without looking still gets it.
     const onRing = t => { const r = ring.getBoundingClientRect(); return Math.hypot(t.clientX - (r.left + r.width / 2), t.clientY - (r.top + r.height / 2)) < r.width * 0.85; };
@@ -206,15 +217,21 @@ export class Input {
     let wantF = 0, wantR = 0, pushed = false;
     if (padMoving) { wantF = soft(pad.forward); wantR = soft(pad.right) * (steerAll ? THUMB_TURN : 1); pushed = true; }
     if (this.stick) {
-      const sx = this.stick.dx, sy = this.stick.dy, mine = this.stick.id === 'mouse' ? ORB_STEER : THUMB_TURN;
-      if (-sy > GO_ON && -sy > Math.abs(sx) * 0.5) this.stick.going = true; else if (sy > GO_OFF) this.stick.going = false;
+      const sx = this.stick.dx, sy = this.stick.dy, mine = this.stick.id === 'mouse' ? ORB_STEER : 1;
+      if (sy > GO_OFF) this.stick.going = false; else if (Math.hypot(sx, sy) > GO_ON) this.stick.going = true;
       wantF = this.stick.going ? 1 : (sy > 0.6 ? -1 : 0);         // up goes; well down is the about-face, or backing up
       if (steerAll) wantR = soft(sx) * mine; else { wantR = 0; this.turn -= soft(sx) * ORB_TURN * dt; }
       pushed = true;
     }
     const k2 = Math.min(1, dt * SMOOTH);
+    // Walk to sprint: eased like the rest, and held as he slows after the thumb lifts.
+    if (this.stick) {
+      const out = Math.max(0, Math.min(1, (this.stick.far - WALK_R) / (SPRINT_R - WALK_R))), pace = WALK_PACE + (SPRINT_PACE - WALK_PACE) * out;
+      this.thumbPace = this.thumbPace ? this.thumbPace + (pace - this.thumbPace) * k2 : pace;
+      if (this.orbRun) this.orbRun.dataset.run = !this.stick.going ? 0 : out > 0.8 ? 3 : out > 0.5 ? 2 : 1;
+    } else if (!this.softF) { this.thumbPace = 0; if (this.orbRun) this.orbRun.dataset.run = 0; }
     this.softF = (this.softF || 0) + ((wantF < 0 && steerAll ? 0 : wantF) - (this.softF || 0)) * k2;
-    this.softR = (this.softR || 0) + (wantR - (this.softR || 0)) * k2;
+    this.softR = (this.softR || 0) + (wantR - (this.softR || 0)) * (this.stick ? Math.min(1, dt * SMOOTH_THUMB) : k2);
     if (Math.abs(this.softF) < 0.005) this.softF = 0;
     if (Math.abs(this.softR) < 0.005) this.softR = 0;
     if (!f && !r && (pushed || this.softF || this.softR)) { f = this.softF; r = this.softR; if (wantF < 0) f = wantF; }
@@ -235,11 +252,17 @@ export class Input {
       this.orbArrows.classList.toggle('orb-left', s.dx < -0.2 || this.aim > 0.004); this.orbArrows.classList.toggle('orb-right', s.dx > 0.2 || this.aim < -0.004);
     }
     if (this.thumbUi) this.showThumbs();
+    if (this.orbHeading) {
+      // Straight on it sits at the top; turning, it swings to that side; an about-face takes it right round. Standing, it rests nearer the middle.
+      const a = orbAngle + (this.softR || 0) * ORB_LEAN, far = ORB_REST + (ORB_MOVING - ORB_REST) * Math.min(1, Math.abs(this.softF || 0));
+      this.orbHeading.style.transform = `translate(${Math.sin(a) * far}px, ${-Math.cos(a) * far}px)`;
+    }
     if (pad) { this.turn += pad.turn; this.tilt += pad.tilt; }
     const turnKeys = (k.has('q') ? 1 : 0) - (k.has('e') ? 1 : 0);
     const out = {
       forward: f, right: r,
-      boost: this.stick ? THUMB_PACE : 1,
+      boost: this.thumbPace || 1,
+      sharp: !!this.thumbPace,         // by thumb: the turn answers at once, with no build-up (wally.js)
       // Classic steering (a setting) is for the keyboard only: up runs the way he
       // faces, down turns him round, left and right turn him. Otherwise, and
       // always for the phone stick and a controller, moving is relative to the camera.

@@ -5,6 +5,18 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- Phones: Wally runs and turns together, with no swivelling on the spot. A little to the side is a slight change of course on the run, a lot
+  is a sharp corner, and a push to the side from a standstill sets him off that way.
+- Croc Park: the bridge has one way on, the steps at the west end, and a bar across it until he has the key. He crosses all of it to reach
+  the gate at the far end; on land he walks under that end. Kenny's scene now shows the bar lifting, the bridge from side to side, then the gate.
+
+- Effort costs energy, on every controller: the faster Wally goes the faster the feed-o-meter drops, swimming costs more than running
+  upright, and every jump costs a little, a big leap more than a hop.
+- Phones: an orb inside the circle moves round to show which way Wally faces, and whether he is going straight or turning.
+
+- Phones: how far out the thumb goes sets Wally's speed, from a walk near the middle of the circle to a sprint past its edge, with a top
+  speed. Three chevrons above the circle show it.
+
 ## v1.0.0-beta.21 (2026-11-01)
 
 - Phones: the circle now has four solid arrows, always in the same place, and the up arrow beckons until the thumb first lands.
