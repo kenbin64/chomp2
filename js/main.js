@@ -897,7 +897,7 @@ function diveStep(dt, k) {
   if (inWater && game.nap <= 0) {
     if (dive) game.wantDepth = T.diveY;
     if (up) game.wantDepth = T.surfaceY;
-    if (!game.diveHint && game.time > 3) { game.diveHint = true; if (!showTip('dive', 'In the water, Shift (or Dive) goes under and Space (or Up) comes back up. Wally can hold his breath for a while.')) toast('Shift dives, Space comes up', 'info'); }
+    if (!game.diveHint && game.time > 3) { game.diveHint = true; if (!showTip('dive', 'In the water, Shift (or Dive) goes under and Space (or Up) comes back up. Wally can hold his breath for a while.')) toast(touch ? 'Dive goes under, Up comes back' : 'Shift dives, Space comes up', 'info'); }
   }
   if (!inWater || game.nap > 0) game.wantDepth = T.surfaceY;
   game.depth += Math.sign(game.wantDepth - game.depth) * Math.min(Math.abs(game.wantDepth - game.depth), 2.5 * dt);

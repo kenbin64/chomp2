@@ -12,13 +12,14 @@
 //        The wheel zooms. Space jumps (and swims up), Shift dives under (and runs on
 //        all fours on land). Q / E turn the camera, wheel zooms, C swings it behind
 //        him, P pauses. (Camera-relative moving is a setting, settings.js.)
-// Phone: right thumb on the fixed circle to move and turn; left thumb on Jump and Dive; elsewhere turns the camera.
+// Phone: right thumb on the fixed arrows to move and turn; left thumb on what fits (showThumbs); elsewhere turns the camera.
 // Game controller (the standard layout: Xbox, PlayStation, Switch Pro): left stick
 //        or d-pad steers him the same way (up forward, sides turn, down turns round),
 //        right stick turns the camera, A jumps (and swims up), B or a
 //        trigger runs on all fours (and dives), Y swings the camera behind him, Start pauses.
 
 import { showTip } from './tips.js';
+import { THUMB_ARROWS } from './thumbs.js';
 import { settings } from './settings.js';
 import { xrGamepad } from './vr.js';           // a VR headset's controllers, read as a game controller
 import './device.js';                    // which controls are in use: keyboard, mouse, controller, touch (device.js)
@@ -30,28 +31,25 @@ const ORB_TURN = 1.7, ORB_STEER = 0.5;    // ORB_STEER: a full push to the side,
 const THUMB_R = 62;                       // pixels of drag for a full push
 const THUMB_TURN = 0.75;                  // a full push to the side, as a share of the keys' turning speed
 const SMOOTH = 9;                         // how quickly he follows a push: a tenth of a second or so
+// The right thumb on a phone (Ken, 2026-11-01: he slowed when the thumb relaxed). Up is on or off, as on the keyboard: past
+// GO_ON he runs at full speed, and he keeps running until the thumb comes back past GO_OFF, below the middle, or lifts.
+const GO_ON = 0.15, GO_OFF = 0.2;
+const THUMB_PACE = 1.1;                   // a smidgeon quicker with the thumb than the keys (Ken, 2026-11-01)
 const soft = v => Math.sign(v) * Math.pow(Math.abs(v), 1.5);   // small pushes are fine, a big one is full
 // Which way Wally faces on screen, as an angle from straight up (clockwise), set by wally.js every frame.
 // The orb's arrows turn to it (Ken, 2026-10-21: the orb always at Wally's orientation), and a push is read
 // against them: toward the up arrow is forward for him, whichever way the camera looks.
 let orbAngle = 0;
-// The left thumb's button says what it does: Dive in the water, Duck on land.
+// Whether he is in the water, set by wally.js: the left thumb's buttons follow it (Input.showThumbs).
 let thumbWater = null;
 export function setThumbWater(on) {
-  if (on === thumbWater || typeof document === 'undefined') return;
-  thumbWater = on; const b = document.getElementById('t-fours'); if (b) b.textContent = on ? 'Dive' : 'Duck';
+  thumbWater = on;
 }
 export function setOrbHeading(a) { if (Number.isFinite(a)) orbAngle = a; }
 // A push on the orb (screen pixels from its middle) turned into Wally's own frame.
 // (Turning the arrows with Wally made a held push keep changing meaning, so he spun: Ken, 2026-10-22. The
 // orb stays fixed: up is always forward, the sides always turn.)
 function toWally(dx, dy) { return { x: dx, y: dy }; }
-// Arrows inside the orb, so it explains itself: up to go, round arrows left and right to turn.
-const ORB_ARROWS = '<svg class="orb-arrows" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="rgba(255,255,240,0.85)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">'
-  + '<g class="a-go"><path d="M36 26 L50 10 L64 26"/><path d="M50 12 L50 36"/></g><g class="a-back" opacity="0.5"><path d="M40 80 L50 90 L60 80"/></g>'
-  + '<g class="a-left"><path d="M22 36 A30 30 0 0 0 22 64"/><path d="M15 43 L22 36 L29 42"/></g>'
-  + '<g class="a-right"><path d="M78 36 A30 30 0 0 1 78 64"/><path d="M85 43 L78 36 L71 42"/></g>'
-  + '<circle cx="50" cy="50" r="5" fill="rgba(255,255,240,0.7)" stroke="none"/></g></svg>';
 
 export class Input {
   constructor(canvas, touchUi) {
@@ -94,8 +92,9 @@ export class Input {
   // thumb has Jump and Dive, fixed at the bottom left. Both work at once. A finger anywhere else turns the camera.
   bindTouch(canvas, ui) {
     const ring = ui.stick, knob = ui.knob;
-    ring.classList.add('orb'); if (!ring.querySelector('.orb-arrows')) ring.insertAdjacentHTML('afterbegin', ORB_ARROWS);
-    this.orbArrows = ring.querySelector('.orb-arrows');
+    ring.classList.add('orb'); if (!ring.querySelector('.orb-arrows')) ring.insertAdjacentHTML('afterbegin', THUMB_ARROWS);
+    this.orbArrows = ring.querySelector('.orb-arrows'); this.thumbUi = ui;
+    ring.classList.add('hint');            // the up arrow beckons until the thumb first lands
     const show = s => { knob.style.transform = `translate(${s.dx * THUMB_R}px, ${s.dy * THUMB_R}px)`; };
     // How far the thumb is from the circle's fixed middle. Past the edge it is a full push, the knob at the rim.
     const read = (s, t) => {
@@ -107,8 +106,8 @@ export class Input {
     const onRing = t => { const r = ring.getBoundingClientRect(); return Math.hypot(t.clientX - (r.left + r.width / 2), t.clientY - (r.top + r.height / 2)) < r.width * 0.85; };
     const take = t => {
       const r = ring.getBoundingClientRect();
-      this.stick = { id: t.identifier, x0: r.left + r.width / 2, y0: r.top + r.height / 2, dx: 0, dy: 0 };
-      read(this.stick, t); show(this.stick); ring.classList.add('active');
+      this.stick = { id: t.identifier, x0: r.left + r.width / 2, y0: r.top + r.height / 2, dx: 0, dy: 0, going: false };
+      read(this.stick, t); show(this.stick); ring.classList.add('active'); ring.classList.remove('hint');
     };
     const begin = e => {
       for (const t of e.changedTouches) {
@@ -143,6 +142,27 @@ export class Input {
     tap(ui.fours, e => { this.diveThumb = e.changedTouches[0].identifier; this.foursTouch = true; this.foursTapped = true; ui.fours.classList.add('on'); });
     tap(ui.pause, () => this.onPause && this.onPause());
     tap(ui.cam, () => { this.recenterQueued = true; });
+  }
+
+  // The left thumb shows only what does something right now (Ken, 2026-11-01), and the big button is the main move here:
+  //   on land               Jump, and Duck beside it
+  //   in water, at the top  Dive, and Leap beside it (no Leap where the level has none: the reef)
+  //   under water           Up, and Dive beside it if there is further down to go
+  //   water with no diving  Leap
+  // The level's own Dive and Up buttons (hidden on a phone) already say when each one works, so they are read here.
+  showThumbs() {
+    const box = document.getElementById('dive-buttons'), canDive = !!thumbWater && !!box && !box.hidden;
+    const under = canDive && !document.getElementById('b-up').disabled;
+    const deeper = canDive && !document.getElementById('b-dive').disabled;
+    const leap = !(box && 'noLeap' in box.dataset);
+    const [jump, jumpSays, fours, foursSays] = under ? ['big', 'Up', deeper ? 'small' : 'off', 'Dive']
+      : canDive ? [leap ? 'small' : 'off', 'Leap', 'big', 'Dive']
+      : thumbWater ? ['big', 'Leap', 'off', 'Dive'] : ['big', 'Jump', 'small', 'Duck'];
+    const now = jump + jumpSays + fours + foursSays;
+    if (now === this.thumbsNow) return;
+    this.thumbsNow = now;
+    const J = this.thumbUi.jump, F = this.thumbUi.fours;
+    J.dataset.slot = jump; J.textContent = jumpSays; F.dataset.slot = fours; F.textContent = foursSays;
   }
 
   // A game controller, if one is plugged in: this frame's stick, d-pad and
@@ -187,7 +207,8 @@ export class Input {
     if (padMoving) { wantF = soft(pad.forward); wantR = soft(pad.right) * (steerAll ? THUMB_TURN : 1); pushed = true; }
     if (this.stick) {
       const sx = this.stick.dx, sy = this.stick.dy, mine = this.stick.id === 'mouse' ? ORB_STEER : THUMB_TURN;
-      wantF = sy < 0 ? soft(-sy) : (sy > 0.6 ? -1 : 0);          // up goes; well down is the about-face, or backing up
+      if (-sy > GO_ON && -sy > Math.abs(sx) * 0.5) this.stick.going = true; else if (sy > GO_OFF) this.stick.going = false;
+      wantF = this.stick.going ? 1 : (sy > 0.6 ? -1 : 0);         // up goes; well down is the about-face, or backing up
       if (steerAll) wantR = soft(sx) * mine; else { wantR = 0; this.turn -= soft(sx) * ORB_TURN * dt; }
       pushed = true;
     }
@@ -210,13 +231,15 @@ export class Input {
       const s = this.stick || { dx: 0, dy: 0 };
       // The compass lights the way he is going, from the orb or from the mouse (hold left: go; moving it: turn).
       // (orb- names: a plain 'go' class is the site's big gold button style, which covered the orb.)
-      this.orbArrows.classList.toggle('orb-go', s.dy < -0.15); this.orbArrows.classList.toggle('orb-back', s.dy > 0.15);
+      this.orbArrows.classList.toggle('orb-go', !!s.going); this.orbArrows.classList.toggle('orb-back', s.dy > 0.15);
       this.orbArrows.classList.toggle('orb-left', s.dx < -0.2 || this.aim > 0.004); this.orbArrows.classList.toggle('orb-right', s.dx > 0.2 || this.aim < -0.004);
     }
+    if (this.thumbUi) this.showThumbs();
     if (pad) { this.turn += pad.turn; this.tilt += pad.tilt; }
     const turnKeys = (k.has('q') ? 1 : 0) - (k.has('e') ? 1 : 0);
     const out = {
       forward: f, right: r,
+      boost: this.stick ? THUMB_PACE : 1,
       // Classic steering (a setting) is for the keyboard only: up runs the way he
       // faces, down turns him round, left and right turn him. Otherwise, and
       // always for the phone stick and a controller, moving is relative to the camera.

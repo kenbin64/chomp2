@@ -423,7 +423,7 @@ export class Wally {
                                fz * input.forward - Math.sin(camYaw) * input.right);
       if (want.lengthSq() > 1) want.normalize();
     }
-    want.multiplyScalar(SPEED[this.mode] * pace);
+    want.multiplyScalar(SPEED[this.mode] * pace * (input.boost || 1));
     if (input.steer) this.vel.lerp(want, Math.min(1, dt * (this.airborne ? 2 : 8)));
     else this.steerArc(dt, want, inWater);
     this.moveFlat(dt);

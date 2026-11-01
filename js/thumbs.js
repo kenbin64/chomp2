@@ -15,6 +15,12 @@
 
 import { isTouchDevice } from './quality.js';
 
+// The arrows inside a fixed circle, so it explains itself: up, down, left and right, solid, and always in the same place.
+// The way being pushed lights gold (style.css). The walking circle (input.js) uses them too.
+export const THUMB_ARROWS = '<svg class="orb-arrows" viewBox="0 0 100 100" aria-hidden="true">'
+  + '<polygon class="a-go" points="50,3 69,29 31,29"/><polygon class="a-back" points="50,97 69,71 31,71"/>'
+  + '<polygon class="a-left" points="3,50 29,31 29,69"/><polygon class="a-right" points="97,50 71,31 71,69"/></svg>';
+
 const STICK_R = 54, ON = 0.35;           // pixels for a full push; how far before a way counts as pressed
 const send = (key, down) => dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', { key, bubbles: true, cancelable: true }));
 
@@ -32,9 +38,9 @@ function button(c, el) {
 }
 
 function stick(el) {
-  const knob = el.querySelector('i'), WAYS = { left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown' }, held = new Set();
+  const knob = el.querySelector('i'), lit = el.querySelector('.orb-arrows'), LIT = { left: 'orb-left', right: 'orb-right', up: 'orb-go', down: 'orb-back' }, WAYS = { left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown' }, held = new Set();
   let id = null, x0 = 0, y0 = 0;
-  const set = (way, on) => { if (on === held.has(way)) return; if (on) held.add(way); else held.delete(way); send(WAYS[way], on); };
+  const set = (way, on) => { if (on === held.has(way)) return; if (on) held.add(way); else held.delete(way); lit.classList.toggle(LIT[way], on); send(WAYS[way], on); };
   const read = t => {
     let dx = (t.clientX - x0) / STICK_R, dy = (t.clientY - y0) / STICK_R; const d = Math.hypot(dx, dy);
     if (d > 1) { dx /= d; dy /= d; }
@@ -63,7 +69,7 @@ export function createThumbs(controls) {
   const made = {};
   for (const [name, c] of Object.entries(controls)) {
     const el = document.createElement(c.stick ? 'div' : 'button');
-    if (c.stick) { el.className = 'thumb-stick'; el.innerHTML = '<i></i>'; }
+    if (c.stick) { el.className = 'thumb-stick'; el.innerHTML = THUMB_ARROWS + '<i></i>'; }
     else { el.type = 'button'; el.className = 'thumb-btn'; el.textContent = c.label; if (c.small) el.classList.add('small'); }
     el.dataset.thumb = name; el.hidden = true; sides[c.side].append(el);
     made[name] = { el, c, release: c.stick ? stick(el) : button(c, el) };

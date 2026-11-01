@@ -37,6 +37,7 @@ try {
   { console.log('Zip line');
     const p = await open('zipline.html?all&free&play&stay', () => window.chomp && window.chomp.game.running);
     await showing(p, 'riding', ['swing', 'brake']); await shot(p, 'zip');
+    check('the circle has its arrows', await p.evaluate(() => document.querySelectorAll('[data-thumb="swing"] .orb-arrows polygon').length === 4));
     const c = await at(p, 'swing'), B = await at(p, 'brake');
     const r = await p.touchscreen.touchStart(c.x, c.y); await r.move(c.x + 50, c.y); await wait(600);
     check('right thumb: he swings out', await p.evaluate(() => Math.abs(window.chomp.game.side) > 0.1 && window.chomp.game.keys.has('ArrowRight')));
@@ -87,9 +88,30 @@ try {
   { console.log('Walking');
     const p = await open('index.html?noopening', () => window.chomp && window.chomp.cam);
     await p.evaluate(() => window.chompStartHere()); await p.waitForFunction(() => window.chomp.game.intro <= 0, { timeout: 30000, polling: 200 }); await wait(800);
-    check('on land the button says Duck', await p.evaluate(() => document.getElementById('t-fours').textContent === 'Duck'));
+    // The left thumb: only what works here, the main move on the big button, and really on the screen.
+    const left = () => p.evaluate(() => { const b = id => { const e = document.getElementById(id), r = e.getBoundingClientRect(); return getComputedStyle(e).display === 'none' || !r.width ? null : { says: e.textContent, w: r.width }; }; const a = [b('t-jump'), b('t-fours')].filter(Boolean).sort((x, y) => y.w - x.w); return a.map(x => x.says).join(); });
+    check('on land: Jump is the big button, Duck beside it', (await left()) === 'Jump,Duck', await left());
+    await shot(p, 'land');
+    // A thumb that pushes up and then relaxes back toward the middle: he keeps his full speed.
+    const S = await p.evaluate(() => { const r = document.getElementById('stick').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    // As a share of his top speed for how he is moving (he may run off the bank and swim), and the thumb's smidgeon is 1.1.
+    const speed = () => p.evaluate(() => { const w = window.chomp.wally; return Math.hypot(w.vel.x, w.vel.z) / { upright: 5.6, fours: 8.2, swim: 4.8 }[w.mode]; });
+    const th = await p.touchscreen.touchStart(S.x, S.y - 50); await wait(700); const full = await speed();
+    await th.move(S.x, S.y - 12); await wait(700); const relaxed = await speed(); await th.move(S.x, S.y + 2); await wait(500); const middle = await speed();
+    check('push up, then the thumb relaxes: he keeps going, just as fast, a smidgeon over the keys', [full, relaxed, middle].every(v => v > 1.05 && v < 1.15), `${full.toFixed(2)}, ${relaxed.toFixed(2)}, ${middle.toFixed(2)}`);
+    check('the up arrow is lit while he goes', await p.evaluate(() => document.querySelector('#stick .orb-arrows').classList.contains('orb-go')));
+    await th.end(); await wait(400);
     await p.evaluate(() => { const w = window.chomp.wally; w.pos.set(3, -0.45, -8); w.vel.set(0, 0, 0); });
-    check('in the water it says Dive', await p.waitForFunction(() => document.getElementById('t-fours').textContent === 'Dive', { timeout: 8000, polling: 100 }).then(() => true).catch(() => false));
+    check('in the water: Dive is the big button, Leap beside it', await p.waitForFunction(() => document.getElementById('t-fours').textContent === 'Dive', { timeout: 8000, polling: 100 }).then(() => true).catch(() => false) && (await left()) === 'Dive,Leap', await left());
+    await shot(p, 'water');
+    const F = await p.evaluate(() => { const r = document.getElementById('t-fours').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    await p.touchscreen.tap(F.x, F.y);
+    check('tap Dive once and he goes under and stays: the big button is now Up', await p.waitForFunction(() => document.getElementById('t-jump').textContent === 'Up', { timeout: 4000, polling: 100 }).then(() => true).catch(() => false) && (await left()) === 'Up', await left());
+    await wait(1200);
+    check('still under, with the thumb off', await p.evaluate(() => document.getElementById('t-jump').textContent === 'Up'));
+    await shot(p, 'under');
+    await p.touchscreen.tap(F.x, F.y);
+    check('tap Up, in the same place: back to the top', await p.waitForFunction(() => document.getElementById('t-fours').textContent === 'Dive' && document.getElementById('t-fours').dataset.slot === 'big', { timeout: 4000, polling: 100 }).then(() => true).catch(() => false));
     check('no page errors', !p.errors.length, p.errors[0]); await p.close(); }
 } finally { await b.close(); }
 console.log(failed ? `${failed} FAILED` : 'all passed');

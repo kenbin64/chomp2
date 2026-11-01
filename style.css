@@ -58,7 +58,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #0d2a38; col
 #touch { position: fixed; inset: 0; pointer-events: none; }
 #stick { position: absolute; width: 120px; height: 120px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.5); background: rgba(255, 255, 255, 0.12); display: none; }
 /* The steering orb (input.js): always there on a touch screen, below Wally; a gold ring while a finger is on it. */
-#stick.orb { display: block; pointer-events: auto; touch-action: none; left: auto; right: max(18px, env(safe-area-inset-right)); top: auto; bottom: max(20px, env(safe-area-inset-bottom)); width: 128px; height: 128px; border: 3px solid rgba(40, 90, 30, 0.7); background: radial-gradient(circle at 40% 35%, rgba(150, 230, 110, 0.75), rgba(60, 150, 50, 0.6) 60%, rgba(30, 90, 30, 0.55)); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); transition: box-shadow 0.12s, border-color 0.12s; }
+#stick.orb { display: block; pointer-events: auto; touch-action: none; left: auto; right: max(18px, env(safe-area-inset-right)); top: auto; bottom: max(20px, env(safe-area-inset-bottom)); width: 128px; height: 128px; border: 3px solid rgba(40, 90, 30, 0.7); background: radial-gradient(circle at 40% 35%, rgba(70, 150, 60, 0.72), rgba(30, 95, 40, 0.68) 60%, rgba(15, 60, 30, 0.66)); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); transition: box-shadow 0.12s, border-color 0.12s; }
 #stick.orb.active { border-color: #ffd166; box-shadow: 0 0 0 5px rgba(255, 209, 102, 0.85), 0 0 22px rgba(255, 209, 102, 0.7); }
 #stick.orb #knob { left: 39px; top: 39px; width: 50px; height: 50px; background: rgba(230, 255, 210, 0.85); box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
 #knob { position: absolute; left: 35px; top: 35px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255, 255, 255, 0.6); }
@@ -657,7 +657,6 @@ body.touch #t-cam { top: auto; bottom: calc(max(26px, env(safe-area-inset-bottom
 /* The orb without its knob: the arrows turn with Wally, and the one being pushed lights gold (input.js). */
 #stick.orb #knob { display: none; }
 #stick.orb .orb-arrows { transition: transform 0.08s linear; }
-#stick.orb .orb-arrows.orb-go .a-go, #stick.orb .orb-arrows.orb-back .a-back, #stick.orb .orb-arrows.orb-left .a-left, #stick.orb .orb-arrows.orb-right .a-right { stroke: #ffd166; opacity: 1; }
 .trip-map-button[hidden] { display: none !important; }   /* until the first level is complete (mapmodal.js) */
 /* The title screen: where it all begins; installed as an app it is just Play and How to play. */
 .opener-bar .begin { margin: 8px 0 2px; color: #ffd166; font: 800 16px var(--font); text-shadow: 0 2px 6px #000; }
@@ -709,7 +708,6 @@ body.touch .dive-buttons { left: calc(max(12px, env(safe-area-inset-left)) + 80p
 body.touch .dive-buttons button { width: 62px; height: 62px; border-radius: 50%; font-size: 15px; padding: 0; }
 body.touch .dive-buttons button small { display: none; }
 body.touch #t-fours { left: calc(max(12px, env(safe-area-inset-left)) + 80px); right: auto; bottom: max(24px, env(safe-area-inset-bottom)); width: 62px; height: 62px; font-size: 14px; }
-body.touch:has(#dive-buttons:not([hidden])) #t-fours { display: none; }
 /* VR (vr.js): the button only appears when a headset is there; beside the Guide button, in the menu on a narrow screen. */
 .vr-button { position: fixed; z-index: 40; top: calc(max(10px, env(safe-area-inset-top)) + 46px); left: 50%; transform: translateX(326px); font: 800 16px var(--font); padding: 8px 14px; border-radius: 999px; border: 2px solid rgba(159, 238, 255, 0.8); background: rgba(10, 30, 44, 0.75); color: #9fe8ff; cursor: pointer; }
 .vr-button:hover { background: rgba(159, 238, 255, 0.2); }
@@ -722,7 +720,15 @@ body.touch #stick.orb #knob { left: 41px; top: 41px; width: 54px; height: 54px; 
 body.touch #t-jump { display: block; left: max(20px, env(safe-area-inset-left)); right: auto; bottom: max(22px, env(safe-area-inset-bottom)); width: 92px; height: 92px; font-size: 19px; }
 body.touch #t-fours { left: calc(max(20px, env(safe-area-inset-left)) + 104px); right: auto; bottom: max(22px, env(safe-area-inset-bottom)); width: 78px; height: 78px; font-size: 17px; background: rgba(159, 238, 255, 0.9); }
 body.touch #t-fours.on { background: #6ccf5a; }
-body.touch .dive-buttons { display: none; }   /* Dive and Jump (which comes back up) are always under the left thumb */
+body.touch .dive-buttons { display: none; }   /* the left thumb's two buttons do their work, and change to fit (input.js showThumbs) */
+body.touch #t-fours[data-slot="big"] { left: max(20px, env(safe-area-inset-left)); width: 92px; height: 92px; font-size: 19px; }
+body.touch #t-jump[data-slot="small"] { left: calc(max(20px, env(safe-area-inset-left)) + 104px); width: 78px; height: 78px; font-size: 17px; }
+body.touch #t-jump[data-slot="off"], body.touch #t-fours[data-slot="off"] { display: none; }
+/* The arrows in a fixed circle (thumbs.js): solid, with a dark edge so they read on any picture; gold on the way being pushed. */
+.orb-arrows polygon { fill: #fffbe6; stroke: rgba(10, 40, 20, 0.85); stroke-width: 2.5; stroke-linejoin: round; transition: fill 0.08s; }
+.orb-arrows.orb-go .a-go, .orb-arrows.orb-back .a-back, .orb-arrows.orb-left .a-left, .orb-arrows.orb-right .a-right { fill: #ffd166; }
+#stick.orb.hint .a-go { animation: thumb-beckon 1.1s ease-in-out infinite; transform-origin: 50px 16px; }
+@keyframes thumb-beckon { 50% { fill: #ffd166; transform: scale(1.18); } }
 #stick.replaced { display: none; }
 
 /* The boss banner as the chase begins (main.js). */
@@ -794,9 +800,10 @@ body.in-cut:not(.fishing) .thumbs { display: none; }
 .thumb-btn.small { width: 66px; height: 66px; font-size: 20px; }
 .thumbs-side.col .thumb-btn { width: 76px; height: 76px; font-size: 24px; }
 .thumb-btn.on { background: #ffd166; color: #102030; border-color: #fff; }
-.thumb-stick { pointer-events: auto; touch-action: none; position: relative; width: 136px; height: 136px; border-radius: 50%; border: 3px solid rgba(255, 255, 240, 0.85); background: rgba(150, 230, 110, 0.32); }
+.thumb-stick { pointer-events: auto; touch-action: none; position: relative; width: 136px; height: 136px; border-radius: 50%; border: 3px solid rgba(255, 255, 240, 0.85); background: radial-gradient(circle at 40% 35%, rgba(70, 150, 60, 0.72), rgba(15, 60, 30, 0.66)); }
+.thumb-stick .orb-arrows { position: absolute; inset: 8px; width: calc(100% - 16px); height: calc(100% - 16px); pointer-events: none; }
 .thumb-stick.on { border-color: #ffd166; }
-.thumb-stick i { position: absolute; left: 41px; top: 41px; width: 54px; height: 54px; border-radius: 50%; background: rgba(255, 209, 102, 0.92); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
+.thumb-stick i { position: absolute; left: 53px; top: 53px; width: 30px; height: 30px; border-radius: 50%; background: rgba(255, 209, 102, 0.92); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
 [data-thumb][hidden] { display: none; }
 /* Fishing on a phone: the gauge and meter up in the top corners, clear of the thumbs. */
 body.own-thumbs .fish-gauge { top: 8px; transform: none; animation: none; }
