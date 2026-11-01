@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.22 (2026-11-01)
+
 - Phones: Wally runs and turns together, with no swivelling on the spot. A little to the side is a slight change of course on the run, a lot
   is a sharp corner, and a push to the side from a standstill sets him off that way.
 - Croc Park: the bridge has one way on, the steps at the west end, and a bar across it until he has the key. He crosses all of it to reach
