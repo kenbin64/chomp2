@@ -38,7 +38,7 @@ function notice(text) {
 }
 
 if (typeof addEventListener === 'function') {
-  addEventListener('keydown', () => set('keys'), true);
+  addEventListener('keydown', e => { if (e.isTrusted) set('keys'); }, true);   // (a thumb button sends keys too: thumbs.js)
   addEventListener('pointerdown', e => set(e.pointerType === 'touch' ? 'touch' : 'mouse'), true);
   addEventListener('gamepadconnected', e => { connected = true; set('pad'); notice(`Controller connected: ${e.gamepad.id.replace(/\(.*\)/, '').trim() || 'game controller'}`); });
   addEventListener('gamepaddisconnected', () => { connected = [...(navigator.getGamepads?.() || [])].some(Boolean); if (!connected && current === 'pad') set('keys'); notice('Controller disconnected'); });

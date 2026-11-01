@@ -9,6 +9,7 @@ import { installVR, inVR } from '../vr.js';
 import { ownView } from '../bubbles.js';
 import { createSnout } from '../eyes.js';
 import * as THREE from 'three';
+import { createThumbs } from '../thumbs.js';
 import { Wally } from '../wally.js';
 import { loadModels } from '../models.js';
 import { createPost } from '../post.js';
@@ -369,8 +370,15 @@ function start() {
   sound.start(); sound.play.leap();
 }
 
+// Right thumb: swing and tuck. Left thumb: the brake.
+const thumbs = createThumbs({ swing: { side: 'right', stick: true }, brake: { side: 'left', label: 'BRAKE', key: ' ' } });
+if (touch) {
+  document.querySelector('.zip-keys').textContent = 'Right thumb: swing, tuck and dangle \u00b7 Left thumb: BRAKE';
+  $('z-brake-hint').textContent = 'Brake zone: hold BRAKE!';
+}
 function step(dt) {
   const st = game.state;
+  thumbs.show(game.crawl ? ['swing'] : ['swing', 'brake']);
   // Swinging side to side (with a little swing to it), tucking and dangling.
   const want = game.keys.has('ArrowLeft') ? -SWAY : game.keys.has('ArrowRight') ? SWAY : 0;
   game.sideV += ((want - game.side) * 9 - game.sideV * 4) * dt; game.side = Math.max(-SWAY, Math.min(SWAY, game.side + game.sideV * dt));
@@ -472,7 +480,7 @@ function place(t) {
 }
 
 function finish() {
-  game.running = false; $('hud').hidden = true; $('z-brake-hint').hidden = true;
+  thumbs.hide(); game.running = false; $('hud').hidden = true; $('z-brake-hint').hidden = true;
   const pts = score(game.got, game.branchesHit, game.land);
   let p = bankFinds(load(), { mangoes: game.got.mango, coins: game.got.gold });
   const tokens = game.got.token + (game.land === 'perfect' ? 2 : 0);

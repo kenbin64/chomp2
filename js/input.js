@@ -12,9 +12,7 @@
 //        The wheel zooms. Space jumps (and swims up), Shift dives under (and runs on
 //        all fours on land). Q / E turn the camera, wheel zooms, C swings it behind
 //        him, P pauses. (Camera-relative moving is a setting, settings.js.)
-// Phone: a finger down anywhere is a thumb-stick there (Ken, 2026-10-30: very smooth, simply by touch): drag up
-//        to go, the further the faster, to the side to turn, the further the sharper, up and across to curve, down
-//        for an about-face, a quick tap to jump. A second finger turns the camera. A button for Duck.
+// Phone: right thumb on the fixed circle to move and turn; left thumb on Jump and Dive; elsewhere turns the camera.
 // Game controller (the standard layout: Xbox, PlayStation, Switch Pro): left stick
 //        or d-pad steers him the same way (up forward, sides turn, down turns round),
 //        right stick turns the camera, A jumps (and swims up), B or a
@@ -37,6 +35,12 @@ const soft = v => Math.sign(v) * Math.pow(Math.abs(v), 1.5);   // small pushes a
 // The orb's arrows turn to it (Ken, 2026-10-21: the orb always at Wally's orientation), and a push is read
 // against them: toward the up arrow is forward for him, whichever way the camera looks.
 let orbAngle = 0;
+// The left thumb's button says what it does: Dive in the water, Duck on land.
+let thumbWater = null;
+export function setThumbWater(on) {
+  if (on === thumbWater || typeof document === 'undefined') return;
+  thumbWater = on; const b = document.getElementById('t-fours'); if (b) b.textContent = on ? 'Dive' : 'Duck';
+}
 export function setOrbHeading(a) { if (Number.isFinite(a)) orbAngle = a; }
 // A push on the orb (screen pixels from its middle) turned into Wally's own frame.
 // (Turning the arrows with Wally made a held push keep changing meaning, so he spun: Ken, 2026-10-22. The
@@ -53,7 +57,7 @@ export class Input {
   constructor(canvas, touchUi) {
     this.keys = new Set();
     this.forward = 0; this.right = 0;
-    this.jumpQueued = false; this.foursHeld = false; this.foursToggle = false;
+    this.jumpQueued = false; this.foursHeld = false; this.foursTouch = false; this.foursTapped = false; this.diveThumb = null;
     this.turn = 0; this.tilt = 0; this.zoom = 0;
     this.onPause = null; this.onMute = null; this.recenterQueued = false;
     this.stick = null;            // { id, x0, y0, dx, dy }
@@ -85,27 +89,36 @@ export class Input {
     if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
   }
 
-  // Touch (Ken, 2026-10-30: very smooth, simply by touch). A finger down anywhere on the game is a thumb-stick right
-  // there, with a ring to show it: no button to find, and the finger is never in the way of Wally. The middle of the
-  // ring follows a thumb dragged past its edge, so coming back is instant. A quick tap jumps; down is an about-face.
+  // Touch (Ken, 2026-11-01: as smooth as the keyboard, and two thumbs). The right thumb has a circle fixed at the bottom
+  // right: up goes, to the side turns, down is the about-face, read through the same smoothing as everything else. The left
+  // thumb has Jump and Dive, fixed at the bottom left. Both work at once. A finger anywhere else turns the camera.
   bindTouch(canvas, ui) {
     const ring = ui.stick, knob = ui.knob;
-    ring.classList.add('thumb');
-    const show = s => { ring.classList.add('on'); ring.style.left = `${s.x0}px`; ring.style.top = `${s.y0}px`; knob.style.transform = `translate(${s.dx * THUMB_R}px, ${s.dy * THUMB_R}px)`; };
+    ring.classList.add('orb'); if (!ring.querySelector('.orb-arrows')) ring.insertAdjacentHTML('afterbegin', ORB_ARROWS);
+    this.orbArrows = ring.querySelector('.orb-arrows');
+    const show = s => { knob.style.transform = `translate(${s.dx * THUMB_R}px, ${s.dy * THUMB_R}px)`; };
+    // How far the thumb is from the circle's fixed middle. Past the edge it is a full push, the knob at the rim.
     const read = (s, t) => {
-      let x = t.clientX - s.x0, y = t.clientY - s.y0, d = Math.hypot(x, y);
-      if (d > 12) s.moved = true;
-      if (d > THUMB_R) { s.x0 += x * (1 - THUMB_R / d); s.y0 += y * (1 - THUMB_R / d); x = t.clientX - s.x0; y = t.clientY - s.y0; d = THUMB_R; }
-      const live = d < THUMB_R * 0.12 ? 0 : (d - THUMB_R * 0.12) / (THUMB_R * 0.88) / d;   // a small dead middle, so a resting thumb is still
+      const x = t.clientX - s.x0, y = t.clientY - s.y0, d = Math.hypot(x, y) || 1;
+      const live = d < THUMB_R * 0.12 ? 0 : Math.min(1, (d - THUMB_R * 0.12) / (THUMB_R * 0.88)) / d;   // a small dead middle, so a resting thumb is still
       s.dx = x * live; s.dy = y * live;
     };
-    canvas.addEventListener('touchstart', e => {
+    // The circle itself, or close enough that a thumb reaching for it without looking still gets it.
+    const onRing = t => { const r = ring.getBoundingClientRect(); return Math.hypot(t.clientX - (r.left + r.width / 2), t.clientY - (r.top + r.height / 2)) < r.width * 0.85; };
+    const take = t => {
+      const r = ring.getBoundingClientRect();
+      this.stick = { id: t.identifier, x0: r.left + r.width / 2, y0: r.top + r.height / 2, dx: 0, dy: 0 };
+      read(this.stick, t); show(this.stick); ring.classList.add('active');
+    };
+    const begin = e => {
       for (const t of e.changedTouches) {
-        if (!this.stick) { this.stick = { id: t.identifier, x0: t.clientX, y0: t.clientY, dx: 0, dy: 0, t0: performance.now(), moved: false }; show(this.stick); }
-        else if (!this.look) this.look = { id: t.identifier, x: t.clientX, y: t.clientY };
+        if (!this.stick && onRing(t)) take(t);
+        else if (!this.look) this.look = { id: t.identifier, x: t.clientX, y: t.clientY };   // anywhere else: the camera
       }
       e.preventDefault();
-    }, { passive: false });
+    };
+    canvas.addEventListener('touchstart', begin, { passive: false });
+    ring.addEventListener('touchstart', e => { e.stopPropagation(); begin(e); }, { passive: false });
     addEventListener('touchmove', e => {
       for (const t of e.changedTouches) {
         if (this.stick && t.identifier === this.stick.id) { read(this.stick, t); show(this.stick); }
@@ -118,20 +131,16 @@ export class Input {
     }, { passive: false });
     const end = e => {
       for (const t of e.changedTouches) {
-        if (this.stick && t.identifier === this.stick.id) {
-          if (!this.stick.moved && performance.now() - this.stick.t0 < 240) this.jumpQueued = true;   // a quick tap: jump
-          this.stick = null; ring.classList.remove('on');
-        }
+        if (this.stick && t.identifier === this.stick.id) { this.stick = null; knob.style.transform = ''; ring.classList.remove('active'); }
         if (this.look && t.identifier === this.look.id) this.look = null;
+        if (t.identifier === this.diveThumb) { this.diveThumb = null; this.foursTouch = false; ui.fours.classList.remove('on'); }
       }
     };
     addEventListener('touchend', end); addEventListener('touchcancel', end);
-    const tap = (el, fn) => el.addEventListener('touchstart', e => { fn(); e.preventDefault(); e.stopPropagation(); }, { passive: false });
+    const tap = (el, fn) => el.addEventListener('touchstart', e => { fn(e); e.preventDefault(); e.stopPropagation(); }, { passive: false });
     tap(ui.jump, () => { this.jumpQueued = true; });
-    tap(ui.fours, () => {
-      this.foursToggle = !this.foursToggle; ui.fours.classList.toggle('on', this.foursToggle);
-      if (this.foursToggle) showTip('duck', 'Duck: Wally drops onto all fours, low enough to get under branches. In water it makes him dive. Tap Duck again to stand up.');
-    });
+    // Held, as Shift is held on a keyboard. foursTapped: a tap quicker than a frame still counts.
+    tap(ui.fours, e => { this.diveThumb = e.changedTouches[0].identifier; this.foursTouch = true; this.foursTapped = true; ui.fours.classList.add('on'); });
     tap(ui.pause, () => this.onPause && this.onPause());
     tap(ui.cam, () => { this.recenterQueued = true; });
   }
@@ -214,13 +223,13 @@ export class Input {
       steer: settings.controls === 'classic',
       aim: this.aim,                   // the mouse's turn of Wally this frame (radians), with the cursor taken
       jump: this.jumpQueued,
-      fours: k.has('shift') || this.foursToggle || !!(pad && pad.fours),
+      fours: k.has('shift') || this.foursTouch || this.foursTapped || !!(pad && pad.fours),
       turnAround: !!this.turnQueued,   // down, once: Wally's about-face (wally.js)
       ctrl: k.has('control'),          // with Shift: come up from a dive (the reef and the sea)
       turn: this.turn, turnKeys, tilt: this.tilt, zoom: this.zoom, recenter: this.recenterQueued,
     };
     this.recenterQueued = false; this.turnQueued = false;
-    this.jumpQueued = false; this.turn = 0; this.tilt = 0; this.zoom = 0; this.aim = 0;
+    this.jumpQueued = false; this.foursTapped = false; this.turn = 0; this.tilt = 0; this.zoom = 0; this.aim = 0;
     return out;
   }
 }

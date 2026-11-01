@@ -146,18 +146,19 @@ test('phone: a finger anywhere steers; down is an about-face; Duck sits by the b
   await p.evaluate(() => window.chompStartHere());
   await p.waitForFunction(() => window.chomp.game.intro <= 0, { timeout: 20000 }).catch(() => {}); await wait(500);
   const before = await p.evaluate(() => window.chomp.wally.facing);
-  const t = await p.touchscreen.touchStart(420, 200);
-  await t.move(420, 300); await wait(900); await t.end(); await wait(900);
+  const orb = await p.evaluate(() => { const r = document.getElementById('stick').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  const t = await p.touchscreen.touchStart(orb.x, orb.y - 40);
+  await t.move(orb.x, orb.y + 60); await wait(900); await t.end(); await wait(900);
   const turned = Math.abs(await p.evaluate(() => window.chomp.wally.facing) - before) / Math.PI;
   check('a drag down turns him right round (half a circle)', Math.abs(turned - 1) < 0.1, turned.toFixed(2));
   const v = await p.evaluate(() => {
     const box = e => { if (!e) return null; const r = e.getBoundingClientRect(); return getComputedStyle(e).display !== 'none' && !e.hidden && r.width > 0 ? r : null; };
     const duck = box(document.getElementById('t-fours')), gear = box(document.querySelector('.gear-badge'));
-    return { cam: !!box(document.getElementById('t-cam')), duck: !!duck, besideGear: !!(duck && gear && duck.left > gear.left && Math.abs(duck.bottom - gear.bottom) < 40), noPad: !document.getElementById('dpad') };
+    return { cam: !!box(document.getElementById('t-cam')), duck: !!duck, besideGear: !!(duck && gear && duck.bottom > gear.top - 1 && duck.left < innerWidth / 2 && gear.bottom <= duck.top + 1), noPad: !document.getElementById('dpad') };
   });
   check('no Cam button on a phone', !v.cam, JSON.stringify(v));
-  check('Duck shows on land, beside the backpack', v.duck && v.besideGear, JSON.stringify(v));
-  check('the thumb-stick has replaced the old pad', v.noPad, JSON.stringify(v));
+  check('Dive shows at the bottom left, below the backpack, clear of it', v.duck && v.besideGear, JSON.stringify(v));
+  check('the fixed circle has replaced the old pad', v.noPad, JSON.stringify(v));
   if (process.env.SHOT) await p.screenshot({ path: process.env.SHOT });
   check('no errors', !p.errors.length, p.errors.join(' | '));
   await p.done();

@@ -614,11 +614,9 @@ body.phone-menu .free-banner { top: calc(max(10px, env(safe-area-inset-top)) + 5
 .landscape-hint { position: fixed; z-index: 70; left: 50%; top: calc(max(10px, env(safe-area-inset-top)) + 160px); transform: translateX(-50%); width: min(340px, calc(100% - 32px)); padding: 10px 40px 10px 14px; border-radius: 14px; background: rgba(10, 30, 44, 0.92); border: 2px solid rgba(255, 209, 102, 0.6); color: #fff; font: 700 14px var(--font); text-align: center; }
 .landscape-hint .turn { display: inline-block; font-size: 20px; color: #ffd166; vertical-align: -2px; margin-right: 4px; }
 /* The bottom of a touch screen (Ken, 2026-10-21): the orb in the middle, Jump and Duck on the right, the item on the left. */
-body.touch #t-fours { right: calc(max(18px, env(safe-area-inset-right)) + 140px); bottom: max(26px, env(safe-area-inset-bottom)); width: 66px; height: 66px; font-size: 15px; }   /* Duck, beside the orb */
-body.touch #t-jump { display: none; }   /* a tap on the orb jumps */
-body.touch .gear-badge { bottom: max(24px, env(safe-area-inset-bottom)); left: 12px; padding: 6px 10px; column-gap: 6px; }
+body.touch .gear-badge { bottom: calc(max(22px, env(safe-area-inset-bottom)) + 104px); left: 12px; padding: 6px 10px; column-gap: 6px; }
 body.touch .gear-badge b, body.touch .gear-badge small { display: none; }
-body.touch .gear-use { bottom: calc(max(24px, env(safe-area-inset-bottom)) + 66px); left: 12px; }
+body.touch .gear-use { bottom: calc(max(22px, env(safe-area-inset-bottom)) + 170px); left: 12px; }
 /* Short landscape screens: tips up at the top, narrower, clear of the controls. */
 @media (max-height: 500px) { .tip-card, body.phone-menu .tip-card { top: calc(max(8px, env(safe-area-inset-top)) + 56px); width: min(400px, calc(100% - 380px)); min-width: 260px; font-size: 14px; padding: 8px 12px; } }
 #t-fours small { display: block; font-size: 10px; font-weight: 700; margin-top: -2px; opacity: 0.8; }
@@ -718,10 +716,13 @@ body.touch:has(#dive-buttons:not([hidden])) #t-fours { display: none; }
 .menu-panel .vr-button { position: static; transform: none; display: block; }
 #title:not([hidden]) ~ .vr-button { display: none !important; }
 
-/* The thumb-stick on touch screens (input.js): a ring that comes up under the finger, wherever it lands. */
-#stick.thumb { position: fixed; display: none; width: 124px; height: 124px; margin: -62px 0 0 -62px; pointer-events: none; border: 3px solid rgba(255, 255, 240, 0.6); background: rgba(255, 255, 240, 0.1); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25); }
-#stick.thumb.on { display: block; }
-#stick.thumb #knob { display: block; position: absolute; left: 35px; top: 35px; width: 54px; height: 54px; border-radius: 50%; background: rgba(255, 209, 102, 0.8); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
+/* Two thumbs on a phone (input.js): the circle fixed at the bottom right, Jump and Dive fixed at the bottom left. */
+body.touch #stick.orb { width: 136px; height: 136px; right: max(22px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); }
+body.touch #stick.orb #knob { left: 41px; top: 41px; width: 54px; height: 54px; background: rgba(255, 209, 102, 0.9); transition: none; }
+body.touch #t-jump { display: block; left: max(20px, env(safe-area-inset-left)); right: auto; bottom: max(22px, env(safe-area-inset-bottom)); width: 92px; height: 92px; font-size: 19px; }
+body.touch #t-fours { left: calc(max(20px, env(safe-area-inset-left)) + 104px); right: auto; bottom: max(22px, env(safe-area-inset-bottom)); width: 78px; height: 78px; font-size: 17px; background: rgba(159, 238, 255, 0.9); }
+body.touch #t-fours.on { background: #6ccf5a; }
+body.touch .dive-buttons { display: none; }   /* Dive and Jump (which comes back up) are always under the left thumb */
 #stick.replaced { display: none; }
 
 /* The boss banner as the chase begins (main.js). */
@@ -780,3 +781,31 @@ body.fishing #toasts, body.fishing .guide-arrow, body.fishing .tip-card { displa
 body.in-cut .level-intro { display: none !important; }
 
 .fish-keys { position: absolute; left: 50%; bottom: 17%; transform: translateX(-50%); width: min(820px, 88vw); margin: 0; padding: 6px 12px; border-radius: 10px; background: rgba(8, 30, 44, 0.72); text-align: center; font: 700 clamp(12px, 1.6vw, 15px)/1.3 var(--font); }
+
+/* Each activity's own thumb controls on a phone (thumbs.js): only those in use, in the bottom corners, under the thumbs. */
+body.own-thumbs #touch, body.own-thumbs .dive-buttons { display: none !important; }
+.thumbs { position: fixed; inset: 0; z-index: 55; pointer-events: none; }
+body.in-cut:not(.fishing) .thumbs { display: none; }
+.thumbs-side { position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); display: flex; align-items: flex-end; gap: 12px; }
+.thumbs-side.left { left: max(20px, env(safe-area-inset-left)); }
+.thumbs-side.right { right: max(20px, env(safe-area-inset-right)); flex-direction: row-reverse; }
+.thumbs-side.col { flex-direction: column-reverse; align-items: center; }
+.thumb-btn { pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; width: 96px; height: 96px; padding: 4px; border: 3px solid rgba(255, 255, 240, 0.85); border-radius: 50%; background: rgba(8, 30, 44, 0.72); color: #fff; font: 800 16px/1.1 var(--font); }
+.thumb-btn.small { width: 66px; height: 66px; font-size: 20px; }
+.thumbs-side.col .thumb-btn { width: 76px; height: 76px; font-size: 24px; }
+.thumb-btn.on { background: #ffd166; color: #102030; border-color: #fff; }
+.thumb-stick { pointer-events: auto; touch-action: none; position: relative; width: 136px; height: 136px; border-radius: 50%; border: 3px solid rgba(255, 255, 240, 0.85); background: rgba(150, 230, 110, 0.32); }
+.thumb-stick.on { border-color: #ffd166; }
+.thumb-stick i { position: absolute; left: 41px; top: 41px; width: 54px; height: 54px; border-radius: 50%; background: rgba(255, 209, 102, 0.92); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); }
+[data-thumb][hidden] { display: none; }
+/* Fishing on a phone: the gauge and meter up in the top corners, clear of the thumbs. */
+body.own-thumbs .fish-gauge { top: 8px; transform: none; animation: none; }
+body.own-thumbs .fish-gauge.alarm { background: rgba(226, 61, 48, 0.9); }
+body.own-thumbs .fish-meter { top: 8px; transform: none; }
+body.own-thumbs .fish-gauge-bar, body.own-thumbs .fish-meter div { height: 34vh; }
+body.own-thumbs .fish-prompt { width: 44vw; bottom: 8px; font-size: clamp(14px, 2.2vw, 18px); }
+body.own-thumbs .fish-stats { top: calc(max(8px, env(safe-area-inset-top)) + 46px); }
+/* The other activities on a phone: nothing under the thumbs. */
+body.own-thumbs .level-intro { display: none !important; }
+body.own-thumbs .boom-meters { top: 8px; bottom: auto; right: 12px; transform: none; }
+@media (pointer: coarse) { body.own-thumbs .zip-panel { left: 132px !important; right: 172px !important; width: auto !important; max-width: none !important; transform: none !important; bottom: max(14px, env(safe-area-inset-bottom)); } body.own-thumbs .zip-keys { display: none; } }

@@ -5,6 +5,11 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- Phones get two-thumb controls: a circle fixed at the bottom right to move and turn, as smooth as the keyboard, and Jump and
+  Dive fixed at the bottom left. They work together; a finger anywhere else turns the camera.
+- On a phone, the zip line (which had no touch controls before), the boomerang, the vines, heaving the boat and the fishing
+  each show only the buttons they use, under the thumbs. The left button says Dive in the water and Duck on land.
+
 ## v1.0.0-beta.19 (2026-10-31)
 
 - The Esplanade has a purpose now. The skipper's charter boat waits at the end of the pier: the fare is mangoes, and pelicans

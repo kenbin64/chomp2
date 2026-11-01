@@ -97,13 +97,15 @@ const jolt = (s, key) => { let m = 0; for (let i = 2; i < s.length; i++) m = Mat
 }
 { // ---- Touch: a phone. ----
   const p = await park({ tips: false }, { width: 844, height: 390, isMobile: true, hasTouch: true });
-  const sx = 300, sy = 220;
+  // The middle of the fixed circle, where the right thumb goes.
+  const { sx, sy } = await p.evaluate(() => { const r = document.getElementById('stick').getBoundingClientRect(); return { sx: r.left + r.width / 2, sy: r.top + r.height / 2 }; });
+  check('touch: the circle is on the right, the buttons on the left', await p.evaluate(() => { const b = id => document.getElementById(id).getBoundingClientRect(); return b('stick').left > innerWidth / 2 && b('t-jump').right < innerWidth / 2 && b('t-fours').right < innerWidth / 2 && getComputedStyle(document.getElementById('t-jump')).display !== 'none'; }));
   await home(p); const t = await p.touchscreen.touchStart(sx, sy);
   await t.move(sx, sy - 70); const up = await watch(p, 1400, 50);
   check('touch, drag up: he goes forward, straight', moved(up) > 4 && Math.abs(turned(up)) < 0.02, `${moved(up).toFixed(1)} m, ${turned(up).toFixed(3)} rad`);
   const steps = up.slice(1).map((s, i) => s.sp - up[i].sp);
   check('touch: he eases up to speed, no sudden jump', Math.max(...steps) < 3, Math.max(...steps).toFixed(2));
-  check('touch: the ring comes up under the finger', await p.evaluate(() => getComputedStyle(document.getElementById('stick')).display !== 'none'));
+  { const r = await p.evaluate(() => { const b = document.getElementById('stick').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }); check('touch: the circle stays where it is under the thumb', Math.abs(r.x - sx) < 1 && Math.abs(r.y - sy) < 1, JSON.stringify(r)); }
   // Curving: slide the thumb from up to up and right, little by little, and his heading follows without a jolt.
   await home(p);
   for (let i = 1; i <= 8; i++) { await t.move(sx + i * 6, sy - 60); await wait(40); }
@@ -114,11 +116,25 @@ const jolt = (s, key) => { let m = 0; for (let i = 2; i < s.length; i++) m = Mat
   check('touch: the turn is smooth, no judder', judder < 1.2, judder.toFixed(2));
   await t.end(); await wait(100); const lifted = await watch(p, 700, 50);
   check('touch, let go: he eases to a stop', lifted[0].sp > 0.2 && lifted[lifted.length - 1].sp < 0.3, `${lifted[0].sp.toFixed(1)} to ${lifted[lifted.length - 1].sp.toFixed(1)}`);
-  await home(p); const a = await state(p); const d = await p.touchscreen.touchStart(sx, sy - 60); await d.move(sx, sy + 20); await wait(900); await d.end(); await wait(300); const b = await state(p);
+  await home(p); const a = await state(p); const d = await p.touchscreen.touchStart(sx, sy - 60); await d.move(sx, sy + 55); await wait(900); await d.end(); await wait(300); const b = await state(p);
   check('touch, drag down: one about-face', Math.abs(Math.abs(wrap(b.f - a.f)) - Math.PI) < 0.12, wrap(b.f - a.f).toFixed(2));
+  // Two thumbs at once: steering with the right, jumping with the left, neither disturbing the other.
+  const btn = id => p.evaluate(id => { const r = document.getElementById(id).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, id);
   await home(p); await wait(100);
-  await p.touchscreen.tap(sx, sy); await wait(120);
-  check('touch, a quick tap: he jumps', await p.evaluate(() => !window.chomp.wally.grounded));
+  await p.touchscreen.tap(sx, sy); await wait(150);
+  check('touch: a tap on the circle does not jump', await p.evaluate(() => window.chomp.wally.grounded));
+  const J = await btn('t-jump'); const right = await p.touchscreen.touchStart(sx, sy); await right.move(sx, sy - 70); const go0 = await state(p); await wait(500);
+  const left = await p.touchscreen.touchStart(J.x, J.y); await left.end(); await wait(120);
+  check('two thumbs: he jumps while the right thumb keeps him going', await p.evaluate(() => !window.chomp.wally.grounded));
+  await wait(500); const go1 = await state(p); await right.end();
+  check('two thumbs: and he kept going', Math.hypot(go1.x - go0.x, go1.z - go0.z) > 2, Math.hypot(go1.x - go0.x, go1.z - go0.z).toFixed(1));
+  const D = await btn('t-fours'); const f0 = await p.evaluate(() => window.chomp.wally.mode);
+  await home(p); await wait(200); const hold = await p.touchscreen.touchStart(D.x, D.y); await wait(400);
+  check('touch: Dive held, as Shift is held', await p.evaluate(() => window.chomp.wally.mode === 'fours' || document.getElementById('t-fours').classList.contains('on')), f0);
+  await hold.end(); await wait(200);
+  check('touch: let go, it lets go', await p.evaluate(() => !document.getElementById('t-fours').classList.contains('on')));
+  const before = await p.evaluate(() => window.chomp.cam.yaw); const look = await p.touchscreen.touchStart(422, 120); await look.move(362, 120); await wait(100); await look.end();
+  check('touch: a finger anywhere else turns the camera', await p.evaluate(b => Math.abs(window.chomp.cam.yaw - b) > 0.1, before));
   check('no page errors', !p.errors.length, p.errors.join(' | '));
   await p.done();
 }

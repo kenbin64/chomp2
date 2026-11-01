@@ -14,6 +14,7 @@ import { guideArrow } from '../guide-arrow.js';
 import { installVR, inVR } from '../vr.js';
 import { createEyes } from '../eyes.js';
 import { carried } from '../carried.js';
+import { createThumbs } from '../thumbs.js';
 import { startRun, addPoints, failRun } from '../points.js';
 import * as THREE from 'three';
 import * as Trip from '../trip-rules.js';
@@ -328,9 +329,12 @@ const VINE_KEYS = {
   keys: [['W', 'or', '\u2191', 'Swing higher (hold)'], ['Space', '', '', 'Leap for the vine / let go']],
   mouse: [['Hold left button', '', '', 'Swing higher'], ['Right click', '', '', 'Leap for the vine / let go']],
   pad: [['Left stick up', '', '', 'Swing higher (hold)'], ['A', '', '', 'Leap for the vine / let go']],
-  touch: [['Stick up', '', '', 'Swing higher (hold)'], ['Jump', '', '', 'Leap for the vine / let go']],
+  touch: [['SWING', '', '', 'Hold to swing higher'], ['LEAP', '', '', 'Leap for the vine / let go']],
 };
+const vineThumbs = createThumbs({ leap: { side: 'left', label: 'LEAP', key: ' ' }, swing: { side: 'right', label: 'SWING', key: 'ArrowUp' } });
 function drawVineHelp() {
+  if (game.phase === 'forest') vineThumbs.show(forest.state === 'bank' ? ['leap'] : forest.state === 'swing' ? ['leap', 'swing'] : []);
+  else vineThumbs.hide();
   const h = vineHelp.el; h.hidden = game.phase !== 'forest';
   if (h.hidden) return;
   const d = device();                                              // device.js: the controls in use
@@ -428,6 +432,7 @@ function endSandbar() {
 function fade(then) { $('fade').classList.add('on'); setTimeout(() => { then(); setTimeout(() => $('fade').classList.remove('on'), 120); }, 850); }
 
 // ---- The rainforest: the vine swing (played) ---------------------------------------------------
+window.chomp.enterForest = () => enterForest();    // for testing
 function enterForest() {
   game.phase = 'forest'; game.scene = null; game.done = false;
   setGround(forestGroundRules);

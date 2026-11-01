@@ -10,7 +10,7 @@
 
 import * as THREE from 'three';
 import { ground } from './ground.js';
-import { setOrbHeading } from './input.js';
+import { setOrbHeading, setThumbWater } from './input.js';
 import { shirtTexture } from './textures.js';
 import { dress } from './models.js';
 import { rigWally, WallyMotion, shapeFor, HumanoidPoser } from './rig.js';
@@ -385,6 +385,7 @@ export class Wally {
     const events = [];
     this.time += dt;
     const inWater = this.surface === 'water';
+    setThumbWater(inWater);
     // His way of moving follows where he is: swimming in water, upright on the
     // boardwalk, and on the banks upright unless the player drops him to all fours.
     const onBoards = this.surface === 'deck';

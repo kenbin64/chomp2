@@ -8,6 +8,7 @@
 // with the power bar in the green, C (or a click) to catch.
 
 import * as THREE from 'three';
+import { createThumbs } from '../thumbs.js';
 import { installVR, inVR } from '../vr.js';
 import { Wally } from '../wally.js';
 import { loadModels } from '../models.js';
@@ -130,6 +131,8 @@ function toast(text, kind = 'good') {
   setTimeout(() => el.remove(), 1800); while ($('toasts').children.length > 3) $('toasts').firstChild.remove();
 }
 
+// Right thumb: aim and angle. Left thumb: hold THROW, let go to throw; CATCH as it comes back.
+const thumbs = createThumbs({ aim: { side: 'right', stick: true }, throw: { side: 'left', label: 'THROW', key: ' ' }, catch: { side: 'left', label: 'CATCH', key: 'c' } });
 addEventListener('keydown', e => {
   if (!game.running) return;
   game.keys.add(e.key);
@@ -164,6 +167,7 @@ function finishThrow(caught) {
 }
 
 function step(dt) {
+  thumbs.show(game.state === 'aim' ? ['aim', 'throw'] : game.state === 'flying' ? ['catch'] : []);
   if (game.state === 'aim') {
     if (game.keys.has('ArrowLeft')) game.aim = Math.max(-1.1, game.aim - dt * 0.9);
     if (game.keys.has('ArrowRight')) game.aim = Math.min(1.1, game.aim + dt * 0.9);
@@ -200,7 +204,7 @@ function step(dt) {
 }
 
 function end() {
-  game.running = false; $('hud').hidden = true;
+  thumbs.hide(); game.running = false; $('hud').hidden = true;
   const tokens = game.catches + Math.floor(game.hits / 2);   // Golden Mangoes won
   const p = readProgress((() => { try { return localStorage.getItem('chomp-progress'); } catch { return null; } })());
   saveProgress({ ...p, mangoes: (p.mangoes || 0) + tokens, boomerangBest: Math.max(p.boomerangBest || 0, game.score) });

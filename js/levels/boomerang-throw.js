@@ -26,6 +26,7 @@ import { THROW_SPOT, GUIDE_SPOT, GUIDE_FROM, THROWERS } from './kuranda-rules.js
 import { ModelSkin } from '../models.js';
 import { say as forDevice } from '../device.js';
 import { boomerangMesh } from './boomerang-shape.js';
+import { createThumbs } from '../thumbs.js';
 
 const EYE = 1.75;                     // Wally's eyes, above the ground
 const SWING = 1.7;                    // seconds for the force meter to swing up and back
@@ -86,6 +87,11 @@ function returningForces(tilt) {
 }
 
 export function boomerangThrow({ scene, camera, wally, sound, models = new Map(), people = [], onTalisman = () => {}, onDone = () => {} }) {
+  const thumbs = createThumbs({
+    set: { side: 'left', label: 'SET', key: ' ' }, throw: { side: 'left', label: 'THROW', key: ' ' }, catch: { side: 'left', label: 'CATCH', key: ' ' },
+    up: { side: 'right', label: '\u25B2', key: 'ArrowUp', col: true }, down: { side: 'right', label: '\u25BC', key: 'ArrowDown', col: true },
+  });
+  const THUMBS = { tilt: ['set', 'up', 'down'], force: ['throw'], flight: ['catch'] };
   const ui = buildUi();
   const held = boomerangMesh(), flying = boomerangMesh();
   const spinner = new THREE.Group(); spinner.add(flying);
@@ -139,12 +145,13 @@ export function boomerangThrow({ scene, camera, wally, sound, models = new Map()
   // ---- The phases ---------------------------------------------------------------------------
   function enter(phase) {
     s.phase = phase; s.t = 0;
+    thumbs.show(THUMBS[phase] || []);
     ui.angle.hidden = !['tilt', 'force'].includes(phase); ui.force.hidden = phase !== 'force';
     ui.catchRing.hidden = true; ui.skip.hidden = phase !== 'opening';
     held.visible = ['tilt', 'force'].includes(phase);
     wally.root.visible = phase === 'opening';                     // first person: his own head would be in the way
-    if (phase === 'tilt') { s.tilt = Math.max(4, s.tilt); prompt(forDevice({ keys: 'Tip it out with Up / Down (or W / S). Space sets the angle.', mouse: 'Tip it out by moving the mouse up and down. Click to set the angle.', pad: 'Tip it out with the left stick. A sets the angle.', touch: 'Tip it out with the stick. Tap to set the angle.' })); say(GUIDE, s.throws ? '' : 'Lift it up. Near upright, tipped out a little.'); }
-    if (phase === 'force') { s.swingT = 0; const z = s.throws < 2 ? returningForces(s.tilt) : null; ui.zone.hidden = !z; if (z) { ui.zone.style.bottom = `${z[0] * 100}%`; ui.zone.style.height = `${Math.max(3, (z[1] - z[0]) * 100)}%`; } prompt(forDevice({ keys: 'Press Space to throw, as hard as the meter shows.', mouse: 'Click to throw, as hard as the meter shows.', pad: 'Press A to throw, as hard as the meter shows.', touch: 'Tap to throw, as hard as the meter shows.' })); say('', ''); }
+    if (phase === 'tilt') { s.tilt = Math.max(4, s.tilt); prompt(forDevice({ keys: 'Tip it out with Up / Down (or W / S). Space sets the angle.', mouse: 'Tip it out by moving the mouse up and down. Click to set the angle.', pad: 'Tip it out with the left stick. A sets the angle.', touch: 'Tip it out with the arrows, then SET.' })); say(GUIDE, s.throws ? '' : 'Lift it up. Near upright, tipped out a little.'); }
+    if (phase === 'force') { s.swingT = 0; const z = s.throws < 2 ? returningForces(s.tilt) : null; ui.zone.hidden = !z; if (z) { ui.zone.style.bottom = `${z[0] * 100}%`; ui.zone.style.height = `${Math.max(3, (z[1] - z[0]) * 100)}%`; } prompt(forDevice({ keys: 'Press Space to throw, as hard as the meter shows.', mouse: 'Click to throw, as hard as the meter shows.', pad: 'Press A to throw, as hard as the meter shows.', touch: 'THROW, as hard as the meter shows.' })); say('', ''); }
     if (phase === 'flight') { prompt(''); }
     if (phase === 'gift') { prompt(''); }
   }
@@ -170,6 +177,7 @@ export function boomerangThrow({ scene, camera, wally, sound, models = new Map()
     enter('tilt');
   }
   function finish() {
+    thumbs.hide();
     s.active = false; s.phase = 'off'; ui.ui.hidden = true; ui.skip.hidden = true; held.visible = false; flyer.visible = false; talisman.visible = false;
     wally.root.visible = true;
     onDone(s.caught);

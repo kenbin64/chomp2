@@ -1,0 +1,96 @@
+// Each activity's own thumb controls on a phone held sideways (thumbs.js, Ken 2026-11-01): only the buttons in use show,
+// the walking controls go away, every button sits in a bottom corner, and pressing one does its job. In real Chrome, with real
+// touches. Needs the server: node serve.mjs. Pass a folder to keep the pictures.
+import puppeteer from 'puppeteer-core';
+const S = process.argv[2];
+const wait = ms => new Promise(r => setTimeout(r, ms));
+let failed = 0;
+const check = (name, ok, info = '') => { console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${name} ${info}`); if (!ok) failed++; };
+const b = await puppeteer.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: 'new', args: ['--use-angle=d3d11', '--enable-unsafe-swiftshader'] });
+const W = 844, H = 390;
+async function open(url, ready) {
+  const p = await b.newPage(); await p.setViewport({ width: W, height: H, isMobile: true, hasTouch: true });
+  p.errors = []; p.on('pageerror', e => p.errors.push(e.message));
+  await p.goto('http://localhost:8090/about.html');
+  await p.evaluate(() => { localStorage.clear(); localStorage.setItem('chomp-tips-off', '1'); localStorage.setItem('chomp-settings', JSON.stringify({ tips: false })); });
+  await p.goto('http://localhost:8090/' + url, { timeout: 60000 });
+  await p.waitForFunction(ready, { timeout: 90000, polling: 200 }); await wait(1200);
+  return p;
+}
+// What is showing: the names of the thumb controls on screen, and whether the walking controls are.
+const seen = p => p.evaluate(() => ({
+  thumbs: [...document.querySelectorAll('[data-thumb]')].filter(e => !e.hidden && e.getBoundingClientRect().width > 0).map(e => e.dataset.thumb).sort(),
+  walking: (() => { const t = document.getElementById('touch'); return !!t && !t.hidden && getComputedStyle(t).display !== 'none'; })(),
+  boxes: [...document.querySelectorAll('[data-thumb]')].filter(e => !e.hidden).map(e => { const r = e.getBoundingClientRect(); return { n: e.dataset.thumb, l: r.left, r: r.right, t: r.top, b: r.bottom }; }),
+}));
+const showing = async (p, name, want) => {
+  const q = await seen(p), got = q.thumbs.join();
+  check(`${name}: shows only ${want.join(', ') || 'nothing'}`, got === [...want].sort().join() && !q.walking, `${got}${q.walking ? ' + walking' : ''}`);
+  const out = q.boxes.filter(r => r.r > W + 1 || r.b > H + 1 || r.l < -1 || r.t < 0);
+  if (want.length) check(`${name}: all on the screen, within thumb reach of a side`, !out.length && q.boxes.every(r => r.r < W * 0.36 || r.l > W * 0.64), JSON.stringify(q.boxes.map(r => [r.n, Math.round(r.l), Math.round(r.t)])));
+};
+const at = (p, name) => p.evaluate(n => { const r = document.querySelector(`[data-thumb="${n}"]`).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, name);
+const tap = async (p, name) => { const c = await at(p, name); const t = await p.touchscreen.touchStart(c.x, c.y); await wait(90); await t.end(); await wait(120); };
+const shot = async (p, n) => { if (S) await p.screenshot({ path: `${S}/thumbs-${n}.png` }); };
+
+try {
+  { console.log('Zip line');
+    const p = await open('zipline.html?all&free&play&stay', () => window.chomp && window.chomp.game.running);
+    await showing(p, 'riding', ['swing', 'brake']); await shot(p, 'zip');
+    const c = await at(p, 'swing'), B = await at(p, 'brake');
+    const r = await p.touchscreen.touchStart(c.x, c.y); await r.move(c.x + 50, c.y); await wait(600);
+    check('right thumb: he swings out', await p.evaluate(() => Math.abs(window.chomp.game.side) > 0.1 && window.chomp.game.keys.has('ArrowRight')));
+    const l = await p.touchscreen.touchStart(B.x, B.y); await wait(200);
+    check('left thumb at once: the brake is on, and he still swings', await p.evaluate(() => window.chomp.game.keys.has(' ') && window.chomp.game.keys.has('ArrowRight')));
+    await l.end(); await r.end(); await wait(200);
+    check('both let go: nothing stuck on', await p.evaluate(() => window.chomp.game.keys.size === 0));
+    check('no page errors', !p.errors.length, p.errors[0]); await p.close(); }
+  { console.log('Vines');
+    const p = await open('daintree.html?all&play&stay', () => window.chomp && window.chomp.game.running);
+    await p.evaluate(() => { document.getElementById('fade').classList.remove('on'); window.chomp.enterForest(); }); await wait(900);
+    await showing(p, 'on the bank', ['leap']); await tap(p, 'leap'); await wait(300);
+    await showing(p, 'on a vine', ['leap', 'swing']); await shot(p, 'vines');
+    const c = await at(p, 'swing'), s0 = await p.evaluate(() => JSON.stringify(window.chomp.forest.state));
+    const t = await p.touchscreen.touchStart(c.x, c.y); await wait(500); await t.end();
+    check('SWING and LEAP work: he is on the vine', s0 === '"swing"', s0);
+    check('no page errors', !p.errors.length, p.errors[0]); await p.close(); }
+  { console.log('Boomerang');
+    const p = await open('kuranda.html?all&play&stay', () => window.chomp && window.chomp.station && window.chomp.game.running);
+    await p.evaluate(() => window.chomp.station.begin(true)); await wait(800);
+    await showing(p, 'setting the angle', ['set', 'up', 'down']); await shot(p, 'boom');
+    await tap(p, 'set'); await wait(200);
+    await showing(p, 'the force', ['throw']); await tap(p, 'throw'); await wait(300);
+    await showing(p, 'in flight', ['catch']);
+    check('no page errors', !p.errors.length, p.errors[0]); await p.close(); }
+  { console.log('Heaving the boat');
+    const p = await open('push.html?play', () => window.chomp && window.chomp.game.running);
+    await p.evaluate(() => window.chomp.startPush()); await wait(300);
+    await showing(p, 'the heave', ['heave']);
+    check('no page errors', !p.errors.length, p.errors[0]); await p.close(); }
+  { console.log('Fishing');
+    const p = await open('esplanade.html?all&play&stay&marlin', () => window.chomp && window.chomp.fishing && window.chomp.fishing.active);
+    const F = fn => p.evaluate(fn);
+    await showing(p, 'aiming', ['set', 'up', 'down']); await shot(p, 'aim');
+    const a0 = await F(() => window.chomp.fishing.state.angle), U = await at(p, 'up'); const hu = await p.touchscreen.touchStart(U.x, U.y); await wait(500); await hu.end();
+    check('the up arrow raises the angle', await p.evaluate(a => window.chomp.fishing.state.angle > a + 2, a0));
+    await tap(p, 'set'); check('SET: on to the force', await F(() => window.chomp.fishing.phase === 'force'));
+    await showing(p, 'the force', ['cast']);
+    await p.evaluate(() => window.chomp.fishing.testHook(70)); await wait(500);
+    await showing(p, 'the fight', ['release', 'reel', 'rodLeft', 'rodRight']); await shot(p, 'fight');
+    await p.evaluate(() => { const f = window.chomp.fishing.state.fight; f.mode = 'rest'; f.modeLeft = 8; f.tension = 0.2; });
+    const line0 = await F(() => window.chomp.fishing.state.fight.line), R = await at(p, 'reel'); const hr = await p.touchscreen.touchStart(R.x, R.y); await wait(1000); await hr.end();
+    check('holding REEL winds line in', await p.evaluate(l => window.chomp.fishing.state.fight.line < l - 1, line0));
+    await p.evaluate(() => { const f = window.chomp.fishing.state.fight; f.mode = 'run'; f.modeLeft = 8; f.stamina = 1; });
+    const line1 = await F(() => window.chomp.fishing.state.fight.line), L = await at(p, 'release'); const hl = await p.touchscreen.touchStart(L.x, L.y); await wait(1200); await hl.end();
+    check('holding RELEASE lets line run', await p.evaluate(l => window.chomp.fishing.state.fight.line > l + 1, line1));
+    check('no page errors', !p.errors.length, p.errors[0]); await p.close(); }
+  { console.log('Walking');
+    const p = await open('index.html?noopening', () => window.chomp && window.chomp.cam);
+    await p.evaluate(() => window.chompStartHere()); await p.waitForFunction(() => window.chomp.game.intro <= 0, { timeout: 30000, polling: 200 }); await wait(800);
+    check('on land the button says Duck', await p.evaluate(() => document.getElementById('t-fours').textContent === 'Duck'));
+    await p.evaluate(() => { const w = window.chomp.wally; w.pos.set(3, -0.45, -8); w.vel.set(0, 0, 0); });
+    check('in the water it says Dive', await p.waitForFunction(() => document.getElementById('t-fours').textContent === 'Dive', { timeout: 8000, polling: 100 }).then(() => true).catch(() => false));
+    check('no page errors', !p.errors.length, p.errors[0]); await p.close(); }
+} finally { await b.close(); }
+console.log(failed ? `${failed} FAILED` : 'all passed');
+process.exit(failed ? 1 : 0);

@@ -11,6 +11,8 @@
 
 import * as THREE from 'three';
 import { createSnout } from '../eyes.js';
+import { createThumbs } from '../thumbs.js';
+import { isTouchDevice } from '../quality.js';
 import { CAST, CAST_ANGLES, LINE, newCast, castStep, forceAt, newTroll, trollStep, newFight, fightStep, tensionZone } from './marlin-rules.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -78,7 +80,7 @@ export function createMarlinFight({ scene, camera, fx, sound, models, wally, boa
   // Out to sea, sideways on to the shore: the boat runs along the coast and the line goes out astern.
   const AT = { x: -120, z: mooredAt.z + 60 };
   const astern = V(0, 0, -1), right = V(1, 0, 0);
-  const s = { phase: null, angle: CAST_ANGLES.start, forceT: 0, force: 0, cast: null, troll: null, fight: null, boatZ: AT.z, away: 0, leap: 0, leapTotal: 2, keys: new Set(), pointer: { reel: false, release: false }, press: false, rod: 0, tick: 0, medalT: -1 };
+  const s = { phase: null, angle: CAST_ANGLES.start, forceT: 0, force: 0, cast: null, troll: null, fight: null, boatZ: AT.z, away: 0, leap: 0, leapTotal: 2, keys: new Set(), press: false, rod: 0, tick: 0, medalT: -1 };
 
   // ---- Things in the world ---------------------------------------------------------------------
   const rig = new THREE.Group(); rig.visible = false; scene.add(rig);
@@ -136,30 +138,28 @@ export function createMarlinFight({ scene, camera, fx, sound, models, wally, boa
     <div class="fish-meter" hidden><span class="fish-meter-label"></span><div><i></i></div><b class="fish-meter-num"></b></div>
     <p class="fish-prompt"></p>
     <p class="fish-keys"></p>
-    <div class="fish-buttons"><button class="fish-b-release" type="button">RELEASE</button><button class="fish-b-reel" type="button">REEL</button></div>
     <div class="fish-after" hidden><button class="fish-again" type="button">Cast again</button><button class="fish-leave" type="button">Back to the pier</button></div>`;
   document.body.append(ui);
-  const $ = q => ui.querySelector(q), needle = $('.fish-needle'), promptEl = $('.fish-prompt'), lineEl = $('.fish-line'), strength = $('.fish-strength'), strengthFill = $('.fish-strength i'), gauge = $('.fish-gauge'), meter = $('.fish-meter'), meterFill = $('.fish-meter i'), meterLabel = $('.fish-meter-label'), meterNum = $('.fish-meter-num'), buttons = $('.fish-buttons'), after = $('.fish-after'), bReel = $('.fish-b-reel'), bRelease = $('.fish-b-release');
+  const $ = q => ui.querySelector(q), needle = $('.fish-needle'), promptEl = $('.fish-prompt'), lineEl = $('.fish-line'), strength = $('.fish-strength'), strengthFill = $('.fish-strength i'), gauge = $('.fish-gauge'), meter = $('.fish-meter'), meterFill = $('.fish-meter i'), meterLabel = $('.fish-meter-label'), meterNum = $('.fish-meter-num'), after = $('.fish-after');
   const say = t => { if (promptEl.textContent !== t) promptEl.textContent = t; };
   // The controls, for the stage he is at (Ken, 2026-10-31).
-  const touch = matchMedia('(pointer: coarse)').matches, keysEl = $('.fish-keys');
-  const CONTROLS = touch ? {
-    aim: 'UP / DOWN buttons: set the angle  \u00b7  Tap the water: on to the force',
-    force: 'Tap: cast, as hard as the meter shows',
-    troll: 'STRIKE button or tap, when the gauge jumps',
-    fight: 'Hold REEL: wind in  \u00b7  Hold RELEASE: let line run  \u00b7  Keep the needle out of the red',
-  } : {
+  const touch = isTouchDevice(), keysEl = $('.fish-keys');
+  const CONTROLS = {
     aim: 'Up / Down or W / S: set the angle  \u00b7  Space: on to the force',
     force: 'Space: cast, as hard as the meter shows',
     troll: 'Space: strike, when the gauge jumps',
     fight: 'Hold Down or S: REEL  \u00b7  Hold Up or W: RELEASE  \u00b7  Left / Right or A / D: swing the rod  \u00b7  P: pause',
     lost: 'Space: cast again  \u00b7  Esc: back to the pier',
   };
-  const hold = (el, key) => {
-    el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); s.pointer[key] = true; if (key === 'reel' && s.phase === 'troll') s.press = true; });
-    for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) el.addEventListener(ev, () => { s.pointer[key] = false; });
-  };
-  hold(bReel, 'reel'); hold(bRelease, 'release');
+  // On a phone, only the controls of the moment, under the thumbs (Ken, 2026-11-01). Each is simply its key.
+  const thumbs = createThumbs({
+    up: { side: 'right', label: '\u25B2', key: 'ArrowUp', col: true }, down: { side: 'right', label: '\u25BC', key: 'ArrowDown', col: true },
+    set: { side: 'left', label: 'SET', key: ' ' }, cast: { side: 'left', label: 'CAST', key: ' ' }, strike: { side: 'left', label: 'STRIKE', key: ' ' },
+    release: { side: 'left', label: 'RELEASE', key: 'ArrowUp' }, rodLeft: { side: 'left', label: '\u25C0', key: 'ArrowLeft', small: true },
+    reel: { side: 'right', label: 'REEL', key: 'ArrowDown' }, rodRight: { side: 'right', label: '\u25B6', key: 'ArrowRight', small: true },
+    again: { side: 'left', label: 'CAST AGAIN', key: ' ' }, back: { side: 'right', label: 'BACK', key: 'Escape' },
+  });
+  const THUMBS = { aim: ['set', 'up', 'down'], force: ['cast'], troll: ['strike'], fight: ['release', 'rodLeft', 'reel', 'rodRight'], lost: ['again', 'back'] };
   $('.fish-again').onclick = e => { e.stopPropagation(); after.hidden = true; enter('aim'); };
   $('.fish-leave').onclick = e => { e.stopPropagation(); finish(false); };
   const keyDown = e => {
@@ -170,9 +170,6 @@ export function createMarlinFight({ scene, camera, fx, sound, models, wally, boa
     s.keys.add(e.key);
   };
   const keyUp = e => s.keys.delete(e.key);
-  // On a phone, a tap on the picture is the press. On a computer it is all keys (Ken, 2026-10-31).
-  const mouseDown = e => { if (!s.phase || e.pointerType !== 'touch' || e.target.closest('button')) return; s.press = true; };
-  const mouseUp = () => { s.pointer.reel = s.pointer.release = false; };
   const noMenu = e => { if (s.phase) e.preventDefault(); };
   const held = (...names) => names.some(n => s.keys.has(n));
   const takePress = () => { const p = s.press; s.press = false; return p; };
@@ -191,13 +188,11 @@ export function createMarlinFight({ scene, camera, fx, sound, models, wally, boa
     s.phase = p; s.press = false;
     gauge.hidden = p === 'aim' || p === 'force' || p === 'flight';
     meter.hidden = p !== 'aim' && p !== 'force';
-    buttons.hidden = !touch || (p !== 'fight' && p !== 'troll' && p !== 'aim');
+    thumbs.show(THUMBS[p] || []);
     strength.hidden = p !== 'fight'; lineEl.hidden = p !== 'fight' && p !== 'troll'; lineEl.parentElement.hidden = lineEl.hidden;
-    after.hidden = p !== 'lost';
-    bReel.textContent = p === 'aim' ? 'UP' : p === 'troll' ? 'STRIKE' : 'REEL'; bRelease.textContent = p === 'aim' ? 'DOWN' : 'RELEASE';
-    bRelease.hidden = p === 'troll';
-    keysEl.textContent = CONTROLS[p] || ''; keysEl.hidden = !CONTROLS[p];
-    if (p === 'aim') { s.fight = s.troll = s.cast = null; line.visible = lure.visible = marlin.visible = false; s.forceT = 0; s.keys.clear(); s.pointer.reel = s.pointer.release = false; s.press = false; say('Set the angle of your cast.'); }
+    after.hidden = touch || p !== 'lost';
+    keysEl.textContent = CONTROLS[p] || ''; keysEl.hidden = touch || !CONTROLS[p];
+    if (p === 'aim') { s.fight = s.troll = s.cast = null; line.visible = lure.visible = marlin.visible = false; s.forceT = 0; s.keys.clear(); s.press = false; say('Set the angle of your cast.'); }
     if (p === 'force') { s.forceT = 0; say('Cast, as hard as the meter shows. Too hard tangles the reel!'); }
     if (p === 'flight') { s.cast = newCast(s.angle, s.force); line.visible = lure.visible = true; sound.play.leap && sound.play.leap(); say(s.cast.tangled ? 'Backlash! The reel has overrun.' : ''); }
     if (p === 'troll') { s.troll = newTroll(rng); say('The boat trolls on. Watch the gauge for a bite...'); }
@@ -210,7 +205,7 @@ export function createMarlinFight({ scene, camera, fx, sound, models, wally, boa
 
   // ---- Each frame ------------------------------------------------------------------------------
   function stepAim(dt) {
-    const dir = (held('ArrowUp', 'w', 'W') || s.pointer.reel ? 1 : 0) - (held('ArrowDown', 's', 'S') || s.pointer.release ? 1 : 0);
+    const dir = (held('ArrowUp', 'w', 'W') ? 1 : 0) - (held('ArrowDown', 's', 'S') ? 1 : 0);
     s.angle = Math.max(CAST_ANGLES.min, Math.min(CAST_ANGLES.max, s.angle + dir * 22 * dt));
     meterLabel.textContent = 'ANGLE'; meterFill.style.height = `${(s.angle - CAST_ANGLES.min) / (CAST_ANGLES.max - CAST_ANGLES.min) * 100}%`; meterNum.textContent = `${Math.round(s.angle)}°`;
     if (takePress()) enter('force');
@@ -244,7 +239,7 @@ export function createMarlinFight({ scene, camera, fx, sound, models, wally, boa
   const PROMPTS = { run: "He's running! RELEASE and let him go!", jump: "He's leaping! RELEASE!", shake: 'He is shaking his head. Ease off...', charge: 'He is charging the boat! REEL fast, keep it tight!', rest: 'He is resting. REEL, win line back!' };
   function stepFight(dt) {
     // (Ken, 2026-10-31: down reels, as pulling back on the rod; up releases, as giving to him.)
-    const f = s.fight, reelOn = held('ArrowDown', 's', 'S') || s.pointer.reel, releaseOn = held('ArrowUp', 'w', 'W') || s.pointer.release;
+    const f = s.fight, reelOn = held('ArrowDown', 's', 'S'), releaseOn = held('ArrowUp', 'w', 'W');
     const dirX = (held('ArrowRight', 'd', 'D') ? 1 : 0) - (held('ArrowLeft', 'a', 'A') ? 1 : 0);
     s.rod += (dirX - s.rod) * Math.min(1, dt * 5);
     s.press = false;
@@ -327,10 +322,10 @@ export function createMarlinFight({ scene, camera, fx, sound, models, wally, boa
 
   // ---- Start and end ---------------------------------------------------------------------------
   function finish(caught) {
-    s.phase = null; ui.hidden = true; rig.visible = line.visible = lure.visible = marlin.visible = medal.visible = false; snout.show(false); snout.holdRod(false);
+    thumbs.hide(); s.phase = null; ui.hidden = true; rig.visible = line.visible = lure.visible = marlin.visible = medal.visible = false; snout.show(false); snout.holdRod(false);
     s.away = 0; s.unhooked = false; s.medalT = -1; s.seen = false;
     boat.position.copy(mooredAt); boat.rotation.set(0, -Math.PI / 2, 0);
-    removeEventListener('keydown', keyDown); removeEventListener('keyup', keyUp); removeEventListener('pointerdown', mouseDown); removeEventListener('pointerup', mouseUp); removeEventListener('contextmenu', noMenu);
+    removeEventListener('keydown', keyDown); removeEventListener('keyup', keyUp); removeEventListener('contextmenu', noMenu);
     document.body.classList.remove('in-cut', 'fishing');
     onLeave(caught);
   }
@@ -343,7 +338,7 @@ export function createMarlinFight({ scene, camera, fx, sound, models, wally, boa
       s.boatZ = AT.z; boat.rotation.set(0, 0, 0); boat.position.set(AT.x, 0, AT.z);
       wally.root.visible = false; rig.visible = true; snout.show(true); snout.holdRod(true); ui.hidden = false;
       document.body.classList.add('in-cut', 'fishing');
-      addEventListener('keydown', keyDown); addEventListener('keyup', keyUp); addEventListener('pointerdown', mouseDown); addEventListener('pointerup', mouseUp); addEventListener('contextmenu', noMenu);
+      addEventListener('keydown', keyDown); addEventListener('keyup', keyUp); addEventListener('contextmenu', noMenu);
       s.keys.clear(); s.angle = CAST_ANGLES.start; enter('aim');
     },
     step(dt, t) {

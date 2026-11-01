@@ -13,6 +13,7 @@ import { installVR, inVR } from '../vr.js';
 import { guideArrow, nearest } from '../guide-arrow.js';
 import { startRun, addPoints, installScore } from '../points.js';
 import * as THREE from 'three';
+import { createThumbs } from '../thumbs.js';
 import { AGROUND_Z, BOAT_LENGTH, boatX, groundAt, insideRiver, crocsRoundBoat } from './daintree-rules.js';
 import { buildDaintree } from './daintree-scene.js';
 import { BEAT, CROCS, PARK, CALL, READY, NEEDED, offBeat, quality, rating, heave, settle, afloat, beatOf } from './push-rules.js';
@@ -234,13 +235,17 @@ function step(dt, t) {
   for (const p of passengers) { p.skin.play(game.phase === 'afloat' || (game.phase === 'push' && boat.moved > 0) ? 'cheer' : 'nervous', { alternatives: ['idle'] }); p.skin.update(dt); }
   placeBoat(t);
 }
+const pushThumbs = createThumbs({ heave: { side: 'right', label: 'HEAVE', key: ' ' } });
+window.chomp.startPush = () => startPush();    // for testing
 function startPush() {
+  pushThumbs.show(['heave']);
   game.phase = 'push'; game.beatT = -1.2; game.lastBeat = -1; game.pressed = -99;
   meter.hidden = false; $('job').textContent = forDevice({ keys: 'Press Space on HEAVE!', mouse: 'Click on HEAVE!', pad: 'Press A on HEAVE!', touch: 'Tap on HEAVE!' });
   bubbles.say(wally.root, 'Right, fellas! Everyone on the hull. On my word... HEAVE!', 3.2);
   toast('Press on the beat: when the marker hits the middle, HEAVE!', 'info');
 }
 function floated() {
+  pushThumbs.hide();
   game.phase = 'afloat'; game.afloatT = 0; meter.hidden = true;
   sound.fanfare && sound.fanfare(); game.flash = 2;
   caption('She floats!');
