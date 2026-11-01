@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.21 (2026-11-01)
+
 - Phones: the circle now has four solid arrows, always in the same place, and the up arrow beckons until the thumb first lands.
   Up is on or off, as on the keyboard, so Wally no longer slows when the thumb relaxes, and he goes a touch quicker by thumb.
 - Phones: the left thumb's buttons change to fit: Jump and Duck on land, Dive and Leap in the water, Up when under. This also
