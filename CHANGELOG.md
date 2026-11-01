@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.20 (2026-11-01)
+
 - Phones get two-thumb controls: a circle fixed at the bottom right to move and turn, as smooth as the keyboard, and Jump and
   Dive fixed at the bottom left. They work together; a finger anywhere else turns the camera.
 - On a phone, the zip line (which had no touch controls before), the boomerang, the vines, heaving the boat and the fishing
