@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.24 (2026-11-02)
+
 - Straightening up no longer swings Wally back: the path only guides him when he is nearly along it, and by thumb the turn stops as soon as the thumb
   is straight.
 
