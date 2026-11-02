@@ -353,7 +353,8 @@ test('regression: the map that opens on arrival, closed with the X, brings back 
   for (const how of ['X', 'Back to the game', 'outside']) {
     const p = await page({ save: { unlocked: ['park'], trip: { difficulty: 'easy', completed: [], items: {}, visits: {}, entered: [] } } });
     await go(p, 'index.html?map', 6000);
-    check(`(${how}) the map is open on arrival`, await p.evaluate(() => [...document.querySelectorAll('.map-modal')].some(m => !m.hidden)));
+    // It opens as the page finishes loading, which on a cold browser takes twice as long: wait for it, rather than look once.
+    check(`(${how}) the map is open on arrival`, await p.waitForFunction(() => [...document.querySelectorAll('.map-modal')].some(m => !m.hidden), { timeout: 30000, polling: 100 }).then(() => true).catch(() => false));
     await p.evaluate(how => { const m = [...document.querySelectorAll('.map-modal')].find(m => !m.hidden);
       if (how === 'X') m.querySelector('.map-close').click(); else if (how === 'outside') m.click(); else [...m.querySelectorAll('button')].find(b => b.textContent === 'Back to the game').click(); }, how);
     await wait(800);
