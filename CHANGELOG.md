@@ -5,6 +5,12 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- Straightening up no longer swings Wally back: the path only guides him when he is nearly along it, and by thumb the turn stops as soon as the thumb
+  is straight.
+
+- Phones: steering is calmer. A thumb near straight up runs him straight, the turn grows slowly as the thumb goes to the side, and only a full push
+  is a sharp corner.
+
 ## v1.0.0-beta.23 (2026-11-02)
 
 - Fixed: with the key, the bridge stayed barred and Kenny's scene never played if Wally had dropped below half energy first.

@@ -54,11 +54,11 @@ check('running on fours costs more than upright', R.energyDrain('fours', true) >
 check('moving costs more than standing', R.energyDrain('swim', true) > R.energyDrain('swim', false));
 // Straight on keeps him on the path (Ken, 2026-11-01).
 { const near = (a, b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
-  let f = 0.5; for (let i = 0; i < 60; i++) f = R.followPath(f, 0, 1 / 60);
+  let f = 0.3; for (let i = 0; i < 120; i++) f = R.followPath(f, 0, 1 / 60);
   check('a little off the path he comes round to it', near(f, 0) < 0.02, f);
-  f = Math.PI - 0.5; for (let i = 0; i < 60; i++) f = R.followPath(f, 0, 1 / 60);
+  f = Math.PI - 0.3; for (let i = 0; i < 120; i++) f = R.followPath(f, 0, 1 / 60);
   check('and either way along it: going the other way he stays going that way', near(f, Math.PI) < 0.02, f);
-  check('facing well across it, it leaves him be: he is leaving', R.followPath(1.4, 0, 0.1) === 1.4);
+  check('at a real angle to it, it leaves him be: he has chosen his own way', R.followPath(0.5, 0, 0.1) === 0.5 && R.followPath(1.4, 0, 0.1) === 1.4);
   const a = 1, t = R.pathTangent(a, 3.5), p = R.fencePoint(a, 3.5), q = R.fencePoint(a + 0.05, 3.5);
   check('the path runs the way the path goes', near(t, Math.atan2(q.x - p.x, q.z - p.z)) < 0.05, t); }
 // Effort costs energy (Ken, 2026-11-01).

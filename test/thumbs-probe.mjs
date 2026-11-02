@@ -123,19 +123,23 @@ try {
     await put(); await wait(300);
     const side = await p.touchscreen.touchStart(S.x + 60, S.y); await wait(350);
     const c = await p.evaluate(() => { const w = window.chomp.wally; return { f: w.facing, sp: Math.hypot(w.vel.x, w.vel.z), m: Math.hypot(w.pos.x, w.pos.z - 21) }; }); await side.end(); await wait(300);
-    check('a full push to the side: about a quarter turn in a third of a second, and he is moving', Math.abs(Math.PI - c.f) > 1 && c.sp > 2 && c.m > 0.3, `${Math.abs(Math.PI - c.f).toFixed(2)} rad, ${c.sp.toFixed(1)} m/s, ${c.m.toFixed(1)} m`);
+    check('a full push to the side: a sharp turn in a third of a second, and he is moving', Math.abs(Math.PI - c.f) > 0.6 && c.sp > 2 && c.m > 0.3, `${Math.abs(Math.PI - c.f).toFixed(2)} rad, ${c.sp.toFixed(1)} m/s, ${c.m.toFixed(1)} m`);
     await put(); await wait(300);
     const run = await p.touchscreen.touchStart(S.x, S.y - 66); await wait(500); const r0 = await speed(); const f0 = await p.evaluate(() => window.chomp.wally.facing);
     await run.move(S.x + 66, S.y - 8); await wait(300); const r1 = await p.evaluate(() => { const w = window.chomp.wally; return { f: w.facing, v: Math.hypot(w.vel.x, w.vel.z) }; });
-    check('running, then a hard corner: he turns sharply and keeps his speed', Math.abs(r1.f - f0) > 0.8 && r1.v > r0.v * 0.9, `${Math.abs(r1.f - f0).toFixed(2)} rad, ${r0.v.toFixed(1)} to ${r1.v.toFixed(1)} m/s`);
+    check('running, then a hard corner: he turns sharply and keeps his speed', Math.abs(r1.f - f0) > 0.6 && r1.v > r0.v * 0.9, `${Math.abs(r1.f - f0).toFixed(2)} rad, ${r0.v.toFixed(1)} to ${r1.v.toFixed(1)} m/s`);
     { await run.move(S.x + 58, S.y + 34); const low0 = await p.evaluate(() => window.chomp.wally.facing); await wait(350); const low = await p.evaluate(() => { const w = window.chomp.wally; return { f: w.facing, v: Math.hypot(w.vel.x, w.vel.z), spin: Math.abs(w.turnLeft || 0) }; });
       check('the thumb arcs low on a hard turn: he keeps running and turning, with no stop and no about-face', low.v > 3 && low.spin === 0 && Math.abs(low.f - low0) > 0.7, `${low.v.toFixed(1)} m/s, ${Math.abs(low.f - low0).toFixed(2)} rad, spin ${low.spin.toFixed(2)}`); }
-    { await run.move(S.x + 62, S.y - 10); await wait(350); await run.move(S.x, S.y - 66); await wait(550);
+    { await run.move(S.x + 62, S.y - 10); await wait(400); const t0 = await p.evaluate(() => window.chomp.wally.facing); await run.move(S.x, S.y - 66); await wait(120);
+      const t1 = await p.evaluate(() => window.chomp.wally.facing); await wait(900); const t2 = await p.evaluate(() => window.chomp.wally.facing);
+      check('turning, then the thumb straight: the turn stops at once, and never swings back', Math.abs(t1 - t0) < 0.2 && Math.abs(t2 - t1) < 0.02, `ran on ${Math.abs(t1 - t0).toFixed(3)}, then ${(t2 - t1).toFixed(3)} rad`);
+      await run.move(S.x + 62, S.y - 10); await wait(350); await run.move(S.x, S.y - 66); await wait(550);
       const b = await p.evaluate(() => { const w = window.chomp.wally, y = window.chomp.cam.yaw + Math.PI, f0 = w.facing; return { side: Math.abs(Math.atan2(Math.sin(f0 - y), Math.cos(f0 - y))) }; });
       const f1 = await p.evaluate(() => window.chomp.wally.facing); await wait(300); const f2 = await p.evaluate(() => window.chomp.wally.facing);
       check('a sharp turn, then straight: he is right ahead on the screen, not left side on', b.side < 0.3, `${b.side.toFixed(2)} rad off`);
       check('and straight stays straight, with no flipping', Math.abs(f2 - f1) < 0.05, Math.abs(f2 - f1).toFixed(3)); }
-    await run.move(S.x + 12, S.y - 66); await wait(100); const s0 = await p.evaluate(() => window.chomp.wally.facing); await wait(400); const s1 = await p.evaluate(() => window.chomp.wally.facing);
+    await run.move(S.x + 10, S.y - 66); await wait(150); { const a0 = await p.evaluate(() => window.chomp.wally.facing); await wait(400); const a1 = await p.evaluate(() => window.chomp.wally.facing); check('a thumb a little off straight: he still runs straight, no twitch', Math.abs(a1 - a0) < 0.01, Math.abs(a1 - a0).toFixed(3)); }
+    await run.move(S.x + 24, S.y - 66); await wait(100); const s0 = await p.evaluate(() => window.chomp.wally.facing); await wait(400); const s1 = await p.evaluate(() => window.chomp.wally.facing);
     check('a slight lean on the run: a gentle change of course', Math.abs(s1 - s0) > 0.01 && Math.abs(s1 - s0) < 0.5, Math.abs(s1 - s0).toFixed(2));
     await run.end(); await wait(400);
     await p.evaluate(() => { const w = window.chomp.wally; w.pos.set(3, -0.45, -8); w.vel.set(0, 0, 0); });

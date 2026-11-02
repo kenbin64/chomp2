@@ -126,8 +126,9 @@ export function pathTangent(a, out = 0) {
   return Math.atan2(q.x - p.x, q.z - p.z);
 }
 // Straight on keeps him on the path (Ken, 2026-11-01): his facing, turned a little toward the way the path runs, whichever
-// way along it he is going. Only when he is roughly along it already: facing well across it, he is leaving, so it lets him.
-export const PATH_CONE = 0.9, PATH_PULL = 5;
+// way along it he is going. Only when he is nearly along it already (Ken, 2026-11-01: straightening up, the path pulled him back
+// the other way): at any real angle to it he has chosen his own way, and it leaves him be.
+export const PATH_CONE = 0.35, PATH_PULL = 2.5;
 export function followPath(facing, along, dt) {
   const near = (a, b) => Math.atan2(Math.sin(b - a), Math.cos(b - a));
   const d = Math.abs(near(facing, along)) <= Math.PI / 2 ? near(facing, along) : near(facing, along + Math.PI);

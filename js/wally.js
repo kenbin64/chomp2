@@ -24,9 +24,9 @@ const TURN = 2.8;                // keyboard steering: how fast left and right t
 // faster than before, for a big one. Measured: the scripted player reversed its turn 68 times a minute.
 const TURN_TAP = 1.4, TURN_HELD = 3.2, TURN_RAMP = 0.6;   // radians a second at first, after TURN_RAMP seconds held
 // By thumb (Ken, 2026-11-01): how far the thumb is to the side is how sharply he turns, at once. A little is a slight change of
-// course on the run, a full push a corner: a quarter circle in under a third of a second.
-const TURN_THUMB = 5.5;
-const PATH_HANDS_OFF = 0.06, PATH_WAIT = 0.6;   // a turn bigger than this, and for this many seconds after it, the path leaves him be
+// course on the run, a full push a corner: a quarter circle in about 0.4 of a second.
+const TURN_THUMB = 4;
+const PATH_HANDS_OFF = 0.03, PATH_WAIT = 1;   // a turn bigger than this, and for this many seconds after it, the path leaves him be
 const SPIN_TIME = 0.5;           // seconds for the animated turn round (Down, or the phone's turn-around button)
 // Turning while he moves (Ken, 2026-10-20: smooth, every angle in between): his
 // heading swings round toward where the player points at this rate, so a change of
@@ -416,7 +416,7 @@ export class Wally {
       this.turnHeld = side !== 0 && side === this.turnSide ? (this.turnHeld || 0) + dt : 0;
       this.turnSide = side;
       const rate = input.sharp ? TURN_THUMB : TURN_TAP + (TURN_HELD - TURN_TAP) * Math.min(1, this.turnHeld / TURN_RAMP);
-      this.turnRate = (this.turnRate || 0) + ((-input.right * rate) - (this.turnRate || 0)) * Math.min(1, dt * (input.sharp ? 18 : 10));
+      this.turnRate = (this.turnRate || 0) + ((-input.right * rate) - (this.turnRate || 0)) * Math.min(1, dt * (input.sharp ? (input.right ? 12 : 40) : 10));   // by thumb, straight means straight now: the turn does not run on
       this.facing += this.turnRate * dt + (input.aim || 0);       // the keys or stick, the mouse, and the aim help
       // Going straight on a path he follows it, curved or straight, and faces the way it runs (Ken, 2026-11-01). A real turn is
       // his own: for a moment after one the path leaves him be, so he can run off it.

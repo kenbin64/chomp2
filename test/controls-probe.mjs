@@ -141,7 +141,7 @@ const jolt = (s, key) => { let m = 0; for (let i = 2; i < s.length; i++) m = Mat
 }
 { // ---- Straight on keeps him on the path (Ken, 2026-11-01): the curved one round the park, and off it when he turns. ----
   const p = await park({ tips: false });
-  const on = await p.evaluate(async () => { const G = await import('./js/ground.js'), R = await import('./js/rules.js'); G.setParkMode('outside'); window.R = R; const a = 2.1, q = R.fencePoint(a, 3.5), w = window.chomp.wally; w.pos.set(q.x, R.BANK_Y, q.z); w.vel.set(0, 0, 0); w.facing = R.pathTangent(a) + 0.35; return R.pathTangent(a); });
+  const on = await p.evaluate(async () => { const G = await import('./js/ground.js'), R = await import('./js/rules.js'); G.setParkMode('outside'); window.R = R; const a = 2.1, q = R.fencePoint(a, 3.5), w = window.chomp.wally; w.pos.set(q.x, R.BANK_Y, q.z); w.vel.set(0, 0, 0); w.facing = R.pathTangent(a) + 0.3; return R.pathTangent(a); });
   const read = () => p.evaluate(() => { const w = window.chomp.wally, a = window.R.pathAngle(w.pos.x, w.pos.z), t = window.R.pathTangent(a); return { a, out: window.R.fenceOffset(w.pos.x, w.pos.z), off: Math.abs(Math.atan2(Math.sin(w.facing - t), Math.cos(w.facing - t))) }; });
   await p.keyboard.down('ArrowUp'); await wait(600); const s0 = await read(); let worst = 0; for (let i = 0; i < 10; i++) { await wait(300); worst = Math.max(worst, Math.abs((await read()).out - 3.5)); } const s1 = await read();
   check('up on the curved path: he comes round to it, and faces along it', s0.off < 0.12 && s1.off < 0.12, `${s0.off.toFixed(2)}, ${s1.off.toFixed(2)} rad`);

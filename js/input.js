@@ -31,13 +31,16 @@ const ORB_TURN = 1.7, ORB_STEER = 0.5;    // ORB_STEER: a full push to the side,
 const THUMB_R = 62;                       // pixels of drag for a full push
 const THUMB_TURN = 0.75;                  // a full push to the side, as a share of the keys' turning speed
 const SMOOTH = 9;                         // how quickly he follows a push: a tenth of a second or so
-const SMOOTH_THUMB = 16;                  // and a thumb's turn, quicker still: he goes where the thumb says
+const SMOOTH_THUMB = 11;                  // and a thumb's turn, a little quicker
 // The right thumb on a phone (Ken, 2026-11-01). A push any way but down sets him off, so he never swivels on the spot to aim: he
 // runs and turns together, as we do. He keeps going until the thumb comes back past GO_OFF, below the middle, or lifts. How fast is how far out the thumb is, walk to sprint: a walk near the middle, about the
 // keys' pace at the rim of the circle, and his sprint past it, out to SPRINT_R pixels. Further out than that changes nothing.
 const GO_ON = 0.15, GO_OFF = 0.2;
 const DOWN_CONE = 1.7;                    // how clearly down a pull must be to count as down: within about 30 degrees of straight down
-const THUMB_CURVE = 1.25;                 // fine control near the middle, and a real turn soon after
+// How the thumb's push to the side becomes a turn (Ken, 2026-11-01: too twitchy). Within THUMB_STRAIGHT of straight up he does not
+// turn at all, as no thumb holds exactly still; past it the turn grows slowly at first, and only a full push is a sharp corner.
+const THUMB_STRAIGHT = 0.2, THUMB_CURVE = 1.6;
+const thumbTurn = sx => Math.sign(sx) * Math.pow(Math.max(0, Math.abs(sx) - THUMB_STRAIGHT) / (1 - THUMB_STRAIGHT), THUMB_CURVE);
 const WALK_R = 20, SPRINT_R = 110;        // pixels from the circle's middle where the walk ends and the sprint is reached
 const WALK_PACE = 0.45, SPRINT_PACE = 1.45;   // as a share of his usual speed
 const ORB_REST = 24, ORB_MOVING = 40;     // the orb in the circle: pixels from the middle, standing and on the move
@@ -55,7 +58,7 @@ export function setThumbWater(on) {
 // Once the thumb is driving, the camera stays close behind him (Ken, 2026-11-01: after a sharp turn he was left side on, so the
 // player kept flipping from one side to the other to aim him). Up on the circle is then always the way he is going on the screen.
 let thumbDriving = false;
-export const THUMB_CAM = 7;              // how quickly the camera comes round behind him (a rate: about a seventh of a second)
+export const THUMB_CAM = 5;              // how quickly the camera comes round behind him (a rate: about a fifth of a second)
 export function isThumbDriving() { return thumbDriving; }
 export function setOrbHeading(a) { if (Number.isFinite(a)) orbAngle = a; }
 // A push on the orb (screen pixels from its middle) turned into Wally's own frame.
@@ -229,7 +232,7 @@ export class Input {
       const pullDown = sy > GO_OFF && sy > Math.abs(sx) * DOWN_CONE;
       if (pullDown) this.stick.going = false; else if (Math.hypot(sx, sy) > GO_ON) this.stick.going = true;
       wantF = this.stick.going ? 1 : (sy > 0.6 && pullDown ? -1 : 0);   // up goes; well down is the about-face, or backing up
-      if (steerAll) wantR = this.stick.id === 'mouse' ? soft(sx) * mine : Math.sign(sx) * Math.pow(Math.abs(sx), THUMB_CURVE); else { wantR = 0; this.turn -= soft(sx) * ORB_TURN * dt; }
+      if (steerAll) wantR = this.stick.id === 'mouse' ? soft(sx) * mine : thumbTurn(sx); else { wantR = 0; this.turn -= soft(sx) * ORB_TURN * dt; }
       pushed = true;
     }
     const k2 = Math.min(1, dt * SMOOTH);
@@ -240,7 +243,7 @@ export class Input {
       if (this.orbRun) this.orbRun.dataset.run = !this.stick.going ? 0 : out > 0.8 ? 3 : out > 0.5 ? 2 : 1;
     } else if (!this.softF) { this.thumbPace = 0; if (this.orbRun) this.orbRun.dataset.run = 0; }
     this.softF = (this.softF || 0) + ((wantF < 0 && steerAll ? 0 : wantF) - (this.softF || 0)) * k2;
-    this.softR = (this.softR || 0) + (wantR - (this.softR || 0)) * (this.stick ? Math.min(1, dt * SMOOTH_THUMB) : k2);
+    this.softR = (this.softR || 0) + (wantR - (this.softR || 0)) * (this.stick ? (wantR ? Math.min(1, dt * SMOOTH_THUMB) : 1) : k2);
     if (Math.abs(this.softF) < 0.005) this.softF = 0;
     if (Math.abs(this.softR) < 0.005) this.softR = 0;
     if (!f && !r && (pushed || this.softF || this.softR)) { f = this.softF; r = this.softR; if (wantF < 0) f = wantF; }
