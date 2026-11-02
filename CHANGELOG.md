@@ -5,6 +5,8 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+## v1.0.0-beta.23 (2026-11-02)
+
 - Fixed: with the key, the bridge stayed barred and Kenny's scene never played if Wally had dropped below half energy first.
 
 - Phones: once the thumb is driving, the camera stays close behind Wally, so after a sharp turn up on the circle is still the way he is going.
