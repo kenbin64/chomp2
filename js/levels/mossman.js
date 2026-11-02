@@ -19,7 +19,7 @@ import { installGear, snorkelling, drainFactor } from '../gear.js';
 import { installBook, openBook } from '../book.js';
 import * as THREE from 'three';
 import * as Trip from '../trip-rules.js';
-import { POOLS, KEY_POOL, CHEST_POOL, SLIDE_HALF, SLIDE_SPEED, START, FINISH_Z, riverX, groundAt, insideGorge, bottomSpot, canReach, groupSpots, slideAt } from './mossman-rules.js';
+import { POOLS, KEY_POOL, CHEST_POOL, SLIDE_HALF, BANK_WIDTH, SLIDE_SPEED, START, FINISH_Z, riverX, groundAt, insideGorge, bottomSpot, canReach, groupSpots, slideAt } from './mossman-rules.js';
 import { buildMossman } from './mossman-scene.js';
 import { Wally } from '../wally.js';
 import { Food, kindFor, useJarModel } from '../food.js';
@@ -64,6 +64,11 @@ const arrow = guideArrow({ show: attempt.visit === 1 });
 const dive = { under: false, depth: 0 };     // depth: how far below the floating line he is (0 floating)
 let solids = [];
 setGround({
+  // Along the rocks beside the river, following its bends (ground.js); not in the water.
+  pathHeading(x, z) {
+    if (groundAt(x, z, false).surface === 'water' || Math.abs(x - riverX(z)) > BANK_WIDTH + SLIDE_HALF) return null;
+    return Math.atan2(riverX(z + 0.5) - riverX(z - 0.5), 1);
+  },
   stand(x, z, feetY) {
     const g = groundAt(x, z, false);
     if (g.surface === 'water') return { y: g.y - dive.depth, surface: 'water' };

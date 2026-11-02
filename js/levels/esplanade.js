@@ -82,6 +82,8 @@ const seaDive = { under: false, depth: SEA_TOP };
 let poolOpen = () => false;              // set below, once the game state exists
 let pierOpen = () => false;              // the pier: open once paid for in mangoes (set below)
 const landGround = {
+  // The boardwalk runs along z, the spur out to the charter boats across it (ground.js).
+  pathHeading: (x, z) => onSpur(x, z) ? Math.PI / 2 : Math.abs(x) <= PATH.half && !inPool(x, z) ? 0 : null,
   stand(x, z, feetY) {
     if (inPool(x, z)) return { y: POOL_WATER - 0.45, surface: 'water' };
     if (onSpur(x, z) && pierOpen() && feetY >= G - 0.35) return { y: G, surface: 'deck' };   // out on the pier

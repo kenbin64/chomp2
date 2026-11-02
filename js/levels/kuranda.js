@@ -61,6 +61,7 @@ POSTCARDS.kuranda = POSTCARDS.kuranda || 'Kuranda sits in the rainforest above C
 // ---- The ground: the village street, flat, between the stalls, and the boomerang clearing --
 const onFoot = (x, z) => Math.abs(x) <= STREET.half + 0.6 || inClearing(x, z, 0.4);   // the clearing overlaps the street edge: no gap to stick in
 setGround({
+  pathHeading: (x, z) => Math.abs(x) <= STREET.half && !inClearing(x, z, 0) ? 0 : null,   // the village street (ground.js)
   stand: () => ({ y: G, surface: 'land' }),
   move: (x, z, nx, nz) => {
     const zc = Math.max(STREET.z0 + 2, Math.min(game && game.ready && game.hasAir ? STREET.z1 : TRAIL_Z - 0.8, nz));

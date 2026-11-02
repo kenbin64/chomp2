@@ -4,7 +4,7 @@
 // ask this, never a level directly, so every level can bring its own ground.
 // The park's ground is the default; another level calls setGround() at start.
 
-import { standHeight, clampToPark, railClamp, onDeck, deckHeight, deckBlocks, deckOpenAt, foodSurface, isWater, terrainHeight, ROCKS, GATE_X, BRIDGE_BAR_X, DECK_THICK, WALLY_TALL, WALLY_SWIM_TALL } from './rules.js';
+import { standHeight, clampToPark, railClamp, onDeck, deckHeight, deckBlocks, deckOpenAt, foodSurface, isWater, terrainHeight, ROCKS, GATE_X, BRIDGE_BAR_X, onPath, pathAngle, pathTangent, fencePoint, fenceOffset, PATH, DECK_THICK, WALLY_TALL, WALLY_SWIM_TALL } from './rules.js';
 import { clampOutside } from './chase-rules.js';
 
 // Where Wally may go in the park (chase-rules.js, Ken 2026-10-29): 'park', inside the croc fence;
@@ -16,6 +16,7 @@ export function getParkMode() { return parkMode; }
 let bridgeShut = false;
 export function setBridgeShut(on) { bridgeShut = on; }
 export function isBridgeShut() { return bridgeShut; }
+const PATH_MIDDLE = (PATH.inner + PATH.outer) / 2;
 function keepIn(x, z) {
   if (parkMode === 'outside') return clampOutside(x, z);
   if (parkMode === 'gate' && onDeck(x, z) && x > GATE_X - 1) return { x, z };   // out along the boardwalk
@@ -110,6 +111,16 @@ export const parkGround = {
     if (!onDeck(x, z) || deckOpenAt(x) || feetY >= deckHeight(x) - STEP) return null;
     return deckHeight(x) - DECK_THICK - (isWater(x, z) ? WALLY_SWIM_TALL : WALLY_TALL);
   },
+  // Which way the path he is on runs (his facing, in radians), or null when he is not on one (Ken, 2026-11-01): the bridge, and
+  // the visitors' path round the fence once he is out in the grounds. Every level says the same for its own paths.
+  pathHeading(x, z, y, facing = 0) {
+    if (onDeck(x, z) && y >= deckHeight(x) - STEP) return Math.PI / 2;
+    if (parkMode !== 'outside' || !onPath(x, z, 0.5)) return null;
+    // The way it runs, the way he is going, leaning gently back to its middle, so a long curve never carries him off the edge.
+    const a = pathAngle(x, z), t = pathTangent(a), way = Math.cos(facing - t) < 0 ? -1 : 1, p0 = fencePoint(a), p1 = fencePoint(a, 1);
+    const off = Math.max(-2, Math.min(2, fenceOffset(x, z) - PATH_MIDDLE)) * 0.25;
+    return Math.atan2(way * Math.sin(t) - (p1.x - p0.x) * off, way * Math.cos(t) - (p1.z - p0.z) * off);
+  },
   // Height food stops at, coming down at (x, z) from prevY.
   foodAt: (x, z, prevY) => foodSurface(x, z, prevY),
   isWater: (x, z) => isWater(x, z),
@@ -119,5 +130,6 @@ export const parkGround = {
 export const ground = { ...parkGround };
 
 export function setGround(g) {
+  ground.pathHeading = null;                    // no paths, unless this level says so
   Object.assign(ground, g);
 }

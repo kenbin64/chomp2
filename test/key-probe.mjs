@@ -91,6 +91,8 @@ const diveTo = (p, x, z) => p.evaluate(async (x, z) => {
   await wait(300);
   s = await state(p);
   check('the way is now the gate', s.stage === 'gate' && /gate/i.test(s.title), s.title);
+  // He may well have gone hungry first: the hint about Kenny's jar must not use up this scene (Ken, 2026-11-01: key in hand, the bridge stayed shut).
+  await p.evaluate(() => { window.chomp.game.kennyTold = true; });
   // Back on land with the key: Kenny says what comes next.
   await p.evaluate(() => { const w = window.chomp.wally; w.pos.set(-20, 0.4, 16); w.vel.set(0, 0, 0); });
   await p.waitForFunction(() => window.chomp.escapeScene.active, { timeout: 20000, polling: 100 }).catch(() => {});
@@ -99,6 +101,7 @@ const diveTo = (p, x, z) => p.evaluate(async (x, z) => {
   check('and Wally is in view in it, not hidden by his own view', await p.evaluate(() => window.chomp.wally.root.visible));
   if (process.env.SHOTS) await p.screenshot({ path: `${process.env.SHOTS}/kenny-scene.png` });
   await p.evaluate(() => window.chomp.escapeScene.end());
+  check('and the bar on the bridge has lifted', await p.evaluate(async () => !(await import('./js/ground.js')).isBridgeShut()));
   // Out through the gate, along the boardwalk: the chase starts.
   await p.evaluate(gx => { const w = window.chomp.wally; w.pos.set(gx, 2.5, 2); w.vel.set(0, 0, 0); }, gx);
   await wait(300);

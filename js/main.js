@@ -28,7 +28,7 @@ import { DayNight } from './daynight.js';
 import { StreetLamps } from './lamps.js';
 import { installBook, bookEvent, HiddenFinds, openBook } from './book.js';
 import { startQuest, questStep } from './sidequest.js';
-import { Input, steering, lazyBehind } from './input.js';
+import { Input, steering, lazyBehind, isThumbDriving, THUMB_CAM } from './input.js';
 import { Bubbles, reaction, pickLine, chatty } from './bubbles.js';
 import { Effects, CRUMBS } from './fx.js';
 import { loadModels, MODEL_FILES, PARK_MODEL_FILES } from './models.js';
@@ -307,11 +307,13 @@ const game = {
   depth: PARK_TREASURE.surfaceY, wantDepth: PARK_TREASURE.surfaceY, clear: 0, foursWas: false, ctrlShiftWas: false,
   diveQueued: false, upQueued: false, hasKey: false, tripDrain: 1, biteCool: 0, treasureHint: 0, diveHint: false,
   kennyCall: 0, kennyTold: false,       // Ken: under half, Wally can go to Kenny for a scoop
+  keyScene: false,                      // Kenny's scene with the key, which lifts the bar on the bridge: its own, or the hunger hint would stop it
 };
 
 // Under the water the lagoon's own ground: at the surface as always, or down
 // at the depth he has dived to (never into the bed).
 setGround({
+  pathHeading: parkGround.pathHeading,
   stand(x, z, feetY, floatY, fromBelow) {
     const s = parkGround.stand(x, z, feetY, floatY, fromBelow);
     if (s.surface === 'water' && game.depth < PARK_TREASURE.surfaceY - 0.02) return { y: swimDepth(game.depth, terrainHeight(x, z)), surface: 'water' };
@@ -543,7 +545,7 @@ function updateQuest(dt) {
     else if (q.leave() || game.chaseTest) finish(true);
   }
   if (escape.on) escapeStep(dt, game.time);
-  if (game.hasKey && !game.kennyTold && !game.chaseTest && wally.surface !== 'water' && !wally.airborne && getParkMode() === 'park') kennyTells();
+  if (game.hasKey && !game.keyScene && !game.chaseTest && wally.surface !== 'water' && !wally.airborne && getParkMode() === 'park') kennyTells();
   // Where to go next, on the first visit (guide-arrow.js): food when he is low; otherwise the next lost thing, the
   // chest, the gate, the way out.
   const hungry = clusters.active.filter(c => !c.fled && c.food > 0).map(c => c.root.position);
@@ -628,7 +630,7 @@ function escapeStep(dt, t) {
 
 // Back on land with the key, Kenny tells him what comes next (Ken, 2026-10-30).
 function kennyTells() {
-  game.kennyTold = true;
+  game.keyScene = true;
   wally.vel.set(0, 0, 0);
   const V3 = (x, y, z) => new THREE.Vector3(x, y, z), f = wally.facing;
   kenny.pos.set(wally.pos.x + Math.sin(f) * 2.1 + Math.cos(f) * 0.5, wally.pos.y, wally.pos.z + Math.cos(f) * 2.1 - Math.sin(f) * 0.5);
@@ -1082,7 +1084,8 @@ function followCamera(dt) {
       if (settings.camera === 'manual') { /* the manual camera turns only when the player turns it */ }
       else if (steering()) {
         const behind = wally.facing + Math.PI, off = Math.atan2(Math.sin(behind - cam.yaw), Math.cos(behind - cam.yaw));
-        if (Math.abs(off) > CAM_ZONE) cam.yaw += (off - Math.sign(off) * CAM_ZONE) * Math.min(1, dt * 2);
+        if (isThumbDriving()) cam.yaw += off * Math.min(1, dt * THUMB_CAM);      // by thumb, right behind him (input.js)
+        else if (Math.abs(off) > CAM_ZONE) cam.yaw += (off - Math.sign(off) * CAM_ZONE) * Math.min(1, dt * 2);
       }
       else cam.yaw = lazyBehind(cam.yaw, wally, dt);
     }
@@ -1135,7 +1138,7 @@ function start() {
   ensureTrip();
   attempt = Trip.startAttempt(progress.trip, 'park'); startRun('park', { level: attempt.level });
   arrow = guideArrow({ show: attempt.visit === 1 });          // where to go next, on the first visit
-  carried.clear(); if (goldenOnBack) goldenOnBack.visible = false; game.kennyTold = false; game.caught = 0; game.out = false; setParkMode('park'); world.lockdown(false); escape.clear(); catcher.forget(); catcher.reset(); game.groupsDone = 0;
+  carried.clear(); if (goldenOnBack) goldenOnBack.visible = false; game.kennyTold = false; game.keyScene = false; game.caught = 0; game.out = false; setParkMode('park'); world.lockdown(false); escape.clear(); catcher.forget(); catcher.reset(); game.groupsDone = 0;
   game.quest = createQuest(escapeQuest());
   game.hasKey = Trip.have(progress.trip, 'park-key') || Trip.have(progress.trip, 'gate-key');   // on a return visit he has it already (gate-key: saves from before)
   setBridgeShut(!game.hasKey);

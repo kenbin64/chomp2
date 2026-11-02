@@ -10,6 +10,7 @@
 
 import * as THREE from 'three';
 import { ground } from './ground.js';
+import { followPath } from './rules.js';
 import { setOrbHeading, setThumbWater } from './input.js';
 import { shirtTexture } from './textures.js';
 import { dress } from './models.js';
@@ -23,8 +24,9 @@ const TURN = 2.8;                // keyboard steering: how fast left and right t
 // faster than before, for a big one. Measured: the scripted player reversed its turn 68 times a minute.
 const TURN_TAP = 1.4, TURN_HELD = 3.2, TURN_RAMP = 0.6;   // radians a second at first, after TURN_RAMP seconds held
 // By thumb (Ken, 2026-11-01): how far the thumb is to the side is how sharply he turns, at once. A little is a slight change of
-// course on the run, a full push a corner: a quarter circle in about a third of a second.
-const TURN_THUMB = 4.5;
+// course on the run, a full push a corner: a quarter circle in under a third of a second.
+const TURN_THUMB = 5.5;
+const PATH_HANDS_OFF = 0.06, PATH_WAIT = 0.6;   // a turn bigger than this, and for this many seconds after it, the path leaves him be
 const SPIN_TIME = 0.5;           // seconds for the animated turn round (Down, or the phone's turn-around button)
 // Turning while he moves (Ken, 2026-10-20: smooth, every angle in between): his
 // heading swings round toward where the player points at this rate, so a change of
@@ -416,6 +418,11 @@ export class Wally {
       const rate = input.sharp ? TURN_THUMB : TURN_TAP + (TURN_HELD - TURN_TAP) * Math.min(1, this.turnHeld / TURN_RAMP);
       this.turnRate = (this.turnRate || 0) + ((-input.right * rate) - (this.turnRate || 0)) * Math.min(1, dt * (input.sharp ? 18 : 10));
       this.facing += this.turnRate * dt + (input.aim || 0);       // the keys or stick, the mouse, and the aim help
+      // Going straight on a path he follows it, curved or straight, and faces the way it runs (Ken, 2026-11-01). A real turn is
+      // his own: for a moment after one the path leaves him be, so he can run off it.
+      this.pathWait = Math.abs(input.right) > PATH_HANDS_OFF ? PATH_WAIT : Math.max(0, (this.pathWait || 0) - dt);
+      const along = ground.pathHeading && this.pathWait <= 0 && input.forward > 0.05 && !this.airborne && !this.turnLeft ? ground.pathHeading(this.pos.x, this.pos.z, this.pos.y, this.facing) : null;
+      if (along !== null) this.facing = followPath(this.facing, along, dt);
       // How fast he goes: as far as up is pushed. He stops for the moment of an about-face.
       const going = Math.abs(this.turnLeft || 0) < 0.3 ? Math.max(0, Math.min(1, input.forward)) : 0;
       want = new THREE.Vector3(Math.sin(this.facing) * going, 0, Math.cos(this.facing) * going);
@@ -427,7 +434,11 @@ export class Wally {
       if (want.lengthSq() > 1) want.normalize();
     }
     want.multiplyScalar(Math.min(SPEED[this.mode] * (input.boost || 1), SPEED.fours) * pace);   // boost: walk to sprint by thumb; his top speed is SPEED.fours
-    if (input.steer) this.vel.lerp(want, Math.min(1, dt * (this.airborne ? 2 : input.sharp ? 14 : 8)));   // by thumb he digs in on a corner and keeps his speed
+    if (input.steer && input.sharp && !this.airborne) {
+      // By thumb he carves (Ken, 2026-11-01: it resisted on sharp turns). His speed goes wherever he faces, at once, so a corner costs no speed and he never skids wide.
+      const now = Math.hypot(this.vel.x, this.vel.z), then = now + (want.length() - now) * Math.min(1, dt * 8);
+      this.vel.set(Math.sin(this.facing) * then, 0, Math.cos(this.facing) * then);
+    } else if (input.steer) this.vel.lerp(want, Math.min(1, dt * (this.airborne ? 2 : 8)));
     else this.steerArc(dt, want, inWater);
     this.moveFlat(dt);
 

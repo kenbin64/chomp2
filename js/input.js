@@ -36,6 +36,8 @@ const SMOOTH_THUMB = 16;                  // and a thumb's turn, quicker still: 
 // runs and turns together, as we do. He keeps going until the thumb comes back past GO_OFF, below the middle, or lifts. How fast is how far out the thumb is, walk to sprint: a walk near the middle, about the
 // keys' pace at the rim of the circle, and his sprint past it, out to SPRINT_R pixels. Further out than that changes nothing.
 const GO_ON = 0.15, GO_OFF = 0.2;
+const DOWN_CONE = 1.7;                    // how clearly down a pull must be to count as down: within about 30 degrees of straight down
+const THUMB_CURVE = 1.25;                 // fine control near the middle, and a real turn soon after
 const WALK_R = 20, SPRINT_R = 110;        // pixels from the circle's middle where the walk ends and the sprint is reached
 const WALK_PACE = 0.45, SPRINT_PACE = 1.45;   // as a share of his usual speed
 const ORB_REST = 24, ORB_MOVING = 40;     // the orb in the circle: pixels from the middle, standing and on the move
@@ -50,6 +52,11 @@ let thumbWater = null;
 export function setThumbWater(on) {
   thumbWater = on;
 }
+// Once the thumb is driving, the camera stays close behind him (Ken, 2026-11-01: after a sharp turn he was left side on, so the
+// player kept flipping from one side to the other to aim him). Up on the circle is then always the way he is going on the screen.
+let thumbDriving = false;
+export const THUMB_CAM = 7;              // how quickly the camera comes round behind him (a rate: about a seventh of a second)
+export function isThumbDriving() { return thumbDriving; }
 export function setOrbHeading(a) { if (Number.isFinite(a)) orbAngle = a; }
 // A push on the orb (screen pixels from its middle) turned into Wally's own frame.
 // (Turning the arrows with Wally made a held push keep changing meaning, so he spun: Ken, 2026-10-22. The
@@ -118,7 +125,7 @@ export class Input {
     const take = t => {
       const r = ring.getBoundingClientRect();
       this.stick = { id: t.identifier, x0: r.left + r.width / 2, y0: r.top + r.height / 2, dx: 0, dy: 0, going: false };
-      read(this.stick, t); show(this.stick); ring.classList.add('active'); ring.classList.remove('hint');
+      read(this.stick, t); show(this.stick); ring.classList.add('active'); ring.classList.remove('hint'); thumbDriving = true;
     };
     const begin = e => {
       for (const t of e.changedTouches) {
@@ -218,9 +225,11 @@ export class Input {
     if (padMoving) { wantF = soft(pad.forward); wantR = soft(pad.right) * (steerAll ? THUMB_TURN : 1); pushed = true; }
     if (this.stick) {
       const sx = this.stick.dx, sy = this.stick.dy, mine = this.stick.id === 'mouse' ? ORB_STEER : 1;
-      if (sy > GO_OFF) this.stick.going = false; else if (Math.hypot(sx, sy) > GO_ON) this.stick.going = true;
-      wantF = this.stick.going ? 1 : (sy > 0.6 ? -1 : 0);         // up goes; well down is the about-face, or backing up
-      if (steerAll) wantR = soft(sx) * mine; else { wantR = 0; this.turn -= soft(sx) * ORB_TURN * dt; }
+      // Down means stop only when it is clearly down. A thumb arcing round to the side and low is a hard turn, and he keeps running.
+      const pullDown = sy > GO_OFF && sy > Math.abs(sx) * DOWN_CONE;
+      if (pullDown) this.stick.going = false; else if (Math.hypot(sx, sy) > GO_ON) this.stick.going = true;
+      wantF = this.stick.going ? 1 : (sy > 0.6 && pullDown ? -1 : 0);   // up goes; well down is the about-face, or backing up
+      if (steerAll) wantR = this.stick.id === 'mouse' ? soft(sx) * mine : Math.sign(sx) * Math.pow(Math.abs(sx), THUMB_CURVE); else { wantR = 0; this.turn -= soft(sx) * ORB_TURN * dt; }
       pushed = true;
     }
     const k2 = Math.min(1, dt * SMOOTH);
@@ -294,6 +303,7 @@ export function lazyBehind(yaw, wally, dt) {
   return Math.abs(d) < 0.8 ? yaw + d * Math.min(1, dt * 0.6) : yaw;
 }
 export function easeBehind(yaw, facing, dt, rate = 3) {
+  if (thumbDriving) rate = Math.max(rate, THUMB_CAM);
   const want = facing + Math.PI, d = Math.atan2(Math.sin(want - yaw), Math.cos(want - yaw));
   return yaw + d * Math.min(1, dt * rate);
 }

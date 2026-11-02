@@ -111,9 +111,10 @@ const jolt = (s, key) => { let m = 0; for (let i = 2; i < s.length; i++) m = Mat
   for (let i = 1; i <= 8; i++) { await t.move(sx + i * 6, sy - 60); await wait(40); }
   const curve = await watch(p, 1000, 50);
   check('touch, up and right: forward, curving right', moved(curve) > 2 && turned(curve) < -0.5, `${moved(curve).toFixed(1)} m, ${turned(curve).toFixed(2)} rad`);
-  const rates = curve.slice(1).map((s, i) => wrap(s.f - curve[i].f) / Math.max(0.001, (s.t - curve[i].t) / 1000));
-  const judder = Math.max(...rates.slice(1).map((r, i) => Math.abs(r - rates[i])));
-  check('touch: the turn is smooth, no judder', judder < 1.2, judder.toFixed(2));
+  // Measured on every drawn frame: sampling between frames shows noise that is not there. A frame the browser ran slow, or the part-frame the measuring starts on, is left out.
+  const frames = await p.evaluate(() => new Promise(done => { const w = window.chomp.wally, out = []; let last = performance.now(), f = w.facing, n = 0; const tick = now => { const dt = (now - last) / 1000; if (dt > 0.012 && dt < 0.04) out.push(Math.atan2(Math.sin(w.facing - f), Math.cos(w.facing - f)) / dt); else out.push(null); last = now; f = w.facing; if (++n < 40) requestAnimationFrame(tick); else done(out); }; requestAnimationFrame(tick); }));
+  const steps2 = frames.slice(1).map((r, i) => r === null || frames[i] === null ? 0 : Math.abs(r - frames[i])), judder = [...steps2].sort((a, b) => a - b)[Math.floor(steps2.length * 0.9)], counted = frames.filter(r => r !== null).length;
+  check('touch: the turn is smooth, no judder', counted > 10 && judder < 0.5, `${judder.toFixed(2)} rad/s frame to frame (nine frames in ten), over ${counted} frames`);
   await t.end(); await wait(100); const lifted = await watch(p, 700, 50);
   check('touch, let go: he eases to a stop', lifted[0].sp > 0.2 && lifted[lifted.length - 1].sp < 0.3, `${lifted[0].sp.toFixed(1)} to ${lifted[lifted.length - 1].sp.toFixed(1)}`);
   await home(p); const a = await state(p); const d = await p.touchscreen.touchStart(sx, sy - 60); await d.move(sx, sy + 55); await wait(900); await d.end(); await wait(300); const b = await state(p);
@@ -135,6 +136,18 @@ const jolt = (s, key) => { let m = 0; for (let i = 2; i < s.length; i++) m = Mat
   check('touch: let go, it lets go', await p.evaluate(() => !document.getElementById('t-fours').classList.contains('on')));
   const before = await p.evaluate(() => window.chomp.cam.yaw); const look = await p.touchscreen.touchStart(422, 120); await look.move(362, 120); await wait(100); await look.end();
   check('touch: a finger anywhere else turns the camera', await p.evaluate(b => Math.abs(window.chomp.cam.yaw - b) > 0.1, before));
+  check('no page errors', !p.errors.length, p.errors.join(' | '));
+  await p.done();
+}
+{ // ---- Straight on keeps him on the path (Ken, 2026-11-01): the curved one round the park, and off it when he turns. ----
+  const p = await park({ tips: false });
+  const on = await p.evaluate(async () => { const G = await import('./js/ground.js'), R = await import('./js/rules.js'); G.setParkMode('outside'); window.R = R; const a = 2.1, q = R.fencePoint(a, 3.5), w = window.chomp.wally; w.pos.set(q.x, R.BANK_Y, q.z); w.vel.set(0, 0, 0); w.facing = R.pathTangent(a) + 0.35; return R.pathTangent(a); });
+  const read = () => p.evaluate(() => { const w = window.chomp.wally, a = window.R.pathAngle(w.pos.x, w.pos.z), t = window.R.pathTangent(a); return { a, out: window.R.fenceOffset(w.pos.x, w.pos.z), off: Math.abs(Math.atan2(Math.sin(w.facing - t), Math.cos(w.facing - t))) }; });
+  await p.keyboard.down('ArrowUp'); await wait(600); const s0 = await read(); let worst = 0; for (let i = 0; i < 10; i++) { await wait(300); worst = Math.max(worst, Math.abs((await read()).out - 3.5)); } const s1 = await read();
+  check('up on the curved path: he comes round to it, and faces along it', s0.off < 0.12 && s1.off < 0.12, `${s0.off.toFixed(2)}, ${s1.off.toFixed(2)} rad`);
+  check('and goes round the curve, staying on it', Math.abs(s1.a - s0.a) > 0.15 && worst < 1.2, `${(s1.a - s0.a).toFixed(2)} rad round, ${s1.out.toFixed(1)} m out (worst ${worst.toFixed(1)})`);
+  await p.keyboard.down('ArrowLeft'); await wait(500); await p.keyboard.up('ArrowLeft'); await wait(1400); const s2 = await read(); await p.keyboard.up('ArrowUp');
+  check('a real turn takes him off it', s2.out > 5.5 || s2.out < 1.5, s2.out.toFixed(1));
   check('no page errors', !p.errors.length, p.errors.join(' | '));
   await p.done();
 }

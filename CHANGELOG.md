@@ -5,6 +5,16 @@ playing shows on the About page. How to publish and roll back: RELEASING.md.
 
 ## Unreleased
 
+- Fixed: with the key, the bridge stayed barred and Kenny's scene never played if Wally had dropped below half energy first.
+
+- Phones: once the thumb is driving, the camera stays close behind Wally, so after a sharp turn up on the circle is still the way he is going.
+
+- Phones: sharp turns no longer fight the thumb. A thumb arcing low and to the side is a hard turn, not a stop or an about-face, and he carves
+  round a corner at full speed instead of skidding wide.
+
+- On every controller, going straight on a path follows it, curved or straight, and he faces the way it runs: the bridge, the park's path,
+  the Esplanade and its spur, the Kuranda street, the Mossman banks and the reef's jetty. A real turn takes him off it.
+
 ## v1.0.0-beta.22 (2026-11-01)
 
 - Phones: Wally runs and turns together, with no swivelling on the spot. A little to the side is a slight change of course on the run, a lot

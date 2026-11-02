@@ -333,6 +333,7 @@ window.chomp.hiddenFinds = hiddenFinds;
 
 // ---- The ground: jetty, island, and the water above and below the reef -------------
 setGround({
+  pathHeading: (x, z, y) => onJetty(x, z) && y >= JETTY.y - 0.4 ? Math.PI / 2 : null,   // the jetty (ground.js)
   stand(x, z, feetY) {
     if (onJetty(x, z) && feetY >= JETTY.y - 0.4) return { y: JETTY.y, surface: 'deck' };
     const sand = sandHeight(x, z);

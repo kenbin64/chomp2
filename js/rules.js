@@ -120,6 +120,20 @@ export function kioskSpots() {
   });
 }
 
+// Which way the path runs at angle a round the oval: the heading of a walk the way a grows (Wally's facing: atan2(x, z)).
+export function pathTangent(a, out = 0) {
+  const p = fencePoint(a - 0.01, out), q = fencePoint(a + 0.01, out);
+  return Math.atan2(q.x - p.x, q.z - p.z);
+}
+// Straight on keeps him on the path (Ken, 2026-11-01): his facing, turned a little toward the way the path runs, whichever
+// way along it he is going. Only when he is roughly along it already: facing well across it, he is leaving, so it lets him.
+export const PATH_CONE = 0.9, PATH_PULL = 5;
+export function followPath(facing, along, dt) {
+  const near = (a, b) => Math.atan2(Math.sin(b - a), Math.cos(b - a));
+  const d = Math.abs(near(facing, along)) <= Math.PI / 2 ? near(facing, along) : near(facing, along + Math.PI);
+  return Math.abs(d) > PATH_CONE ? facing : facing + d * Math.min(1, dt * PATH_PULL);
+}
+
 export function onPath(x, z, margin = 0) {
   const o = fenceOffset(x, z);
   return o >= PATH.inner - margin && o <= PATH.outer + margin;
